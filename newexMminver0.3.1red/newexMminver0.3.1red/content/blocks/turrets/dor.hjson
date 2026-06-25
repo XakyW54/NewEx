@@ -1,0 +1,67 @@
+
+name: Dor
+description: "Pháo Dor: Sản phẩm quân sự đầu tay của NewEx. Pháo bắn đạn thường liên tục, xen kẽ các loạt đạn chùm theo chu kỳ. Bắn đủ số loạt đạn chùm sẽ kích hoạt trạng thái Cuồng Bạo, tăng mạnh tốc độ bắn đạn thường."
+health: 380
+size: 2
+reload: 20
+range: 176
+inaccuracy: 2
+targetAir: true
+targetGround: true
+maxAmmo: 10
+ammoPerShot: 1
+ammoTypes: {
+  copper: {
+    type: BasicBulletType
+    speed: 5
+    damage: 30
+    width: 7
+    height: 9
+    lifetime: 40
+    frontColor: e0ea87
+    backColor: e5ff00
+    trailColor: daea80
+  }
+}
+
+
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+  parts: [
+    {
+      suffix: -2
+                layer: 51
+      y: 0
+      moveY: -0
+      recoilIndex: 0
+      progress: recoil
+                    children: [
+            {
+              suffix: -2
+              outline: false
+              layer: 50.01
+            }
+
+            {
+              suffix: -1
+              layer: 50.1
+              outline: false
+              layerOffset: -0.001
+              y: 2.5
+              moveY: -1.25
+              progress: reload
+            }
+
+              ]
+    }
+
+  ]
+}
+
+
+requirements: [
+  copper/240
+]
+category: turret
+research: newex

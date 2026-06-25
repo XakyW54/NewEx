@@ -1,0 +1,46 @@
+type: ItemTurret
+name: Tyber
+description: Tháp pháo tên lửa hạng nặng bắn luân phiên cụm 3 nòng. Tự động bắn thêm tên lửa tầm nhiệt phụ và định kỳ kích nổ xung kích tại tâm để tiêu diệt kẻ địch áp sát.
+size: 4
+health: 565
+category: turret
+researchCostMultiplier: 0.7
+
+configurable: true
+
+
+
+coolant: {
+  type: ConsumeCoolant
+  allowGas: true
+  allowLiquid: true
+  amount: 0.2
+}
+
+ammoTypes: {}
+
+outlineColor: 313131FF
+targetAir: true
+targetGround: true
+reload: 140
+range: 620
+inaccuracy: 4
+shootSound: missileLaunch
+shake: 1.5
+recoil: 0.7
+cooldownTime: 200
+
+shoot: {
+  shots: 3
+  shotDelay: 9
+}
+
+requirements: [
+  copper/3400
+  lead/1100
+  titanium/740
+plastanium/250
+  silicon/450
+]
+category: turret
+research: Vendicum

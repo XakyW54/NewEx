@@ -1,0 +1,77 @@
+
+name: Rangtaturs
+description: "Pháo Rangtaturs: Dòng tháp pháo Shotgun đa dụng mang cơ chế 7 loại hiệu ứng bất ngờ. Bình thường, pháo xả một loạt đạn mảnh hỗn hợp ngẫu nhiên các hiệu ứng (Nổ, Đốt, Băng, Điện, Ướt, Axit, Tan chảy) để khống chế mục tiêu. Cứ sau một khoảng thời gian tự động nén năng lượng, pháo sẽ phóng thêm một tia Laser gây sát thương đột biến, đồng thời tích nội tại kích hoạt trạng thái Cuồng Nộ để sấy đạn thường nhanh gấp bội."
+health: 380
+size: 3
+reload: 20
+range: 176
+inaccuracy: 2
+targetAir: true
+targetGround: true
+maxAmmo: 10
+ammoPerShot: 1
+ammoTypes: {
+  titanium: {
+    type: BasicBulletType
+    speed: 999
+    damage: 1
+    width: 1
+    height: 1
+    lifetime: 999
+  }
+}
+
+
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+  parts: [
+    {
+      suffix: -2
+                layer: 51
+      y: 0
+      moveY: -0
+      recoilIndex: 0
+      progress: recoil
+                    children: [
+            {
+              suffix: -2
+              outline: false
+              layer: 50.01
+            }
+
+            {
+              suffix: -1
+              layer: 50.1
+              outline: false
+              layerOffset: -0.001
+              y: 2.5
+              moveY: -1.25
+              progress: reload
+            }
+
+                        {
+              suffix: -1a
+              layer: 50.1
+              outline: false
+              layerOffset: -0.001
+              y: 2.5
+              moveY: -6.25
+              progress: reload
+            }
+
+              ]
+    }
+
+  ]
+}
+
+
+requirements: [
+  copper/660
+    lead/700
+    titanium/300
+    silicon/680
+]
+category: turret
+research: xylaon

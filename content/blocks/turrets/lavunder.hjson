@@ -1,0 +1,34 @@
+name: Lavunder 
+description: A powerful laser turret that grows stronger with each shot. Damage increases as it fires continuously, resetting when idle.
+health: 250000
+size: 4
+range: 260
+inaccuracy: 2
+rotateSpeed: 20.5
+shootSound: Gekko_fire
+shootCone: 25
+shootEffect: none
+maxAmmo: 50
+ammoPerShot: 1
+unitSort: strongest
+targetGround: true
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+  parts: [
+    {
+      type: RegionPart
+      suffix: -barrel
+      progress: recoil
+      moveY: -3
+    }
+  ]
+}
+requirements: [
+  copper/500
+  lead/400
+  coal/300
+  silicon/200
+]
+category: turret
+research: duo

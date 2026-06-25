@@ -11,7 +11,3 @@ require("tyber");
 require("rangtaturs");
 
 require("dtg-soldern");
-
-require("lavunder");
-
-require("lyvervon-system");

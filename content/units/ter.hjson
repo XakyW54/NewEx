@@ -1,0 +1,54 @@
+# File: content/units/ter.hjson
+
+type: tank
+name: "Ter"
+description: "Một đơn vị thiết giáp hạng nặng tích hợp công nghệ xung kích từ Reguilater. Có khả năng tự tăng tốc khi hành quân đường dài và triển khai khiên năng lượng tổ ong khi phòng thủ tĩnh."
+
+
+
+# Thuộc tính sinh tồn & Di chuyển
+health: 3500
+armor: 10
+speed: 1.2
+hitSize: 24
+itemCapacity: 0
+
+# Cấu hình di chuyển đặc trưng của dòng xe tăng
+omniMovement: false
+faceTarget: true
+treadRects: [
+    {
+        x: -10
+        y: -22
+        width: 5
+        height: 44
+    }
+]
+
+# Đồ họa & Vận tốc xoay thân
+spritesScale: 1.0
+outlineColor: "1c1723"
+rotateSpeed: 1.8
+
+# Khai báo cấu trúc vũ khí ban đầu (Hiển thị thông số trên UI trò chơi)
+weapons: [
+    {
+        name: "ter-weapon"
+        reload: 60
+        x: 0
+        y: 0
+        shootY: 4
+        mirror: false
+        shootSound: "laser"
+        rotate: true
+        rotateSpeed: 4.0
+        bullet: {
+            type: BasicBulletType
+            damage: 20
+            speed: 6.0
+            lifetime: 45
+            width: 8
+            height: 12
+        }
+    }
+]

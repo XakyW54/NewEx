@@ -1,4 +1,3 @@
-
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
@@ -26,6 +25,20 @@ xylaon.range = 420;
 xylaon.configurable = true;
 xylaon.category = Category.turret;
 
+// ================= TÙY CHỈNH KHO ĐẠN & GIÁ TRỊ BẮN =================
+xylaon.itemCapacity = 30;    // Tăng sức chứa ổ đạn lên 200 items
+xylaon.ammoPerShot = 1;       // Tiêu tốn 1 item cho mỗi lượt bắn...
+xylaon.shots = 5;             // ...nhưng bắn ra 5 viên đạn cùng lúc
+xylaon.inaccuracy = 4.5;      // Tăng độ lệch tâm nhẹ để tạo độ tỏa khi bắn chùm 5 viên
+
+// Cấu hình hàm thiết lập thuộc tính chung cho đạn (Xuyên thấu & Truy đuổi)
+const applyBulletUpgrades = (bullet) => {
+    bullet.pierce = true;            // Cho phép đạn xuyên mục tiêu
+    bullet.pierceCap = 3;            // Giới hạn xuyên tối đa 3 mục tiêu
+    bullet.homingPower = 0.04;       // Lực truy đuổi nhẹ
+    bullet.homingRange = 120;        // Tầm quét tìm mục tiêu truy đuổi
+};
+
 let xylaonBullet = extend(BasicBulletType, {});
 xylaonBullet.speed = 12;
 xylaonBullet.damage = 20;
@@ -37,6 +50,7 @@ xylaonBullet.trailEffect = Fx.disperseTrail;
 xylaonBullet.trailColor = Color.valueOf("#66ccff");
 xylaonBullet.backColor = Color.valueOf("#88ddff");
 xylaonBullet.frontColor = Color.white;
+applyBulletUpgrades(xylaonBullet);
 
 let xylaonMK2Bullet = extend(BasicBulletType, {});
 xylaonMK2Bullet.speed = 15.6; 
@@ -53,6 +67,7 @@ xylaonMK2Bullet.frontColor = Color.white;
 xylaonMK2Bullet.despawnEffect = Fx.hitBulletColor;
 xylaonMK2Bullet.knockback = 1.3; 
 xylaonMK2Bullet.impact = true;
+applyBulletUpgrades(xylaonMK2Bullet);
 
 let xylaonMK2BBullet = extend(BasicBulletType, {});
 xylaonMK2BBullet.speed = 16.5; 
@@ -70,6 +85,7 @@ xylaonMK2BBullet.despawnEffect = Fx.hitLancer;
 xylaonMK2BBullet.despawnColor = Color.valueOf("#aa2ee8");
 xylaonMK2BBullet.knockback = 0.8; 
 xylaonMK2BBullet.impact = true;
+applyBulletUpgrades(xylaonMK2BBullet);
 
 xylaon.ammo(Items.graphite, xylaonBullet);
 
@@ -150,7 +166,7 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
                 let dialog = extend(BaseDialog, "Nâng Cấp Hệ Thống Xylaon", {});
                 
-                let titleCell = dialog.cont.add("[gold]=== TIẾN HÓA LÕI THÁP PHÁO XYLAON ===[]");
+                let titleCell = dialog.cont.add("[gold]=== TIẾN HÓA LÕI THÁP PHÁO EXPANSION ===[]");
                 titleCell.row(); titleCell.padBottom(10);
                 
                 let labelCell = dialog.cont.label(packProv(() => {
@@ -222,7 +238,8 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                 descStr = "[accent]⚙️ CƠ BẢN:[] Đạn thường: [lightgray]20 Sát thương[]\n | 1,600 HP | Tầm bắn: 420\n" +
                           "[scarlet]⚠ GIỚI HẠN: Tối đa 10 cấu trúc/Đội trên sân[]\n\n" +
                           "[sky]⚡ ĐẶC TÍNH HOẠT ĐỘNG:[]\n" +
-                          "• Cơ chế: Quá tải lõi gia tăng tốc độ hỏa lực tối đa [yellow]+350% AS.[]";
+                          "• Cơ chế: Quá tải lõi gia tăng tốc độ hỏa lực tối đa [yellow]+350% AS.[]\n" +
+                          "• Nâng cấp mới: Ổ đạn 200 items, Bắn chùm 5 viên/lượt, Xuyên 3 mục tiêu, Truy đuổi nhẹ.";
             } 
             else if (currentTier == 1) {
                 title += "[cyan]CẤU HÌNH TIÊU CHUẨN (MK2)[]";
@@ -230,7 +247,7 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                           "[scarlet]⚠ GIỚI HẠN: Tối đa 10 cấu trúc/Đội trên sân[]\n\n" +
                 "[lime]⚡ ĐẶC TÍNH NHÁNH TIÊU CHUẨN:[]\n" +
                           "• Cơ chế: Quá tải lõi tăng tốc độ hỏa lực tối đa lên [yellow]+450% AS[] (+28.5% so với MK1).\n" +
-                          "• Cải tiến: Tốc độ đạn bay nhanh hơn 30% (15.6).";
+                          "• Cải tiến: Tốc độ đạn bay nhanh hơn 30% (15.6), Giữ nguyên cơ chế bắn chùm xuyên thấu tầm nhiệt.";
             } 
             else if (currentTier == 2) {
                 title += "[purple]BIẾN THỂ ĐỘT PHÁ (MK2B)[]";

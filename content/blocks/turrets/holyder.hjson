@@ -1,13 +1,13 @@
 
-name: ylaon
-description: Pháo Xylaon: Tháp pháo sở hữu cơ chế quá tải nhiệt độc đáo. Càng bắn liên tục, pháo càng nóng và tốc độ xả đạn càng tăng mạnh (lên đến +350% tốc độ bắn). Tuy nhiên, nếu để thanh nhiệt quá tải chạm mức giới hạn, pháo sẽ bị cưỡng ép dừng bắn để chuyển sang chế độ làm nguội.
-health: 2200
+name: holyder
+description: Pháo Holyder: Tháp pháo năng lượng hạng nặng chuyên trị mục tiêu mặt đất, nổi bật với khả năng vừa phòng thủ vừa tấn công toàn diện. Tháp pháo liên tục sạc năng lượng để cường hóa sát thương cho phát bắn, đồng thời tự tạo một lớp khiên bảo vệ kiên cố xung quanh thân pháo để chặn đạn lạc từ kẻ địch.
+health: 220
 size: 3
 reload: 20
- 
+range: 410
 recoil: 0
-inaccuracy: 3
-rotateSpeed: 20
+inaccuracy: 2
+rotateSpeed: 2
 shootWarmupSpeed: 0.002
   "velocityRnd": 0.05,
 
@@ -20,8 +20,8 @@ shoot: {
 shootSound: minal
 shootCone: 45
 shootEffect: none
-maxAmmo: 300
-ammoPerShot: 1
+maxAmmo: 30
+ammoPerShot: 2
 cooldownTime: 150
 unitSort: closest
 drawer: {
@@ -212,9 +212,10 @@ drawer: {
     }
   ],
 requirements: [
-  copper/400
-  lead/170
-  graphite/150
+  copper/2400
+  lead/300
+  coal/200
+  silicon/2150
 ]
 category: turret
-research: dor
+research: newex

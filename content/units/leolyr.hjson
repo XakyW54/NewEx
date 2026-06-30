@@ -1,0 +1,57 @@
+type: legs
+name: Leolyr
+
+outlineColor: 36363c
+hitSize: 12
+health: 890
+armor: 4
+drag: 0.4
+faceTarget: true
+range: 180
+flying: false
+legCount: 6
+hovering: true
+speed: 0.8
+targetAir: true
+rotateSpeed: 3
+
+drawCell: true
+legMaxLength: 1.1
+legMinLength: 0.6
+legLengthScl: 0.96
+legForwardScl: 2
+legExtension: -4
+legStraightness: 0.3
+legPhysicsLayer: false
+legContinuousMove: true
+lockLegBase: true
+rippleScale: 0.2
+legBaseOffset: 3
+legMoveSpace: 0.6
+legLength: 18
+allowLegStep: true
+
+immunities: [
+  freezing
+]
+
+weapons: [
+  {
+    name: left-weapon
+    reload: 15
+    x: 6
+    y: 2
+    top: false
+    mirror: false
+    shootSound: shoot
+  }
+  {
+    name: right-weapon
+    reload: 45
+    x: -6
+    y: 2
+    top: false
+    mirror: false
+    shootSound: minal
+  }
+]

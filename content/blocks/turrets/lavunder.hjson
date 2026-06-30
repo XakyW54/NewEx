@@ -1,0 +1,35 @@
+name: Lavunder 
+description: Pháo Lavunder: Tháp pháo năng lượng tầm trung cao cấp. Chiếu tia laser Photon liên tục vào các mục tiêu mặt đất để tích lũy năng lượng, càng bắn lâu sát thương càng mạnh. Khi đầy tải sẽ kích hoạt vụ nổ quang phổ cực lớn.
+health: 1500
+size: 3
+range: 260
+inaccuracy: 2
+rotateSpeed: 20.5
+shootSound: Gekko_fire
+shootCone: 25
+shootEffect: none
+maxAmmo: 50
+ammoPerShot: 1
+canControl: false
+unitSort: strongest
+targetGround: true
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+  parts: [
+    {
+      type: RegionPart
+      suffix: -barrel
+      progress: recoil
+      moveY: -3
+    }
+  ]
+}
+requirements: [
+  copper/900
+  lead/600
+  titanium/1300
+  silicon/400
+]
+category: turret
+research: newex

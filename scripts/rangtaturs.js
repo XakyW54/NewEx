@@ -359,7 +359,6 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
             dialog.addCloseButton(); dialog.show();
         }).size(50, 40);
 
-        // NÚT 2: THÔNG TIN CHI TIẾT
         table.button(Icon.info, Styles.cleari, 40, () => {
             let dialog = extend(BaseDialog, "Thông tin chi tiết", {});
             

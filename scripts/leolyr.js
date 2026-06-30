@@ -1,8 +1,4 @@
-// File: scripts/leolyr.js
-
-// ==========================================
-// [CẤU HÌNH HỆ THỐNG NÂNG CẤP NGUYÊN BẢN]
-// ==========================================
+ 
 function getUpgradeRequirements(currentLevel) {
     return {
         copperNeeded: 40,
@@ -11,16 +7,14 @@ function getUpgradeRequirements(currentLevel) {
         siliconItem: Items.silicon
     };
 }
-// ==========================================
-
+ 
 const leftBullet = extend(BasicBulletType, { speed: 8.0, damage: 15, width: 6, height: 9, lifetime: 25 });
 const rightBullet = extend(BasicBulletType, { speed: 3.5, damage: 65, width: 14, height: 20, lifetime: 55 });
 
 let lastTapTime = 0;
 const doubleTapInterval = 250; 
 
-// Biến hỗ trợ kỹ năng Dash MK2 (Cấp 10+)
-let mk2TargetX = 0;
+ let mk2TargetX = 0;
 let mk2TargetY = 0;
 let isMarkedMK2 = false;
 
@@ -97,8 +91,7 @@ Events.on(ClientLoadEvent, () => {
                     let currentMaxShield = 100 + (this.level * 250); 
                     let currentShieldRadius = (7 * 8) * (1.0 + (this.level * 0.10)); 
 
-                    // 1. QUÉT KHIÊN DI ĐỘNG
-                    if(this.shieldHealth > 0){
+                     if(this.shieldHealth > 0){
                         let currentShield = this;
                         Groups.bullet.intersect(this.x - currentShieldRadius - 16, this.y - currentShieldRadius - 16, (currentShieldRadius + 16) * 2, (currentShieldRadius + 16) * 2, cons(b => {
                             if(b.team != currentShield.team && b.type != null && b.type.damage > 0){
@@ -125,8 +118,7 @@ Events.on(ClientLoadEvent, () => {
                     }
                     this.ignoreNextDamage = false; 
 
-                    // 2. QUÉT KHIÊN TĨNH TRÊN MẶT ĐẤT
-                    staticShields = staticShields.filter(s => s.lifetime > 0); 
+                     staticShields = staticShields.filter(s => s.lifetime > 0); 
                     let currentUnit = this;
                     staticShields.forEach(s => {
                         s.lifetime -= Time.delta;
@@ -149,8 +141,7 @@ Events.on(ClientLoadEvent, () => {
                         }
                     });
 
-                    // Cơ chế hấp thụ khoáng sản nâng cấp level
-                    let req = getUpgradeRequirements(this.level);
+                     let req = getUpgradeRequirements(this.level);
                     if(this.level < this.maxLevel && this.stack != null){
                         if(this.copperAbsorbed < req.copperNeeded && this.stack.item == req.copperItem && this.stack.amount > 0){
                             let consumeAmt = Math.min(2, this.stack.amount); this.stack.amount -= consumeAmt; this.copperAbsorbed += consumeAmt;
@@ -166,8 +157,7 @@ Events.on(ClientLoadEvent, () => {
                         }
                     }
 
-                    // XỬ LÝ KỸ NĂNG DASH / DASH MK2 TỪ LEVEL 10+
-                    let cooldownReduction = 1.0 - (this.level * 0.05);
+                     let cooldownReduction = 1.0 - (this.level * 0.05);
                     let maxDashCooldown = 300 * cooldownReduction;
                     let executeDash = false;
                     let finalX = this.x, finalY = this.y;
@@ -179,26 +169,21 @@ Events.on(ClientLoadEvent, () => {
                             if((currentTime - lastTapTime) < doubleTapInterval){
                                 
                                 if(this.level >= 10){
-                                    // LOGIC DASH MK2 (LEVEL 10+)
-                                    if(!isMarkedMK2 && this.dashCooldown <= 0){
-                                        // Nhấn đúp lần 1: Đánh dấu vị trí
-                                        mk2TargetX = Vars.player.mouseX;
+                                     if(!isMarkedMK2 && this.dashCooldown <= 0){
+                                         mk2TargetX = Vars.player.mouseX;
                                         mk2TargetY = Vars.player.mouseY;
                                         isMarkedMK2 = true;
                                         
-                                        // ĐÃ SỬA: Thay thế hiệu ứng lỗi hitShieldPlasma bằng hiệu ứng an toàn gốc
-                                        Fx.shieldBreak.at(mk2TargetX, mk2TargetY, this.hexSize * 2, Color.sky);
+                                         Fx.shieldBreak.at(mk2TargetX, mk2TargetY, this.hexSize * 2, Color.sky);
                                         Fx.shieldApply.at(mk2TargetX, mk2TargetY, 0, Color.sky);
                                     } else if(isMarkedMK2 && this.dashCooldown <= 0){
-                                        // Nhấn đúp lần 2: Lướt tới đúng điểm đã đánh dấu
-                                        executeDash = true;
+                                         executeDash = true;
                                         finalX = mk2TargetX;
                                         finalY = mk2TargetY;
                                         isMarkedMK2 = false; 
                                     }
                                 } else {
-                                    // LOGIC DASH CƠ BẢN (DƯỚI LEVEL 10)
-                                    if(this.dashCooldown <= 0){
+                                     if(this.dashCooldown <= 0){
                                         executeDash = true;
                                         let dashDistance = 80 + (this.level * 40);
                                         let angle = this.rotation; if(this.vel.len() > 0.1) angle = this.vel.angle();
@@ -211,8 +196,7 @@ Events.on(ClientLoadEvent, () => {
                         }
                         this.wasTouchedPrev = isTouchedNow;
                     } else {
-                        // AI lướt tự động như cũ
-                        if(this.vel.len() > 0.1 && this.dashCooldown <= 0 && Mathf.chance(0.02)){
+                         if(this.vel.len() > 0.1 && this.dashCooldown <= 0 && Mathf.chance(0.02)){
                             executeDash = true;
                             let dashDistance = 80 + (this.level * 40);
                             let angle = this.vel.angle();
@@ -221,8 +205,7 @@ Events.on(ClientLoadEvent, () => {
                         }
                     }
 
-                    // Thực thi dịch chuyển vị trí khi đủ điều kiện kích hoạt
-                    if(executeDash){
+                     if(executeDash){
                         let oldX = this.x; let oldY = this.y;
                         
                         this.set(finalX, finalY);
@@ -298,8 +281,7 @@ Events.on(ClientLoadEvent, () => {
                         Draw.color(Color.white); Fill.circle(laserOriginX, laserOriginY, ballRadius * 0.6); Draw.color();
                     }
 
-                    // VẼ HIỆU ỨNG ĐÁNH DẤU CHO ĐIỂM ĐÁNH DẤU DASH MK2 (CHỈ NGƯỜI CHƠI THẤY)
-                    if(isMarkedMK2 && Vars.player.unit() == this && this.level >= 10){
+                     if(isMarkedMK2 && Vars.player.unit() == this && this.level >= 10){
                         Draw.z(Layer.effect);
                         Draw.color(Color.sky, 0.4 + Mathf.absin(Time.time, 3.0, 0.2));
                         Lines.stroke(1.0);

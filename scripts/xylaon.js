@@ -25,18 +25,16 @@ xylaon.range = 420;
 xylaon.configurable = true;
 xylaon.category = Category.turret;
 
-// ================= TÙY CHỈNH KHO ĐẠN & GIÁ TRỊ BẮN =================
-xylaon.itemCapacity = 30;    // Tăng sức chứa ổ đạn lên 200 items
-xylaon.ammoPerShot = 1;       // Tiêu tốn 1 item cho mỗi lượt bắn...
-xylaon.shots = 5;             // ...nhưng bắn ra 5 viên đạn cùng lúc
-xylaon.inaccuracy = 4.5;      // Tăng độ lệch tâm nhẹ để tạo độ tỏa khi bắn chùm 5 viên
+ xylaon.itemCapacity = 30;     
+xylaon.ammoPerShot = 1;        
+xylaon.shots = 5;              
+xylaon.inaccuracy = 4.5;       
 
-// Cấu hình hàm thiết lập thuộc tính chung cho đạn (Xuyên thấu & Truy đuổi)
-const applyBulletUpgrades = (bullet) => {
-    bullet.pierce = true;            // Cho phép đạn xuyên mục tiêu
-    bullet.pierceCap = 3;            // Giới hạn xuyên tối đa 3 mục tiêu
-    bullet.homingPower = 0.04;       // Lực truy đuổi nhẹ
-    bullet.homingRange = 120;        // Tầm quét tìm mục tiêu truy đuổi
+ const applyBulletUpgrades = (bullet) => {
+    bullet.pierce = true;             
+    bullet.pierceCap = 3;             
+    bullet.homingPower = 0.04;        
+    bullet.homingRange = 120;        
 };
 
 let xylaonBullet = extend(BasicBulletType, {});

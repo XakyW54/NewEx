@@ -106,6 +106,21 @@ function makeReguBuild() {
 
         canControl() { return false; },
 
+        // --- BẮT ĐẦU LOGIC GIỚI HẠN BLOCK ĐẶT RA LÀ 4 ---
+        placed() {
+            this.super$placed();
+            let count = 0;
+            Groups.build.each(b => {
+                if (b.block == reguilater && b.team == this.team) count++;
+            });
+            if (count > 4) {
+                Call.sendMessage("[red]Giới hạn: Mỗi đội chỉ được phép xây dựng tối đa 4 tháp pháo Reguilater trên sân!");
+                this.kill();
+                return;
+            }
+        },
+        // --- KẾT THÚC LOGIC GIỚI HẠN ---
+
         setTier(val) { this.reguTier = val; },
         getTier() { return this.reguTier !== undefined ? this.reguTier : 1; },
         config() { return java.lang.Integer(this.getTier()); },

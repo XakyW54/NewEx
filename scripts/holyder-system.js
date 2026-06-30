@@ -181,6 +181,21 @@ function makeBuildSetup(initialTier) {
             return false;
         },
 
+        // --- BẮT ĐẦU LOGIC GIỚI HẠN BLOCK ĐẶT RA LÀ 4 ---
+        placed() {
+            this.super$placed();
+            let count = 0;
+            Groups.build.each(b => {
+                if (b.block == holyder && b.team == this.team) count++;
+            });
+            if (count > 4) {
+                Call.sendMessage("[red]Giới hạn: Mỗi đội chỉ được phép xây dựng tối đa 4 tháp pháo Holyder trên sân!");
+                this.kill();
+                return;
+            }
+        },
+        // --- KẾT THÚC LOGIC GIỚI HẠN ---
+
         setTier(val) {
             this.holyderInternalTier = val;
             if (val == 1) {

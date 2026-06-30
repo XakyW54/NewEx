@@ -237,7 +237,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
         this.super$shoot(bulletToShoot); 
         this.energyState = Math.max(this.energyState - currentLoss, 0.0); 
         
-        // Kích hoạt phản lực giật lùi khi bắn
+ 
         this.customRecoil = 1.0;
     },
 
@@ -254,7 +254,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
     draw(){
         let modName = this.block.name.split("-")[0]; 
 
-        // 1. Vẽ khối nền Base
+ 
         let baseRegion = Core.atlas.find(this.block.basePrefix + "" + this.block.size);
         if(baseRegion.found()){
             Draw.rect(baseRegion, this.x, this.y);

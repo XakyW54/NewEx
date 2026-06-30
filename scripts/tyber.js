@@ -65,7 +65,7 @@ Events.on(EventType.ContentInitEvent, () => {
             shootingTimer: 0.0,      
             lastRocketTime: 0.0,     
             lastExplosionTime: 0.0,  
-            evolution: 0, // 0: MK1, 1: MK2, 2: MK2B
+            evolution: 0, 
 
             range(){
                 if(this.evolution == 1) return this.super$range() * 1.5;

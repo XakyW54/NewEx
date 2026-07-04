@@ -30,7 +30,7 @@ drawer: {
   basePrefix: reinforced-
 }
 
-
+researchCostMultiplier: 0.1
 requirements: [
   copper/2540
     titanium/1040

@@ -1,15 +1,15 @@
  
 function getUpgradeRequirements(currentLevel) {
     return {
-        copperNeeded: 40,
-        siliconNeeded: 40,
+        copperNeeded: 400,
+        siliconNeeded: 400,
         copperItem: Items.copper,
         siliconItem: Items.silicon
     };
 }
  
-const leftBullet = extend(BasicBulletType, { speed: 8.0, damage: 15, width: 6, height: 9, lifetime: 25 });
-const rightBullet = extend(BasicBulletType, { speed: 3.5, damage: 65, width: 14, height: 20, lifetime: 55 });
+const leftBullet = extend(BasicBulletType, { speed: 9.0, damage: 15, width: 6, height: 11, lifetime: 35 });
+const rightBullet = extend(BasicBulletType, { speed: 9.0, damage: 15, width: 6, height: 11, lifetime: 35 });
 
 let lastTapTime = 0;
 const doubleTapInterval = 250; 

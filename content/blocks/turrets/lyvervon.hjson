@@ -24,6 +24,7 @@ drawer: {
     }
   ]
 }
+researchCostMultiplier: 0.1
 requirements: [
   copper/500
   lead/400

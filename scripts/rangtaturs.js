@@ -281,20 +281,19 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
     laserCount: 0, burstTimer: 0, customReloadTimer: 0,
     checkTimer: 0, 
 
-    buildConfiguration(table){
-        table.clear();
-        table.row(); 
+    buildConfiguration(table) {
+        table.clear(); table.row();
+        let tier = this.evolutionTier;
 
-        table.button(Icon.upOpen, Styles.cleari, 40, () => {
-            let dialog = extend(BaseDialog, "Trung Tâm Chỉnh Sửa Cấu Trúc Rangtaturs", {});
-            
-            if(this.evolutionTier == 0){
-                let titleText = "[gold]=== CHỌN NHÁNH TIẾN HÓA RANGTATURS ===[]";
-                dialog.cont.add(titleText).padBottom(15).row();
+        // 1. NÚT NÂNG CẤP (^) - PHONG CÁCH DỌC CỦA LAVUNDER (ĐÃ SỬA LỖI RUNNABLE)
+        if(tier == 0) {
+            table.button(Icon.upOpen, Styles.cleari, 40, () => {
+                let dialog = extend(BaseDialog, "Trung Tâm Chỉnh Sửa Cấu Trúc Rangtaturs", {});
                 
                 dialog.cont.label(prov(() => {
                     let core = this.team.core();
-                    if(core == null) return "[red]Không tìm thấy Kho cốt lõi![]";
+                    if(!core) return "[red]Không tìm thấy Kho cốt lõi![]";
+                    
                     let currentCopper = core.items.get(Items.copper);
                     let currentLead = core.items.get(Items.lead);
                     let currentSilicon = core.items.get(Items.silicon);
@@ -305,36 +304,53 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                     let copColor2 = currentCopper >= reqRangtatursMK2B.copper ? "[green]" : "[red]";
                     let ledColor2 = currentLead >= reqRangtatursMK2B.lead ? "[green]" : "[red]";
                     let silColor2 = currentSilicon >= reqRangtatursMK2B.silicon ? "[green]" : "[red]";
-                    
-                    return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" + 
-                           "[cyan]Nhánh MK2:[] Copper: " + copColor1 + reqRangtatursMK2.copper + "[]/" + currentCopper + " | Lead: " + ledColor1 + reqRangtatursMK2.lead + "[]/" + currentLead + "\n" +
-                           "[orange]Nhánh MK2B:[] Copper: " + copColor2 + reqRangtatursMK2B.copper + "[]/" + currentCopper + " | Lead: " + ledColor2 + reqRangtatursMK2B.lead + "[]/" + currentLead + " | Silicon: " + silColor2 + reqRangtatursMK2B.silicon + "[]/" + currentSilicon;
-                })).padBottom(15).row();
 
-                let branchesTable = extend(Table, {});
-                
-                let b1 = extend(Table, {}); b1.background(Styles.black6);
-                b1.add("[cyan]NHÁNH 1: TIÊU CHUẨN (MK2)[]").pad(5).row();
-                b1.add("[gray]- Tăng số lượng mảnh đạn hỗn hợp: +30 viên/loạt\n- Giữ nguyên cơ chế tích tụ tia laser giải phóng hiệu ứng hỗn hợp (7 trạng thái)[]").left().pad(5).row();
+                    return "[yellow]=== CHỌN NHÁNH TIẾN HÓA RANGTATURS ===[]\n" +
+                           "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
+                           "[cyan]Nhánh MK2:[] Đồng: " + copColor1 + currentCopper + "[]/" + reqRangtatursMK2.copper + " | Chì: " + ledColor1 + currentLead + "[]/" + reqRangtatursMK2.lead + "\n" +
+                           "[orange]Nhánh MK2B:[] Đồng: " + copColor2 + currentCopper + "[]/" + reqRangtatursMK2B.copper + " | Chì: " + ledColor2 + currentLead + "[]/" + reqRangtatursMK2B.lead + " | Silicon: " + silColor2 + currentSilicon + "[]/" + reqRangtatursMK2B.silicon;
+                })).row(); dialog.cont.add().height(15).row();
+
+                let branchesTable = new Table();
+
+                // Nhánh 1: MK2 xếp dọc
+                let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
+                b1.add("[cyan]NHÁNH 1: TIÊU CHUẨN (MK2)[]").row();
+                let b1D = b1.add("Cấu hình tăng cường mật độ mảnh hỏa lực:\n" +
+                                 " [white]• Mưa đạn trạng thái: Đẩy mạnh lên [green]39 viên đạn mảnh[] dải thảm.[]\n" +
+                                 " [white]• Sát thương đạn thường tăng tiến lên [yellow]17.5 đơn vị[].[]\n" +
+                                 " [white]• Siêu Laser tích tụ: Thời gian sạc rút ngắn còn [yellow]140 tick[].[]\n" +
+                                 " [white]• Đại pháo năng lượng giải phóng sức mạnh kích nổ nhân [red]310% hỏa lực[].[]\n" +
+                                 " [white]• Siêu cuồng nộ: Kéo dài thời gian Berserk mượt mà tăng tốc bắn gấp [orange]250%[].[]");
+                b1D.width(360).get().setWrap(true); b1D.get().setAlignment(Align.left);
+                b1.row();
                 b1.button("[green]KÍCH HOẠT MK2[]", () => {
                     let core = this.team.core();
-                    if(core != null && core.items.get(Items.copper) >= reqRangtatursMK2.copper && core.items.get(Items.lead) >= reqRangtatursMK2.lead){
+                    if(core && core.items.get(Items.copper) >= reqRangtatursMK2.copper && core.items.get(Items.lead) >= reqRangtatursMK2.lead){
                         core.items.remove(Items.copper, reqRangtatursMK2.copper);
                         core.items.remove(Items.lead, reqRangtatursMK2.lead);
                         this.evolutionTier = 1;
                         Fx.upgradeCore.at(this.x, this.y);
                         dialog.hide(); this.deselect();
                     } else {
-                        Vars.ui.showInfo("[red]Tiến hóa thất bại![]\nKhông đủ tài nguyên cho nhánh MK2.");
+                        Vars.ui.showInfoToast("[red]Không đủ tài nguyên nâng cấp![]", 2);
                     }
-                }).size(200, 45).pad(10);
+                }).size(180, 40);
 
-                let b2 = extend(Table, {}); b2.background(Styles.black6);
-                b2.add("[orange]NHÁNH 2: BÃO TỐ LOẠN TRẠNG THÁI (MK2B)[]").pad(5).row();
-                b2.add("[gray]- Bắn thường shotgun giải phóng 50 viên đạn hỗn hợp 7 trạng thái cực mạnh\n- Tích đủ 6 phát kích hoạt SIÊU BÃO ĐA TRẠNG THÁI[]").left().pad(5).row();
-                b2.button("[green]KÍCH HOẠT MK2B[]", () => {
+                // Nhánh 2: MK2b xếp dọc ngay phía dưới
+                let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
+                b2.add("[orange]NHÁNH 2: BÃO TỐ LOẠN TRẠNG THÁI (MK2B)[]").row();
+                let b2D = b2.add("Cấu hình tối thượng hủy diệt bão đạn:\n" +
+                                 " [white]• Siêu bão hỗn hợp: Loạt bắn thường xả [green]50 viên đạn[] dồn tâm cực đại.[]\n" +
+                                 " [white]• Đạn thường đột biến tăng mạnh sát thương gốc lên [red]20 hỏa lực[].[]\n" +
+                                 " [white]• Loại bỏ nạp đạn thường, ép chu kỳ nén riêng biệt [yellow]70 tick[] mỗi loạt.[]\n" +
+                                 " [white]• Burst Mode: Tích đủ 6 phát giải phóng siêu bão [orange]100 viên đạn nén[].[]\n" +
+                                 " [white]• Quá tải nhiệt làm mát hệ thống bắt buộc trong vòng [purple]180 tick[].[]");
+                b2D.width(360).get().setWrap(true); b2D.get().setAlignment(Align.left);
+                b2.row();
+                b2.button("[orange]KÍCH HOẠT MK2B[]", () => {
                     let core = this.team.core();
-                    if(core != null && core.items.get(Items.copper) >= reqRangtatursMK2B.copper && core.items.get(Items.lead) >= reqRangtatursMK2B.lead && core.items.get(Items.silicon) >= reqRangtatursMK2B.silicon){
+                    if(core && core.items.get(Items.copper) >= reqRangtatursMK2B.copper && core.items.get(Items.lead) >= reqRangtatursMK2B.lead && core.items.get(Items.silicon) >= reqRangtatursMK2B.silicon){
                         core.items.remove(Items.copper, reqRangtatursMK2B.copper);
                         core.items.remove(Items.lead, reqRangtatursMK2B.lead);
                         core.items.remove(Items.silicon, reqRangtatursMK2B.silicon);
@@ -342,96 +358,72 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                         Fx.bigShockwave.at(this.x, this.y);
                         dialog.hide(); this.deselect();
                     } else {
-                        Vars.ui.showInfo("[red]Tiến hóa thất bại![]\nKhông đủ tài nguyên cho nhánh MK2B.");
+                        Vars.ui.showInfoToast("[red]Không đủ tài nguyên nâng cấp![]", 2);
                     }
-                }).size(200, 45).pad(10);
+                }).size(180, 40);
 
-                branchesTable.add(b1).pad(5).width(340).row();
-                branchesTable.add().height(10).row(); 
-                branchesTable.add(b2).pad(5).width(340).row();
-                
-                dialog.cont.add(branchesTable).row();
-            } else {
-                let currentLabel = this.evolutionTier == 1 ? "[cyan]ĐANG SỬ DỤNG CẤU TRÚC: RANGTATURS MK2[]" : "[orange]ĐANG SỬ DỤNG CẤU TRÚC: RANGTATURS MK2B[]";
-                dialog.cont.add("[gold]=== TRẠNG THÁI HỆ THỐNG ===[]").padBottom(10).row();
-                dialog.cont.add(currentLabel).padBottom(10).row();
-            }
-            dialog.addCloseButton(); dialog.show();
-        }).size(50, 40);
+                // Ghép nối cấu hình dọc
+                branchesTable.add(b1).width(360); branchesTable.row();
+                branchesTable.add().height(10).row();
+                branchesTable.add(b2).width(360);
+                dialog.cont.add(branchesTable);
+                dialog.addCloseButton(); dialog.show();
+            }).size(50, 40).tooltip("Tiến hóa tháp pháo");
+        } else {
+            table.button(Icon.lock, Styles.cleari, 40, () => {}).size(50, 40).tooltip("Đã đạt cấp tối đa");
+        }
 
+        // 2. NÚT THÔNG TIN (i) - PHONG CÁCH BỐ CỰC DOR VÀ PHÂN TÁCH BIỂU TƯỢNG GAME (ĐÃ SỬA LỖI RUNNABLE)
         table.button(Icon.info, Styles.cleari, 40, () => {
-            let dialog = extend(BaseDialog, "Thông tin chi tiết", {});
-            
-            let headerText = "[white]THÁP PHÁO RANGTATURS MK1[]";
-            if (this.evolutionTier == 1) headerText = "[cyan]THÁP PHÁO RANGTATURS MK2[]";
-            if (this.evolutionTier == 2) headerText = "[orange]THÁP PHÁO RANGTATURS MK2B[]";
-            
-            dialog.cont.add(headerText).padBottom(15).row();
-            
-            let contentTable = extend(Table, {});
-            let descriptionText = "";
+            let dialog = extend(BaseDialog, "📊 THÔNG SỐ KỸ THUẬT RANGTATURS", {});
+            let currentTier = this.evolutionTier;
+            let descStr = "";
 
-            if(this.evolutionTier == 0){
-                descriptionText = "[yellow]Cấu hình trạng thái gốc (MK1):[]\n\n" +
-                                         "[scarlet]⚠ GIỚI HẠN: Tối đa 10 cấu trúc/Đội trên sân[]\n\n" + 
-                "• Đạn thường: [lightgray]16 Sát thương[]\n" +
-                            "[lightgray]1. Chế độ thường:[] Bắn ra loạt [white]9 viên đạn Shotgun[] tỏa rộng dồn ép mục tiêu.\n" +
-                            "Các loại hiệu ứng sau:\n" +
-                            " - [orange]Blasted:[] Gây nổ lan và đẩy lùi mạnh mục tiêu.\n" +
-                            " - [yellow]Melting:[] Axit nhiệt đốt cháy, làm tan chảy lớp giáp.\n" +
-                            " - [coral]Burning:[] Thiêu đốt liên tục theo thời gian.\n" +
-                            " - [cyan]Freezing:[] Đóng băng làm chậm tốc độ di chuyển kẻ địch.\n" +
-                            " - [purple]Shocked:[] Kích hoạt chuỗi sét lan truyền sát thương.\n" +
-                            " - [blue]Wet:[] Gây ướt diện rộng, tạo combo dẫn điện cực mạnh.\n" +
-                            " - [lime]Corroded:[] Ăn mòn axit độc quyền phá hủy cấu trúc mục tiêu.\n\n" +
-                            "[lightgray]2. Đòn tích tụ Laser:[] Sau [white]180 tick[] nạp năng lượng tự động, phát bắn kế tiếp sẽ phóng ra một [orange]Tia Laser Đại Pháo Khổng Lề[] mang sát thương nhân [gold]280%[] kèm trạng thái ngẫu nhiên.\n\n" +
-                            "[lightgray]3. Trạng thái Cuồng Nộ:[] Bắn đủ [white]3 phát Đại Pháo Laser[], pháo đi vào trạng thái [red]Berserk Mode[] giúp tăng tốc độ xả đạn thường lên [gold]150%[] liên tục.";
-            } else if(this.evolutionTier == 1) {
-                descriptionText = "[cyan]Cấu hình nâng cấp tốc độ và mật độ (MK2):[]\n\n" +
-                                            "[scarlet]⚠ GIỚI HẠN: Tối đa 10 cấu trúc/Đội trên sân[]\n\n" +
-                "• Đạn thường: [lightgray]17.5 Sát thương[]\n" +
-                            "[lightgray]1. Mưa Đạn Trạng Thái:[] Số lượng đạn thường tăng vọt lên [green]39 viên đạn mảnh[] dải thảm.\n" +
-                            "Các loại hiệu ứng sau:\n" +
-                            " - [orange]Blasted:[] Gây nổ lan và đẩy lùi mạnh mục tiêu.\n" +
-                            " - [yellow]Melting:[] Axit nhiệt đốt cháy, làm tan chảy lớp giáp.\n" +
-                            " - [coral]Burning:[] Thiêu đốt liên tục theo thời gian.\n" +
-                            " - [cyan]Freezing:[] Đóng băng làm chậm tốc độ di chuyển kẻ địch.\n" +
-                            " - [purple]Shocked:[] Kích hoạt chuỗi sét lan truyền sát thương.\n" +
-                            " - [blue]Wet:[] Gây ướt diện rộng, tạo combo dẫn điện cực mạnh.\n" +
-                            " - [lime]Corroded:[] Ăn mòn axit độc quyền phá hủy cấu trúc mục tiêu.\n\n" +
-                            "[lightgray]2. Siêu Laser Tích Tụ:[] Thời gian sạc rút ngắn xuống [white]140 tick[], sát thương tia đại pháo laser nâng cấp mạnh lên nhân [gold]310%[].\n\n" +
-                            "[lightgray]3. Siêu Cuồng Nộ:[] Kéo dài thời gian Berserk mượt mà hơn và đẩy tốc độ bắn lên cực đại gấp [red]250%[].";
+            if (currentTier == 0) {
+                descStr = "[cyan]⚙️ [white]Cấu Hình: [accent]MK1 (Trạng Thái Gốc)[]\n" +
+                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+                          "[heart] [lightgray]Máu tháp pháo:[] [green]" + this.health + "[]\n" +
+                          "[layers] [lightgray]Kích thước khối:[] [orange]" + this.block.size + "x" + this.block.size + "[]\n" +
+                          "[power] [lightgray]Năng lượng tiêu thụ:[] [gainsboro]Nội động lực tích tụ (Hộp đạn)[]\n" +
+                          "[aim] [lightgray]Mục tiêu phát xạ:[] [yellow]Mặt đất[] (Không thể bắn bay)\n" +
+                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+                          "[orange]📌 Giới hạn điều động: Tối đa 10 cấu trúc dòng Rangtaturs toàn đội.[]\n\n" +
+                          "[lightgray]Đặc tính vận hành sạc điểm và laze phụ:[]\n" +
+                          "[white]• Chế độ thường: Xả loạt 9 viên Shotgun hỗn hợp mang đầy đủ 7 trạng thái dị biệt.\n" +
+                          "[white]• Chu kỳ tích tụ: Sau 180 tick tự động nạp sạc, phát hỏa kế tiếp kích hoạt Đại Pháo Laser khổng lồ gây siêu sát thương đột biến nhân tiến [gold]280%[].\n" +
+                          "[white]• Mạch cuồng nộ (Berserk): Tích lũy đủ 3 phát đại pháo laser đưa toàn tháp vào trạng thái quá tải, gia tăng [red]150%[] tốc hỏa lực bắn thường liên tục.";
+            } else if (currentTier == 1) {
+                descStr = "[cyan]⚙️ [white]Cấu Hình: [orange]MK2 (Mật Độ Mảnh Tốc Lực)[]\n" +
+                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+                          "[heart] [lightgray]Máu tháp pháo:[] [green]" + this.health + "[]\n" +
+                          "[layers] [lightgray]Kích thước khối:[] [orange]" + this.block.size + "x" + this.block.size + "[]\n" +
+                          "[power] [lightgray]Năng lượng tiêu thụ:[] [gainsboro]Nội động lực tích tụ (Hộp đạn)[]\n" +
+                          "[aim] [lightgray]Mục tiêu phát xạ:[] [yellow]Mặt đất[] (Không thể bắn bay)\n" +
+                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+                          "[orange]📌 Giới hạn điều động: Tối đa 10 cấu trúc dòng Rangtaturs toàn đội.[]\n\n" +
+                          "[lightgray]Đặc tính vận hành sạc điểm và laze phụ:[]\n" +
+                          "[white]• Mưa đạn trạng thái: Đẩy cao số lượng đạn mảnh dải thảm lên 39 viên đạn dồn ép diện rộng.\n" +
+                          "[white]• Sạc xung ngắn mạch: Thời gian tích tụ rút ngắn còn 140 tick, sát thương khuếch đại dòng laze lõi tăng vọt tới [red]310%[] hỏa lực thường.\n" +
+                          "[white]• Chu kỳ Siêu cuồng nộ: Kéo dài thời gian bộc phá dồn dập, đẩy tốc độ xả đạn thường lên cực hạn đạt mức [red]250%[].";
             } else {
-                descriptionText = "[orange]Cấu hình Tối Thượng hủy diệt (MK2B):[]\n\n" +
-                                          "[scarlet]⚠ GIỚI HẠN: Tối đa 10 cấu trúc/Đội trên sân[]\n\n" +
-                "• Đạn thường: [lightgray]20 Sát thương[]\n" +
-                            "[lightgray]1. Siêu bão hỗn hợp:[] Phát bắn thường thay thế bằng loạt [white]50 viên đạn[] gom tâm dồn sát thương cực đại.\n" +
-                            "Các loại hiệu ứng sau:\n" +
-                            " - [orange]Blasted:[] Gây nổ lan và đẩy lùi mạnh mục tiêu.\n" +
-                            " - [yellow]Melting:[] Axit nhiệt đốt cháy, làm tan chảy lớp giáp.\n" +
-                            " - [coral]Burning:[] Thiêu đốt liên tục theo thời gian.\n" +
-                            " - [cyan]Freezing:[] Đóng băng làm chậm tốc độ di chuyển kẻ địch.\n" +
-                            " - [purple]Shocked:[] Kích hoạt chuỗi sét lan truyền sát thương.\n" +
-                            " - [blue]Wet:[] Gây ướt diện rộng, tạo combo dẫn điện cực mạnh.\n" +
-                            " - [lime]Corroded:[] Ăn mòn axit độc quyền phá hủy cấu trúc mục tiêu.\n\n" +
-                            "[lightgray]2. Cơ chế nén năng lượng đột phá:[] Loại bỏ nạp đạn thường của game, ép tháp pháo hoạt động theo chu kỳ nén riêng biệt ([white]70 tick[] mỗi loạt bắn laser thường).\n\n" +
-                            "[lightgray]3. Tuyệt chiêu Xả Bão Đa Trạng Thái (Burst Mode):[] Tích đủ 6 phát bắn, pháo giải phóng chu kỳ bão đơn cực đại [red]100 viên đạn nén hỗn hợp siêu bão[], sau đó rơi vào trạng thái quá tải nhiệt làm mát trong [white]180 tick[].";
+                descStr = "[scarlet]⚡ [white]Cấu Cấu Hình: [purple]MK2b (Siêu Bão Loạn Trạng Thái)[]\n" +
+                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+                          "[heart] [lightgray]Máu tháp pháo:[] [green]" + this.health + "[]\n" +
+                          "[layers] [lightgray]Kích thước khối:[] [orange]" + this.block.size + "x" + this.block.size + "[]\n" +
+                          "[power] [lightgray]Năng lượng tiêu thụ:[] [gainsboro]Nội động lực tích tụ (Hộp đạn)[]\n" +
+                          "[aim] [lightgray]Mục tiêu phát xạ:[] [yellow]Mặt đất[] (Không thể bắn bay)\n" +
+                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+                          "[orange]📌 Giới hạn điều động: Tối đa 10 cấu trúc dòng Rangtaturs toàn đội.[]\n\n" +
+                          "[lightgray]Đặc tính vận hành sạc điểm và laze phụ:[]\n" +
+                          "[white]• Siêu bão hỗn hợp: Chuyển đổi loạt bắn thường sang dạng shotgun gom tâm mật độ siêu cao 50 viên đạn áp đảo.\n" +
+                          "[white]• Cơ chế nén ép xung: Triệt tiêu cơ chế nạp đạn của cấu trúc game, khóa cố định chu kỳ nạp [yellow]70 tick[] mỗi loạt laze nén thông thường.\n" +
+                          "[white]• Tuyệt chiêu Xả Bão (Burst Mode): Nạp tích đủ 6 chu kỳ phát phát hỏa, giải phóng siêu bão đơn cực đại chứa [red]100 viên đạn hỗn hợp[], rơi vào quá tải cưỡng bức làm mát trong [white]180 tick[].";
             }
 
-            let infoLabel = new Label(prov(() => descriptionText));
-            infoLabel.setWrap(true); 
-            contentTable.add(infoLabel).width(380).left().pad(10);
-
-            let scrollPane = new Packages.arc.scene.ui.ScrollPane(contentTable, Styles.defaultPane);
-            scrollPane.setFlickScroll(true); 
-            
-            let mainWrapperTable = extend(Table, {});
-            mainWrapperTable.background(Styles.black6);
-            mainWrapperTable.add(scrollPane).width(420).height(320).scrollX(false).scrollY(true);
-
-            dialog.cont.add(mainWrapperTable).row();
+            let cell = dialog.cont.add(descStr).width(390);
+            cell.get().setWrap(true); cell.get().setAlignment(Align.left);
             dialog.addCloseButton(); dialog.show();
-        }).size(50, 40);
+        }).size(50, 40).tooltip("Xem thông số chi tiết");
     },
 
     updateTile(){

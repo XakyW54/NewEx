@@ -7,7 +7,7 @@ health: 890
 armor: 4
 drag: 0.4
 faceTarget: true
-range: 180
+range: 230
 flying: false
 legCount: 6
 hovering: true
@@ -38,7 +38,7 @@ immunities: [
 weapons: [
   {
     name: left-weapon
-    reload: 15
+    reload: 7
     x: 6
     y: 2
     top: false
@@ -47,7 +47,7 @@ weapons: [
   }
   {
     name: right-weapon
-    reload: 45
+    reload: 9
     x: -6
     y: 2
     top: false

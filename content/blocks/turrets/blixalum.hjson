@@ -1,0 +1,40 @@
+
+name: Blixalum
+description: "Pháo Blixalum: Pháo điện từ sử dụng đạn năng lượng hội tụ với sức công phá diện rộng. Hệ thống gia tốc từ trường cho phép tăng nhịp khai hỏa khi chiến trường xuất hiện nhiều mục tiêu, kết hợp cùng cơ cấu cánh cơ khí tự động triển khai để duy trì hỏa lực áp chế."
+health: 3800000
+size: 3
+reload: 20
+range: 276
+inaccuracy: 2
+targetAir: tru3
+targetGround: true
+maxAmmo: 10
+ammoPerShot: 1
+ammoTypes: {
+  copper: {
+    type: BasicBulletType
+    speed: 10
+    damage: 30
+    width: 7
+    height: 9
+    lifetime: 10
+status: blasted
+statusDuration: 80
+  }
+}
+
+
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+}
+
+researchCostMultiplier: 0.1
+requirements: [
+  copper/240
+  lead/ 1000
+  titanium/2300
+  silicon/1400
+]
+category: turret
+research: blaw

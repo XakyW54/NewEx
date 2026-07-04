@@ -94,12 +94,12 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
         table.clear(); table.row();
         let tier = this.getTier();
 
+        // --- NÚT NÂNG CẤP (PHONG CÁCH HÀNG DỌC GỌN GÀNG TRONG 1 GUI CỦA LAVUNDER) ---
         if(tier == 0) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-                let dialog = extend(BaseDialog, "Trang Tiến Hóa Tháp Pháo", {});
-                let titleText = Vars.mobile ? "[gold]=== TIẾN HÓA THÁP PHÁO ===[]" : "[gold]=== CHỌN NHÁNH TIẾN HÓA CHO THÁP PHÁO VENDICUM ===[]";
-                dialog.cont.add(titleText).padBottom(15).row();
+                let dialog = extend(BaseDialog, "Hệ Thống Tiến Hóa Vendicum", {});
                 
+                dialog.cont.add("[gold]=== TIẾN HÓA LÕI ĐA CHỨC NĂNG VENDICUM ===[]").row();
                 dialog.cont.label(packProv(() => {
                     let core = this.team.core();
                     if(core == null) return "[red]Không tìm thấy Kho cốt lõi![]";
@@ -117,13 +117,18 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                     return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
                            "[cyan]Nhánh MK2:[] Titanium: " + titColor1 + reqMK2.titanium + "[]/" + currentTitanium + " | Silicon: " + silColor1 + reqMK2.silicon + "[]/" + currentSilicon + "\n" +
                            "[purple]Nhánh MK2B:[] Titanium: " + titColor2 + reqMK2B.titanium + "[]/" + currentTitanium + " | Silicon: " + silColor2 + reqMK2B.silicon + "[]/" + currentSilicon + " | Plastanium: " + plaColor2 + reqMK2B.plastanium + "[]/" + currentPlastanium;
-                })).padBottom(15).row();
+                })).row(); dialog.cont.add().height(10).row();
 
                 let branchesTable = new Table();
 
-                let b1 = new Table(); b1.background(Styles.black6); b1.margin(10);
-                b1.add("[cyan]TIẾN HÓA: VENDICUM MK2 (XUYÊN PHÁ)[]").pad(5).row();
-                b1.add("[gray]- Tăng sát thương gốc đạn lên 65, tăng tầm bắn và khả năng xuyên thấu (5 mục tiêu)\n- Giảm hao hụt năng lượng súng, hồi phục buff siêu tốc chỉ 3 giây[]").left().pad(5).row();
+                // Nhánh 1: MK2 (Xuyên Phá)
+                let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
+                b1.add("[cyan]TIẾN HÓA: VENDICUM MK2 (XUYÊN PHÁ)[]").row();
+                let b1D = b1.add("Cải tiến kết cấu rãnh nòng gia tốc từ tính:\n" +
+                                 " [white]• Tăng sát thương đạn lên [green]65 đơn vị[] và mở rộng tầm bắn đạt [green]420 pixel[].[]\n" +
+                                 " [white]• Đạn bắn xuyên qua tối đa [yellow]5 mục tiêu[] kẻ địch hoặc công trình.[]\n" +
+                                 " [white]• Giảm mức hao hụt năng lượng, tối ưu hóa hồi phục buff chỉ mất [pink]3 giây[].[]");
+                b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                 b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.titanium) >= reqMK2.titanium && core.items.get(Items.silicon) >= reqMK2.silicon){
@@ -132,11 +137,16 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                         this.configure(java.lang.Integer(1)); 
                         dialog.hide(); this.deselect();
                     } else { Vars.ui.showInfo("[red]Nâng cấp thất bại! Tài nguyên chưa đủ.[]"); }
-                })).size(180, 40).pad(5);
+                })).size(180, 38);
 
-                let b2 = new Table(); b2.background(Styles.black6); b2.margin(10);
-                b2.add("[purple]TIẾN HÓA: VENDICUM MK2B (TRUY ĐUỔI)[]").pad(5).row();
-                b2.add("[gray]- Chuyển đổi hoàn toàn sang hệ thống Đạn Truy Đuổi mục tiêu tự động\n- Loại bỏ cơ chế xuyên thấu. Hình dáng đạn thuôn mảnh và dài gấp 4 lần\n- Sát thương thô giảm 50% nhưng bù lại tần suất bắn trúng và hồi buff tối ưu cực cao[]").left().pad(5).row();
+                // Nhánh 2: MK2B (Truy Đuổi)
+                let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
+                b2.add("[purple]TIẾN HÓA: VENDICUM MK2B (TRUY ĐUỔI)[]").row();
+                let b2D = b2.add("Chuyển đổi sang lõi năng lượng xung kích tầm nhiệt:\n" +
+                                 " [white]• Thay đổi cấu trúc đạn thuôn dài, tích hợp cảm biến [orange]tự động bẻ lái truy đuổi[].[]\n" +
+                                 " [white]• Loại bỏ cơ chế xuyên thấu, sát thương cơ bản giảm còn [red]22.5[] nhưng tầm bắn đạt [green]360[].[]\n" +
+                                 " [white]• Giảm thiểu tiêu hao, tăng mạnh tần suất bắn trúng và hồi buff tối ưu.[]");
+                b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
                 b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.titanium) >= reqMK2B.titanium && core.items.get(Items.silicon) >= reqMK2B.silicon && core.items.get(Items.plastanium) >= reqMK2B.plastanium){
@@ -145,47 +155,69 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                         this.configure(java.lang.Integer(2)); 
                         dialog.hide(); this.deselect();
                     } else { Vars.ui.showInfo("[red]Nâng cấp thất bại! Tài nguyên chưa đủ.[]"); }
-                })).size(180, 40).pad(5);
+                })).size(180, 38);
 
-                branchesTable.add(b1).width(Vars.mobile ? 280 : 360).padBottom(10).row();
-                branchesTable.add(b2).width(Vars.mobile ? 280 : 360);
+                // Sắp xếp bố cục dọc chuẩn Lavunder trong cùng một GUI duy nhất
+                branchesTable.add(b1).width(340); branchesTable.row();
+                branchesTable.add().height(12).row();
+                branchesTable.add(b2).width(340);
+
                 dialog.cont.add(branchesTable);
-                
                 dialog.addCloseButton(); dialog.show();
             })).size(50, 40).tooltip("Mở bảng tiến hóa hệ thống");
         } else {
             table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
-                Vars.ui.showInfo("[scarlet]HỆ THỐNG ĐÃ ĐẠT GIỚI HẠN TIẾN HÓA CỦA NHÁNH ĐÃ CHỌN![]");
+                Vars.ui.showInfo("[scarlet]HỆ THỐNG VENDICUM ĐÃ ĐẠT GIỚI HẠN TIẾN HÓA CỦA NHÁNH![]");
             })).size(50, 40).tooltip("Đã đạt cấp tối đa");
         }
 
+        // --- NÚT THÔNG TIN (PHONG CÁCH BỐ CỰC ĐẶC TRƯNG CỦA DOR) ---
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
             let title = "📊 THÔNG SỐ PHÁO VENDICUM: ";
             let descStr = "";
             let currentTier = this.getTier();
 
             if (currentTier == 0) {
-                title += "[yellow]Cấu hình trạng thái gốc (MK1)[]";
-                descStr = "[accent]⚙️ CƠ BẢN:[] Sát thương gốc: [lightgray]45[] | Xuyên thấu: [lightgray]3 mục tiêu[]\n\n" +
+                title += "[yellow]Trạng thái gốc (MK1)[]";
+                descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
+                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+                          "[heart] [lightgray]Máu tháp pháo:[] [green]1,200[]\n" +
+                          "[gray]📐 Kích thước khối:[] [white]3x3[]\n" +
+                          "[aim] Tầm bắn hiệu dụng:[] [orange]320 pixel[]\n" +
+                          "[zap] Sát thương đạn thô:[] [yellow]45.00[] (Xuyên: [lightgray]3 mục tiêu[])\n" +
+                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
                           "[scarlet]⚠ GIỚI HẠN: Tối đa 10 cấu trúc/Đội trên sân[]\n\n" +
-                "[sky]⚡ ĐẶC TÍNH HOẠT ĐỘNG:[]\n" +
-                          "• Mỗi phát bắn mất [coral]1%[] năng lượng. Tốc độ hồi phục cơ bản [yellow](Mất khoảng 5 giây để hồi đầy từ 0%)[].";
+                          "[sky]⚡ CƠ CHẾ NĂNG LƯỢNG TIÊU HAO:[]\n" +
+                          "• Hiệu ứng: Mỗi phát bắn tiêu trừ 1.0% mức tích lũy năng lượng lõi. Sát thương của đạn phụ thuộc hoàn toàn vào thanh năng lượng hiện tại.\n" +
+                          "• Hồi phục: Tốc độ nạp lại cơ bản mất khoảng 5 giây để nạp đầy từ 0% lên 100% khi ngừng bắn.";
             } 
             else if (currentTier == 1) {
                 title += "[cyan]CẤU HÌNH TIÊU CHUẨN (MK2)[]";
-                descStr = "[accent]⚙️ NÂNG CẤP:[] Sát thương cường hóa: [lightgray]65[] | Khả năng xuyên thấu tăng mạnh: [lightgray]5 mục tiêu[]\n\n" +
+                descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
+                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+                          "[heart] [lightgray]Máu tháp pháo:[] [green]1,800[] [yellow](+50%)[]\n" +
+                          "[gray]📐 Kích thước khối:[] [white]3x3[]\n" +
+                          "[aim] Tầm bắn hiệu dụng:[] [orange]420 pixel[] [yellow](+31.2%)[]\n" +
+                          "[zap] Sát thương đạn nâng cấp:[] [yellow]65.00[] (Xuyên: [lightgray]5 mục tiêu[])\n" +
+                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
                           "[scarlet]⚠ GIỚI HẠN: Tối đa 10 cấu trúc/Đội trên sân[]\n\n" +
-                "[lime]⚡ ĐẶC TÍNH NHÁNH TIÊU CHUẨN:[]\n" +
-                          "• Giảm một nửa lượng hao hụt mỗi phát bắn [yellow](chỉ còn 0.5%)[], đồng thời tốc độ hồi phục buff được tăng tốc siêu phàm (chỉ mất khoảng 3 giây để nạp đầy lại năng lượng). Nhánh này giúp tháp pháo duy trì sát thương cao lâu hơn.\n" ;
-        
+                          "[lime]⚡ CƠ CHẾ NĂNG LƯỢNG TIÊU HAO:[]\n" +
+                          "• Hiệu ứng: Mức tiêu hao năng lượng giảm một nửa (chỉ còn 0.5% mỗi phát bắn).\n" +
+                          "• Hồi phục: Tốc độ tái nạp năng lượng lõi đẩy mạnh siêu tốc, chỉ mất 3 giây để đầy thanh chứa, giúp duy trì chuỗi sát thương đại pháo tối đa lâu hơn.";
             } 
             else if (currentTier == 2) {
                 title += "[purple]BIẾN THỂ ĐẠN ĐUỔI (MK2B)[]";
-                descStr = "[accent]⚙️ NÂNG CẤP:[] Sát thương thô: [lightgray]22.5 (-50%)[] | Xuyên thấu: [red]Không[]\n\n" +
+                descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
+                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+                          "[heart] [lightgray]Máu tháp pháo:[] [green]1,600[] [yellow](+33.3%)[]\n" +
+                          "[gray]📐 Kích thước khối:[] [white]3x3[]\n" +
+                          "[aim] Tầm bắn hiệu dụng:[] [orange]360 pixel[] [yellow](+12.5%)[]\n" +
+                          "[zap] Sát thương đạn thuôn dài:[] [yellow]22.50[] [coral](-50%)[]\n" +
+                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
                           "[scarlet]⚠ GIỚI HẠN: Tối đa 10 cấu trúc/Đội trên sân[]\n\n" +
-                "[purple]🔥 ĐẶC TÍNH PHÂN NHÁNH TRUY ĐUỔI:[]\n" +
-                      
-                          "• Đạn sở hữu bộ tìm đường, tự động bẻ lái truy đuổi mục tiêu xung quanh với độ chính xác tuyệt đối.";
+                          "[purple]🔥 CƠ CHẾ NĂNG LƯỢNG TIÊU HAO:[]\n" +
+                          "• Hiệu ứng: Đạn mất hoàn toàn khả năng xuyên thấu, đổi lấy bộ định vị tự động bẻ góc bám đuổi kẻ địch xung quanh.\n" +
+                          "• Ổn định: Năng lượng tiêu hao mỗi phát bắn giảm xuống mức thấp nhất (0.3%), giúp vũ khí liên tục duy trì trạng thái hỏa lực ổn định.";
             }
 
             let dialog = extend(BaseDialog, title, {});

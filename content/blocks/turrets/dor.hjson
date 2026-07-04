@@ -59,7 +59,7 @@ drawer: {
   ]
 }
 
-
+researchCostMultiplier: 0.1
 requirements: [
   copper/240
 ]

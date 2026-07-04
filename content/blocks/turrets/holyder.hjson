@@ -211,6 +211,7 @@ drawer: {
       "layer": 104
     }
   ],
+  researchCostMultiplier: 0.1
 requirements: [
   copper/2400
   lead/300

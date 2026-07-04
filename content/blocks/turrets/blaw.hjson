@@ -1,0 +1,39 @@
+
+name: blaw
+description: "Pháo Blaw: Pháo hai nòng sử dụng đạn Băng và Hỏa khai hỏa luân phiên, kết hợp khả năng khống chế và sát thương diện rộng để áp chế kẻ địch. Hiệu quả đặc biệt khi đối đầu với các mục tiêu có độ bền cao."
+health: 380
+size: 2
+reload: 20
+range: 176
+inaccuracy: 2
+targetAir: true
+targetGround: true
+maxAmmo: 10
+ammoPerShot: 1
+ammoTypes: {
+  copper: {
+    type: BasicBulletType
+    speed: 10
+    damage: 30
+    width: 7
+    height: 9
+    lifetime: 10
+status: blasted
+statusDuration: 80
+  }
+}
+
+
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+}
+
+researchCostMultiplier: 0.1
+requirements: [
+  copper/240
+  lead/500
+  graphite/50
+]
+category: turret
+research: newex

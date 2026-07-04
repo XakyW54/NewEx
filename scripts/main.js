@@ -25,6 +25,12 @@ require("holyder-system");
 
 require("reguilater");
 
+require("flazerd");
+
+require("blaw");
+
+require("blixalum");
+
 
 
 

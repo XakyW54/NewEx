@@ -34,7 +34,7 @@ shoot: {
   shots: 3
   shotDelay: 9
 }
-
+researchCostMultiplier: 0.1
 requirements: [
   copper/3400
   lead/1100

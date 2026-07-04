@@ -7,7 +7,7 @@ reload: 20
  
 recoil: 0
 inaccuracy: 3
-rotateSpeed: 20
+rotateSpeed: 8
 shootWarmupSpeed: 0.002
   "velocityRnd": 0.05,
 
@@ -211,6 +211,7 @@ drawer: {
       "layer": 104
     }
   ],
+  researchCostMultiplier: 0.1
 requirements: [
   copper/400
   lead/170

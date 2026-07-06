@@ -397,8 +397,9 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                 branchesTable.add(b1).width(340); branchesTable.row();
                 let spaceCell = branchesTable.add(); spaceCell.height(18); spaceCell.row();
                 branchesTable.add(b2).width(340);
-                dialog.cont.add(branchesTable);
-
+let scroll = new ScrollPane(branchesTable);
+scroll.setScrollingDisabled(true, false);
+dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); dialog.show();
             })).size(50, 40).tooltip("Tiến hóa tháp pháo Lyvervon");
         } 
@@ -445,9 +446,17 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                           "• Mỗi chấn tâm vụ nổ gây lượng sát thương cực đại gấp 2.5 lần và bắn ra loạt chùm [orange]13 luồng sét phụ cấu trúc hỗn mang (Chaos)[] có biên độ gãy khúc rộng, càn quét toàn bộ quân địch trong bán kính 45 ô xung quanh.";
             }
 
-            let dialog = extend(BaseDialog, title, {});
-            let cell = dialog.cont.add(descStr).width(360);
+let dialog = extend(BaseDialog, title, {});
+            
+            // Tích hợp ScrollPane lướt vuốt tại đây
+            let infoTable = new Table();
+            let cell = infoTable.add(descStr).width(360);
             cell.get().setWrap(true); cell.get().setAlignment(Align.left);
+            
+            let infoScroll = new ScrollPane(infoTable);
+            infoScroll.setScrollingDisabled(true, false);
+            dialog.cont.add(infoScroll).size(380, 400);
+            
             dialog.addCloseButton(); dialog.show();
         })).size(50, 40).tooltip("Xem chi tiết thông số trạng thái");
     },

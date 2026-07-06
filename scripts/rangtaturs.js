@@ -32,49 +32,49 @@ const acidCorrosionEffect = new Effect(30, cons(e => {
 
 
 const rangtatursNormalBlasted = extend(BasicBulletType, {
-    speed: 7, damage: 16, width: 7, height: 18, lifetime: 43,
+    speed: 7, damage: 1, width: 7, height: 18, lifetime: 43,
     frontColor: Color.valueOf("#ffab40"), backColor: Color.valueOf("#ff6d00"), 
     trailColor: Color.valueOf("#ff6d00"), trailWidth: 1.5, trailLength: 5,
     splashDamage: 12, splashDamageRadius: 24, knockback: 1.2, statusDuration: 140,
     hitEffect: Fx.blastExplosion, despawnEffect: Fx.blastExplosion, status: StatusEffects.blasted
 });
 const rangtatursNormalMelting = extend(BasicBulletType, {
-    speed: 7, damage: 16, width: 7, height: 18, lifetime: 43,
+    speed: 7, damage: 1, width: 7, height: 18, lifetime: 43,
     frontColor: Color.valueOf("#ffa726"), backColor: Color.valueOf("#f57c00"), 
     trailColor: Color.valueOf("#f57c00"), trailWidth: 1.5, trailLength: 5,
     splashDamage: 12, splashDamageRadius: 24, knockback: 0.5, statusDuration: 140,
     hitEffect: Fx.melting, despawnEffect: Fx.melting, status: StatusEffects.melting
 });
 const rangtatursNormalBurning = extend(BasicBulletType, {
-    speed: 7, damage: 16, width: 7, height: 18, lifetime: 43,
+    speed: 7, damage: 1, width: 7, height: 18, lifetime: 43,
     frontColor: Color.valueOf("#ff7043"), backColor: Color.valueOf("#d84315"), 
     trailColor: Color.valueOf("#d84315"), trailWidth: 1.5, trailLength: 5,
     splashDamage: 12, splashDamageRadius: 24, knockback: 0.5, statusDuration: 140,
     hitEffect: Fx.fire, despawnEffect: Fx.fire, status: StatusEffects.burning
 });
 const rangtatursNormalFreezing = extend(BasicBulletType, {
-    speed: 7, damage: 16, width: 7, height: 18, lifetime: 43,
+    speed: 7, damage: 1, width: 7, height: 18, lifetime: 43,
     frontColor: Color.valueOf("#29b6f6"), backColor: Color.valueOf("#0288d1"), 
     trailColor: Color.valueOf("#0288d1"), trailWidth: 1.5, trailLength: 5,
     splashDamage: 12, splashDamageRadius: 24, knockback: 0.5, statusDuration: 140,
     hitEffect: Fx.freezing, despawnEffect: Fx.freezing, status: StatusEffects.freezing
 });
 const rangtatursNormalShocked = extend(BasicBulletType, {
-    speed: 7, damage: 16, width: 7, height: 18, lifetime: 43,
+    speed: 7, damage: 1, width: 7, height: 18, lifetime: 43,
     frontColor: Color.valueOf("#e1bee7"), backColor: Color.valueOf("#ba68c8"), 
     trailColor: Color.valueOf("#ba68c8"), trailWidth: 1.5, trailLength: 5,
     splashDamage: 12, splashDamageRadius: 24, knockback: 0.5, statusDuration: 140,
     hitEffect: Fx.lightning, despawnEffect: Fx.lightning, status: StatusEffects.shocked
 });
 const rangtatursNormalWet = extend(BasicBulletType, {
-    speed: 7.2, damage: 15, width: 6.5, height: 17, lifetime: 43,
+    speed: 7.2, damage: 1, width: 6.5, height: 17, lifetime: 43,
     frontColor: Color.valueOf("#60a5fa"), backColor: Color.valueOf("#2563eb"), 
     trailColor: Color.valueOf("#2563eb"), trailWidth: 1.4, trailLength: 5,
     splashDamage: 10, splashDamageRadius: 24, knockback: 0.6, statusDuration: 180,
     hitEffect: Fx.freezing, despawnEffect: Fx.freezing, status: StatusEffects.wet
 });
 const rangtatursNormalCorroded = extend(BasicBulletType, {
-    speed: 6.8, damage: 17, width: 7, height: 17, lifetime: 43,
+    speed: 6.8, damage: 1, width: 7, height: 17, lifetime: 43,
     frontColor: Color.valueOf("#bef264"), backColor: Color.valueOf("#65a30d"), 
     trailColor: Color.valueOf("#65a30d"), trailWidth: 1.5, trailLength: 6,
     splashDamage: 14, splashDamageRadius: 26, knockback: 0.3, statusDuration: 160,
@@ -85,49 +85,49 @@ const rangtatursNormalBullet = rangtatursNormalBlasted;
 
 
 const rangtatursmk2NormalBlasted = extend(BasicBulletType, {
-    speed: 7.7, damage: 17.5, width: 7.7, height: 19.8, lifetime: 43,      
+    speed: 7.7, damage: 1, width: 7.7, height: 19.8, lifetime: 43,      
     frontColor: Color.valueOf("#ffab40"), backColor: Color.valueOf("#ff6d00"),
     trailColor: Color.valueOf("#ff6d00"), trailWidth: 1.65, trailLength: 6,    
     splashDamage: 15, splashDamageRadius: 28, knockback: 1.4, statusDuration: 140,
     hitEffect: Fx.blastExplosion, despawnEffect: Fx.blastExplosion, status: StatusEffects.blasted
 });
 const rangtatursmk2NormalMelting = extend(BasicBulletType, {
-    speed: 7.7, damage: 17.5, width: 7.7, height: 19.8, lifetime: 43,      
+    speed: 7.7, damage: 1, width: 7.7, height: 19.8, lifetime: 43,      
     frontColor: Color.valueOf("#ffa726"), backColor: Color.valueOf("#f57c00"),
     trailColor: Color.valueOf("#f57c00"), trailWidth: 1.65, trailLength: 6,    
     splashDamage: 15, splashDamageRadius: 28, knockback: 0.6, statusDuration: 140,
     hitEffect: Fx.melting, despawnEffect: Fx.melting, status: StatusEffects.melting
 });
 const rangtatursmk2NormalBurning = extend(BasicBulletType, {
-    speed: 7.7, damage: 17.5, width: 7.7, height: 19.8, lifetime: 43,      
+    speed: 7.7, damage: 1, width: 7.7, height: 19.8, lifetime: 43,      
     frontColor: Color.valueOf("#ff7043"), backColor: Color.valueOf("#d84315"),
     trailColor: Color.valueOf("#d84315"), trailWidth: 1.65, trailLength: 6,    
     splashDamage: 15, splashDamageRadius: 28, knockback: 0.6, statusDuration: 140,
     hitEffect: Fx.fire, despawnEffect: Fx.fire, status: StatusEffects.burning
 });
 const rangtatursmk2NormalFreezing = extend(BasicBulletType, {
-    speed: 7.7, damage: 17.5, width: 7.7, height: 19.8, lifetime: 43,      
+    speed: 7.7, damage: 1, width: 7.7, height: 19.8, lifetime: 43,      
     frontColor: Color.valueOf("#29b6f6"), backColor: Color.valueOf("#0288d1"),
     trailColor: Color.valueOf("#0288d1"), trailWidth: 1.65, trailLength: 6,    
     splashDamage: 15, splashDamageRadius: 28, knockback: 0.6, statusDuration: 140,
     hitEffect: Fx.freezing, despawnEffect: Fx.freezing, status: StatusEffects.freezing
 });
 const rangtatursmk2NormalShocked = extend(BasicBulletType, {
-    speed: 7.7, damage: 17.5, width: 7.7, height: 19.8, lifetime: 43,      
+    speed: 7.7, damage: 1, width: 7.7, height: 19.8, lifetime: 43,      
     frontColor: Color.valueOf("#e1bee7"), backColor: Color.valueOf("#ba68c8"),
     trailColor: Color.valueOf("#ba68c8"), trailWidth: 1.65, trailLength: 6,    
     splashDamage: 15, splashDamageRadius: 28, knockback: 0.6, statusDuration: 140,
     hitEffect: Fx.lightning, despawnEffect: Fx.lightning, status: StatusEffects.shocked
 });
 const rangtatursmk2NormalWet = extend(BasicBulletType, {
-    speed: 7.9, damage: 16.5, width: 7.2, height: 18.5, lifetime: 43,      
+    speed: 7.9, damage: 1, width: 7.2, height: 18.5, lifetime: 43,      
     frontColor: Color.valueOf("#60a5fa"), backColor: Color.valueOf("#2563eb"),
     trailColor: Color.valueOf("#2563eb"), trailWidth: 1.55, trailLength: 6,    
     splashDamage: 12, splashDamageRadius: 28, knockback: 0.7, statusDuration: 180,
     hitEffect: Fx.freezing, despawnEffect: Fx.freezing, status: StatusEffects.wet
 });
 const rangtatursmk2NormalCorroded = extend(BasicBulletType, {
-    speed: 7.5, damage: 18.5, width: 7.7, height: 18.5, lifetime: 43,      
+    speed: 7.5, damage: 1, width: 7.7, height: 18.5, lifetime: 43,      
     frontColor: Color.valueOf("#bef264"), backColor: Color.valueOf("#65a30d"),
     trailColor: Color.valueOf("#65a30d"), trailWidth: 1.65, trailLength: 7,    
     splashDamage: 17, splashDamageRadius: 30, knockback: 0.4, statusDuration: 160,
@@ -136,49 +136,49 @@ const rangtatursmk2NormalCorroded = extend(BasicBulletType, {
 
 
 const normalBulletBBlasted = extend(BasicBulletType, {
-    speed: 8.5, damage: 20, width: 8, height: 20, lifetime: 40,
+    speed: 8.5, damage: 1, width: 8, height: 20, lifetime: 40,
     frontColor: Color.valueOf("#ff5252"), backColor: Color.valueOf("#ff1744"), 
     trailColor: Color.valueOf("#ff1744"), trailWidth: 2, trailLength: 6,
     splashDamage: 22, splashDamageRadius: 36, knockback: 1.8, statusDuration: 180,
     hitEffect: Fx.blastExplosion, despawnEffect: Fx.blastExplosion, status: StatusEffects.blasted
 });
 const normalBulletBMelting = extend(BasicBulletType, {
-    speed: 8.5, damage: 20, width: 8, height: 20, lifetime: 40,
+    speed: 8.5, damage: 1, width: 8, height: 20, lifetime: 40,
     frontColor: Color.valueOf("#ffa726"), backColor: Color.valueOf("#f57c00"), 
     trailColor: Color.valueOf("#f57c00"), trailWidth: 2, trailLength: 6,
     splashDamage: 22, splashDamageRadius: 36, knockback: 0.8, statusDuration: 180,
     hitEffect: Fx.melting, despawnEffect: Fx.melting, status: StatusEffects.melting
 });
 const normalBulletBBurning = extend(BasicBulletType, {
-    speed: 8.5, damage: 20, width: 8, height: 20, lifetime: 40,
+    speed: 8.5, damage: 1, width: 8, height: 20, lifetime: 40,
     frontColor: Color.valueOf("#ff7043"), backColor: Color.valueOf("#d84315"), 
     trailColor: Color.valueOf("#d84315"), trailWidth: 2, trailLength: 6,
     splashDamage: 22, splashDamageRadius: 36, knockback: 0.8, statusDuration: 180,
     hitEffect: Fx.fire, despawnEffect: Fx.fire, status: StatusEffects.burning
 });
 const normalBulletBFreezing = extend(BasicBulletType, {
-    speed: 8.5, damage: 20, width: 8, height: 20, lifetime: 40,
+    speed: 8.5, damage: 1, width: 8, height: 20, lifetime: 40,
     frontColor: Color.valueOf("#29b6f6"), backColor: Color.valueOf("#0288d1"), 
     trailColor: Color.valueOf("#0288d1"), trailWidth: 2, trailLength: 6,
     splashDamage: 22, splashDamageRadius: 36, knockback: 0.8, statusDuration: 180,
     hitEffect: Fx.freezing, despawnEffect: Fx.freezing, status: StatusEffects.freezing
 });
 const normalBulletBShocked = extend(BasicBulletType, {
-    speed: 8.5, damage: 20, width: 8, height: 20, lifetime: 40,
+    speed: 8.5, damage: 1, width: 8, height: 20, lifetime: 40,
     frontColor: Color.valueOf("#e1bee7"), backColor: Color.valueOf("#ba68c8"), 
     trailColor: Color.valueOf("#ba68c8"), trailWidth: 2, trailLength: 6,
     splashDamage: 22, splashDamageRadius: 36, knockback: 0.8, statusDuration: 180,
     hitEffect: Fx.lightning, despawnEffect: Fx.lightning, status: StatusEffects.shocked
 });
 const normalBulletBWet = extend(BasicBulletType, {
-    speed: 8.7, damage: 19, width: 7.5, height: 19, lifetime: 40,
+    speed: 8.7, damage: 1, width: 7.5, height: 19, lifetime: 40,
     frontColor: Color.valueOf("#93c5fd"), backColor: Color.valueOf("#1d4ed8"), 
     trailColor: Color.valueOf("#1d4ed8"), trailWidth: 1.9, trailLength: 6,
     splashDamage: 18, splashDamageRadius: 36, knockback: 0.9, statusDuration: 220,
     hitEffect: Fx.freezing, despawnEffect: Fx.freezing, status: StatusEffects.wet
 });
 const normalBulletBCorroded = extend(BasicBulletType, {
-    speed: 8.3, damage: 22, width: 8, height: 19, lifetime: 40,
+    speed: 8.3, damage: 1, width: 8, height: 19, lifetime: 40,
     frontColor: Color.valueOf("#bef264"), backColor: Color.valueOf("#4d7c0f"), 
     trailColor: Color.valueOf("#4d7c0f"), trailWidth: 2, trailLength: 7,
     splashDamage: 26, splashDamageRadius: 38, knockback: 0.5, statusDuration: 200,
@@ -188,7 +188,7 @@ const normalBulletBCorroded = extend(BasicBulletType, {
 
 const createLaser = (dmg, w, lt, col, st, hitEf) => {
     return extend(LaserBulletType, {
-        length: 120, damage: dmg, width: w, lifetime: lt, colors: col, status: st, statusDuration: 180,
+        length: 240, damage: dmg, width: w, lifetime: lt, colors: col, status: st, statusDuration: 180,
         hitEffect: hitEf, chargeEffect: Fx.lancerLaserCharge, smokeEffect: Fx.smoke
     });
 };
@@ -366,7 +366,9 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                 branchesTable.add(b1).width(360); branchesTable.row();
                 branchesTable.add().height(10).row();
                 branchesTable.add(b2).width(360);
-                dialog.cont.add(branchesTable);
+let scroll = new ScrollPane(branchesTable);
+scroll.setScrollingDisabled(true, false);
+dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); dialog.show();
             }).size(50, 40).tooltip("Tiến hóa tháp pháo");
         } else {
@@ -374,6 +376,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
         }
 
         // 2. NÚT THÔNG TIN (i) - PHONG CÁCH BỐ CỰC DOR VÀ PHÂN TÁCH BIỂU TƯỢNG GAME (ĐÃ SỬA LỖI RUNNABLE)
+// 2. NÚT THÔNG TIN (i) - PHONG CÁCH BỐ CỰC DOR VÀ PHÂN TÁCH BIỂU TƯỢNG GAME (ĐÃ THÊM LOGIC CUỘN)
         table.button(Icon.info, Styles.cleari, 40, () => {
             let dialog = extend(BaseDialog, "📊 THÔNG SỐ KỸ THUẬT RANGTATURS", {});
             let currentTier = this.evolutionTier;
@@ -420,8 +423,15 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                           "[white]• Tuyệt chiêu Xả Bão (Burst Mode): Nạp tích đủ 6 chu kỳ phát phát hỏa, giải phóng siêu bão đơn cực đại chứa [red]100 viên đạn hỗn hợp[], rơi vào quá tải cưỡng bức làm mát trong [white]180 tick[].";
             }
 
-            let cell = dialog.cont.add(descStr).width(390);
+            // Đoạn cải tiến bọc ScrollPane nằm ở đây:
+            let infoTable = new Table();
+            let cell = infoTable.add(descStr).width(360);
             cell.get().setWrap(true); cell.get().setAlignment(Align.left);
+            
+            let infoScroll = new ScrollPane(infoTable);
+            infoScroll.setScrollingDisabled(true, false);
+            dialog.cont.add(infoScroll).size(380, 400);
+            
             dialog.addCloseButton(); dialog.show();
         }).size(50, 40).tooltip("Xem thông số chi tiết");
     },

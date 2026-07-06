@@ -201,8 +201,9 @@ function makeReguBuild() {
                     branchesTable.add(b1).width(360); branchesTable.row();
                     branchesTable.add().height(10).row();
                     branchesTable.add(b2).width(360);
-                    dialog.cont.add(branchesTable);
-                    dialog.addCloseButton(); dialog.show();
+let scroll = new ScrollPane(branchesTable);
+scroll.setScrollingDisabled(true, false);
+dialog.cont.add(scroll).maxHeight(400);                    dialog.addCloseButton(); dialog.show();
                 })).size(50, 40).tooltip("Nâng cấp cấu trúc Reguilater");
             } else {
                 table.button(Icon.lock, Styles.cleari, 40, () => {}).size(50, 40).tooltip("Hệ thống pháo đã đạt giới hạn tiến hóa tối đa!");
@@ -250,9 +251,14 @@ function makeReguBuild() {
                               "[white]• [red]Cơ chế Bão Hòa Hủy Diệt[]: Khi bắn trúng mục tiêu chính, tự động phân tách phóng chuỗi liên laser phụ thiêu rụi các kẻ địch lân cận.\n" +
                               "[white]• Quả cầu năng lượng đồng trục nòng chuyển màu đỏ tối thượng.";
                 }
-
-                let cell = dialog.cont.add(descStr).width(380);
+let infoTable = new Table();
+                let cell = infoTable.add(descStr).width(360);
                 cell.get().setWrap(true); cell.get().setAlignment(Align.left);
+                
+                let infoScroll = new ScrollPane(infoTable);
+                infoScroll.setScrollingDisabled(true, false);
+                dialog.cont.add(infoScroll).size(380, 400);
+
                 dialog.addCloseButton(); dialog.show();
             })).size(50, 40).tooltip("Xem chi tiết trạng thái tháp pháo");
         },

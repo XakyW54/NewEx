@@ -549,7 +549,9 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
                 branchesTable.add(b1).width(360); branchesTable.row();
                 branchesTable.add().height(10).row();
                 branchesTable.add(b2).width(360);
-                dialog.cont.add(branchesTable);
+let scroll = new ScrollPane(branchesTable);
+scroll.setScrollingDisabled(true, false);
+dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); dialog.show();
             })).size(50, 40).tooltip("Tiến hóa tháp pháo");
         } else {
@@ -601,8 +603,14 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
                           "[white]• Đạt đỉnh [yellow]100 điểm[] giải phóng chuỗi [red]3 loạt bộc phá liên hoàn siêu cấp[] nghiền nát cụm đội hình địch.";
             }
 
-            let cell = dialog.cont.add(descStr).width(390);
+let infoTable = new Table();
+            let cell = infoTable.add(descStr).width(360);
             cell.get().setWrap(true); cell.get().setAlignment(Align.left);
+            
+            let infoScroll = new ScrollPane(infoTable);
+            infoScroll.setScrollingDisabled(true, false);
+            dialog.cont.add(infoScroll).size(380, 400);
+            
             dialog.addCloseButton(); dialog.show();
         })).size(50, 40).tooltip("Xem thông số chi tiết");
     },

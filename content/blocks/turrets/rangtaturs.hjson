@@ -4,7 +4,7 @@ description: "Pháo Rangtaturs: Dòng tháp pháo Shotgun đa dụng mang cơ ch
 health: 380
 size: 3
 reload: 20
-range: 176
+range: 352
 inaccuracy: 2
 targetAir: true
 targetGround: true

@@ -138,8 +138,8 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                     let plaColor2 = currenttitanium >= reqMK2B.titanium ? "[green]" : "[red]";
                     
                     return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
-                           "[cyan]Nhánh MK2:[] copper: " + titColor1 + reqMK2.copper + "[]/" + currentcopper + " | lead: " + silColor1 + reqMK2.lead + "[]/" + currentlead + "\n" +
-                           "[purple]Nhánh MK2B:[] copper: " + titColor2 + reqMK2B.copper + "[]/" + currentcopper + " | lead: " + silColor2 + reqMK2B.lead + "[]/" + currentlead + "\n | titanium: " + plaColor2 + reqMK2B.titanium + "[]/" + currenttitanium;
+                           "[cyan]Nhánh MK2:[] copper: " + titColor1 + reqMK2.copper + "[]/" + currentcopper + "\n | lead: " + silColor1 + reqMK2.lead + "[]/" + currentlead + "\n" +
+                           "[purple]Nhánh MK2B:[] copper: " + titColor2 + reqMK2B.copper + "[]/" + currentcopper + "\n | lead: " + silColor2 + reqMK2B.lead + "[]/" + currentlead + "\n | titanium: " + plaColor2 + reqMK2B.titanium + "[]/" + currenttitanium;
                 })).row(); dialog.cont.add().height(10).row();
 
                 let branchesTable = new Table();
@@ -148,6 +148,7 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                 b1.add("[cyan]CẤU HÌNH TIÊU CHUẨN (MK2)[]").row();
                 let b1D = b1.add("Nâng cấp mạch sạc xung điện:\n" +
+                                 " [white]• Máu tăng mạnh lên [green]1885[] (+30%).[]\n" +
                                  " [white]• Máu tăng mạnh lên [green]1885[] (+30%).[]\n" +
                                  " [white]• Tầm bắn mở rộng đạt [green]390 pixel[] (+30%).[]\n" +
                                  " [white]• Đạn thường: [yellow]+75% sát thương (21)[] và +30% vận tốc.[]\n" +
@@ -185,7 +186,14 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                 branchesTable.add().height(12).row(); 
                 branchesTable.add(b2).width(340);
 
-                dialog.cont.add(branchesTable);
+
+
+let scroll = new ScrollPane(branchesTable);
+scroll.setScrollingDisabled(true, false);
+dialog.cont.add(scroll).maxHeight(400);
+
+
+
                 dialog.addCloseButton(); dialog.show();
             })).size(50, 40).tooltip("Tiến hóa tháp pháo Dor");
         } else {
@@ -244,7 +252,18 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
             }
 
             let dialog = extend(BaseDialog, title, {});
-            let cell = dialog.cont.add(descStr).width(360);
+
+
+
+let infoTable = new Table();
+let cell = infoTable.add(descStr).width(360);
+cell.get().setWrap(true); cell.get().setAlignment(Align.left);
+let scroll = new ScrollPane(infoTable);
+scroll.setScrollingDisabled(true, false);
+dialog.cont.add(scroll).maxHeight(400);
+
+
+
             cell.get().setWrap(true); cell.get().setAlignment(Align.left);
             dialog.addCloseButton(); dialog.show();
         })).size(50, 40).tooltip("Xem chi tiết thông số trạng thái");

@@ -253,7 +253,9 @@ Events.on(EventType.ContentInitEvent, () => {
                         branchesTable.add(b1).width(340); branchesTable.row(); 
                         branchesTable.add().height(15).row(); 
                         branchesTable.add(b2).width(340);
-                        dialog.cont.add(branchesTable);
+let scroll = new ScrollPane(branchesTable);
+scroll.setScrollingDisabled(true, false);
+dialog.cont.add(scroll).maxHeight(400);
                         dialog.addCloseButton(); dialog.show(); 
                     })).size(50, 40).tooltip("Nâng cấp cấu trúc tháp pháo Tyber"); 
                 } else {

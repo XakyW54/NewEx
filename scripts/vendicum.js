@@ -162,7 +162,9 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                 branchesTable.add().height(12).row();
                 branchesTable.add(b2).width(340);
 
-                dialog.cont.add(branchesTable);
+let scroll = new ScrollPane(branchesTable);
+scroll.setScrollingDisabled(true, false);
+dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); dialog.show();
             })).size(50, 40).tooltip("Mở bảng tiến hóa hệ thống");
         } else {
@@ -221,7 +223,12 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
             }
 
             let dialog = extend(BaseDialog, title, {});
-            let cell = dialog.cont.add(descStr).width(360);
+let infoTable = new Table();
+let cell = infoTable.add(descStr).width(360);
+cell.get().setWrap(true); cell.get().setAlignment(Align.left);
+let scroll = new ScrollPane(infoTable);
+scroll.setScrollingDisabled(true, false);
+dialog.cont.add(scroll).maxHeight(400);
             cell.get().setWrap(true); cell.get().setAlignment(Align.left);
             dialog.addCloseButton(); dialog.show();
         })).size(50, 40).tooltip("Xem chi tiết thông số trạng thái");

@@ -231,7 +231,10 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
                 branchesTable.add(b1).width(340); branchesTable.row();
                 branchesTable.add().height(15).row();
                 branchesTable.add(b2).width(340);
-                dialog.cont.add(branchesTable); dialog.addCloseButton(); dialog.show();
+let scroll = new ScrollPane(branchesTable);
+scroll.setScrollingDisabled(true, false);
+dialog.cont.add(scroll).maxHeight(400);
+ dialog.addCloseButton(); dialog.show();
             })).size(50, 40).tooltip("Tiến hóa công nghệ pháo Blaw");
         } else {
             table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
@@ -269,9 +272,17 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
                           "• Mảnh đạn Shotgun kế thừa trọn vẹn sát thương và hiệu ứng của đạn MK2.";
             }
 
-            let dialog = extend(BaseDialog, title, {});
-            let cell = dialog.cont.add(descStr).width(380);
+let dialog = extend(BaseDialog, title, {});
+            
+            // Phần thêm ScrollPane lướt lên xuống
+            let infoTable = new Table();
+            let cell = infoTable.add(descStr).width(360);
             cell.get().setWrap(true); cell.get().setAlignment(Align.left);
+            
+            let infoScroll = new ScrollPane(infoTable);
+            infoScroll.setScrollingDisabled(true, false);
+            dialog.cont.add(infoScroll).size(380, 400);
+            
             dialog.addCloseButton(); dialog.show();
         })).size(50, 40).tooltip("Xem thông số chi tiết trạng thái");
     }

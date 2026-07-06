@@ -523,7 +523,9 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
                 branchesTable.add().height(12).row(); // Khoảng cách đệm giữa 2 dòng
                 branchesTable.add(b2).width(360);
 
-                dialog.cont.add(branchesTable);
+let scroll = new ScrollPane(branchesTable);
+scroll.setScrollingDisabled(true, false);
+dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); dialog.show();
             })).size(50, 40).tooltip("Tiến hóa pháo");
         } else {
@@ -580,8 +582,14 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
                           "[white]• [orange]Hỏa lực phân nhánh đặc biệt[]: Mỗi tia phụ rẽ nhánh tự động gây lượng sát thương bằng [red]chính xác 50% sát thương của tia laze chính[] ở thời điểm hiện tại.";
             }
 
-            let cell = dialog.cont.add(descStr).width(390);
+let infoTable = new Table();
+            let cell = infoTable.add(descStr).width(360);
             cell.get().setWrap(true); cell.get().setAlignment(Align.left);
+            
+            let infoScroll = new ScrollPane(infoTable);
+            infoScroll.setScrollingDisabled(true, false);
+            dialog.cont.add(infoScroll).size(380, 400);
+            
             dialog.addCloseButton(); dialog.show();
         })).size(50, 40).tooltip("Xem thông số chi tiết");
     },

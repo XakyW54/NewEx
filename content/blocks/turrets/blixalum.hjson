@@ -1,7 +1,7 @@
 
 name: Blixalum
 description: "Pháo Blixalum: Pháo điện từ sử dụng đạn năng lượng hội tụ với sức công phá diện rộng. Hệ thống gia tốc từ trường cho phép tăng nhịp khai hỏa khi chiến trường xuất hiện nhiều mục tiêu, kết hợp cùng cơ cấu cánh cơ khí tự động triển khai để duy trì hỏa lực áp chế."
-health: 3800000
+health: 3800
 size: 3
 reload: 20
 range: 276

@@ -182,7 +182,7 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                     
                     return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
                            "[cyan]Nhánh MK2:[] Titanium: " + titColor1 + reqMK2.titanium + "[]/" + currenttitanium + " | Silicon: " + silColor1 + reqMK2.silicon + "[]/" + currentsilicon + "\n" +
-                           "[purple]Nhánh MK2B:[] Titanium: " + titColor2 + reqMK2B.titanium + "[]/" + currenttitanium + " | Silicon: " + silColor2 + reqMK2B.silicon + "[]/" + currentsilicon + " | Plastanium: " + plaColor2 + reqMK2B.plastanium + "[]/" + currentplastanium;
+                           "[purple]Nhánh MK2B:[] Titanium: " + titColor2 + reqMK2B.titanium + "[]/" + currenttitanium + " | Silicon: " + silColor2 + reqMK2B.silicon + "[]/" + currentsilicon + "\n | Plastanium: " + plaColor2 + reqMK2B.plastanium + "[]/" + currentplastanium;
                 })).row(); dialog.cont.add().height(10).row();
 
                 let branchesTable = new Table();
@@ -226,7 +226,9 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                 branchesTable.add().height(12).row();
                 branchesTable.add(b2).width(340);
 
-                dialog.cont.add(branchesTable);
+let scroll = new ScrollPane(branchesTable);
+scroll.setScrollingDisabled(true, false);
+dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); dialog.show();
             })).size(50, 40).tooltip("Nâng cấp tháp pháo Xylaon");
         } else {
@@ -284,7 +286,12 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
             }
 
             let dialog = extend(BaseDialog, title, {});
-            let cell = dialog.cont.add(descStr).width(360);
+let infoTable = new Table();
+let cell = infoTable.add(descStr).width(360);
+cell.get().setWrap(true); cell.get().setAlignment(Align.left);
+let scroll = new ScrollPane(infoTable);
+scroll.setScrollingDisabled(true, false);
+dialog.cont.add(scroll).maxHeight(400);
             cell.get().setWrap(true); cell.get().setAlignment(Align.left);
             dialog.addCloseButton(); dialog.show();
         })).size(50, 40).tooltip("Xem thông số chi tiết hệ thống");

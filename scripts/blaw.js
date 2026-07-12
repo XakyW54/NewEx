@@ -138,6 +138,7 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
     
     recoilLeft: 0,
     recoilRight: 0,
+    limitCheck: 0, // Biến đếm thời gian kiểm tra giới hạn
 
     getTier(){ return this.tierState == null ? 0 : this.tierState; },
     setTier(val){ 
@@ -290,6 +291,22 @@ let dialog = extend(BaseDialog, title, {});
     config() { return java.lang.Integer(this.getTier()); },
 
     updateTile(){
+        // --- ĐOẠN CODE THÊM VÀO: GIỚI HẠN XÂY DỰNG TỐI ĐA LÀ 1 ---
+        this.limitCheck += Time.delta;
+        if(this.limitCheck >= 15){
+            this.limitCheck = 0; let count = 0; let firstBuild = null;
+            Groups.build.each(b => {
+                if(b.block == blaw && b.team == this.team) { 
+                    count++; if(firstBuild == null) firstBuild = b; 
+                }
+            });
+            if(count > 1 && this !== firstBuild){
+                Call.sendMessage("[red]Giới hạn: Chỉ được đặt tối đa 1 tháp pháo Blaw! Cấu trúc thừa đã tự hủy![]"); 
+                this.kill(); return;
+            }
+        }
+        // ---------------------------------------------------------
+
         this.super$updateTile();
         let tier = this.getTier();
         
@@ -300,7 +317,7 @@ let dialog = extend(BaseDialog, title, {});
         if(this.recoilLeft > 0) this.recoilLeft = Math.max(0, this.recoilLeft - Time.delta * 0.1);
         if(this.recoilRight > 0) this.recoilRight = Math.max(0, this.recoilRight - Time.delta * 0.1);
 
-        if(this.isShooting() && this.hasAmmo()){
+        if(this.isShooting && this.hasAmmo()){
             let randomBoost = Mathf.random(0.0, 2.0); 
             this.reloadCounter += Time.delta * randomBoost * this.efficiency;
 

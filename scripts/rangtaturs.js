@@ -478,7 +478,7 @@ dialog.cont.add(scroll).maxHeight(400);
         if (this.berserkTimer > 0) {
             this.berserkTimer -= Time.delta;
             if (this.berserkTimer < 0) this.berserkTimer = 0;
-            if (this.isShooting() && this.hasAmmo()) {
+            if (this.isShooting && this.hasAmmo()) {
                 this.reloadCounter += Time.delta * (this.efficiency * efficiencyMultiplier);
             }
         } else {

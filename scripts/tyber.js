@@ -66,6 +66,7 @@ Events.on(EventType.ContentInitEvent, () => {
             lastRocketTime: 0.0,     
             lastExplosionTime: 0.0,  
             evolution: 0, 
+            limitCheck: 0, // Thêm biến đếm thời gian kiểm tra giới hạn giống pháo Dor
 
             range(){
                 if(this.evolution == 1) return this.super$range() * 1.5;
@@ -99,25 +100,23 @@ Events.on(EventType.ContentInitEvent, () => {
             },
 
             updateTile(){
-                this.super$updateTile();
-
-
-                let count = 0;
-                let firstBuild = null;
-                
-                Groups.build.each(b => {
-                    if(b.block == tyberBase && b.team == this.team) { 
-                        count++; 
-                        if(firstBuild == null) firstBuild = b; 
+                // --- ĐOẠN CODE KIỂM TRA GIỚI HẠN ĐƯỢC THÊM VÀO (GIỚI HẠN LÀ 1) ---
+                this.limitCheck += Time.delta;
+                if(this.limitCheck >= 15){
+                    this.limitCheck = 0; let count = 0; let firstBuild = null;
+                    Groups.build.each(b => {
+                        if(b.block == tyberBase && b.team == this.team) { 
+                            count++; if(firstBuild == null) firstBuild = b; 
+                        }
+                    });
+                    if(count > 1 && this !== firstBuild){
+                        Call.sendMessage("[red]Giới hạn: Chỉ được phép đặt tối đa 1 tháp pháo thuộc dòng Tyber System! Cấu trúc thừa đã tự hủy![]"); 
+                        this.kill(); return;
                     }
-                });
-
-                if(count > 10 && this !== firstBuild){
-                    Call.sendMessage("[red]Giới hạn: Chỉ được phép đặt tối đa 10 pháo thuộc dòng Tyber System![]");
-                    this.kill(); 
-                    return; 
                 }
+                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+                this.super$updateTile();
                 
                 if(this.isShooting && this.hasAmmo() && this.isActive()){
                     this.shootingTimer += Time.delta;
@@ -231,7 +230,7 @@ Events.on(EventType.ContentInitEvent, () => {
                         
                         let b2D = b2.add("[lightgray]Nén loạt bắn thành 1 nòng tâm bạo kích, tốc độ nạp đạn nhanh gấp đôi.\n" +
                                  "Phóng liên tục cặp tên lửa sườn xé gió siêu tốc (Tốc độ: 6).\n" +
-                                 "Tích hợp lõi hủy diệt nén điểm, gây [ ngập tràn sát thương ] lên tới [red]1350 bạo kích[] tại tầm gần (Bán kính: 30)![]");
+                                 "Tích hợp lõi hủy diệt nén điểm, gây [ ngập tràn sát thương ] lên tới [red]1350 bạo kích[] tại tầm gần (Bán kích: 30)![]");
                         b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
                         b2.add().height(8).row();
 
@@ -253,9 +252,9 @@ Events.on(EventType.ContentInitEvent, () => {
                         branchesTable.add(b1).width(340); branchesTable.row(); 
                         branchesTable.add().height(15).row(); 
                         branchesTable.add(b2).width(340);
-let scroll = new ScrollPane(branchesTable);
-scroll.setScrollingDisabled(true, false);
-dialog.cont.add(scroll).maxHeight(400);
+                        let scroll = new ScrollPane(branchesTable);
+                        scroll.setScrollingDisabled(true, false);
+                        dialog.cont.add(scroll).maxHeight(400);
                         dialog.addCloseButton(); dialog.show(); 
                     })).size(50, 40).tooltip("Nâng cấp cấu trúc tháp pháo Tyber"); 
                 } else {
@@ -274,7 +273,7 @@ dialog.cont.add(scroll).maxHeight(400);
                         title += (ev == 0) ? "[lightgray]MK1 TIÊU CHUẨN[]" : "[cyan]MK2 TIẾN HÓA[]";
                         descStr = "[accent]⚙️ THÔNG SỐ TRẠNG THÁI:[]\n" +
                                   "• [heart] Máu pháo:[] 565 HP | [aim] Tầm bắn:[] " + (ev == 1 ? "[green]930 pixel[] (+50%)" : "[white]620 pixel[]") + "\n" +
-                                  "[scarlet]⚠ GIỚI HẠN DÒNG: Tối đa 10 cấu trúc/Đội trên chiến trường[]\n\n" +
+                                  "[scarlet]⚠ GIỚI HẠN DÒNG: Tối đa 1 cấu trúc/Đội trên chiến trường[]\n\n" +
                                   "[sky]⚡ CƠ CHẾ HỎA LỰC CHÍNH:[]\n" +
                                   "• [orange]Hệ thống nòng:[] " + (ev == 1 ? "Cải tiến [cyan]5 nòng súng song song[] bắn luân phiên liên tục (Giãn cách: 4)." : "Mặc định gồm [yellow]3 nòng súng cốt lõi[] xả loạt đạn luân phiên (Giãn cách: 6).") + "\n" +
                                   "• [lightgray]Đạn chính (Titanium):[] Triệu hồi Tên lửa hạng nặng Tyber vọt tầm xa.\n\n" +
@@ -286,7 +285,7 @@ dialog.cont.add(scroll).maxHeight(400);
                         title += "[orange]MK2B BIẾN THỂ PHÒNG THỦ[]";
                         descStr = "[accent]⚙️ THÔNG SỐ TRẠNG THÁI:[]\n" +
                                   "• [heart] Máu pháo:[] 565 HP | [aim] Tầm bắn:[] [white]620 pixel[]\n" +
-                                  "[scarlet]⚠ GIỚI HẠN DÒNG: Tối đa 10 cấu trúc/Đội trên chiến trường[]\n\n" +
+                                  "[scarlet]⚠ GIỚI HẠN DÒNG: Tối đa 1 cấu trúc/Đội trên chiến trường[]\n\n" +
                                   "[purple]🔥 HỎA LỰC HỘI TỤ SIÊU TRỌNG:[]\n" +
                                   "• [orange]Chế độ nòng trung tâm:[] Gom hỏa lực xả [red]1 viên bạo kích duy nhất[] tập trung, giảm Reload xuống còn [green]40 Tích tắc[] (Bắn nhanh gấp đôi).\n\n" +
                                   "[lime]⚡ HỆ THỐNG PHỤ TRỢ TỰ ĐỘNG (MK2B):[]\n" +

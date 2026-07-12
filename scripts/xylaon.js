@@ -318,7 +318,7 @@ dialog.cont.add(scroll).maxHeight(400);
         let cooldownCap = cooldownCapTable[tier];
         if(this.thermalstate == null) this.thermalstate = -cooldownCap;
         
-        if(!this.isShooting() || this.thermalstate < 0.2){
+        if(!this.isShooting || this.thermalstate < 0.2){
             let sign = this.thermalstate > 0 ? 1 : -1;
             this.thermalstate -= Math.min(Math.abs(this.thermalstate), Time.delta) * sign;
         }

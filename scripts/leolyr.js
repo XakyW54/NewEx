@@ -1,4 +1,3 @@
- 
 function getUpgradeRequirements(currentLevel) {
     return {
         copperNeeded: 400,
@@ -14,7 +13,7 @@ const rightBullet = extend(BasicBulletType, { speed: 9.0, damage: 15, width: 6, 
 let lastTapTime = 0;
 const doubleTapInterval = 250; 
 
- let mk2TargetX = 0;
+let mk2TargetX = 0;
 let mk2TargetY = 0;
 let isMarkedMK2 = false;
 
@@ -85,6 +84,33 @@ Events.on(ClientLoadEvent, () => {
                 },
 
                 update(){
+                    // 1. CƠ CHẾ GIỚI HẠN UNIT AN TOÀN
+                    if (Math.floor(Time.time) % 20 === 0) {
+                        let currentCount = 0;
+                        let myType = this.type;
+                        let myTeam = this.team;
+                        let myId = this.id;
+                        let shouldRemove = false;
+
+                        let units = Groups.unit;
+                        for (let i = 0; i < units.size(); i++) {
+                            let u = units.index(i);
+                            if (u != null && u.type == myType && u.team == myTeam) {
+                                currentCount++;
+                                if (currentCount > 2 && myId >= u.id) {
+                                    shouldRemove = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (shouldRemove) {
+                            Fx.pulverize.at(this.x, this.y);
+                            this.remove();
+                            return; 
+                        }
+                    }
+
                     this.super$update(); 
                     if(this.dashCooldown > 0) this.dashCooldown--;
 
@@ -118,7 +144,7 @@ Events.on(ClientLoadEvent, () => {
                     }
                     this.ignoreNextDamage = false; 
 
-                     staticShields = staticShields.filter(s => s.lifetime > 0); 
+                    staticShields = staticShields.filter(s => s.lifetime > 0); 
                     let currentUnit = this;
                     staticShields.forEach(s => {
                         s.lifetime -= Time.delta;
@@ -141,7 +167,7 @@ Events.on(ClientLoadEvent, () => {
                         }
                     });
 
-                     let req = getUpgradeRequirements(this.level);
+                    let req = getUpgradeRequirements(this.level);
                     if(this.level < this.maxLevel && this.stack != null){
                         if(this.copperAbsorbed < req.copperNeeded && this.stack.item == req.copperItem && this.stack.amount > 0){
                             let consumeAmt = Math.min(2, this.stack.amount); this.stack.amount -= consumeAmt; this.copperAbsorbed += consumeAmt;
@@ -157,7 +183,7 @@ Events.on(ClientLoadEvent, () => {
                         }
                     }
 
-                     let cooldownReduction = 1.0 - (this.level * 0.05);
+                    let cooldownReduction = 1.0 - (this.level * 0.05);
                     let maxDashCooldown = 300 * cooldownReduction;
                     let executeDash = false;
                     let finalX = this.x, finalY = this.y;
@@ -171,16 +197,16 @@ Events.on(ClientLoadEvent, () => {
                                 if(this.level >= 10){
                                      if(!isMarkedMK2 && this.dashCooldown <= 0){
                                          mk2TargetX = Vars.player.mouseX;
-                                        mk2TargetY = Vars.player.mouseY;
-                                        isMarkedMK2 = true;
+                                         mk2TargetY = Vars.player.mouseY;
+                                         isMarkedMK2 = true;
                                         
                                          Fx.shieldBreak.at(mk2TargetX, mk2TargetY, this.hexSize * 2, Color.sky);
-                                        Fx.shieldApply.at(mk2TargetX, mk2TargetY, 0, Color.sky);
+                                         Fx.shieldApply.at(mk2TargetX, mk2TargetY, 0, Color.sky);
                                     } else if(isMarkedMK2 && this.dashCooldown <= 0){
                                          executeDash = true;
-                                        finalX = mk2TargetX;
-                                        finalY = mk2TargetY;
-                                        isMarkedMK2 = false; 
+                                         finalX = mk2TargetX;
+                                         finalY = mk2TargetY;
+                                         isMarkedMK2 = false; 
                                     }
                                 } else {
                                      if(this.dashCooldown <= 0){
@@ -205,7 +231,7 @@ Events.on(ClientLoadEvent, () => {
                         }
                     }
 
-                     if(executeDash){
+                    if(executeDash){
                         let oldX = this.x; let oldY = this.y;
                         
                         this.set(finalX, finalY);

@@ -291,7 +291,7 @@ dialog.cont.add(scroll).maxHeight(400);
 
         if(tier == 2){
             if (this.burstTimer > 0) {
-                if (this.isShooting() && this.hasAmmo()) { this.reloadCounter += this.block.reload; }
+                if (this.isShooting && this.hasAmmo()) { this.reloadCounter += this.block.reload; }
             } else {
                 if (this.customReloadTimer > 0) {
                     this.customReloadTimer -= Time.delta;
@@ -306,7 +306,7 @@ dialog.cont.add(scroll).maxHeight(400);
                 this.berserkTimer -= Time.delta;
                 if (this.berserkTimer < 0) this.berserkTimer = 0;
                 
-                if (this.isShooting() && this.hasAmmo()) {
+                if (this.isShooting && this.hasAmmo()) {
                     this.reloadCounter += Time.delta * (this.efficiency * speedBoost);
                 }
             } else {

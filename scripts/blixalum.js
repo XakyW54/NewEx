@@ -218,7 +218,24 @@ dialog.cont.add(scroll).maxHeight(400);
 
     config() { return java.lang.Integer(this.getTier()); },
 
-    updateTile(){
+updateTile(){
+        // --- ĐOẠN CODE THÊM MỚI: GIỚI HẠN SỐ LƯỢNG ĐẶT KHỐI (TỐI ĐA 1 BLOCK) ---
+        if(this.limitCheck === undefined) this.limitCheck = 0;
+        this.limitCheck += Time.delta;
+        if(this.limitCheck >= 15){
+            this.limitCheck = 0; let count = 0; let firstBuild = null;
+            Groups.build.each(b => {
+                if(b.block == blixalum && b.team == this.team) { 
+                    count++; if(firstBuild == null) firstBuild = b; 
+                }
+            });
+            if(count > 1 && this !== firstBuild){
+                Call.sendMessage("[red]Giới hạn: Chỉ được đặt tối đa 1 tháp pháo Blixalum! Cấu trúc thừa đã tự hủy![]"); 
+                this.kill(); return;
+            }
+        }
+        // -------------------------------------------------------------------
+
         this.super$updateTile();
         let tier = this.getTier();
 
@@ -244,7 +261,7 @@ dialog.cont.add(scroll).maxHeight(400);
         let maxBonus = (tier == 1) ? 3.0 : ((tier == 2) ? 0.8 : 1.0); 
         this.dynamicSpeedBonus = 1.0 + Math.min(maxBonus, enemyCount * 0.1);
 
-        if(this.isShooting() && this.hasAmmo()){
+        if(this.isShooting && this.hasAmmo()){
             this.reloadCounter += Time.delta * (this.dynamicSpeedBonus - 1.0) * this.efficiency;
             if(!this.isCharged){
                 if(this.reloadCounter > 0) this.reloadCounter = 0; 
@@ -390,7 +407,7 @@ draw(){
         if(blixalum.region != null && blixalum.region.found()){ Draw.rect(blixalum.region, this.x, this.y, drawAngle); }
 
         // Hiệu ứng tụ năng lượng bắn pháo (Giữ nguyên logic cũ)
-        if(this.isShooting() && !this.isCharged && this.hasAmmo()){
+        if(this.isShooting && !this.isCharged && this.hasAmmo()){
             let progress = this.chargeTimer / 120; let inverseProgress = 1.0 - progress; 
             let muzzleX = this.x + Angles.trnsx(this.rotation, 10); let muzzleY = this.y + Angles.trnsy(this.rotation, 10);
             let tier = this.getTier();

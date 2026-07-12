@@ -1,12 +1,17 @@
-{
-  "type": "Block",
-  "name": "Kén Triệu Hồi Leolyr",
-  "description": "Đặt xuống mảnh đất, kén tháp pháo sẽ tự tích năng lượng và vỡ ra giải phóng một Leolyr sau 5 giây.",
-  "category": "turret",
-  "size": 2,
-  "health": 500,
-  "update": true,
-  "requirements": [
-    { "item": "copper", "amount": 50 }
-  ]
-}
+
+  type: Block
+  name: Kén Triệu Hồi Leolyr
+  description: Đặt xuống mảnh đất kén tháp pháo sẽ tự tích năng lượng và vỡ ra giải phóng một Leolyr sau 5 giây.
+  category: turret
+  size: 3
+  health: 500
+  update: true
+  
+researchCostMultiplier: 0.1
+requirements: [
+  copper/540
+  silicon/240
+  lead/140
+]
+category: turret
+research: newex

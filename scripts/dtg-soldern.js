@@ -480,7 +480,7 @@ dialog.cont.add(scroll).maxHeight(400);
         }
         this.wasInShotgunRange = targetInShotgunRange;
 
-        if(targetInShotgunRange && this.isShooting() && this.hasAmmo()){
+        if(targetInShotgunRange && this.isShooting && this.hasAmmo()){
             if(this.shotgunReloadTimer > 0){
                 this.shotgunReloadTimer -= Time.delta;
             } else {
@@ -541,7 +541,7 @@ dialog.cont.add(scroll).maxHeight(400);
             }
         }
 
-        if(this.isShooting() && this.shieldHealth > 0){
+        if(this.isShooting && this.shieldHealth > 0){
             this.shieldScale = Math.min(1.0, this.shieldScale + zoomSpeed * Time.delta);
         } else {
             this.shieldScale = Math.max(0.0, this.shieldScale - zoomSpeed * Time.delta);

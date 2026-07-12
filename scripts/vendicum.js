@@ -251,7 +251,7 @@ dialog.cont.add(scroll).maxHeight(400);
         if(tier == 1) currentRegen = regenSpeedMK2;
         if(tier == 2) currentRegen = regenSpeedMK2B;
 
-        if(!this.isShooting() || !this.hasAmmo() || !this.isActive()){ 
+        if(!this.isShooting || !this.hasAmmo() || !this.isActive()){ 
             if(this.energyState < 1.0){ 
                 this.energyState = Math.min(this.energyState + (currentRegen * Time.delta / 60), 1.0); 
             } 

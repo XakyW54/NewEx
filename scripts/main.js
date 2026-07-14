@@ -1,7 +1,7 @@
 require("hp");
 require("fix-save");
 
- 
+
  
 
  
@@ -42,3 +42,4 @@ require("leolyr-summoner");
 
 require("leolyr");
 
+require("sta");

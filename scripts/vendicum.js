@@ -15,22 +15,162 @@ const regenSpeedMK2B = 0.40;
 
 
 
+const bulletSlashEffect = new Effect(15, e => {
+    let baseAngle = e.rotation;
+
+     
+    let maxLength = 16.0;    
+    let maxWidth = 6.0;     
+    let maxStroke = 2.5;    
+
+ 
+    let len = maxLength * e.fout();
+    let width = maxWidth * e.fout();
+    let stroke = maxStroke * e.fout();
+
+ 
+    let cx = e.x;
+    let cy = e.y;
+
+ 
+    let cosA = Math.cos(baseAngle * Mathf.degRad);
+    let sinA = Math.sin(baseAngle * Mathf.degRad);
+
+ 
+    function getX(localX, localY) { return cx + (localX * cosA - localY * sinA); }
+    function getY(localX, localY) { return cy + (localX * sinA + localY * cosA); }
+
+ 
+    let pTipX = getX(len, 0);           
+    let pTipY = getY(len, 0);
+
+    let pMidLeftX = getX(len * 0.4, width * 0.5);   
+    let pMidLeftY = getY(len * 0.4, width * 0.5);
+
+    let pMidRightX = getX(len * 0.4, -width * 0.5);  
+    let pMidRightY = getY(len * 0.4, -width * 0.5);
+
+    let pTailX = getX(-len * 0.2, 0);   
+    let pTailY = getY(-len * 0.2, 0);
+
+ 
+    Draw.color(Color.valueOf("#ffe18f"));
+    Lines.stroke(stroke);
+    
+    // Vẽ khung nối các điểm lại thành hình đầu đạn
+    Lines.line(pTailX, pTailY, pMidLeftX, pMidLeftY);
+    Lines.line(pMidLeftX, pMidLeftY, pTipX, pTipY);
+    Lines.line(pTipX, pTipY, pMidRightX, pMidRightY);
+    Lines.line(pMidRightX, pMidRightY, pTailX, pTailY);
+
+ 
+    if (e.fout() > 0.15) {
+        Draw.color(Color.white);
+        Lines.stroke(stroke * 0.4);  
+        
+         
+        let cTipX = getX(len * 0.9, 0);
+        let cTipY = getY(len * 0.9, 0);
+        let cMidLeftX = getX(len * 0.4, width * 0.3);
+        let cMidLeftY = getY(len * 0.4, width * 0.3);
+        let cMidRightX = getX(len * 0.4, -width * 0.3);
+        let cMidRightY = getY(len * 0.4, -width * 0.3);
+        let cTailX = getX(0, 0);
+        let cTailY = getY(0, 0);
+
+        Lines.line(cTailX, cTailY, cMidLeftX, cMidLeftY);
+        Lines.line(cMidLeftX, cMidLeftY, cTipX, cTipY);
+        Lines.line(cTipX, cTipY, cMidRightX, cMidRightY);
+        Lines.line(cMidRightX, cMidRightY, cTailX, cTailY);
+    }
+
+    Draw.reset();
+});
+
+
 const vendicumBullet = extend(BasicBulletType, {
-    speed: 8, damage: 45, lifetime: 48, width: 11, height: 16, frontColor: Color.white, backColor: Color.valueOf("#e0b080"),
-    trailEffect: Fx.disperseTrail, trailChance: 0.95, trailColor: Color.valueOf("#feb380"), hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor,
-    pierce: true, pierceCap: 3, pierceBuilding: true, knockback: 1, impact: true
+    speed: 8, damage: 45, lifetime: 48, width: 11, height: 16, 
+    frontColor: Color.white, backColor: Color.valueOf("#e0b080"),
+    pierce: true, pierceCap: 3, pierceBuilding: true, knockback: 1, impact: true,
+
+
+    update(b) {
+        this.super$update(b);
+        if (Mathf.chance(0.20)) {  
+            Fx.disperseTrail.at(b.x, b.y, b.rotation()); 
+        }
+    },
+
+ 
+    hit(b, x, y) {
+        this.super$hit(b, x, y);
+        Fx.disperseTrail.at(x, y, b.rotation()); 
+    },
+    
+    despawn(b) {
+        this.super$despawn(b);
+       Fx.disperseTrail.at(b.x, b.y, b.rotation()); 
+    }
 });
 
 const vendicumMK2Bullet = extend(BasicBulletType, {
     speed: 10, damage: 65, lifetime: 45, width: 13, height: 20, frontColor: Color.white, backColor: Color.valueOf("#ffaa66"),
-    trailEffect: Fx.disperseTrail, trailChance: 0.98, trailColor: Color.valueOf("#ffcc88"), hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor,
-    pierce: true, pierceCap: 5, pierceBuilding: true, knockback: 1.4, impact: true
+    pierce: true, pierceCap: 5, pierceBuilding: true, knockback: 1.4, impact: true,
+
+
+        update(b) {
+        this.super$update(b);
+        if (Mathf.chance(0.40)) {  
+            Fx.disperseTrail.at(b.x, b.y, b.rotation()); 
+        }
+    },
+
+ 
+    hit(b, x, y) {
+        this.super$hit(b, x, y);
+        Fx.disperseTrail.at(x, y, b.rotation()); 
+    },
+    
+    despawn(b) {
+        this.super$despawn(b);
+        Fx.disperseTrail.at(b.x, b.y, b.rotation()); 
+    }
+
 });
 
 const vendicumMK2BBullet = extend(BasicBulletType, {
-    speed: 9, damage: 22.5, lifetime: 50, width: 5, height: 64, frontColor: Color.white, backColor: Color.valueOf("#ff8a80"),
-    trailEffect: Fx.disperseTrail, trailChance: 0.98, trailColor: Color.valueOf("#ff5252"), hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor,
-    pierce: false, pierceBuilding: false, knockback: 0.8, impact: true, homingPower: 0.15, homingRange: 200        
+    speed: 9, damage: 122.5, lifetime: 50, width: 5, height: 64, 
+    frontColor: Color.white, backColor: Color.valueOf("#831006"),
+    trailEffect: Fx.disperseTrail, trailChance: 2.0, 
+    trailColor: Color.valueOf("#ff2525"),
+    pierce: false, pierceBuilding: false, knockback: 2.8, impact: true, 
+    homingPower: 0.15, homingRange: 200,
+
+update(b) {
+        this.super$update(b);
+        if (Mathf.chance(0.40)) {  
+
+            
+            Fx.disperseTrail.at(b.x, b.y, b.rotation()); 
+            
+            // Trả lại trạng thái trộn màu mặc định để không lỗi game
+            Draw.mixcol(); 
+        }
+    },
+
+    hit(b, x, y) {
+        this.super$hit(b, x, y);
+
+        Fx.disperseTrail.at(x, y, b.rotation()); 
+        Draw.mixcol();
+    },
+    
+    despawn(b) {
+        this.super$despawn(b);
+
+        Fx.disperseTrail.at(b.x, b.y, b.rotation()); 
+        Draw.mixcol();
+    }
 });
 
 
@@ -97,12 +237,11 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
         // --- NÚT NÂNG CẤP (PHONG CÁCH HÀNG DỌC GỌN GÀNG TRONG 1 GUI CỦA LAVUNDER) ---
         if(tier == 0) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-                let dialog = extend(BaseDialog, "Hệ Thống Tiến Hóa Vendicum", {});
+                let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Vendicum", {});
                 
-                dialog.cont.add("[gold]=== TIẾN HÓA LÕI ĐA CHỨC NĂNG VENDICUM ===[]").row();
-                dialog.cont.label(packProv(() => {
+                let reqCell = dialog.cont.label(packProv(() => {
                     let core = this.team.core();
-                    if(core == null) return "[red]Không tìm thấy Kho cốt lõi![]";
+                    if(core == null) return "[red]Không tìm thấy Lõi Đội![]";
                     let currentTitanium = core.items.get(Items.titanium);
                     let currentSilicon = core.items.get(Items.silicon);
                     let currentPlastanium = core.items.get(Items.plastanium);
@@ -115,19 +254,29 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                     let plaColor2 = currentPlastanium >= reqMK2B.plastanium ? "[green]" : "[red]";
 
                     return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
-                           "[cyan]Nhánh MK2:[] Titanium: " + titColor1 + reqMK2.titanium + "[]/" + currentTitanium + " | Silicon: " + silColor1 + reqMK2.silicon + "[]/" + currentSilicon + "\n" +
-                           "[purple]Nhánh MK2B:[] Titanium: " + titColor2 + reqMK2B.titanium + "[]/" + currentTitanium + " | Silicon: " + silColor2 + reqMK2B.silicon + "[]/" + currentSilicon + " | Plastanium: " + plaColor2 + reqMK2B.plastanium + "[]/" + currentPlastanium;
-                })).row(); dialog.cont.add().height(10).row();
+                           "[cyan]Nhánh MK2:[]\n" +
+                           " • Titan: " + titColor1 + currentTitanium + "[] / " + reqMK2.titanium + "\n" +
+                           " • Silicon: " + silColor1 + currentSilicon + "[] / " + reqMK2.silicon + "\n" +
+                           "[purple]Nhánh MK2B:[]\n" +
+                           " • Titan: " + titColor2 + currentTitanium + "[] / " + reqMK2B.titanium + "\n" +
+                           " • Silicon: " + silColor2 + currentSilicon + "[] / " + reqMK2B.silicon + "\n" +
+                           " • Nhựa: " + plaColor2 + currentPlastanium + "[] / " + reqMK2B.plastanium;
+                }));
+                
+                reqCell.width(360).get().setWrap(true);
+                reqCell.get().setAlignment(Align.left);
+                dialog.cont.row(); dialog.cont.add().height(10).row();
 
                 let branchesTable = new Table();
 
                 // Nhánh 1: MK2 (Xuyên Phá)
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
-                b1.add("[cyan]TIẾN HÓA: VENDICUM MK2 (XUYÊN PHÁ)[]").row();
+                b1.add("[cyan]===(MK2 - XUYÊN PHÁ)===[]").row();
                 let b1D = b1.add("Cải tiến kết cấu rãnh nòng gia tốc từ tính:\n" +
-                                 " [white]• Tăng sát thương đạn lên [green]65 đơn vị[] và mở rộng tầm bắn đạt [green]420 pixel[].[]\n" +
+                                 " [white]• Sát thương tăng mạnh lên [green]65 đơn vị[] và mở rộng tầm bắn [green]420 pixel[].[]\n" +
                                  " [white]• Đạn bắn xuyên qua tối đa [yellow]5 mục tiêu[] kẻ địch hoặc công trình.[]\n" +
-                                 " [white]• Giảm mức hao hụt năng lượng, tối ưu hóa hồi phục buff chỉ mất [pink]3 giây[].[]");
+                                 " [white]• Tối ưu hóa mạch sạc, thời gian hồi đầy năng lượng rút xuống còn [pink]3.0 giây[].[]\n" +
+                                 " [white]• Nâng cấp kết cấu bền vững, tăng [green]+50% Máu[] tháp pháo.[]");
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                 b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
                     let core = this.team.core();
@@ -136,16 +285,17 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                         Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(4, 4, this.x, this.y);
                         this.configure(java.lang.Integer(1)); 
                         dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfo("[red]Nâng cấp thất bại! Tài nguyên chưa đủ.[]"); }
+                    } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                 })).size(180, 38);
 
                 // Nhánh 2: MK2B (Truy Đuổi)
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
-                b2.add("[purple]TIẾN HÓA: VENDICUM MK2B (TRUY ĐUỔI)[]").row();
-                let b2D = b2.add("Chuyển đổi sang lõi năng lượng xung kích tầm nhiệt:\n" +
-                                 " [white]• Thay đổi cấu trúc đạn thuôn dài, tích hợp cảm biến [orange]tự động bẻ lái truy đuổi[].[]\n" +
-                                 " [white]• Loại bỏ cơ chế xuyên thấu, sát thương cơ bản giảm còn [red]22.5[] nhưng tầm bắn đạt [green]360[].[]\n" +
-                                 " [white]• Giảm thiểu tiêu hao, tăng mạnh tần suất bắn trúng và hồi buff tối ưu.[]");
+                b2.add("[purple]===(MK2B - TRUY ĐUỔI)===[]").row();
+                let b2D = b2.add("Chuyển đổi sang cấu hình xung kích tầm nhiệt:\n" +
+                                 " [white]• Tích hợp chip cảm biến thông minh [orange]tự động bẻ lái truy đuổi[] kẻ địch xung quanh.[]\n" +
+                                 " [white]• Tăng sát thương thô lên [red]122.5[] và tăng nhẹ tầm bắn lên [green]360 pixel[].[]\n" +
+                                 " [white]• Tiêu hao năng lượng cực thấp ([green]-70% mỗi phát bắn[]), giữ mức buff hỏa lực siêu ổn định.[]\n" +
+                                 " [white]• Loại bỏ hoàn toàn khả năng xuyên thấu mục tiêu.[]");
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
                 b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                     let core = this.team.core();
@@ -154,84 +304,77 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                         Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(4, 4, this.x, this.y);
                         this.configure(java.lang.Integer(2)); 
                         dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfo("[red]Nâng cấp thất bại! Tài nguyên chưa đủ.[]"); }
+                    } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
                 })).size(180, 38);
 
-                // Sắp xếp bố cục dọc chuẩn Lavunder trong cùng một GUI duy nhất
+                // Xếp các bảng nhánh theo hàng dọc chuẩn Lavunder
                 branchesTable.add(b1).width(340); branchesTable.row();
                 branchesTable.add().height(12).row();
                 branchesTable.add(b2).width(340);
 
-let scroll = new ScrollPane(branchesTable);
-scroll.setScrollingDisabled(true, false);
-dialog.cont.add(scroll).maxHeight(400);
+                let scroll = new ScrollPane(branchesTable);
+                scroll.setScrollingDisabled(true, false);
+                dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); dialog.show();
-            })).size(50, 40).tooltip("Mở bảng tiến hóa hệ thống");
+            })).size(50, 40).tooltip("Nâng cấp hệ thống Vendicum");
         } else {
             table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
-                Vars.ui.showInfo("[scarlet]HỆ THỐNG VENDICUM ĐÃ ĐẠT GIỚI HẠN TIẾN HÓA CỦA NHÁNH![]");
+                Vars.ui.showInfo("[scarlet]HỆ THỐNG VENDICUM ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]");
             })).size(50, 40).tooltip("Đã đạt cấp tối đa");
         }
 
         // --- NÚT THÔNG TIN (PHONG CÁCH BỐ CỰC ĐẶC TRƯNG CỦA DOR) ---
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-            let title = "📊 THÔNG SỐ PHÁO VENDICUM: ";
+            let title = " Thông số pháo Vendicum: ";
             let descStr = "";
             let currentTier = this.getTier();
 
             if (currentTier == 0) {
-                title += "[yellow]Trạng thái gốc (MK1)[]";
+                title += "[yellow](MK1)[]";
                 descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[heart] [lightgray]Máu tháp pháo:[] [green]1,200[]\n" +
-                          "[gray]📐 Kích thước khối:[] [white]3x3[]\n" +
-                          "[aim] Tầm bắn hiệu dụng:[] [orange]320 pixel[]\n" +
-                          "[zap] Sát thương đạn thô:[] [yellow]45.00[] (Xuyên: [lightgray]3 mục tiêu[])\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[scarlet]⚠ GIỚI HẠN: Tối đa 10 cấu trúc/Đội trên sân[]\n\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]1,200[]\n" +
+                          "[lightgray]Tầm bắn hiệu dụng:[] [orange]320 pixel[]\n" +
+                          "[lightgray]Sát thương cơ bản:[] [yellow]45.00[]\n" +
+                          "[lightgray]Khả năng xuyên thấu:[] [white]3 mục tiêu[]\n" +
+                          "[scarlet]⚠ Giới hạn: Tối đa 10 cấu trúc cấu thành trên sân[]\n\n" +
                           "[sky]⚡ CƠ CHẾ NĂNG LƯỢNG TIÊU HAO:[]\n" +
-                          "• Hiệu ứng: Mỗi phát bắn tiêu trừ 1.0% mức tích lũy năng lượng lõi. Sát thương của đạn phụ thuộc hoàn toàn vào thanh năng lượng hiện tại.\n" +
-                          "• Hồi phục: Tốc độ nạp lại cơ bản mất khoảng 5 giây để nạp đầy từ 0% lên 100% khi ngừng bắn.";
+                          "• [lightgray]Tiêu hao (Energy Loss):[] Mỗi phát bắn làm tiêu trừ [red]1.0%[] năng lượng tích lũy của lõi. Sát thương đầu ra tỷ lệ thuận với lượng điện tích hiện có.\n" +
+                          "• [lightgray]Tốc độ tái nạp:[] Mất khoảng [yellow]5.0 giây[] để nạp đầy lại từ thanh trống (0% -> 100%) khi ngừng khai hỏa.";
             } 
             else if (currentTier == 1) {
-                title += "[cyan]CẤU HÌNH TIÊU CHUẨN (MK2)[]";
+                title += "[cyan](MK2)[]";
                 descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[heart] [lightgray]Máu tháp pháo:[] [green]1,800[] [yellow](+50%)[]\n" +
-                          "[gray]📐 Kích thước khối:[] [white]3x3[]\n" +
-                          "[aim] Tầm bắn hiệu dụng:[] [orange]420 pixel[] [yellow](+31.2%)[]\n" +
-                          "[zap] Sát thương đạn nâng cấp:[] [yellow]65.00[] (Xuyên: [lightgray]5 mục tiêu[])\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[scarlet]⚠ GIỚI HẠN: Tối đa 10 cấu trúc/Đội trên sân[]\n\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]1,800 [lime](+50%)[]\n" +
+                          "[lightgray]Tầm bắn hiệu dụng:[] [orange]420 pixel [lime](+31.2%)[]\n" +
+                          "[lightgray]Sát thương cơ bản:[] [yellow]65.00 [lime](+44.4%)[]\n" +
+                          "[lightgray]Khả năng xuyên thấu:[] [yellow]5 mục tiêu [lime](+2 mục tiêu)[]\n" +
+                          "[scarlet]⚠ Giới hạn: Tối đa 10 cấu trúc cấu thành trên sân[]\n\n" +
                           "[lime]⚡ CƠ CHẾ NĂNG LƯỢNG TIÊU HAO:[]\n" +
-                          "• Hiệu ứng: Mức tiêu hao năng lượng giảm một nửa (chỉ còn 0.5% mỗi phát bắn).\n" +
-                          "• Hồi phục: Tốc độ tái nạp năng lượng lõi đẩy mạnh siêu tốc, chỉ mất 3 giây để đầy thanh chứa, giúp duy trì chuỗi sát thương đại pháo tối đa lâu hơn.";
+                          "• [lightgray]Tối ưu tiêu hao:[] Giảm thiểu mức tiêu hao năng lượng xuống chỉ còn [red]0.5%[] cho mỗi phát bắn (Giảm -50%).\n" +
+                          "• [lightgray]Siêu sạc phản lực:[] Tốc độ nạp năng lượng đẩy mạnh vượt trội, chỉ mất [green]3.0 giây[] để hồi đầy bình tích lũy.";
             } 
             else if (currentTier == 2) {
-                title += "[purple]BIẾN THỂ ĐẠN ĐUỔI (MK2B)[]";
+                title += "[purple](MK2B)[]";
                 descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[heart] [lightgray]Máu tháp pháo:[] [green]1,600[] [yellow](+33.3%)[]\n" +
-                          "[gray]📐 Kích thước khối:[] [white]3x3[]\n" +
-                          "[aim] Tầm bắn hiệu dụng:[] [orange]360 pixel[] [yellow](+12.5%)[]\n" +
-                          "[zap] Sát thương đạn thuôn dài:[] [yellow]22.50[] [coral](-50%)[]\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[scarlet]⚠ GIỚI HẠN: Tối đa 10 cấu trúc/Đội trên sân[]\n\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]1,600 [lime](+33.3%)[]\n" +
+                          "[lightgray]Tầm bắn hiệu dụng:[] [orange]360 pixel [lime](+12.5%)[]\n" +
+                          "[lightgray]Sát thương cơ bản:[] [red]122.50 (+173%)[]\n" +
+                          "[lightgray]Khả năng xuyên thấu:[] [red]Không (Mất khả năng xuyên)[]\n" +
+                          "[scarlet]⚠ Giới hạn: Tối đa 10 cấu trúc cấu thành trên sân[]\n\n" +
                           "[purple]🔥 CƠ CHẾ NĂNG LƯỢNG TIÊU HAO:[]\n" +
-                          "• Hiệu ứng: Đạn mất hoàn toàn khả năng xuyên thấu, đổi lấy bộ định vị tự động bẻ góc bám đuổi kẻ địch xung quanh.\n" +
-                          "• Ổn định: Năng lượng tiêu hao mỗi phát bắn giảm xuống mức thấp nhất (0.3%), giúp vũ khí liên tục duy trì trạng thái hỏa lực ổn định.";
+                          "• [lightgray]Mạch định vị:[] Đổi khả năng xuyên lấy cảm biến tích hợp, đạn [pink]tự động bẻ lái tìm mục tiêu[] trong phạm vi 200 pixel.\n" +
+                          "• [lightgray]Mức ổn định cao:[] Năng lượng tiêu hao mỗi phát bắn giảm cực hạn xuống còn [green]0.3%[] giúp duy trì hỏa lực cực kỳ ổn định và lâu dài.";
             }
 
             let dialog = extend(BaseDialog, title, {});
-let infoTable = new Table();
-let cell = infoTable.add(descStr).width(360);
-cell.get().setWrap(true); cell.get().setAlignment(Align.left);
-let scroll = new ScrollPane(infoTable);
-scroll.setScrollingDisabled(true, false);
-dialog.cont.add(scroll).maxHeight(400);
+            let infoTable = new Table();
+            let cell = infoTable.add(descStr).width(360);
             cell.get().setWrap(true); cell.get().setAlignment(Align.left);
+            let scroll = new ScrollPane(infoTable);
+            scroll.setScrollingDisabled(true, false);
+            dialog.cont.add(scroll).maxHeight(400);
             dialog.addCloseButton(); dialog.show();
-        })).size(50, 40).tooltip("Xem chi tiết thông số trạng thái");
+        })).size(50, 40).tooltip("Xem thông số chi tiết hệ thống");
     },
 
     config() { return java.lang.Integer(this.getTier()); },

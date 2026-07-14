@@ -160,13 +160,12 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
         table.clear(); table.row();
         let tier = this.getTier();
 
-        // --- NÚT NÂNG CẤP (PHONG CÁCH HÀNG DỌC GỌN GÀNG TRONG 1 GUI CỦA LAVUNDER) ---
         if(tier == 0) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-                let dialog = extend(BaseDialog, "Trạm Nâng Cấp Hệ Thống Xylaon", {});
+        let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Xylaon", {});
                 
-                dialog.cont.add("[gold]=== TIẾN HÓA LÕI NHIỆT MẠCH XYLAON ===[]").row();
-                dialog.cont.label(packProv(() => {
+
+                let reqCell = dialog.cont.label(packProv(() => {
                     let core = this.team.core();
                     if(core == null) return "[red]Không tìm thấy Lõi Đội![]";
                     let currenttitanium = core.items.get(Items.titanium);
@@ -181,19 +180,28 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                     let plaColor2 = currentplastanium >= reqMK2B.plastanium ? "[green]" : "[red]";
                     
                     return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
-                           "[cyan]Nhánh MK2:[] Titanium: " + titColor1 + reqMK2.titanium + "[]/" + currenttitanium + " | Silicon: " + silColor1 + reqMK2.silicon + "[]/" + currentsilicon + "\n" +
-                           "[purple]Nhánh MK2B:[] Titanium: " + titColor2 + reqMK2B.titanium + "[]/" + currenttitanium + " | Silicon: " + silColor2 + reqMK2B.silicon + "[]/" + currentsilicon + "\n | Plastanium: " + plaColor2 + reqMK2B.plastanium + "[]/" + currentplastanium;
-                })).row(); dialog.cont.add().height(10).row();
+                           "[cyan]Nhánh MK2:[]\n" +
+                           " • Titan: " + titColor1 + currenttitanium + "[] / " + reqMK2.titanium + "\n" +
+                           " • Silicon: " + silColor1 + currentsilicon + "[] / " + reqMK2.silicon + "\n" +
+                           "[purple]Nhánh MK2B:[]\n" +
+                           " • Titan: " + titColor2 + currenttitanium + "[] / " + reqMK2B.titanium + "\n" +
+                           " • Silicon: " + silColor2 + currentsilicon + "[] / " + reqMK2B.silicon + "\n" +
+                           " • Nhựa: " + plaColor2 + currentplastanium + "[] / " + reqMK2B.plastanium;
+                }));
+                
+                reqCell.width(360).get().setWrap(true);
+                reqCell.get().setAlignment(Align.left);
+                dialog.cont.row(); dialog.cont.add().height(10).row();
 
                 let branchesTable = new Table();
 
                 // Nhánh 1: MK2
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
-                b1.add("[cyan]CẤU HÌNH TĂNG TỐC QUÁ NHIỆT (MK2)[]").row();
+                b1.add("[cyan]===(MK2)===[]").row();
                 let b1D = b1.add("Mô-đun tối ưu hóa hệ thống sả nhiệt bán dẫn:\n" +
-                                 " [white]• Rút ngắn thời gian đóng băng Cooldown xuống [green]3.0 giây[].[]\n" +
+                                 " [white]• Rút ngắn thời gian khóa làm mát xuống [green]3.0 giây[] (Giảm -25%).[]\n" +
                                  " [white]• Tốc độ xả đạn gia tăng tối đa [yellow]+450%[] dựa theo nhiệt tích lũy.[]\n" +
-                                 " [white]• Nâng cấp lõi đạn năng lượng tăng cường vận tốc hỏa lực.[]");
+                                 " [white]• Tăng [green]+30% Máu[] và tăng [green]+29.5% Tầm bắn[].");
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                 b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
                     let core = this.team.core();
@@ -206,11 +214,11 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
 
                 // Nhánh 2: MK2B
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
-                b2.add("[purple]BIẾN THỂ SIÊU XUNG ĐA LUỒNG (MK2B)[]").row();
+                b2.add("[purple]===(MK2B)===[]").row();
                 let b2D = b2.add("Cấu hình mạch xung kích bùng nổ chu kỳ ngắn:\n" +
-                                 " [white]• Thời gian đóng băng tự động giảm siêu tốc xuống chỉ còn [green]1.5 giây[].[]\n" +
+                                 " [white]• Thời gian khóa làm mát tự động giảm siêu tốc xuống còn [green]1.5 giây[] (Giảm -62.5%).[]\n" +
                                  " [white]• Tốc độ xả đạn tăng trưởng chạm mốc điên rồ [red]+999%[].[]\n" +
-                                 " [white]• Lõi phóng tích nhiệt thứ cấp tạo luồng xung kích áp chế dồn dập kẻ địch.[]");
+                                 " [white]• Tăng [green]+56.25% Máu[] nhưng giảm [red]-30% Tầm bắn[] để tập trung hỏa lực tầm gần.");
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
                 b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                     let core = this.team.core();
@@ -226,9 +234,9 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                 branchesTable.add().height(12).row();
                 branchesTable.add(b2).width(340);
 
-let scroll = new ScrollPane(branchesTable);
-scroll.setScrollingDisabled(true, false);
-dialog.cont.add(scroll).maxHeight(400);
+                let scroll = new ScrollPane(branchesTable);
+                scroll.setScrollingDisabled(true, false);
+                dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); dialog.show();
             })).size(50, 40).tooltip("Nâng cấp tháp pháo Xylaon");
         } else {
@@ -246,53 +254,50 @@ dialog.cont.add(scroll).maxHeight(400);
             if (currentTier == 0) {
                 title += "[yellow]Cấu hình gốc (MK1)[]";
                 descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[heart] [lightgray]Máu tháp pháo:[] [green]1,600[]\n" +
+                           "[lightgray]Máu tháp pháo:[] [green]1,600[]\n" +
                           "[gray]📐 Kích thước khối:[] [white]4x4[]\n" +
-                          "[aim] Tầm bắn hiệu dụng:[] [orange]420 pixel[]\n" +
+                          "Tầm bắn hiệu dụng:[] [orange]420 pixel[]\n" +
                           "[lightning] Tốc độ bắn cơ bản:[] [white]30.00 hỏa lực[]\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[sky]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
-                          "• Quá nhiệt (Overheat): Mỗi phát bắn tích lũy 10% lượng nhiệt. Khi đạt ngưỡng [red]540 điểm[] nhiệt, tháp pháo sẽ rơi vào trạng thái quá tải an toàn.\n" +
-                          "• Đóng băng hệ thống: Khi quá tải, pháo ngừng quay và không thể bắn trong [yellow]4.0 giây[] để xả hoàn toàn thanh nhiệt.\n" +
-                          "• Cơ chế gia tốc: Nhiệt lượng càng cao, tốc độ hồi nạp đạn bắn càng nhanh (Tối đa [cyan]+350%[] tốc độ bắn).";
+                         "[scarlet]⚠ Giới hạn đặt: Tối đa 10 cấu trúc/đội[]\n\n" +
+                           "[sky]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
+                          "• [lightgray]Quá nhiệt (Overheat):[] Mỗi phát bắn tích lũy [red]1%[] nhiệt lượng. Khi đạt ngưỡng [red]540 điểm[] nhiệt, lõi sẽ rơi vào trạng thái quá tải bảo vệ.\n" +
+                          "• [lightgray]Đóng băng hệ thống:[] Khi quá tải, pháo ngừng hoạt động hoàn toàn trong [yellow]4.0 giây[] để xả hoàn toàn thanh nhiệt.\n" +
+                          "• [lightgray]Gia tốc hỏa lực (AS):[] Nhiệt lượng tích lũy liên tục trong [cyan]3.0 giây[] sẽ kích hoạt tối đa [cyan]+350%[] tốc độ bắn cơ bản.";
             } 
             else if (currentTier == 1) {
                 title += "[cyan]CẤU HÌNH TIÊU CHUẨN (MK2)[]";
                 descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[heart] [lightgray]Máu tháp pháo:[] [green]2,080[]\n" +
+                           "[lightgray]Máu tháp pháo:[] [green]2,080 [lime](+30%)[]\n" +
                           "[gray]📐 Kích thước khối:[] [white]4x4[]\n" +
-                          "[aim] Tầm bắn hiệu dụng:[] [orange]544 pixel[]\n" +
+                          "Tầm bắn hiệu dụng:[] [orange]544 pixel [lime](+29.5%)[]\n" +
                           "[lightning] Tốc độ bắn gia tốc:[] [yellow]Tối đa +450%[]\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[lime]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
-                          "• Quá nhiệt nâng cao: Giới hạn chịu nhiệt tối đa đạt [red]480 điểm[].\n" +
-                          "• Rút ngắn xả tải: Thời gian khóa hệ thống để làm mát đóng băng giảm mạnh xuống còn [yellow]3.0 giây[].\n" +
-                          "• Hỏa lực tăng cường: Sử dụng biến thể đạn MK2 tăng tiến vận tốc mạnh mẽ.";
+                          "[scarlet]⚠ Giới hạn đặt: Tối đa 10 cấu trúc/đội[]\n\n" +
+                           "[lime]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
+                          "• [lightgray]Quá nhiệt nâng cao:[] Giới hạn chịu nhiệt tối đa đạt [red]480 điểm[] (Mỗi phát tích 1%).\n" +
+                          "• [lightgray]Rút ngắn xả tải:[] Thời gian khóa hệ thống làm mát giảm xuống còn [yellow]3.0 giây[] [lime](Giảm -25%)[].\n" +
+                          "• [lightgray]Gia tốc hỏa lực (AS):[] Duy trì bắn liên tục trong [cyan]3.0 giây[] để đạt mốc gia tốc cực đại [cyan]+450%[].";
             } 
             else if (currentTier == 2) {
                 title += "[purple]BIẾN THỂ SIÊU XUNG (MK2B)[]";
                 descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[heart] [lightgray]Máu tháp pháo:[] [green]2,500[]\n" +
+                           "[lightgray]Máu tháp pháo:[] [green]2,500 [lime](+56.25%)[]\n" +
                           "[gray]📐 Kích thước khối:[] [white]4x4[]\n" +
-                          "[aim] Tầm bắn hiệu dụng:[] [orange]294 pixel[]\n" +
+                          "Tầm bắn hiệu dụng:[] [red]294 pixel (-30%)[]\n" +
                           "[lightning] Tốc độ bắn bùng nổ:[] [pink]Tối đa +999%[]\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[purple]🔥 CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
-                          "• Chu kỳ siêu ngắn: Chịu nhiệt giới hạn [red]480 điểm[] nhưng bùng nổ tốc độ nạp đạn điên rồ lên tới [red]9.99 lần[] tốc độ gốc.\n" +
-                          "• Siêu làm mát phản lực: Thời gian đóng băng hệ thống để xả sập sàn toàn bộ nhiệt lượng giảm cực hạn chỉ còn [green]1.5 giây swipes[].";
+                          "[scarlet]⚠ Giới hạn đặt: Tối đa 10 cấu trúc/đội[]\n\n" +
+                           "[purple]🔥 CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
+                          "• [lightgray]Chu kỳ siêu ngắn:[] Giới hạn chịu nhiệt [red]480 điểm[], xả đạn bùng nổ chạm ngưỡng kinh hoàng [red]+999%[] tốc độ bắn.\n" +
+                          "• [lightgray]Siêu làm mát phản lực:[] Thời gian khóa hệ thống để xả sập sàn toàn bộ nhiệt lượng giảm cực hạn chỉ còn [green]1.5 giây[] [lime](Giảm -62.5%)].\n" +
+                          "• [lightgray]Gia tốc hỏa lực (AS):[] Đạt mốc gia tốc điên rồ [pink]+999%[] chỉ sau [cyan]3.0 giây[] duy trì hỏa lực liên tục.";
             }
 
             let dialog = extend(BaseDialog, title, {});
-let infoTable = new Table();
-let cell = infoTable.add(descStr).width(360);
-cell.get().setWrap(true); cell.get().setAlignment(Align.left);
-let scroll = new ScrollPane(infoTable);
-scroll.setScrollingDisabled(true, false);
-dialog.cont.add(scroll).maxHeight(400);
+            let infoTable = new Table();
+            let cell = infoTable.add(descStr).width(360);
             cell.get().setWrap(true); cell.get().setAlignment(Align.left);
+            let scroll = new ScrollPane(infoTable);
+            scroll.setScrollingDisabled(true, false);
+            dialog.cont.add(scroll).maxHeight(400);
             dialog.addCloseButton(); dialog.show();
         })).size(50, 40).tooltip("Xem thông số chi tiết hệ thống");
     },

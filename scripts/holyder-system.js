@@ -176,12 +176,10 @@ function makeBuildSetup(initialTier) {
         maxRegenCooldown: (initialTier == 3) ? 720 : 600, 
         isShieldBroken: false, 
 
-        // Ngăn chặn người chơi điều khiển thủ công ở tầng Build
         canControl() {
             return false;
         },
 
-        // --- BẮT ĐẦU LOGIC GIỚI HẠN BLOCK ĐẶT RA LÀ 4 ---
         placed() {
             this.super$placed();
             let count = 0;
@@ -194,7 +192,6 @@ function makeBuildSetup(initialTier) {
                 return;
             }
         },
-        // --- KẾT THÚC LOGIC GIỚI HẠN ---
 
         setTier(val) {
             this.holyderInternalTier = val;
@@ -222,40 +219,46 @@ function makeBuildSetup(initialTier) {
 
             if(tier == 1) {
                 table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-                    let dialog = extend(BaseDialog, "Nâng Cấp Chuỗi Hệ Thống Dor", {});
+                    let dialog = extend(BaseDialog, "Trung tâm nâng cấp tháp pháo Holyder", {});
                     
-                    let titleCell = dialog.cont.add("[purple]=== TIẾN HÓA LÕI THÁP PHÁO HOLYDER ===[]");
-                    titleCell.row(); titleCell.padBottom(10);
-                    
-                    let labelCell = dialog.cont.label(packProv(() => {
+                    let reqCell = dialog.cont.label(packProv(() => {
                         let core = this.team.core();
                         if(core == null) return "[red]Không tìm thấy Lõi Đội![]";
-                        let currentTitanium = core.items.get(Items.titanium);
-                        let currentSilicon = core.items.get(Items.silicon);
-                        let currentPlastanium = core.items.get(Items.plastanium);
+                        let currenttitanium = core.items.get(Items.titanium);
+                        let currentsilicon = core.items.get(Items.silicon);
+                        let currentplastanium = core.items.get(Items.plastanium);
                         
-                        let titColor1 = currentTitanium >= reqMK2.titanium ? "[green]" : "[red]";
-                        let silColor1 = currentSilicon >= reqMK2.silicon ? "[green]" : "[red]";
+                        let titColor1 = currenttitanium >= reqMK2.titanium ? "[green]" : "[red]";
+                        let silColor1 = currentsilicon >= reqMK2.silicon ? "[green]" : "[red]";
                         
-                        let titColor2 = currentTitanium >= reqMK2B.titanium ? "[green]" : "[red]"; 
-                        let silColor2 = currentSilicon >= reqMK2B.silicon ? "[green]" : "[red]";
-                        let plaColor2 = currentPlastanium >= reqMK2B.plastanium ? "[green]" : "[red]";
+                        let titColor2 = currenttitanium >= reqMK2B.titanium ? "[green]" : "[red]";
+                        let silColor2 = currentsilicon >= reqMK2B.silicon ? "[green]" : "[red]";
+                        let plaColor2 = currentplastanium >= reqMK2B.plastanium ? "[green]" : "[red]";
                         
                         return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
-                               "[cyan]Nhánh MK2:[] Titanium: " + titColor1 + reqMK2.titanium + "[]/" + currentTitanium + " | Silicon: " + silColor1 + reqMK2.silicon + "\n" +
-                               "[green]Nhánh MK2B:[] Titanium: " + titColor2 + reqMK2B.titanium + "[]/" + currentTitanium + " | Silicon: " + silColor2 + reqMK2B.silicon + " | Plastanium: " + plaColor2 + reqMK2B.plastanium;
+                               "[cyan]Nhánh MK2:[]\n" +
+                               " • Titan: " + titColor1 + currenttitanium + "[] / " + reqMK2.titanium + "\n" +
+                               " • Silicon: " + silColor1 + currentsilicon + "[] / " + reqMK2.silicon + "\n" +
+                               "[purple]Nhánh MK2B:[]\n" +
+                               " • Titan: " + titColor2 + currenttitanium + "[] / " + reqMK2B.titanium + "\n" +
+                               " • Silicon: " + silColor2 + currentsilicon + "[] / " + reqMK2B.silicon + "\n" +
+                               " • Nhựa: " + plaColor2 + currentplastanium + "[] / " + reqMK2B.plastanium;
                     }));
-                    labelCell.row(); labelCell.padBottom(20);
+                    
+                    reqCell.width(360).get().setWrap(true);
+                    reqCell.get().setAlignment(Align.left);
+                    dialog.cont.row(); dialog.cont.add().height(10).row();
 
                     let branchesTable = new Table();
 
-                    let b1 = new Table(); b1.background(Styles.black6); b1.margin(12, 16, 12, 16);
-                    b1.add("[cyan]CẤU HÌNH TIÊU CHUẨN (MK2)[]").row(); b1.add().height(6).row();
-                    
-                    let b1D = b1.add("[lightgray]Máu tăng 3200 (+28%). Tầm bắn mở rộng lên 340.\nTăng giới hạn tích điểm xung kích cực đại lên [yellow]200%[].\nTự động nạp hỏa lực bắn thêm mục tiêu phụ ngẫu nhiên với [orange]50% sát thương đạn chính[].[]");
-                    b1D.width(340); b1D.get().setWrap(true); b1D.get().setAlignment(Align.left);
-                    b1D.row(); b1.add().height(10).row();
-                    
+                    // Nhánh 1: MK2
+                    let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
+                    b1.add("[cyan]===(MK2)===[]").row();
+                    let b1D = b1.add("Mô-đun cấu hình hỏa lực tiêu chuẩn mở rộng:\n" +
+                                     " [white]• Giới hạn tích lũy điểm xung kích cực đại tăng vọt [yellow]+200%[].[]\n" +
+                                     " [white]• Kích hoạt nòng hỏa lực phụ tự động bắn hỗ trợ ngẫu nhiên [orange]50% sát thương đạn chính[].[]\n" +
+                                     " [white]• Tăng [green]+28% Máu[] và tăng [green]+6.25% Tầm bắn[].");
+                    b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                     b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
                         let core = this.team.core();
                         if(core != null && core.items.get(Items.titanium) >= reqMK2.titanium && core.items.get(Items.silicon) >= reqMK2.silicon){
@@ -264,15 +267,16 @@ function makeBuildSetup(initialTier) {
                             this.configure(java.lang.Integer(2)); 
                             dialog.hide(); this.deselect();
                         } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); }
-                    })).size(200, 40);
+                    })).size(180, 38);
 
-                    let b2 = new Table(); b2.background(Styles.black6); b2.margin(12, 16, 12, 16);
-                    b2.add("[green]BIẾN THỂ TRỌNG PHÁO GIÁP (MK2B)[]").row(); b2.add().height(6).row();
-                    
-                    let b2D = b2.add("[lightgray]Máu siêu gia cố 4000 (+60%). Tầm bắn cực đại 360.\nGiới hạn sạc điểm giảm xuống mốc [yellow]50%[] giúp xả đạn nhanh.\nĐặc tính Quá Tải: Khi trường khiên vỡ, tốc độ sạc và chu kỳ hồi nạp xả kích của pháo [orange]tăng đột biến lên 500%[].[]");
-                    b2D.width(340); b2D.get().setWrap(true); b2D.get().setAlignment(Align.left);
-                    b2D.row(); b2.add().height(10).row();
-                    
+                    // Nhánh 2: MK2B
+                    let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
+                    b2.add("[purple]===(MK2B)===[]").row();
+                    let b2D = b2.add("Cấu hình mạch xung kích bến thế trọng pháo giáp:\n" +
+                                     " [white]• Giới hạn sạc điểm giảm xuống mốc [yellow]50%[] hỗ trợ xả đạn thần tốc cực hạn.[]\n" +
+                                     " [white]• Đặc tính Quá Tải: Khi khiên vỡ, tốc độ sạc và chu kỳ hồi nạp đạn [red]tăng đột biến +500%[].[]\n" +
+                                     " [white]• Tăng [green]+60% Máu[] hệ thống và tăng [green]+12.5% Tầm bắn[], nhưng giảm sức bền của lõi khiên.");
+                    b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
                     b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                         let core = this.team.core();
                         if(core != null && core.items.get(Items.titanium) >= reqMK2B.titanium && core.items.get(Items.silicon) >= reqMK2B.silicon && core.items.get(Items.plastanium) >= reqMK2B.plastanium){
@@ -281,60 +285,74 @@ function makeBuildSetup(initialTier) {
                             this.configure(java.lang.Integer(3)); 
                             dialog.hide(); this.deselect();
                         } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
-                    })).size(200, 40);
+                    })).size(180, 38);
 
                     branchesTable.add(b1).width(340); branchesTable.row();
-                    let spaceCell = branchesTable.add(); spaceCell.height(15); spaceCell.row();
+                    branchesTable.add().height(12).row();
                     branchesTable.add(b2).width(340);
-let scroll = new ScrollPane(branchesTable);
-scroll.setScrollingDisabled(true, false);
-dialog.cont.add(scroll).maxHeight(400);
 
+                    let scroll = new ScrollPane(branchesTable);
+                    scroll.setScrollingDisabled(true, false);
+                    dialog.cont.add(scroll).maxHeight(400);
                     dialog.addCloseButton(); dialog.show();
-                })).size(50, 40).tooltip("Tiến hóa tháp pháo Holyder");
+                })).size(50, 40).tooltip("Nâng cấp tháp pháo Holyder");
             } else {
                 table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
                     Vars.ui.showInfo("[scarlet]HỆ THỐNG ĐÃ ĐẠT GIỚI HẠN TIẾN HÓA CỦA NHÁNH ĐÃ CHỌN![]");
                 })).size(50, 40).tooltip("Đã đạt cấp tối đa");
             }
 
+            // --- NÚT THÔNG TIN PHÁO HOLYDER ---
             table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-                let title = "📊 THÔNG SỐ PHÁO HOLYDER: ";
+                let title = " Thông số pháo Holyder: ";
                 let descStr = "";
                 let currentTier = this.getTier();
 
                 if (currentTier == 1) {
-                    title += "[yellow]Cấu hình trạng thái gốc (MK1)[]";
-                    descStr = "[accent]🛡️ Chỉ số cơ bản:[] Máu hệ thống: [lightgray]2,500 HP[] (Quy cách 3x3) | Sát thương gốc: [purple]380 Sát thương thô / viên[]\n" +
-                              "[orange]📌 Giới hạn xây dựng:[] Không giới hạn số lượng đặt tháp pháo trên sân đội\n" +
-                              "[sky]⚡ Phương thức vận hành:[] Tầm bắn hiệu dụng: [lightgray]320[] | Loại mục tiêu bắn: [lightgray]Chỉ mặt đất[] | Cơ chế khóa mục tiêu bằng tia laser định vị đỏ trước khi sạc hỏa lực\n" +
-                              "[lime]⚙️ Cơ chế đặc biệt:[] Tích hợp trường năng lượng khiên bảo vệ hấp thụ sát thương [teal]9,000 HP[] (Thời gian tự động tái khởi động lõi khiên là 10 giây sau khi bị phá vỡ).";
+                    title += "[yellow](MK1)[]";
+                    descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
+                              "[lightgray]Máu tháp pháo:[] [green]2,500 HP (Quy cách 3x3)[]\n" +
+                              "Sát thương thô:[] [purple]380 / viên[] (Sát thương tăng theo tỷ lệ sạc hỏa lực)\n" +
+                              "Tầm bắn hiệu dụng:[] [orange]320 pixel[] | [lightgray]Mục tiêu:[] Mặt đất\n\n" +
+                              "[scarlet]⚠ Giới hạn đặt: Tối đa 4 cấu trúc/đội[]\n\n" +
+                              "[sky]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH & KHIÊN:[]\n" +
+                              
+                              "• [lightgray]Định vị mục tiêu:[] Sử dụng tia laser đỏ để khóa cứng vị trí trước khi tích sạc.\n" +
+                              "• [lightgray]Trường khiên năng lượng:[] Tự động kích hoạt khiên hấp thụ [teal]9,000 HP[]. Khi vỡ cần [yellow]10.0 giây[] để tái khởi động lõi khiên.";
                 } 
                 else if (currentTier == 2) {
-                    title += "[cyan]CẤU HÌNH TIÊU CHUẨN (MK2)[]";
-                    descStr = "[accent]🛡️ Chỉ số cơ bản:[] Máu hệ thống: [lightgray]3,200 HP [yellow](+28%)[] | Sát thương chính: [purple]380[] + [orange]50% sát thương đạn chính từ nòng phụ[]\n" +
-                              "[orange]📌 Giới hạn xây dựng:[] Không giới hạn số lượng đặt tháp pháo trên sân đội\n" +
-                              "[sky]⚡ Phương thức vận hành:[] Tầm bắn mở rộng: [lightgray]340[] | Loại mục tiêu bắn: [lightgray]Chỉ mặt đất[] | Giới hạn tích lũy điểm xung kích cực đại tăng vọt lên mức [yellow]200%[]\n" +
-                              "[lime]⚙️ Cơ chế đặc biệt:[] Duy trì trường khiên [teal]9,000 HP[]. Kích hoạt thêm nòng phụ hỏa lực gia tốc, tự động bắn hỗ trợ ngẫu nhiên vào 1 mục tiêu phụ lân cận.";
+                    title += "[cyan](MK2)[]";
+                    descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
+                              "[lightgray]Máu tháp pháo:[] [green]3,200 HP [lime](+28%)[]\n" +
+                              "Sát thương chính:[] [purple]380[] + [orange]50% sát thương từ nòng phụ[]\n" +
+                              "Tầm bắn hiệu dụng:[] [orange]340 pixel [lime](+6.25%)[]\n\n" +
+                              "[scarlet]⚠ Giới hạn đặt: Tối đa 4 cấu trúc/đội[]\n\n" +
+                              "[lime]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH & KHIÊN:[]\n" +
+                              "• [lightgray]Xung kích cực đại:[] Giới hạn tích lũy điểm xung sạc nâng cao chạm mốc [yellow]200%[].\n" +
+                              "• [lightgray]Đa mục tiêu:[] Kích hoạt thêm nòng phụ gia tốc, tự động xả đạn hỗ trợ vào 1 mục tiêu phụ lân cận.\n" +
+                              "• [lightgray]Trường khiên năng lượng:[] Duy trì hệ thống lõi khiên bảo vệ vững chắc [teal]9,000 HP[].";
                 } 
                 else if (currentTier == 3) {
-                    title += "[green]BIẾN THỂ TRỌNG PHÁO GIÁP (MK2B)[]";
-                    descStr = "[accent]🛡️ Chỉ số cơ bản:[] Máu siêu gia cố: [lightgray]4,000 HP [yellow](+60%)[] | Sát thương nạp hỏa lực xung kích tối đa cực đại\n" +
-                              "[orange]📌 Giới hạn xây dựng:[] Không giới hạn số lượng đặt tháp pháo trên sân đội\n" +
-                              "[sky]⚡ Phương thức vận hành:[] Tầm bắn cực đại: [lightgray]360[] | Loại mục tiêu bắn: [lightgray]Chỉ mặt đất[] | Giới hạn sạc điểm giảm xuống mốc [yellow]50%[] hỗ trợ xả đạn thần tốc\n" +
-                              "[lime]⚙️ Cơ chế đặc biệt:[] Lõi khiên năng lượng giảm tải còn [purple]1,000 HP[] (Hồi khiên sau 12s vỡ). Khi khiên vỡ, kích hoạt Mạch Quá Tải (Overloaded) tăng mạnh tốc độ sạc và chu kỳ nạp đạn tháp pháo lên [orange]500%[] (Gấp 5 lần bình thường).";
+                    title += "[purple](MK2B)[]";
+                    descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
+                              "[lightgray]Máu siêu gia cố:[] [green]4,000 HP [lime](+60%)[]\n" +
+                              "Sát thương xung kích:[] [pink]Tối đa theo tiến trình nạp sạc[]\n" +
+                              "Tầm bắn hiệu dụng:[] [orange]360 pixel [lime](+12.5%)[]\n\n" +
+                              "[scarlet]⚠ Giới hạn đặt: Tối đa 4 cấu trúc/đội[]\n\n" +
+                              "[purple]🔥 CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH & KHIÊN:[]\n" +
+                              "• [lightgray]Xả đạn thần tốc:[] Giới hạn sạc điểm giảm xuống mốc [yellow]50%[] hỗ trợ chu kỳ xả đạn cực nhanh.\n" +
+                              "• [lightgray]Mạch Quá Tải (Overloaded):[] Lõi khiên năng lượng chủ động giảm tải chỉ còn [purple]1,000 HP[] (Hồi khiên sau 12 giây vỡ). Khi khiên vỡ, tốc độ sạc và chu kỳ nạp bắn tăng mạnh [red]+500%[] (Gấp 5 lần bình thường).";
                 }
 
                 let dialog = extend(BaseDialog, title, {});
-let infoTable = new Table();
-let cell = infoTable.add(descStr).width(360);
-cell.get().setWrap(true); cell.get().setAlignment(Align.left);
-let scroll = new ScrollPane(infoTable);
-scroll.setScrollingDisabled(true, false);
-dialog.cont.add(scroll).maxHeight(400);
+                let infoTable = new Table();
+                let cell = infoTable.add(descStr).width(360);
                 cell.get().setWrap(true); cell.get().setAlignment(Align.left);
+                let scroll = new ScrollPane(infoTable);
+                scroll.setScrollingDisabled(true, false);
+                dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); dialog.show();
-            })).size(50, 40).tooltip("Xem chi tiết thông số trạng thái");
+            })).size(50, 40).tooltip("Xem thông số chi tiết hệ thống");
         },
 
         updateTile() {
@@ -607,10 +625,8 @@ holyder.targetAir = false;
 holyder.targetGround = true;
 holyder.configurable = true; 
 
-// Ngăn chặn người chơi thủ công nhập vào điều khiển tháp pháo ở cấp Block
 holyder.canControl = false;
 
-// ĐỒNG BỘ TUYỆT ĐỐI THEO FILE DOR.JS: Nhận dạng chuẩn Integer từ Java Core gửi xuống
 holyder.config(java.lang.Integer, packCons2((tile, value) => {
     if (tile != null && tile.setTier !== undefined) {
         tile.setTier(value);

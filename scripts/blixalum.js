@@ -152,68 +152,139 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
 
         if(tier == 0) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-                let dialog = extend(BaseDialog, "Nâng Cấp Chuỗi Hệ Thống Blixalum", {});
-                dialog.cont.add("[gold]=== TIẾN HÓA LÕI THÁP PHÁO BLIXALUM ===[]").padBottom(15).row();
-                dialog.cont.label(packProv(() => {
-                    let core = this.team.core(); if(core == null) return "[red]Không tìm thấy Kho cốt lõi![]";
-                    let cCop = core.items.get(Items.copper); let cLea = core.items.get(Items.lead); let cTit = core.items.get(Items.titanium);
-                    return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" + 
-                           "[cyan]Nhánh MK2:[] Copper: " + (cCop >= reqBlixalumMK2.copper ? "[green]" : "[red]") + cCop + "[]/" + reqBlixalumMK2.copper + " | Lead: " + (cLea >= reqBlixalumMK2.lead ? "[green]" : "[red]") + cLea + "[]/" + reqBlixalumMK2.lead + "\n" +
-                           "[purple]Nhánh MK2B:[] Copper: " + (cCop >= reqBlixalumMK2B.copper ? "[green]" : "[red]") + cCop + "[]/" + reqBlixalumMK2B.copper + " | Lead: " + (cLea >= reqBlixalumMK2B.lead ? "[green]" : "[red]") + cLea + "[]/" + reqBlixalumMK2B.lead + " | Titanium: " + (cTit >= reqBlixalumMK2B.titanium ? "[green]" : "[red]") + cTit + "[]/" + reqBlixalumMK2B.titanium;
-                })).padBottom(15).row();
+                let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Blixalum", {});
+                
+                let reqCell = dialog.cont.label(packProv(() => {
+                    let core = this.team.core();
+                    if(core == null) return "[red]Không tìm thấy Lõi Đội![]";
+                    let currentcopper = core.items.get(Items.copper);
+                    let currentlead = core.items.get(Items.lead);
+                    let currenttitanium = core.items.get(Items.titanium);
+                    
+                    let copColor1 = currentcopper >= reqBlixalumMK2.copper ? "[green]" : "[red]";
+                    let leaColor1 = currentlead >= reqBlixalumMK2.lead ? "[green]" : "[red]";
+                    
+                    let copColor2 = currentcopper >= reqBlixalumMK2B.copper ? "[green]" : "[red]";
+                    let leaColor2 = currentlead >= reqBlixalumMK2B.lead ? "[green]" : "[red]";
+                    let titColor2 = currenttitanium >= reqBlixalumMK2B.titanium ? "[green]" : "[red]";
+                    
+                    return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
+                           "[cyan]Nhánh MK2:[]\n" +
+                           " • Đồng: " + copColor1 + currentcopper + "[] / " + reqBlixalumMK2.copper + "\n" +
+                           " • Chì: " + leaColor1 + currentlead + "[] / " + reqBlixalumMK2.lead + "\n" +
+                           "[purple]Nhánh MK2B:[]\n" +
+                           " • Đồng: " + copColor2 + currentcopper + "[] / " + reqBlixalumMK2B.copper + "\n" +
+                           " • Chì: " + leaColor2 + currentlead + "[] / " + reqBlixalumMK2B.lead + "\n" +
+                           " • Titan: " + titColor2 + currenttitanium + "[] / " + reqBlixalumMK2B.titanium;
+                }));
+                
+                reqCell.width(360).get().setWrap(true);
+                reqCell.get().setAlignment(Align.left);
+                dialog.cont.row(); dialog.cont.add().height(10).row();
 
                 let branchesTable = new Table();
-                let b1 = new Table(); b1.background(Styles.black6); b1.margin(12, 16, 12, 16);
-                b1.add("[cyan]NHÁNH 1: QUÁ TẢI TỐC ĐỘ (MK2)[]").padBottom(4).row();
-                let b1D = b1.add("[lightgray]Cải tiến lõi từ trường tăng tầm bắn phụ và đột biến giới hạn tốc hỏa.\n• [green]Gia tăng giới hạn:[] Đẩy mốc cộng dồn tốc độ bắn tối đa từ [yellow]100% lên 300%[] khi tầm quét dày đặc kẻ địch.");
+
+                // Nhánh 1: MK2
+                let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
+                b1.add("[cyan]===(MK2)===[]").row();
+                let b1D = b1.add("Cải tiến lõi từ trường tối ưu tần suất quét từ động:\n" +
+                                 " [white]• Tầm bắn hiệu dụng mở rộng lên [green]340 pixel[] (Tăng +30.7%).[]\n" +
+                                 " [white]• Đột biến giới hạn tích lũy tốc hỏa động tối đa đạt [yellow]+300%[].[]\n" +
+                                 " [white]• Mở rộng bán kính nổ lan của đầu đạn xé gió lên [green]80 pixel[] (+25%).");
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                 b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.copper) >= reqBlixalumMK2.copper && core.items.get(Items.lead) >= reqBlixalumMK2.lead){
                         core.items.remove(Items.copper, reqBlixalumMK2.copper); core.items.remove(Items.lead, reqBlixalumMK2.lead);
-                        Fx.upgradeCore.at(this.x, this.y); this.configure(java.lang.Integer(1)); dialog.hide(); this.deselect();
+                        Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
+                        this.setTier(1); dialog.hide(); this.deselect();
                     } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); }
-                })).size(220, 40);
+                })).size(180, 38);
 
-                let b2 = new Table(); b2.background(Styles.black6); b2.margin(12, 16, 12, 16);
-                b2.add("[purple]NHÁNH 2: MA TRẬN LAZE XUNG KÍCH (MK2B)[]").padBottom(4).row();
-                let b2D = b2.add("[lightgray]Chuyển đổi sang lõi năng lượng hỗn hợp Laze phá hủy cao cơ động.\n• [orange]Hỏa lực gốc:[] Tăng mạnh sát thương gốc [green]+120%[] (300 DMG).\n• [red]Thu hẹp diện nổ:[] Giảm sát thương nổ lan xuống còn [yellow]50%[] gốc.\n• [cyan]Xung kích Laze thụ động:[] Cứ mỗi 5s chiến đấu, đồng loạt khai hỏa [yellow]4 tia laze vanilla[] quét thẳng mục tiêu.");
+                // Nhánh 2: MK2B
+                let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
+                b2.add("[purple]===(MK2B)===[]").row();
+                let b2D = b2.add("Hợp nhất ma trận lõi năng lượng Laze phá hủy cơ động:\n" +
+                                 " [white]• Sát thương vật lý gốc tăng mạnh lên [green]300 DMG[] (Tăng +20%).[]\n" +
+                                 " [white]• Thu hẹp diện nổ lan xuống [red]48 pixel[] và sát thương nổ còn [red]150 DMG[].[]\n" +
+                                 " [white]• [cyan]Xung kích Phụ:[] Cứ mỗi 5s nạp, kích hoạt đồng loạt [yellow]4 tia laze[] quét mục tiêu.");
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
                 b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.copper) >= reqBlixalumMK2B.copper && core.items.get(Items.lead) >= reqBlixalumMK2B.lead && core.items.get(Items.titanium) >= reqBlixalumMK2B.titanium){
                         core.items.remove(Items.copper, reqBlixalumMK2B.copper); core.items.remove(Items.lead, reqBlixalumMK2B.lead); core.items.remove(Items.titanium, reqBlixalumMK2B.titanium);
-                        Fx.bigShockwave.at(this.x, this.y); this.configure(java.lang.Integer(2)); dialog.hide(); this.deselect();
+                        Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
+                        this.setTier(2); dialog.hide(); this.deselect();
                     } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
-                })).size(220, 40);
+                })).size(180, 38);
 
-                branchesTable.add(b1).width(340); branchesTable.row(); branchesTable.add().height(15).row(); branchesTable.add(b2).width(340);
-                
-let scroll = new ScrollPane(branchesTable);
-scroll.setScrollingDisabled(true, false);
-dialog.cont.add(scroll).maxHeight(400);
-                
+                // Xếp các bảng nhánh theo hàng dọc chuẩn Lavunder
+                branchesTable.add(b1).width(340); branchesTable.row();
+                branchesTable.add().height(12).row();
+                branchesTable.add(b2).width(340);
+
+                let scroll = new ScrollPane(branchesTable);
+                scroll.setScrollingDisabled(true, false);
+                dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); dialog.show();
-            })).size(50, 40).tooltip("Tiến hóa công nghệ pháo Blixalum");
+            })).size(50, 40).tooltip("Nâng cấp tháp pháo Blixalum");
         } else {
             table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
-                Vars.ui.showInfo(tier == 1 ? "[cyan]HỆ THỐNG ĐANG HOẠT ĐỘNG Ở CẤU CẤU HÌNH BLIXALUM MK2![]" : "[purple]HỆ THỐNG ĐANG HOẠT ĐỘNG Ở CẤU CẤU HÌNH BLIXALUM MK2B![]");
-            })).size(50, 40).tooltip("Đã khóa nhánh tiến hóa");
+                Vars.ui.showInfo("[scarlet]HỆ THỐNG BLIXALUM ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]");
+            })).size(50, 40).tooltip("Đã đạt cấp tối đa");
         }
 
+        // --- NÚT THÔNG TIN (PHONG CÁCH BỐ CỰC ĐẶC TRƯNG CỦA DOR) ---
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-            let title = "📊 THÔNG SỐ TRẠNG THÁI BLIXALUM: "; let currentTier = this.getTier(); let descStr = "";
-            if (currentTier == 0 || currentTier == 1) {
-                title += (currentTier == 0) ? "[lightgray]MK1 MẶC ĐỊNH[]" : "[cyan]MK2 TIẾN HÓA[]";
-                // --- CHỈNH SỬA THÊM: Cập nhật text mô tả thông số UI từ 0.5s thành 1.0s ---
-                descStr = "[accent]⚙️ CƠ CHẾ ĐẠN VÀ TỤ LỰC XÉ GIÓ:[]\n• Nòng pháo cần [yellow]2.0 giây đầu tiên[] tích tụ điện từ trường.\n• Phóng ra viên đạn vật lý có hiệu ứng vòng biến dạng giãn nở chuyển động chậm.\n• Giãn cách hỏa lực duy trì liên tục: [green]1.0 giây / phát bắn[].\n\n[orange]📈 TỐC ĐỘ HOẢ LỰC ĐỘNG:[]\n• Mỗi mục tiêu trong tầm bắn [green]+10% tốc độ bắn[].\n• Giới hạn tối đa: " + (currentTier == 1 ? "[green]+300% (MK2)[]" : "[yellow]+100% (MK1)[]") + ".";
-            } else if (currentTier == 2) {
-                title += "[purple]MK2B LAZE XUNG KÍCH[]";
-                descStr = "[accent]⚙️ BIẾN THỂ MA TRẬN PHÁ HỦY HỖN HỢP:[]\n• Sát thương vật lý gốc tăng vọt: [green]300 DMG[] | Sát thương nổ lan hẹp: [red]150 DMG[].\n• Giới hạn tốc độ bắn động tối đa: [yellow]+80%[].\n• [pink]Đặc quyền laze:[] Trong giao tranh, cứ mỗi [cyan]5 giây[] pháo tự động nạp bắn song hành [orange]4 tia laze vanilla[] quét đám đông.";
+            let title = " Thông số pháo Blixalum: ";
+            let descStr = "";
+            let currentTier = this.getTier();
+
+            if (currentTier == 0) {
+                title += "[yellow](MK1)[]";
+                descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]3,500[]\n" +
+                          "Tầm bắn hiệu dụng:[] [orange]260 pixel[]\n" +
+                          "Hỏa lực đặc hiệu:[] [💥 250 Thẳng] | [💣 875 Nổ Lan / 64 R]\n" +
+                          "Giãn cách hỏa lực:[] [white]1.0 giây / phát bắn[]\n\n" +
+                          "[scarlet]⚠ Giới hạn đặt: Tối đa 1 cấu trúc/đội[]\n\n" +
+                          "[sky]⚡ CƠ CHẾ ĐẠN VÀ TỤ LỰC XÉ GIÓ:[]\n" +
+                          "• [lightgray]Tụ điện từ trường:[] Hệ thống nòng cần [yellow]2.0 giây đầu[] để tích năng lượng trước khi bắn.\n" +
+                          "• [lightgray]Gia tốc từ động:[] Mỗi kẻ địch xuất hiện trong tầm quét cộng thêm [cyan]+10%[] tốc độ bắn cơ bản.\n" +
+                          "• [lightgray]Giới hạn gia tốc:[] Tốc độ bắn gia tăng chạm ngưỡng tối đa [cyan]+100%[].";
+            } 
+            else if (currentTier == 1) {
+                title += "[cyan](MK2)[]";
+                descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]3,500[]\n" +
+                          "Tầm bắn hiệu dụng:[] [orange]340 pixel [lime](+30.7%)[]\n" +
+                          "Hỏa lực đặc hiệu:[] [💥 250 Thẳng] | [💣 875 Nổ Lan / [lime]80 R (+25%)[]]\n\n" +
+                          "[scarlet]⚠ Giới hạn đặt: Tối đa 1 cấu trúc/đội[]\n\n" +
+                          "[lime]⚡ CƠ CHẾ ĐẠN VÀ TỤ LỰC XÉ GIÓ:[]\n" +
+                          "• [lightgray]Siêu tụ trường:[] Cơ chế sạc từ trường giữ nguyên mốc [yellow]2.0 giây[] bảo toàn lực đẩy.\n" +
+                          "• [lightgray]Đột biến hỏa lực:[] Tốc độ hỏa lực cộng dồn động theo số lượng mục tiêu tăng vọt chạm mốc cực đại [cyan]+300% [lime](Tăng +200%)[].";
+            } 
+            else if (currentTier == 2) {
+                title += "[purple](MK2B)[]";
+                descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]3,500[]\n" +
+                          "Tầm bắn hiệu dụng:[] [red]260 pixel (Mặc định)[]\n" +
+                          "Hỏa lực đặc hiệu:[] [💥 300 Thẳng [lime](+20%)[]] | [💣 150 Nổ Lan / 48 R [red](Hẹp)[]]\n\n" +
+                          "[scarlet]⚠ Giới hạn đặt: Tối đa 1 cấu trúc/đội[]\n\n" +
+                          "[purple]🔥 BIẾN THỂ MA TRẬN PHÁ HỦY HỖN HỢP:[]\n" +
+                          "• [lightgray]Hạn chế tốc động:[] Giới hạn cộng dồn tốc độ hỏa lực theo mục tiêu bị bóp giảm xuống còn [red]+80%[].\n" +
+                          "• [lightgray]Ma trận Laze thụ động:[] Trong giao tranh, duy trì bắn liên tục cứ mỗi [green]5.0 giây[] pháo tự động đồng loạt khai hỏa [pink]4 tia laze xung kích[] quét thẳng đám đông.";
             }
-            let dialog = extend(BaseDialog, title, {}); let cell = dialog.cont.add(descStr).width(380);
-            cell.get().setWrap(true); cell.get().setAlignment(Align.left); dialog.addCloseButton(); dialog.show();
-        })).size(50, 40).tooltip("Xem thông số chi tiết");
+
+            let dialog = extend(BaseDialog, title, {});
+            let infoTable = new Table();
+            let cell = infoTable.add(descStr).width(360);
+            cell.get().setWrap(true); cell.get().setAlignment(Align.left);
+            let scroll = new ScrollPane(infoTable);
+            scroll.setScrollingDisabled(true, false);
+            dialog.cont.add(scroll).maxHeight(400);
+            dialog.addCloseButton(); dialog.show();
+        })).size(50, 40).tooltip("Xem thông số chi tiết hệ thống");
     },
 
     config() { return java.lang.Integer(this.getTier()); },

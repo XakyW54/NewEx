@@ -341,11 +341,9 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
 
         if(tier == 1) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-                let dialog = extend(BaseDialog, "Nâng Cấp Chuỗi Hệ Thống Lyvervon", {});
-                let titleCell = dialog.cont.add("[gold]=== TIẾN HÓA LÕI THÁP PHÁO LYVERVON ===[]");
-                titleCell.row(); titleCell.padBottom(10);
+                let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Lyvervon", {});
                 
-                let labelCell = dialog.cont.label(packProv(() => {
+                let reqCell = dialog.cont.label(packProv(() => {
                     let core = this.team.core();
                     if(core == null) return "[red]Không tìm thấy Lõi Đội![]";
                     let currentTitanium = core.items.get(Items.titanium);
@@ -355,21 +353,34 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                     
                     let titColor1 = currentTitanium >= reqMK2.titanium ? "[green]" : "[red]";
                     let thoColor1 = currentThorium >= reqMK2.thorium ? "[green]" : "[red]";
+                    
                     let copColor2 = currentCopper >= reqMK3.copper ? "[green]" : "[red]"; 
                     let plaColor2 = currentPlastanium >= reqMK3.plastanium ? "[green]" : "[red]";
                     
                     return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
-                           "[cyan]Nhánh MK2:[] Titanium: " + titColor1 + reqMK2.titanium + "[]/" + currentTitanium + " | Thorium: " + thoColor1 + reqMK2.thorium + "[]/" + currentThorium + "\n" +
-                           "[purple]Nhánh MK2b:[] Copper: " + copColor2 + reqMK3.copper + "[]/" + currentCopper + " | Plastanium: " + plaColor2 + reqMK3.plastanium + "[]/" + currentPlastanium;
+                           "[cyan]Nhánh MK2:[]\n" +
+                           " • Titanium: " + titColor1 + currentTitanium + "[] / " + reqMK2.titanium + "\n" +
+                           " • Thorium: " + thoColor1 + currentThorium + "[] / " + reqMK2.thorium + "\n" +
+                           "[purple]Nhánh MK2b:[]\n" +
+                           " • Copper: " + copColor2 + currentCopper + "[] / " + reqMK3.copper + "\n" +
+                           " • Plastanium: " + plaColor2 + currentPlastanium + "[] / " + reqMK3.plastanium;
                 }));
-                labelCell.row(); labelCell.padBottom(20);
+                
+                reqCell.width(360).get().setWrap(true);
+                reqCell.get().setAlignment(Align.left);
+                dialog.cont.row(); dialog.cont.add().height(10).row();
 
                 let branchesTable = new Table();
 
-                let b1 = new Table(); b1.background(Styles.black6); b1.margin(12, 16, 12, 16);
-                let b1T = b1.add("[cyan]CẤU HÌNH TIÊU CHUẨN XUNG KÍCH (MK2)[]"); b1T.row(); b1T.padBottom(6);
-                let b1D = b1.add("[lightgray]Mô-đun siêu liên hoàn truyền dẫn:\n• Tăng HP lên [green]2950[], tầm bắn mở rộng [green]350[].\n• Tiêu tốn điện năng: [orange]1200 đv/s[].\n• Sét chính tự động tích năng lượng tăng tiến dần lên tới [yellow]1499%[] uy lực (phình đại tia [orange]150%[]).\n• Chuỗi phóng điện liên tục truyền dẫn qua 5 nấc [yellow]A->B->C->D->E[], tại vị trí mục tiêu cuối tự nổ thêm 5 tia phụ quét đơn vị máu cao nhất![]"); 
-                b1D.width(320); b1D.get().setWrap(true); b1D.row(); b1D.padBottom(10);
+                // Nhánh 1: MK2
+                let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
+                b1.add("[cyan]===(MK2)===[]").row();
+                let b1D = b1.add("Mô-đun tối ưu hóa chuỗi dẫn mạch liên tục:\n" +
+                                 " [white]• Tăng trưởng kết cấu lên [green]2,950 HP[] (Tăng +73.5%).[]\n" +
+                                 " [white]• Tầm hiệu dụng mở rộng đạt [green]350 ô[] (Mở rộng +16.6%).[]\n" +
+                                 " [white]• Tải điện bắn tăng mạnh chạm mốc [orange]1,200 đv/s[] (+1100%).[]\n" +
+                                 " [white]• Tia điện tích tụ tăng tiến uy lực cực đại [yellow]+1499%[] kèm hiệu ứng chuỗi truyền nổ phóng 5 tia phụ quét đơn vị máu cao nhất.");
+                b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                 b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.titanium) >= reqMK2.titanium && core.items.get(Items.thorium) >= reqMK2.thorium){
@@ -378,12 +389,17 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                         this.configure(java.lang.Integer(2)); 
                         dialog.hide(); this.deselect();
                     } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); }
-                })).size(220, 40);
+                })).size(180, 38);
 
-                let b2 = new Table(); b2.background(Styles.black6); b2.margin(12, 16, 12, 16);
-                let b2T = b2.add("[purple]TRỌNG XUNG KÍCH KÍCH NỔ ĐỒNG TÂM (MK2b)[]"); b2T.row(); b2T.padBottom(6);
-                let b2D = b2.add("[lightgray]Lõi cộng hương bão điện Chaos:\n• Tăng mạnh HP lên [green]3600[], tầm bắn tối đa [green]380[].\n• Tiêu tốn điện năng: [orange]850 đv/s[].\n• Tích lũy chu kỳ sạc [purple]5 điểm/giây[] khi tháp pháo bắn liên tục.\n• Đạt mốc [yellow]25 điểm[], lập tức kích hoạt [red]Xung Kích Kép Đồng Thời[]: phát nổ hủy diệt tại cả vị trí tâm pháo lẫn mục tiêu, phóng [orange]13 luồng sét Chaos[] càn quét loạn xạ![]"); 
-                b2D.width(320); b2D.get().setWrap(true); b2D.row(); b2D.padBottom(10);
+                // Nhánh 2: MK2b
+                let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
+                b2.add("[purple]===(MK2B)===[]").row();
+                let b2D = b2.add("Lõi cộng hưởng bão điện Chaos hỗn mang cực đại:\n" +
+                                 " [white]• Gia cố kết cấu tối đa lên [green]3,600 HP[] (Tăng mạnh +111.7%).[]\n" +
+                                 " [white]• Tầm bắn càn quét đẩy lên ngưỡng [green]380 ô[] (Mở rộng +26.6%).[]\n" +
+                                 " [white]• Tải điện dung hòa tối ưu ở mức [orange]850 đv/s[] (+750%).[]\n" +
+                                 " [white]• Tích lũy [purple]5 điểm/giây[] duy trì bắn. Đạt 25 điểm kích nổ [red]Kép Đồng Thời[] giải phóng [orange]13 luồng sét Chaos[] gãy khúc diện rộng.");
+                b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
                 b2.button("[orange]KÍCH HOẠT MK2b[]", packRun(() => {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.copper) >= reqMK3.copper && core.items.get(Items.plastanium) >= reqMK3.plastanium){
@@ -392,73 +408,76 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                         this.configure(java.lang.Integer(3)); 
                         dialog.hide(); this.deselect();
                     } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2b![]"); }
-                })).size(220, 40);
+                })).size(180, 38);
 
+                // Sắp xếp bố cục hàng dọc chuẩn Lavunder
                 branchesTable.add(b1).width(340); branchesTable.row();
-                let spaceCell = branchesTable.add(); spaceCell.height(18); spaceCell.row();
+                branchesTable.add().height(12).row();
                 branchesTable.add(b2).width(340);
-let scroll = new ScrollPane(branchesTable);
-scroll.setScrollingDisabled(true, false);
-dialog.cont.add(scroll).maxHeight(400);
+
+                let scroll = new ScrollPane(branchesTable);
+                scroll.setScrollingDisabled(true, false);
+                dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); dialog.show();
             })).size(50, 40).tooltip("Tiến hóa tháp pháo Lyvervon");
-        } 
-        else {
+        } else {
             table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
-                Vars.ui.showInfo("[scarlet]HỆ THỐNG ĐÃ ĐẠT GIỚI HẠN TIẾN HÓA CỦA NHÁNH ĐÃ CHỌN![]");
+                Vars.ui.showInfo("[scarlet]HỆ THỐNG LYVERVON ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]");
             })).size(50, 40).tooltip("Đã đạt cấp tối đa");
         }
 
+        // --- NÚT BẢNG THÔNG TIN CHI TIẾT (PHONG CÁCH BỐ CỰC DOR) ---
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-            let title = "📊 THÔNG SỐ PHÁO LYVERVON: ";
+            let title = " Thông số pháo Lyvervon: ";
             let descStr = "";
             let currentTier = this.getTier();
 
             if (currentTier == 1) {
-                title += "[yellow]Trạng thái gốc (MK1)[]";
-                descStr = "[accent]⚙️ 1. CƠ CHẾ LOGIC CƠ BẢN:[]\n" +
-                          "• Máu hệ thống: [lightgray]1,700 HP[] | Quy cách: [lightgray]4x4[]\n" +
-                          "• Sát thương thô: [purple]10 đơn vị / xung điện sấm sét[]\n" +
-                          "• Năng lượng yêu cầu: [lightning]100 điện / giây[] (Lưu trữ max: 5000)\n" +
-                          "• Tầm bắn mặc định: [lightgray]300[] | Tốc độ nạp xả: [green]0.1 giây / phát[]\n" +
-                          "• Vùng mù bắt buộc (Deadzone): [scarlet]80 ô xung quanh tâm pháo[]\n" +
-                          "• Chế độ bắn mục tiêu: Chỉ quét mục tiêu [lightgray]Mặt Đất[]\n\n" +
-                          "[orange]⚠ Giới hạn lắp đặt:[] Do lượng xung từ trường cực đại làm nhiễu loạn mạng điện, mỗi đội chỉ cho phép đặt tối đa [red]2 tháp pháo Lyvervon[] trên toàn bản đồ.";
-            } else if (currentTier == 2) {
-                title += "[cyan]CẤU HÌNH TIÊU CHUẨN (MK2)[]";
-                descStr = "[accent]⚙️ 1. MÔ-ĐUN TĂNG TIẾN UY LỰC LÕI SẠC:[]\n" +
-                          "• Kết cấu bền bỉ: [lightgray]2,950 HP[] | Tầm bắn mở rộng: [lightgray]350[]\n" +
-                          "• Năng lượng yêu cầu: [lightning]1,200 điện / giây[] (Lưu trữ max: 5000)\n" +
-                          "• Sát thương nền tia điện: [purple]8 Sát thương thô / xung kích[]\n" +
-                          "• Tiến trình tăng ích hỏa lực liên tục tối đa [yellow]1499%[] rồi tự động Reset. Trong trạng thái xả hỏa lực, tia điện chính tỷ lệ phình to lên tối đa [orange]150%[] kích thước.\n\n" +
-                          "[sky]⚡ 2. THUẬT TOÁN CHUỖI SÉT TRUYỀN DẪN ĐA MỤC TIÊU:[]\n" +
-                          "• Khi tia chính đánh trúng đích đầu tiên, luồng xung điện tự động tìm kiếm nối mạch tuần tự qua 5 kẻ địch [lightgray]A -> B -> C -> D -> E[] trong tầm tỏa [lightgray]180[] ô.\n" +
-                          "• Mỗi nấc truyền dẫn gây 70% sát thương tăng tiến hiện tại. Khi tia điện truyền chạm tới đích cuối cùng (vị trí E), nó kích hoạt một sóng chấn động Sonic nổ tung diện rộng và xả thêm [orange]5 tia sét phụ cực đại[] ghim thẳng vào 5 kẻ địch xung quanh có lượng HP cao nhất.";
-            } else if (currentTier == 3) {
-                title += "[purple]KÍCH NỔ ĐỒNG TÂM KÉP (MK2b)[]";
-                descStr = "[accent]⚙️ 1. THÔNG SỐ NÂNG CẤP ĐẠI THỂ (MK2b):[]\n" +
-                          "• Kết cấu tối đa: [lightgray]3,600 HP[] | Tầm bắn càn quét: [lightgray]380[]\n" +
-                          "• Năng lượng yêu cầu: [lightning]850 điện / giây[] (Lưu trữ max: 5000)\n" +
-                          "• Sát thương gốc tia chính: [purple]12 Sát thương thô / phát bắn[]\n" +
-                          "• Chu kỳ tích nạp điểm sạc: Nhận [green]5 điểm / giây[] khi duy trì xả xích sét vào mục tiêu.\n\n" +
-                          "[scarlet]💥 2. CƠ CHẾ KÍCH NỔ ĐỒNG TÂM KÉP BÃO ĐIỆN (CHAOS):[]\n" +
-                          "• Khi thanh năng lượng sạc chạm ngưỡng tối đa [yellow]25/25 điểm[], lõi pháo tự giải phóng chuỗi phản ứng hủy diệt kích nổ [yellow]Kép Đồng Thời[]: tạo chấn chấn động nổ cực mạnh tại vị trí kẻ địch bị khóa và phát nổ ngược ngay tại chính tâm tháp pháo.\n" +
-                          "• Mỗi chấn tâm vụ nổ gây lượng sát thương cực đại gấp 2.5 lần và bắn ra loạt chùm [orange]13 luồng sét phụ cấu trúc hỗn mang (Chaos)[] có biên độ gãy khúc rộng, càn quét toàn bộ quân địch trong bán kính 45 ô xung quanh.";
+                title += "[yellow](MK1)[]";
+                descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]1,700 HP[] (Quy cách 4x4)\n" +
+                          "[lightgray]Sát thương thô:[] [purple]10 đơn vị / xung sấm sét[]\n" +
+                          "[lightgray]Tầm bắn mặc định:[] [orange]300 ô[] | [green]Tốc độ xả: 0.1s/phát[]\n" +
+                          "[lightgray]Yêu cầu năng lượng:[] [lightning]100 điện / giây[] (Trữ lượng: 5000)\n" +
+                          "[lightgray]Vùng mù (Deadzone):[] [scarlet]80 ô xung quanh tâm pháo[]\n" +
+                          "[lightgray]Mục tiêu ưu tiên:[] Chỉ quét mục tiêu [lightgray]Mặt Đất[]\n\n" +
+                          "[orange]⚠ GIỚI HẠN LẮP ĐẶT ĐẶC BIỆT:[]\n" +
+                          "Do lượng xung từ trường cực đại làm nhiễu loạn mạng lưới dòng điện, mỗi đội chỉ cho phép xây dựng tối đa [red]2 tháp pháo Lyvervon[] trên toàn bản đồ.";
+            } 
+            else if (currentTier == 2) {
+                title += "[cyan](MK2)[]";
+                descStr = "[cyan]⚡ THÔNG SỐ TIẾN HÓA (MK2) ⚡[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]2,950 HP[] [lime](+73.5%)[]\n" +
+                          "[lightgray]Tầm bắn hiệu dụng:[] [orange]350 ô[] [lime](+16.6%)[]\n" +
+                          "[lightgray]Sát thương nền:[] [purple]8 đơn vị / xung kích[]\n" +
+                          "[lightgray]Yêu cầu năng lượng:[] [lightning]1,200 điện / giây[] [red](+1100%)[]\n\n" +
+                          "[sky]⚡ MÔ-ĐUN TĂNG TIẾN & CHUỖI SÈT TRUYỀN DẪN:[]\n" +
+                          "• [lightgray]Gia tốc sạc mạch:[] Tiến trình tích lũy tăng tiến hỏa lực liên tục tối đa đạt [yellow]1499%[] uy lực, đồng thời phình đại kích cỡ tia điện chính lên [orange]150%[].\n" +
+                          "• [lightgray]Thuật toán truyền đa mục tiêu:[] Sét tự động nối mạch tuần tự qua 5 kẻ địch [lightgray]A -> B -> C -> D -> E[] trong tầm tỏa [lightgray]180[] ô.\n" +
+                          "• [lightgray]Xung kích Sonic kết liễu:[] Mỗi nấc truyền gây 70% sát thương hiện tại. Tại vị trí đích cuối (E), kích hoạt sóng chấn nổ diện rộng và phóng thêm [orange]5 tia phụ[] ghim thẳng vào 5 mục tiêu có HP cao nhất.";
+            } 
+            else if (currentTier == 3) {
+                title += "[purple](MK2b)[]";
+                descStr = "[purple]⚡ THÔNG SỐ TỐI THƯỢNG (MK2b) ⚡[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]3,600 HP[] [lime](+111.7%)[]\n" +
+                          "[lightgray]Tầm bắn hiệu dụng:[] [orange]380 ô[] [lime](+26.6%)[]\n" +
+                          "[lightgray]Sát thương gốc tia:[] [purple]12 đơn vị / phát bắn[]\n" +
+                          "[lightgray]Yêu cầu năng lượng:[] [lightning]850 điện / giây[] [red](+750%)[]\n\n" +
+                          "[scarlet]💥 CƠ CHẾ KÍCH NỔ ĐỒNG TÂM KÉP BÃO ĐIỆN (CHAOS):[]\n" +
+                          "• [lightgray]Chu kỳ nạp điểm:[] Tự động tích lũy [green]5 điểm / giây[] khi duy trì xả xích sét ổn định vào mục tiêu.\n" +
+                          "• [lightgray]Bùng nổ đồng tâm kép:[] Khi năng lượng chạm ngưỡng sạc [yellow]25/25 điểm[], pháo tự giải phóng chuỗi phản ứng kích nổ hủy diệt đồng thời tại cả [yellow]Tâm tháp pháo[] và [yellow]Vị trí kẻ địch bị khóa[].\n" +
+                          "• [lightgray]Luồng sét hỗn mang:[] Mỗi chấn tâm vụ nổ gây sát thương gấp 2.5 lần, bung ra [orange]13 luồng sét phụ cấu trúc Chaos[] gãy khúc biên độ rộng càn quét bán kính 45 ô xung quanh.";
             }
 
-let dialog = extend(BaseDialog, title, {});
-            
-            // Tích hợp ScrollPane lướt vuốt tại đây
+            let dialog = extend(BaseDialog, title, {});
             let infoTable = new Table();
             let cell = infoTable.add(descStr).width(360);
             cell.get().setWrap(true); cell.get().setAlignment(Align.left);
-            
-            let infoScroll = new ScrollPane(infoTable);
-            infoScroll.setScrollingDisabled(true, false);
-            dialog.cont.add(infoScroll).size(380, 400);
-            
+            let scroll = new ScrollPane(infoTable);
+            scroll.setScrollingDisabled(true, false);
+            dialog.cont.add(scroll).maxHeight(400);
             dialog.addCloseButton(); dialog.show();
-        })).size(50, 40).tooltip("Xem chi tiết thông số trạng thái");
+        })).size(50, 40).tooltip("Xem chi tiết thông số trạng thái hệ thống");
     },
 
     findTarget(){

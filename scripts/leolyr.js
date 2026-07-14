@@ -53,6 +53,12 @@ Events.on(ClientLoadEvent, () => {
     if(wing1Region == null || !wing1Region.found()){ wing1Region = Core.atlas.find("leolyr-wing1"); }
     if(wing2Region == null || !wing2Region.found()){ wing2Region = Core.atlas.find("leolyr-wing2"); }
 
+    // Lấy trạng thái tăng tốc độ đánh từ content
+    let atkSpeedStatus = Vars.content.getByName(ContentType.status, "newex-atkspeed");
+    if(atkSpeedStatus == null) {
+        atkSpeedStatus = Vars.content.getByName(ContentType.status, "atkspeed");
+    }
+
     const leolyrUnit = Vars.content.getByName(ContentType.unit, "newex-leolyr");
     if(leolyrUnit != null){
         if(leolyrUnit.weapons.size >= 2){
@@ -241,6 +247,11 @@ Events.on(ClientLoadEvent, () => {
                         this.dashCooldown = maxDashCooldown;
                         this.shieldHealth = currentMaxShield; 
                         
+                        // THÊM STATUS VÀO ĐÂY: Áp dụng hiệu ứng atkspeed trong 5 giây (5 * 60 = 300 ticks)
+                        if(atkSpeedStatus != null){
+                            this.apply(atkSpeedStatus, 300);
+                        }
+
                         staticShields.push({
                             x: oldX, y: oldY, 
                             rad: currentShieldRadius, 

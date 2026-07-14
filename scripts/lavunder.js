@@ -377,10 +377,13 @@ lavunder.consumePower(22);
 lavunder.configurable = true;
 lavunder.canControl = false;
 
+// SỬA LẠI ĐOẠN NÀY TRONG FILE CỦA BẠN:
 lavunder.config(java.lang.Integer, packCons2((tile, value) => {
     if(tile != null && value != null) {
         let turretId = tile.id;
-        let valInt = value.intValue();
+        // Sửa ở đây: Sử dụng trực tiếp 'value' thay vì 'value.intValue()'
+        let valInt = Math.floor(value); 
+        
         turretTierMap.put(turretId, valInt);
         if(valInt == 1) tile.health = 2300;
         else if(valInt == 2) tile.health = 3500;
@@ -479,9 +482,9 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
 
         if(tier == 1) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-                let dialog = extend(BaseDialog, "Trạm Nâng Cấp Lavunder", {});
+                let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Lavunder", {});
                 
-                dialog.cont.label(packProv(() => {
+                let reqCell = dialog.cont.label(packProv(() => {
                     let core = this.team.core();
                     if(!core) return "[red]Không tìm thấy Lõi Đội![]";
                     
@@ -495,124 +498,135 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
                     let leadColor = leadAmt >= reqMK3.lead ? "[green]" : "[red]";
                     let siliconColor = siliconAmt >= reqMK3.silicon ? "[green]" : "[red]";
 
-                    return "[yellow]=== LỰA CHỌN PHÂN NHÁNH TIẾN HÓA MẠCH ===[]\n" +
-                           "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
-                           "[cyan]Nhánh MK2:[] Đồng: " + copperColor + copperAmt + "[]/" + reqMK2.copper + " | Graphite: " + graphiteColor + graphiteAmt + "[]/" + reqMK2.graphite + "\n" +
-                           "[purple]Nhánh MK2b:[] Chì: " + leadColor + leadAmt + "[]/" + reqMK3.lead + " | Silicon: " + siliconColor + siliconAmt + "[]/" + reqMK3.silicon;
-                })).row(); dialog.cont.add().height(15).row();
+                    return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
+                           "[cyan]Nhánh MK2:[]\n" +
+                           " • Đồng: " + copperColor + copperAmt + "[] / " + reqMK2.copper + "\n" +
+                           " • Graphite: " + graphiteColor + graphiteAmt + "[] / " + reqMK2.graphite + "\n" +
+                           "[purple]Nhánh MK2B:[]\n" +
+                           " • Chì: " + leadColor + leadAmt + "[] / " + reqMK3.lead + "\n" +
+                           " • Silicon: " + siliconColor + siliconAmt + "[] / " + reqMK3.silicon;
+                }));
+                
+                reqCell.width(360).get().setWrap(true);
+                reqCell.get().setAlignment(Align.left);
+                dialog.cont.row(); dialog.cont.add().height(10).row();
 
                 let branchesTable = new Table();
 
+                // Nhánh 1: MK2
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
-                b1.add("[cyan]CẤU HÌNH TIÊU CHUẨN XUNG KÍCH (MK2)[]").row();
+                b1.add("[cyan]===(MK2)===[]").row();
                 let b1D = b1.add("Mô-đun kích xung hỏa lực liên hoàn:\n" +
-                                 " [white]• Tăng mạnh HP lên [green]3500[], tầm bắn tối đa [green]340[].[]\n" +
-                                 " [white]• Sát thương gốc tăng [yellow]250%[] (115.5 hỏa lực).[]\n" +
-                                 " [white]• Tốc hỏa lực gia tốc sạc điểm năng lượng tăng [yellow]80%[].[]\n" +
-                                 " [white]• Đạt mốc [yellow]100 điểm[]: [cyan]2% HP tối đa[] + [red]320 sát thương[] diện rộng.[]\n" +
-                                 " [white]• Đặc biệt: Có [orange]50%[] tỷ lệ hồi ngay [yellow]80 điểm sạc[] sau khi nổ.[]");
-                b1D.width(360).get().setWrap(true); b1D.get().setAlignment(Align.left);
-                b1.row();
+                                 " [white]• Sát thương liên tục gia tăng cực mạnh lên mốc [yellow]+250%[] (115.5 đv/s).[]\n" +
+                                 " [white]• Tốc độ gia tốc sạc điểm năng lượng tăng trưởng nhanh [green]+80%[].[]\n" +
+                                 " [white]• Khi đạt [yellow]100 sạc[]: Gây [red]320 ST flat[] + [cyan]2% HP tối đa[] diện rộng.[]\n" +
+                                 " [white]• [green]Mạch Phản Hồi[]: Có [orange]50%[] tỷ lệ hoàn trả [yellow]80 điểm sạc[] ngay sau nổ.[]\n" +
+                                 " [white]• Tăng [green]+52.17% Máu[] (3,500) và mở rộng [green]+6.25% Tầm bắn[] (340 px).");
+                b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                 b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
                     let core = this.team.core();
                     if(core && core.items.get(Items.copper) >= reqMK2.copper && core.items.get(Items.graphite) >= reqMK2.graphite){
                         core.items.remove(Items.copper, reqMK2.copper);
                         core.items.remove(Items.graphite, reqMK2.graphite);
                         this.configure(java.lang.Integer(2)); 
-                        dialog.hide();
+                        dialog.hide(); this.deselect();
                     } else {
-                        Vars.ui.showInfoToast("[red]Không đủ tài nguyên nâng cấp![]", 2);
+                        Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]");
                     }
-                })).size(180, 40);
+                })).size(180, 38);
 
+                // Nhánh 2: MK2B
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
-                b2.add("[purple]BIẾN THỂ ĐẠI QUANG PHỔ (MK2b)[]").row();
-                let b2D = b2.add("Lõi hội tụ quang phổ hủy diệt:\n" +
-                                 " [white]• Siêu gia cố Máu lên [green]4200[], tầm phát xạ [green]320[].[]\n" +
-                                 " [white]• Sát thương tia đột biến tích lũy tăng tiến lên [red]+500%[] (198.0/s).[]\n" +
-                                 " [white]• Sạc đa tầng: Mốc [yellow]20,40,60,80[] có [cyan]70%[] tỷ lệ nổ phụ tia.[]\n" +
-                                 " [white]• Đỉnh điểm kích hoạt chuỗi [orange]3 loạt bộc phá liên tiếp[] hủy diệt diện rộng![]");
-                b2D.width(360).get().setWrap(true); b2D.get().setAlignment(Align.left);
-                b2.row();
-                b2.button("[orange]KÍCH HOẠT MK2b[]", packRun(() => {
+                b2.add("[purple]===(MK2B)===[]").row();
+                let b2D = b2.add("Lõi hội tụ quang phổ hủy diệt diện rộng:\n" +
+                                 " [white]• Sát thương liên tục đột biến chạm mốc kinh hoàng [red]+500%[] (198.0 đv/s).[]\n" +
+                                 " [white]• [cyan]Cơ chế Sạc Đa Tầng[]: Tại mốc [yellow]20,40,60,80[] có [white]70%[] tỷ lệ nổ phụ tia.[]\n" +
+                                 " [white]• Khi chạm [yellow]100 sạc[]: Kích hoạt chuỗi [orange]3 loạt bộc phá liên tiếp[] hủy diệt.[]\n" +
+                                 " [white]• Siêu gia cố cấu trúc tăng [green]+82.6% Máu[] (4,200).[]\n" +
+                                 " [white]• Giữ nguyên [yellow]Tầm bắn[] (320 px) để duy trì mật độ tập trung năng lượng.");
+                b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
+                b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                     let core = this.team.core();
                     if(core && core.items.get(Items.lead) >= reqMK3.lead && core.items.get(Items.silicon) >= reqMK3.silicon){
                         core.items.remove(Items.lead, reqMK3.lead);
                         core.items.remove(Items.silicon, reqMK3.silicon);
                         this.configure(java.lang.Integer(3)); 
-                        dialog.hide();
+                        dialog.hide(); this.deselect();
                     } else {
-                        Vars.ui.showInfoToast("[red]Không đủ tài nguyên nâng cấp![]", 2);
+                        Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]");
                     }
-                })).size(180, 40);
+                })).size(180, 38);
 
-                branchesTable.add(b1).width(360); branchesTable.row();
-                branchesTable.add().height(10).row();
-                branchesTable.add(b2).width(360);
-let scroll = new ScrollPane(branchesTable);
-scroll.setScrollingDisabled(true, false);
-dialog.cont.add(scroll).maxHeight(400);
+                // Xếp các bảng nhánh theo hàng dọc chuẩn Lavunder
+                branchesTable.add(b1).width(340); branchesTable.row();
+                branchesTable.add().height(12).row();
+                branchesTable.add(b2).width(340);
+
+                let scroll = new ScrollPane(branchesTable);
+                scroll.setScrollingDisabled(true, false);
+                dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); dialog.show();
-            })).size(50, 40).tooltip("Tiến hóa tháp pháo");
+            })).size(50, 40).tooltip("Nâng cấp tháp pháo Lavunder");
         } else {
-            table.button(Icon.lock, Styles.cleari, 40, () => {}).size(50, 40).tooltip("Đã đạt cấp tối đa");
+            table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
+                Vars.ui.showInfo("[scarlet]HỆ THỐNG LAVUNDER ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]");
+            })).size(50, 40).tooltip("Đã đạt cấp tối đa");
         }
 
+        // --- NÚT THÔNG TIN (PHONG CÁCH BỐ CỰC ĐẶC TRƯNG CỦA DOR / LAVUNDER) ---
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-            let dialog = extend(BaseDialog, "📊 THÔNG SỐ KỸ THUẬT LAVUNDER", {});
-            let currentTier = turretTierMap.containsKey(this.id) ? turretTierMap.get(this.id) : 1;
+            let title = " Thông số pháo Lavunder: ";
             let descStr = "";
+            let currentTier = turretTierMap.containsKey(this.id) ? turretTierMap.get(this.id) : 1;
 
             if (currentTier == 1) {
-                descStr = "[cyan]⚙️ [white]Cấu Hình: [accent]MK1 (Hội Tụ Xung Kích)[]\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[heart] [lightgray]Máu tháp pháo:[] [green]2,300[]\n" +
-                          "[aim] [lightgray]Tầm bắn phát xạ:[] [orange]320[] (Vùng mù: <40)\n" +
-                          "[zap] [lightgray]Sát thương liên tục:[] [yellow]33.00[] / giây (Tăng tiến theo điểm)\n" +
-                          "[power] [lightgray]Năng lượng tiêu thụ:[] [gainsboro]22.00 Giây/đv[]\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[orange]📌 Giới hạn điều động: tối đa 2 cấu trúc toàn đội.[]\n\n" +
-                          "[lightgray]Đặc tính vận hành:[]\n" +
-                          "[white]• Khắc tinh mặt đất tuyệt đối (Không thể bắn mục tiêu bay).\n" +
-                          "[white]• Tự động tích lũy năng lượng sạc điểm khi bám dính tia vào mục tiêu.\n" +
-                          "[white]• Khi đạt [yellow]100 điểm[] phóng xung kích nổ phẳng diện rộng [red]100 sát thương[] + [cyan]1% HP tối đa[].";
-            } else if (currentTier == 2) {
-                descStr = "[cyan]⚙️ [white]Cấu Hình: [orange]MK2 (Xung Kích Liên Hoàn)[]\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[heart] [lightgray]Máu tháp pháo:[] [green]3,500[]\n" +
-                          "[aim] [lightgray]Tầm bắn phát xạ:[] [orange]340[] (Gia tăng tầm bắn)\n" +
-                          "[zap] [lightgray]Sát thương liên tục:[] [yellow]115.50[] / giây (+250% Sát thương)\n" +
-                          "[power] [lightgray]Năng lượng tiêu thụ:[] [gainsboro]22.00 Giây/đv[]\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[orange]📌 Giới hạn điều động: tối đa 2 cấu trúc toàn đội.[]\n\n" +
-                          "[lightgray]Đặc tính vận hành:[]\n" +
-                          "[white]• Tốc độ gia tốc sạc điểm được đẩy mạnh tăng cường lên [yellow]+80%[].\n" +
-                          "[white]• Đạt mốc [yellow]100 điểm[] kích nổ siêu áp suất: [red]320 sát thương[] + [cyan]2% HP tối đa[].\n" +
-                          "[white]• [green]Mạch Phản Hồi[]: Có [orange]50%[] cơ hội hoàn trả ngay lập tức [yellow]80 điểm sạc[] để kích nổ chuỗi tiếp theo.";
-            } else {
-                descStr = "[scarlet]⚡ [white]Cấu Cấu Hình: [purple]MK2b (Đại Quang Phổ Hủy Diệt)[]\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[heart] [lightgray]Máu tháp pháo:[] [green]4,200[] (Siêu gia cố)\n" +
-                          "[aim] [lightgray]Tầm bắn phát xạ:[] [orange]320[] (Vùng mù: <40)\n" +
-                          "[zap] [lightgray]Sát thương liên tục:[] [yellow]198.00[] / giây (Cực đại đại quang phổ)\n" +
-                          "[power] [lightgray]Năng lượng tiêu thụ:[] [gainsboro]22.00 Giây/đv[]\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[orange]📌 Giới hạn điều động: tối đa 2 cấu trúc toàn đội.[]\n\n" +
-                          "[lightgray]Đặc tính vận hành:[]\n" +
-                          "[white]• [cyan]Cơ chế Sạc Đa Tầng[]: Tại các mốc [yellow]20, 40, 60, 80[] điểm, có [lightgray]70%[] tỉ lệ kích phát nổ tia laser phụ gây sát thương cực nặng.\n" +
-                          "[white]• Đạt đỉnh [yellow]100 điểm[] giải phóng chuỗi [red]3 loạt bộc phá liên hoàn siêu cấp[] nghiền nát cụm đội hình địch.";
+                title += "[yellow](MK1)[]";
+                descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]2,300[]\n" +
+                          "[lightgray]Tầm bắn phát xạ:[] [orange]320 pixel[] (Vùng mù: <40 px)\n" +
+                          "[lightgray]Sát thương liên tục:[] [white]33.00 hỏa lực/giây[]\n" +
+                          "[lightgray]Năng lượng tiêu thụ:[] [gainsboro]22.00 đơn vị/giây[]\n\n" +
+                                                    "[scarlet]⚠ Giới hạn đặt: Tối đa 10 cấu trúc/đội[]\n\n" +
+
+                          "[sky]⚡ CƠ CHẾ HOẠT ĐỘNG MẠCH XUNG KÍCH:[]\n" +
+                           "• [lightgray]Bám dính mục tiêu:[] Chỉ tấn công mặt đất, tự động tích lũy năng lượng sạc điểm khi duy trì tia bắn liên tục.\n" +
+                          "• [lightgray]Xung kích năng lượng:[] Khi đạt [yellow]100 điểm sạc[] phóng nổ diện rộng gây [red]100 sát thương[] + [cyan]1% HP tối đa[] mục tiêu.";
+            } 
+            else if (currentTier == 2) {
+                title += "[cyan](MK2)[]";
+                descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]3,500 [lime](+52.17%)[]\n" +
+                          "[lightgray]Tầm bắn phát xạ:[] [orange]340 pixel [lime](+6.25%)[]\n" +
+                          "[lightgray]Sát thương liên tục:[] [yellow]115.50 hỏa lực/giây (+250%)[]\n" +
+                          "[lightgray]Năng lượng tiêu thụ:[] [gainsboro]22.00 đơn vị/giây[]\n\n" +
+                          "[scarlet]⚠ Giới hạn đặt: Tối đa 10 cấu trúc/đội[]\n\n" +
+                          "[lime]⚡ CƠ CHẾ HOẠT ĐỘNG MẠCH XUNG KÍCH:[]\n" +
+                          "• [lightgray]Gia tốc dòng sạc:[] Tốc độ tích lũy năng lượng điểm được đẩy mạnh thêm [yellow]+80%[].\n" +
+                          "• [lightgray]Siêu áp suất nổ:[] Tại mốc [yellow]100 điểm sạc[] giải phóng chấn động cực đại: [red]320 sát thương[] + [cyan]2% HP tối đa[].\n" +
+                          "• [lightgray]Mạch hồi lưu sạc:[] Sở hữu [orange]50%[] tỷ lệ hoàn trả ngay lập tức [yellow]80 điểm sạc[] để kích chuỗi vụ nổ kế tiếp.";
+            } 
+            else if (currentTier == 3) {
+                title += "[purple](MK2B)[]";
+                descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]4,200 [lime](+82.60%)[]\n" +
+                          "[lightgray]Tầm bắn phát xạ:[] [orange]320 pixel [yellow](0%)[]\n" +
+                          "[lightgray]Sát thương liên tục:[] [pink]198.00 hỏa lực/giây (+500%)[]\n" +
+                          "[lightgray]Năng lượng tiêu thụ:[] [gainsboro]22.00 đơn vị/giây[]\n\n" +
+                          "[scarlet]⚠ Giới hạn đặt: Tối đa 10 cấu trúc/đội[]\n\n" +
+                          "[purple]🔥 CƠ CHẾ HOẠT ĐỘNG ĐẠI QUANG PHỔ:[]\n" +
+                          "• [lightgray]Sạc đa tầng quang phổ:[] Duy trì bắn tích năng lượng qua các mốc [yellow]20, 40, 60, 80[] có [white]70%[] cơ hội nổ phụ tia laser phụ.\n" +
+                          "• [lightgray]Đại bộc phá chu kỳ:[] Đạt đỉnh [yellow]100 điểm sạc[] kích nổ chuỗi [red]3 loạt bộc phá liên hoàn siêu cấp[] diện rộng, càn quét toàn bộ đội hình địch.";
             }
 
-let infoTable = new Table();
+            let dialog = extend(BaseDialog, title, {});
+            let infoTable = new Table();
             let cell = infoTable.add(descStr).width(360);
             cell.get().setWrap(true); cell.get().setAlignment(Align.left);
-            
-            let infoScroll = new ScrollPane(infoTable);
-            infoScroll.setScrollingDisabled(true, false);
-            dialog.cont.add(infoScroll).size(380, 400);
-            
+            let scroll = new ScrollPane(infoTable);
+            scroll.setScrollingDisabled(true, false);
+            dialog.cont.add(scroll).maxHeight(400);
             dialog.addCloseButton(); dialog.show();
-        })).size(50, 40).tooltip("Xem thông số chi tiết");
+        })).size(50, 40).tooltip("Xem thông số chi tiết hệ thống");
     },
 
     findTarget(){

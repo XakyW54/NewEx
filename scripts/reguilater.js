@@ -131,11 +131,11 @@ function makeReguBuild() {
 
             if (tier == 1) {
                 table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-                    let dialog = extend(BaseDialog, "Hệ Thống Tiến Hóa Cốt Lõi Reguilater", {});
+                    let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Reguilater", {});
                     
-                    dialog.cont.label(packProv(() => {
+                    let reqCell = dialog.cont.label(packProv(() => {
                         let core = this.team.core();
-                        if (!core) return "[red]Không tìm thấy Lõi Đội để trích xuất tài nguyên![]";
+                        if (!core) return "[red]Không tìm thấy Lõi Đội![]";
                         
                         let coAmt = core.items.get(Items.copper);
                         let siAmt = core.items.get(Items.silicon);
@@ -147,43 +147,49 @@ function makeReguBuild() {
                         let thColor = thAmt >= reguReqMK3.thorium ? "[green]" : "[red]";
                         let tiColor = tiAmt >= reguReqMK3.titanium ? "[green]" : "[red]";
 
-                        return "[yellow]=== BẢNG CHỌN NHÁNH NÂNG CẤP NĂNG LƯỢNG KÉP ===[]\n" +
-                               "[yellow]TÌNH TRẠNG KHO LÕI HIỆN TẠI:[]\n" +
-                               "[cyan]Cấp MK2:[] Copper: " + coColor + coAmt + "[]/" + reguReqMK2.copper + " | Silicon: " + siColor + siAmt + "[]/" + reguReqMK2.silicon + "\n" +
-                               "[purple]Cấp MK2b:[] Thorium: " + thColor + thAmt + "[]/" + reguReqMK3.thorium + " | Titanium: " + tiColor + tiAmt + "[]/" + reguReqMK3.titanium;
-                    })).row(); dialog.cont.add().height(15).row();
+                        return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
+                               "[cyan]Nhánh MK2:[]\n" +
+                               " • Đồng: " + coColor + coAmt + "[] / " + reguReqMK2.copper + "\n" +
+                               " • Silicon: " + siColor + siAmt + "[] / " + reguReqMK2.silicon + "\n" +
+                               "[purple]Nhánh MK2b:[]\n" +
+                               " • Thori: " + thColor + thAmt + "[] / " + reguReqMK3.thorium + "\n" +
+                               " • Titan: " + tiColor + tiAmt + "[] / " + reguReqMK3.titanium;
+                    }));
+                    
+                    reqCell.width(360).get().setWrap(true);
+                    reqCell.get().setAlignment(Align.left);
+                    dialog.cont.row(); dialog.cont.add().height(10).row();
 
                     let branchesTable = new Table();
 
+                    // Nhánh 1: MK2
                     let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
-                    b1.add("[cyan]MÔ-ĐUN NÉN ÁP SUẤT KÉP (MK2)[]").row();
-                    let b1D = b1.add("Gia tốc mật độ hạt điện từ trường:\n" +
-                                     " [white]• Tầm bắn duy trì ổn định, tăng sát thương cơ bản [green]+150%[].[]\n" +
-                                     " [white]• Tăng tỷ lệ bộc phát bạo kích (Crit) when duy trì bắn mục tiêu liên tục.[]\n" +
-                                     " [white]• Lõi tụ năng lượng nòng chuyển màu cam rực khi đạt ngưỡng nén cực đại.[]");
-                    b1D.width(360).get().setWrap(true); b1D.get().setAlignment(Align.left);
-                    b1.row();
+                    b1.add("[cyan]===(MK2)===[]").row();
+                    let b1D = b1.add("Mô-đun nén áp suất kép kỹ thuật cao:\n" +
+                                     " [white]• Tầm bắn đột phá tăng mạnh tối đa [green]420 pixel[] (Tăng +50%).[]\n" +
+                                     " [white]• Sát thương cơ bản gia tăng vượt bậc chạm ngưỡng [green]300 hỏa lực[].[]\n" +
+                                     " [white]• Mở khóa cơ chế bắn bồi [orange]Burst-Shot[] siêu tốc và bạo kích Crit gấp đôi sát thương.[]");
+                    b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                     b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
                         let core = this.team.core();
                         if (core && core.items.get(Items.copper) >= reguReqMK2.copper && core.items.get(Items.silicon) >= reguReqMK2.silicon) {
                             core.items.remove(Items.copper, reguReqMK2.copper);
                             core.items.remove(Items.silicon, reguReqMK2.silicon);
                             this.setTier(2);
-                            Fx.upgradeCore.at(this.x, this.y);
-                            dialog.hide();
+                            Fx.upgradeCore.at(this.x, this.y); dialog.hide(); this.deselect();
                         } else {
-                            Vars.ui.showInfoToast("[red]Kho lõi thiếu Copper hoặc Silicon![]", 2);
+                            Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]");
                         }
-                    })).size(180, 40);
+                    })).size(180, 38);
 
+                    // Nhánh 2: MK2b
                     let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
-                    b2.add("[purple]XUNG LỰC HỦY DIỆT TỐI THƯỢNG (MK2b)[]").row();
-                    let b2D = b2.add("Đại hỏa lực nén hạt nhân mật độ cao:\n" +
-                                     " [white]• Kích hoạt lớp giáp siêu kiên cố bảo vệ tháp pháo lên [green]250,000 HP[].[]\n" +
-                                     " [white]• Mở khóa cơ chế bắn bão hòa: Đạt ngưỡng liên chuỗi phát nổ [red]HỦY DIỆT diện rộng[].[]\n" +
-                                     " [white]• Quả cầu năng lượng đồng trục tại nòng pháo chuyển thành màu đỏ tối thượng.[]");
-                    b2D.width(360).get().setWrap(true); b2D.get().setAlignment(Align.left);
-                    b2.row();
+                    b2.add("[purple]===(MK2b)===[]").row();
+                    let b2D = b2.add("Xung lực hủy diệt hạt nhân tối thượng:\n" +
+                                     " [white]• Duy trì lớp giáp thành trì siêu kiên cố vững chãi [green]250,000 HP[].[]\n" +
+                                     " [white]• Sát thương lõi xung kích đạt ngưỡng hủy diệt kinh hoàng [red]720 hỏa lực[].[]\n" +
+                                     " [white]• Kích hoạt [red]Mạch Bão Hòa Hủy Diệt[]: Tự động phân tách chuỗi liên laser phụ thiêu rụi mục tiêu lân cận.[]");
+                    b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
                     b2.button("[orange]KÍCH HOẠT MK2b[]", packRun(() => {
                         let core = this.team.core();
                         if (core && core.items.get(Items.thorium) >= reguReqMK3.thorium && core.items.get(Items.titanium) >= reguReqMK3.titanium) {
@@ -191,76 +197,83 @@ function makeReguBuild() {
                             core.items.remove(Items.titanium, reguReqMK3.titanium);
                             this.setTier(3);
                             this.health = 250000;   
-                            Fx.bigShockwave.at(this.x, this.y);
-                            dialog.hide();
+                            Fx.bigShockwave.at(this.x, this.y); dialog.hide(); this.deselect();
                         } else {
-                            Vars.ui.showInfoToast("[red]Kho lõi thiếu Thorium hoặc Titanium![]", 2);
+                            Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2b![]");
                         }
-                    })).size(180, 40);
+                    })).size(180, 38);
 
-                    branchesTable.add(b1).width(360); branchesTable.row();
-                    branchesTable.add().height(10).row();
-                    branchesTable.add(b2).width(360);
-let scroll = new ScrollPane(branchesTable);
-scroll.setScrollingDisabled(true, false);
-dialog.cont.add(scroll).maxHeight(400);                    dialog.addCloseButton(); dialog.show();
+                    // Xếp các bảng nhánh theo hàng dọc chuẩn Lavunder
+                    branchesTable.add(b1).width(340); branchesTable.row();
+                    branchesTable.add().height(12).row();
+                    branchesTable.add(b2).width(340);
+
+                    let scroll = new ScrollPane(branchesTable);
+                    scroll.setScrollingDisabled(true, false);
+                    dialog.cont.add(scroll).maxHeight(400);
+                    dialog.addCloseButton(); dialog.show();
                 })).size(50, 40).tooltip("Nâng cấp cấu trúc Reguilater");
             } else {
-                table.button(Icon.lock, Styles.cleari, 40, () => {}).size(50, 40).tooltip("Hệ thống pháo đã đạt giới hạn tiến hóa tối đa!");
+                table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
+                    Vars.ui.showInfo("[scarlet]HỆ THỐNG REGUILATER ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]");
+                })).size(50, 40).tooltip("Đã đạt cấp tối đa");
             }
 
+            // --- NÚT THÔNG TIN (PHONG CÁCH BỐ CỰC ĐẶC TRƯNG CỦA DOR) ---
             table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-                let dialog = extend(BaseDialog, "📊 THÔNG SỐ TRẠNG THÁI REGUILATER", {});
-                let currentTier = this.getTier();
+                let title = " Thông số pháo Reguilater: ";
                 let descStr = "";
+                let currentTier = this.getTier();
 
                 if (currentTier == 1) {
-                    descStr = "[cyan]⚙️ [white]Cấp Hiện Tại: [accent]MK1 (Cơ Bản)[]\n" +
-                              "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                              "[heart] [lightgray]Máu cấu trúc:[] [green]250,000[]\n" +
-                              "[aim] [lightgray]Tầm bắn tối đa:[] [orange]280[] (Ô: 35)\n" +
-                              "[zap] [lightgray]Sát thương cơ bản:[] [yellow]120[] / phát bắn\n" +
-                              "[power] [lightgray]Năng lượng tiêu thụ:[] [gainsboro]12.00 Giây/đv[]\n" +
-                              "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                              "[lightgray]Mô tả hệ thống:[]\n" +
-                              "[white]• Tích tụ hạt điện từ đơn tầng nhắm bắn mục tiêu hỗn hợp tầm xa.\n" +
-                              "[white]• Tốc độ xoay nòng tăng tiến theo thời gian bám đuổi mục tiêu.\n" +
-                              "[white]• Sát thương tăng tiến tối đa [green]+100%[] khi duy trì bắn liên tục.";
-                } else if (currentTier == 2) {
-                    descStr = "[cyan]⚙️ [white]Cấp Hiện Tại: [orange]MK2 (Nén Áp Suất Kép)[]\n" +
-                              "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                              "[heart] [lightgray]Máu cấu trúc:[] [green]250,000[]\n" +
-                              "[aim] [lightgray]Tầm bắn tối đa:[] [orange]420[] (Gia tăng 1.5x)\n" +
-                              "[zap] [lightgray]Sát thương cơ bản:[] [yellow]300[] / phát bắn\n" +
-                              "[power] [lightgray]Năng lượng tiêu thụ:[] [gainsboro]12.00 Giây/đv[]\n" +
-                              "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                              "[lightgray]Mô tả hệ thống:[]\n" +
-                              "[white]• Kích hoạt cơ chế gia tốc điện từ trường, tăng mạnh cự ly bắn.\n" +
-                              "[white]• Mở khóa [orange]Cơ chế Burst-Shot[]: Tỷ lệ bộc phát bắn bồi cực nhanh.\n" +
-                              "[white]• Tăng tỷ lệ nổ bạo kích (Crit) gây sát thương gấp đôi lên mục tiêu.";
-                } else {
-                    descStr = "[scarlet]⚡ [white]Cấp Hiện Tại: [purple]MK2b (Xung Lực Tối Thượng)[]\n" +
-                              "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                              "[heart] [lightgray]Máu cấu trúc:[] [green]250,000[] (Siêu Thành Trì)\n" +
-                              "[aim] [lightgray]Tầm bắn tối đa:[] [orange]280[] (Ô: 35)\n" +
-                              "[zap] [lightgray]Sát thương cơ bản:[] [yellow]720[] / phát bắn\n" +
-                              "[power] [lightgray]Năng lượng tiêu thụ:[] [gainsboro]12.00 Giây/đv[]\n" +
-                              "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                              "[lightgray]Mô tả hệ thống:[]\n" +
-                              "[white]• Chuyển đổi sang đại hỏa lực nén hạt nhân mật độ cao siêu phá hủy.\n" +
-                              "[white]• [red]Cơ chế Bão Hòa Hủy Diệt[]: Khi bắn trúng mục tiêu chính, tự động phân tách phóng chuỗi liên laser phụ thiêu rụi các kẻ địch lân cận.\n" +
-                              "[white]• Quả cầu năng lượng đồng trục nòng chuyển màu đỏ tối thượng.";
+                    title += "[yellow](MK1)[]";
+                    descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
+                              "[lightgray]Máu cấu trúc:[] [green]250,000[]\n" +
+                              "Tầm bắn hiệu dụng:[] [orange]280 pixel[] (35 Ô)\n" +
+                              "Sát thương cơ bản:[] [yellow]120 hỏa lực[] / phát bắn\n" +
+                              "Năng lượng yêu cầu:[] [gainsboro]12.00 đơn vị/giây[]\n\n" +
+                              "[scarlet]⚠ Giới hạn đặt: Tối đa 4 cấu trúc/đội[]\n\n" +
+                              "[sky]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
+                              "• [lightgray]Điện từ đơn tầng:[] Tập trung năng lượng khóa và bắn mục tiêu hỗn hợp Không & Đất.\n" +
+                              "• [lightgray]Gia tốc nòng:[] Tốc độ xoay nòng tăng tiến liên tục theo thời gian bám đuổi mục tiêu.\n" +
+                              "• [lightgray]Xung kích duy trì:[] Sát thương tăng tiến tuyến tính, đạt tối đa [green]+100%[] khi duy trì xả súng liên tục.";
+                } 
+                else if (currentTier == 2) {
+                    title += "[cyan](MK2)[]";
+                    descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
+                              "[lightgray]Máu cấu trúc:[] [green]250,000[]\n" +
+                              "Tầm bắn hiệu dụng:[] [orange]420 pixel [lime](+50%)[]\n" +
+                              "Sát thương cơ bản:[] [yellow]300 hỏa lực [lime](+150%)[]\n" +
+                              "Năng lượng yêu cầu:[] [gainsboro]12.00 đơn vị/giây[]\n\n" +
+"[scarlet]⚠ Giới hạn đặt: Tối đa 4 cấu trúc/đội[]\n\n" +
+                              "[lime]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
+                              "• [lightgray]Nén áp suất kép:[] Gia tốc mật độ hạt trường điện từ, mở rộng cự ly bắn cực đại.\n" +
+                              "• [lightgray]Cơ chế Burst-Shot:[] Kích hoạt tỷ lệ bắn bồi siêu tốc (giảm khóa mục tiêu xuống 2 tick).\n" +
+                              "• [lightgray]Bạo kích (Crit):[] Tích tụ hạt chuyển màu cam rực, mở khóa tỷ lệ bộc phát chí mạng gây gấp đôi sát thương lên mục tiêu.";
+                } 
+                else if (currentTier == 3) {
+                    title += "[purple](MK2b)[]";
+                    descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2b) ⚡[]\n" +
+                              "[lightgray]Máu cấu trúc:[] [green]250,000 [lime](Siêu Thành Trì)[]\n" +
+                              "Tầm bắn hiệu dụng:[] [red]280 pixel (-30%)[] để tập trung hỏa lực tầm gần\n" +
+                              "Sát thương cơ bản:[] [pink]720 hỏa lực [red](Hủy Diệt)[]\n" +
+                              "Năng lượng yêu cầu:[] [gainsboro]12.00 đơn vị/giây[]\n\n" +
+"[scarlet]⚠ Giới hạn đặt: Tối đa 4 cấu trúc/đội[]\n\n" +
+                              "[purple]🔥 CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
+                              "• [lightgray]Hạt nhân mật độ cao:[] Đồng trục nòng pháo tích tụ quả cầu năng lượng màu đỏ tối thượng.\n" +
+                              "• [lightgray]Bão hòa hủy diệt:[] Khi bắn trúng kẻ địch chính, tự động phân tách phóng chuỗi liên laser phụ (tối đa 6 tia) thiêu rụi mục tiêu lân cận.\n" +
+                              "• [lightgray]Hỏa lực bão hòa:[] Hủy diệt diện rộng nhưng hy sinh cự ly bắn để đổi lấy mật độ phá hủy tối đa.";
                 }
-let infoTable = new Table();
+
+                let dialog = extend(BaseDialog, title, {});
+                let infoTable = new Table();
                 let cell = infoTable.add(descStr).width(360);
                 cell.get().setWrap(true); cell.get().setAlignment(Align.left);
-                
-                let infoScroll = new ScrollPane(infoTable);
-                infoScroll.setScrollingDisabled(true, false);
-                dialog.cont.add(infoScroll).size(380, 400);
-
+                let scroll = new ScrollPane(infoTable);
+                scroll.setScrollingDisabled(true, false);
+                dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); dialog.show();
-            })).size(50, 40).tooltip("Xem chi tiết trạng thái tháp pháo");
+            })).size(50, 40).tooltip("Xem thông số chi tiết hệ thống");
         },
 
         range() {

@@ -447,151 +447,144 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
         if(!turretTierMap.containsKey(turretId)) turretTierMap.put(turretId, 1);
         let tier = turretTierMap.get(turretId);
 
-        // --- NÚT NÂNG CẤP (PHONG CÁCH HÀNG DỌC CỦA LAVUNDER) ---
         if(tier == 1) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-                let dialog = extend(BaseDialog, "Trạm Tiến Hóa Linh Kiện Flazerd", {});
+                let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Flazerd", {});
                 
-                dialog.cont.add("[yellow]=== GIA CỐ PHÂN NHÁNH TRỤC NĂNG LƯỢNG ===[]").row();
-                dialog.cont.label(packProv(() => {
+                let reqCell = dialog.cont.label(packProv(() => {
                     let core = this.team.core();
-                    if(!core) return "[red]Không tìm thấy Lõi Đội![]";
+                    if(core == null) return "[red]Không tìm thấy Lõi Đội![]";
+                    let currentcopper = core.items.get(Items.copper);
+                    let currentgraphite = core.items.get(Items.graphite);
+                    let currentlead = core.items.get(Items.lead);
+                    let currentsilicon = core.items.get(Items.silicon);
                     
-                    let copperAmt = core.items.get(Items.copper);
-                    let graphiteAmt = core.items.get(Items.graphite);
-                    let leadAmt = core.items.get(Items.lead);
-                    let siliconAmt = core.items.get(Items.silicon);
+                    let copColor = currentcopper >= reqMK2.copper ? "[green]" : "[red]";
+                    let graColor = currentgraphite >= reqMK2.graphite ? "[green]" : "[red]";
                     
-                    let copperColor = copperAmt >= reqMK2.copper ? "[green]" : "[red]";
-                    let graphiteColor = graphiteAmt >= reqMK2.graphite ? "[green]" : "[red]";
-                    let leadColor = leadAmt >= reqMK3.lead ? "[green]" : "[red]";
-                    let siliconColor = siliconAmt >= reqMK3.silicon ? "[green]" : "[red]";
-
+                    let leaColor = currentlead >= reqMK3.lead ? "[green]" : "[red]";
+                    let silColor = currentsilicon >= reqMK3.silicon ? "[green]" : "[red]";
+                    
                     return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
-                           "[cyan]Nhánh MK2:[] Đồng: " + copperColor + copperAmt + "[]/" + reqMK2.copper + " | Graphite: " + graphiteColor + graphiteAmt + "[]/" + reqMK2.graphite + "\n" +
-                           "[purple]Nhánh MK2b:[] Chì: " + leadColor + leadAmt + "[]/" + reqMK3.lead + " | Silicon: " + siliconColor + siliconAmt + "[]/" + reqMK3.silicon;
-                })).row(); dialog.cont.add().height(10).row();
+                           "[cyan]Nhánh MK2:[]\n" +
+                           " • Đồng: " + copColor + currentcopper + "[] / " + reqMK2.copper + "\n" +
+                           " • Graphite: " + graColor + currentgraphite + "[] / " + reqMK2.graphite + "\n" +
+                           "[purple]Nhánh MK2B:[]\n" +
+                           " • Chì: " + leaColor + currentlead + "[] / " + reqMK3.lead + "\n" +
+                           " • Silicon: " + silColor + currentsilicon + "[] / " + reqMK3.silicon;
+                }));
+                
+                reqCell.width(360).get().setWrap(true);
+                reqCell.get().setAlignment(Align.left);
+                dialog.cont.row(); dialog.cont.add().height(10).row();
 
-                // Tạo bảng chứa các nhánh được sắp xếp THÀNH HÀNG DỌC chuẩn Lavunder
                 let branchesTable = new Table();
 
-                // Cột Khối Nhánh 1 (MK2)
+                // Nhánh 1: MK2
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
-                b1.add("[cyan]CẤU HÌNH GIA TỐC HỎA LỰC (MK2)[]").row();
+                b1.add("[cyan]===(MK2)===[]").row();
                 let b1D = b1.add("Mô-đun mạch xung hỏa lực bứt tốc:\n" +
-                                 " [white]• Tăng HP lên [green]3500[], tầm phát xạ [green]340[].[]\n" +
-                                 " [white]• [yellow]Gia tốc sạc tụ đạt 150%[] giúp tăng tiến sức mạnh cực nhanh.[]\n" +
-                                 " [white]• Hiệu ứng tụ năng: [orange]Mỗi 1% sạc cộng thêm tới 2% sát thương[] gốc.[]\n" +
-                                 " [white]• [pink]Laser Sóng Kép (Helix Laze)[]: Kích hoạt cặp laze sóng uốn cong đối xứng dọc thân.[]");
-                b1D.width(360).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
+                                 " [white]• Tốc độ sạc tụ gia tốc vượt bậc đạt ngưỡng [yellow]150%[].[]\n" +
+                                 " [white]• Tăng tiến [red]+2% Sát thương[] tổng ứng với mỗi 1% năng lượng sạc.[]\n" +
+                                 " [white]• Gia cố [green]+3,500 Máu[] và mở rộng tầm phát xạ lên [green]340 pixel[].[]\n" +
+                                 " [white]• Kích hoạt cặp laze sóng uốn cong đối xứng dọc trục chính.");
+                b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                 b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
                     let core = this.team.core();
-                    if(core && core.items.get(Items.copper) >= reqMK2.copper && core.items.get(Items.graphite) >= reqMK2.graphite){
-                        core.items.remove(Items.copper, reqMK2.copper);
-                        core.items.remove(Items.graphite, reqMK2.graphite);
-                        Fx.upgradeCore.at(this.x, this.y);
-                        Fx.mineHuge.at(this.x, this.y);
-                        Effect.shake(5, 5, this.x, this.y);
-                        this.configure(new java.lang.Integer(2)); 
-                        dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfoToast("[red]Không đủ tài nguyên nâng cấp![]", 2); }
+                    if(core != null && core.items.get(Items.copper) >= reqMK2.copper && core.items.get(Items.graphite) >= reqMK2.graphite){
+                        core.items.remove(Items.copper, reqMK2.copper); core.items.remove(Items.graphite, reqMK2.graphite);
+                        Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
+                        this.configure(new java.lang.Integer(2)); dialog.hide(); this.deselect();
+                    } else { Vars.ui.showInfoToast("[red]Không đủ tài nguyên cho nhánh MK2![]", 2); }
                 })).size(180, 38);
 
-                // Cột Khối Nhánh 2 (MK2b)
+                // Nhánh 2: MK2B
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
-                b2.add("[purple]BIẾN THỂ TAM TUYẾN ĐA MỐC (MK2b)[]").row();
+                b2.add("[purple]===(MK2B)===[]").row();
                 let b2D = b2.add("Lõi hội tụ đa chùm phổ hủy diệt tầng cao:\n" +
-                                 " [white]• Siêu gia cố Máu lên [green]4200[], tầm phát xạ [green]320[].[]\n" +
-                                 " [white]• Sát thương gốc tăng trưởng liên tục theo mức sạc tâm.[]\n" +
-                                 " [white]• [green]Tia Phụ Đa Mốc Quang Phổ[]: Tách thêm tia phụ bắn tới các mục tiêu xung quanh ứng với mỗi mốc [yellow]20 -> 200 điểm[], sát thương bằng [orange]50% tia laze chính đang có[].[]");
-                b2D.width(360).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
-                b2.button("[orange]KÍCH HOẠT MK2b[]", packRun(() => {
+                                 " [white]• Siêu gia cố Máu đạt mốc cực đại [green]4,200 Máu[] (Tầm bắn [orange]320 pixel[]).[]\n" +
+                                 " [white]• Tự động kích hoạt phóng thêm các tia laze phụ khi điểm sạc vượt các mốc [yellow]20 -> 200[].[]\n" +
+                                 " [white]• Mở rộng tối đa lên tới 10 chùm tia quang phổ phân rã mục tiêu xung quanh.[]\n" +
+                                 " [white]• Mỗi tia phụ gây lượng sát thương bằng [red]chính xác 50%[] của tia laze chính.");
+                b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
+                b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                     let core = this.team.core();
-                    if(core && core.items.get(Items.lead) >= reqMK3.lead && core.items.get(Items.silicon) >= reqMK3.silicon){
-                        core.items.remove(Items.lead, reqMK3.lead);
-                        core.items.remove(Items.silicon, reqMK3.silicon);
-                        Fx.bigShockwave.at(this.x, this.y);
-                        Fx.mineHuge.at(this.x, this.y);
-                        Effect.shake(5, 5, this.x, this.y);
-                        this.configure(new java.lang.Integer(3)); 
-                        dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfoToast("[red]Không đủ tài nguyên nâng cấp![]", 2); }
+                    if(core != null && core.items.get(Items.lead) >= reqMK3.lead && core.items.get(Items.silicon) >= reqMK3.silicon){
+                        core.items.remove(Items.lead, reqMK3.lead); core.items.remove(Items.silicon, reqMK3.silicon);
+                        Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
+                        this.configure(new java.lang.Integer(3)); dialog.hide(); this.deselect();
+                    } else { Vars.ui.showInfoToast("[red]Không đủ tài nguyên cho nhánh MK2B![]", 2); }
                 })).size(180, 38);
 
-                // Xếp hàng dọc bằng lệnh .row() giữa hai bảng
-                branchesTable.add(b1).width(360); branchesTable.row();
-                branchesTable.add().height(12).row(); // Khoảng cách đệm giữa 2 dòng
-                branchesTable.add(b2).width(360);
+                // Xếp các bảng nhánh theo hàng dọc chuẩn Lavunder
+                branchesTable.add(b1).width(340); branchesTable.row();
+                branchesTable.add().height(12).row();
+                branchesTable.add(b2).width(340);
 
-let scroll = new ScrollPane(branchesTable);
-scroll.setScrollingDisabled(true, false);
-dialog.cont.add(scroll).maxHeight(400);
+                let scroll = new ScrollPane(branchesTable);
+                scroll.setScrollingDisabled(true, false);
+                dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); dialog.show();
-            })).size(50, 40).tooltip("Tiến hóa pháo");
+            })).size(50, 40).tooltip("Tiến hóa pháo Flazerd");
         } else {
-            table.button(Icon.lock, Styles.cleari, 40, () => {}).size(50, 40).tooltip("Đã đạt cấp tối đa");
+            table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
+                Vars.ui.showInfo("[scarlet]HỆ THỐNG FLAZERD ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]");
+            })).size(50, 40).tooltip("Đã đạt cấp tối đa");
         }
 
-        // --- NÚT THÔNG TIN (PHONG CÁCH BỐ CỤC ĐẶC TRƯNG CỦA DOR) ---
+        // --- NÚT THÔNG TIN (PHONG CÁCH BỐ CỰC ĐẶC TRƯNG CỦA DOR) ---
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-            let dialog = extend(BaseDialog, "📊 THÔNG SỐ KỸ THUẬT FLAZERD", {});
-            let currentTier = turretTierMap.containsKey(this.id) ? turretTierMap.get(this.id) : 1;
+            let title = " Thông số pháo Flazerd: ";
             let descStr = "";
+            let currentTier = turretTierMap.containsKey(this.id) ? turretTierMap.get(this.id) : 1;
 
             if (currentTier == 1) {
+                title += "[yellow](MK1)[]";
                 descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[heart] [lightgray]Máu tháp pháo:[] [green]2,300[]\n" +
-                          "[gray]📐 Kích thước khối:[] [white]4x4[]\n" +
-                          "[lightning] Năng lượng yêu cầu:[] [cyan]22.00 đv/s[]\n" +
-                          "[target] Phân loại mục tiêu:[] [red]Chỉ mặt đất (Ground)[]\n" +
-                          "[aim] Tầm bắn hiệu dụng:[] [orange]320 pixel[]\n" +
-                          "[zap] Sát thương liên tục:[] [yellow]33.00[] / giây\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[lightgray]⚙️ CƠ CHẾ VẬN HÀNH KHỐI MẠCH:[]\n" +
-                          "[white]• Phát xạ hệ thống chùm laze đơn mục tiêu liên tục bám khóa kẻ địch.\n" +
-                          "[white]• [orange]Giao diện Holyder Kỹ Thuật Số[]: Hiển thị thời gian thực số % sạc tụ tại lõi tâm.\n" +
-                          "[white]• [yellow]Giới hạn sạc tích lũy mở rộng lên 200%[] giúp tăng tiến dần sát thương.";
-            } else if (currentTier == 2) {
+                          "[lightgray]Máu tháp pháo:[] [green]2,300[]\n" +
+                          "Tầm bắn hiệu dụng:[] [orange]320 pixel[]\n" +
+                          "Sát thương liên tục:[] [white]33.00 hỏa lực/s[]\n" +
+                          "[scarlet]⚠ Giới hạn đặt: Tối đa 2 cấu trúc/đội[]\n\n" +
+                          "[sky]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
+                          "• [lightgray]Phát xạ mục tiêu:[] Phóng chùm tia laze đơn liên tục bám khóa chặt kẻ địch mặt đất.\n" +
+                          "• [lightgray]Màn hình Holyder:[] Giao diện kỹ thuật số hiển thị thời gian thực số % sạc tụ lõi tâm.\n" +
+                          "• [lightgray]Tích tụ năng lượng:[] Giới hạn sạc mở rộng lên [yellow]200%[] giúp tăng tiến dần sát thương tổng.";
+            } 
+            else if (currentTier == 2) {
+                title += "[cyan](MK2)[]";
                 descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[heart] [lightgray]Máu tháp pháo:[] [green]3,500[]\n" +
-                          "[gray]📐 Kích thước khối:[] [white]4x4[]\n" +
-                          "[lightning] Năng lượng yêu cầu:[] [cyan]22.00 đv/s[]\n" +
-                          "[target] Phân loại mục tiêu:[] [red]Chỉ mặt đất (Ground)[]\n" +
-                          "[aim] Tầm bắn hiệu dụng:[] [orange]340 pixel[]\n" +
-                          "[zap] Sát thương cơ bản:[] [yellow]115.50[] / giây\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[lightgray]⚙️ CƠ CHẾ VẬN HÀNH KHỐI MẠCH:[]\n" +
-                          "[white]• [yellow]Mạch tụ điện cao thế hỏa tốc sạc đạt tốc độ 150%[] vượt bậc.\n" +
-                          "[white]• [orange]Xung lực gia cường[]: Cứ mỗi 1% điểm sạc tích lũy cộng thêm [red]2% sát thương[] tổng.\n" +
-                          "[white]• [pink]Laser Sóng Kép (Helix Laze)[]: Kích hoạt thêm 2 tia sóng phụ uốn lượn hình sin bám dọc đối xứng hai bên trục chính.\n" +
-                          "[white]• Hệ thống xả quá tải an toàn: Tự động đếm ngược sạc và reset điểm về 0 sau khi duy trì trạng thái đỉnh năng lượng.";
-            } else {
-                descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2b) ⚡[]\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[heart] [lightgray]Máu tháp pháo:[] [green]4,200[]\n" +
-                          "[gray]📐 Kích thước khối:[] [white]4x4[]\n" +
-                          "[lightning] Năng lượng yêu cầu:[] [cyan]22.00 đv/s[]\n" +
-                          "[target] Phân loại mục tiêu:[] [red]Chỉ mặt đất (Ground)[]\n" +
-                          "[aim] Tầm bắn hiệu dụng:[] [orange]320 pixel[]\n" +
-                          "[zap] Sát thương cơ bản:[] [yellow]198.00[] / giây\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[lightgray]⚙️ CƠ CHẾ VẬN HÀNH KHỐI MẠCH:[]\n" +
-                          "[white]• [green]Hệ Thống Tia Phụ Phân Tách Đa Mốc[]: Tự động kích hoạt phóng thêm các tia laze phụ màu xanh lá bắn phá thẳng vào các kẻ địch xung quanh bất cứ khi nào điểm sạc tâm vượt qua các mốc cụ thể: [yellow]20, 40, 60, 80, 100, 120, 140, 160, 180, 200[].\n" +
-                          "[white]• [orange]Hỏa lực phân nhánh đặc biệt[]: Mỗi tia phụ rẽ nhánh tự động gây lượng sát thương bằng [red]chính xác 50% sát thương của tia laze chính[] ở thời điểm hiện tại.";
+                          "[lightgray]Máu tháp pháo:[] [green]3,500 [lime](+52%)[]\n" +
+                          "Tầm bắn hiệu dụng:[] [orange]340 pixel [lime](+6.25%)[]\n" +
+                          "Sát thương cơ bản:[] [white]115.50 hỏa lực/s[]\n" +
+                          "[scarlet]⚠ Giới hạn đặt: Tối đa 2 cấu trúc/đội[]\n\n" +
+                          "[lime]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
+                          "• [lightgray]Mạch hỏa tốc:[] Tốc độ sạc tụ năng lượng gia tốc vượt bậc đạt ngưỡng đỉnh [yellow]150%[].\n" +
+                          "• [lightgray]Xung lực hỏa lực:[] Cứ mỗi 1% điểm sạc tích lũy cộng trực tiếp [red]+2% sát thương[] tổng.\n" +
+                          "• [lightgray]Laser Helix:[] Kích hoạt thêm 2 tia sóng phụ uốn lượn hình sin bám dọc đối xứng hai bên trục chính.\n" +
+                          "• [lightgray]Xả quá tải an toàn:[] Tự động đếm ngược và reset điểm về 0 sau khi duy trì đỉnh năng lượng.";
+            } 
+            else if (currentTier == 3) {
+                title += "[purple](MK2B)[]";
+                descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]4,200 [lime](+82.6%)[]\n" +
+                          "Tầm bắn hiệu dụng:[] [orange]320 pixel[]\n" +
+                          "Sát thương cơ bản:[] [white]198.00 hỏa lực/s[]\n" +
+                          "[scarlet]⚠ Giới hạn đặt: Tối đa 2 cấu trúc/đội[]\n\n" +
+                          "[purple]🔥 CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
+                          "• [lightgray]Phân chùm đa mốc:[] Tách thêm tia laze phụ xanh lá bắn phá mục tiêu xung quanh khi điểm sạc vượt qua các mốc [yellow]20, 40, 60, 80, 100, 120, 140, 160, 180, 200[].\n" +
+                          "• [lightgray]Hỏa lực rẽ nhánh:[] Mỗi tia phụ rẽ nhánh tự động gây sát thương bằng [red]chính xác 50%[] hỏa lực tia chính.\n" +
+                          "• [lightgray]Xả tụ thông minh:[] Tự động thiết lập lại điểm năng lượng về 0 sau chu kỳ bắn để chuẩn bị cho loạt xung năng mới.";
             }
 
-let infoTable = new Table();
+            let dialog = extend(BaseDialog, title, {});
+            let infoTable = new Table();
             let cell = infoTable.add(descStr).width(360);
             cell.get().setWrap(true); cell.get().setAlignment(Align.left);
-            
-            let infoScroll = new ScrollPane(infoTable);
-            infoScroll.setScrollingDisabled(true, false);
-            dialog.cont.add(infoScroll).size(380, 400);
-            
+            let scroll = new ScrollPane(infoTable);
+            scroll.setScrollingDisabled(true, false);
+            dialog.cont.add(scroll).maxHeight(400);
             dialog.addCloseButton(); dialog.show();
-        })).size(50, 40).tooltip("Xem thông số chi tiết");
+        })).size(50, 40).tooltip("Xem thông số chi tiết hệ thống");
     },
 
     findTarget(){

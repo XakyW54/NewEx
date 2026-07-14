@@ -240,42 +240,52 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
         table.clear(); table.row();
         let tier = this.getTier();
 
-        // --- NÚT NÂNG CẤP (PHONG CÁCH HÀNG DỌC GỌN GÀNG CỦA FLOWER/LAVUNDER) ---
+        // --- NÚT TIẾN HÓA (PHONG CÁCH HÀNG DỌC GỌN GÀNG CỦA LAVUNDER) ---
         if(tier == 0) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-                let dialog = extend(BaseDialog, "Nâng Cấp Chuỗi Hệ Thống DTG Soldern", {});
+                let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo DTG Soldern", {});
                 
-                dialog.cont.add("[gold]=== TIẾN HÓA LÕI THÁP PHÁO DTG SOLDERN ===[]").row();
-                dialog.cont.label(packProv(() => {
+                let reqCell = dialog.cont.label(packProv(() => {
                     let core = this.team.core();
                     if(core == null) return "[red]Không tìm thấy Lõi Đội![]";
-                    let currenttitanium = core.items.get(Items.titanium);
-                    let currentsilicon = core.items.get(Items.silicon);
-                    let currentplastanium = core.items.get(Items.plastanium);
                     
-                    let titColor1 = currenttitanium >= reqMK2.titanium ? "[green]" : "[red]";
-                    let silColor1 = currentsilicon >= reqMK2.silicon ? "[green]" : "[red]";
+                    let currentTitanium = core.items.get(Items.titanium);
+                    let currentSilicon = core.items.get(Items.silicon);
+                    let currentPlastanium = core.items.get(Items.plastanium);
                     
-                    let titColor2 = currenttitanium >= reqMK2B.titanium ? "[green]" : "[red]";
-                    let silColor2 = currentsilicon >= reqMK2B.silicon ? "[green]" : "[red]";
-                    let plaColor2 = currentplastanium >= reqMK2B.plastanium ? "[green]" : "[red]";
+                    let titColor1 = currentTitanium >= reqMK2.titanium ? "[green]" : "[red]";
+                    let silColor1 = currentSilicon >= reqMK2.silicon ? "[green]" : "[red]";
+                    
+                    let titColor2 = currentTitanium >= reqMK2B.titanium ? "[green]" : "[red]";
+                    let silColor2 = currentSilicon >= reqMK2B.silicon ? "[green]" : "[red]";
+                    let plaColor2 = currentPlastanium >= reqMK2B.plastanium ? "[green]" : "[red]";
                     
                     return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
-                           "[cyan]Nhánh MK2:[] Titanium: " + titColor1 + currenttitanium + "[]/" + reqMK2.titanium + " | Silicon: " + silColor1 + currentsilicon + "[]/" + reqMK2.silicon + "\n" +
-                           "[purple]Nhánh MK2B:[] Titanium: " + titColor2 + currenttitanium + "[]/" + reqMK2B.titanium + " | Silicon: " + silColor2 + currentsilicon + "[]/" + reqMK2B.silicon + " | Plastanium: " + plaColor2 + currentplastanium + "[]/" + reqMK2B.plastanium;
-                })).row(); dialog.cont.add().height(10).row();
+                           "[cyan]Nhánh MK2:[]\n" + 
+                           " • Titan: " + titColor1 + currentTitanium + "[] / " + reqMK2.titanium + "\n" +
+                           " • Silicon: " + silColor1 + currentSilicon + "[] / " + reqMK2.silicon + "\n" +
+                           "[purple]Nhánh MK2B:[]\n" + 
+                           " • Titan: " + titColor2 + currentTitanium + "[] / " + reqMK2B.titanium + "\n" +
+                           " • Silicon: " + silColor2 + currentSilicon + "[] / " + reqMK2B.silicon + "\n" +
+                           " • Nhựa: " + plaColor2 + currentPlastanium + "[] / " + reqMK2B.plastanium;
+                }));
+                
+                reqCell.width(360).get().setWrap(true);
+                reqCell.get().setAlignment(Align.left);
+                dialog.cont.row(); dialog.cont.add().height(10).row();
 
                 let branchesTable = new Table();
 
-                // Khối Nhánh 1: MK2
+                // Khối Nhánh 1: Cấu hình Tiêu chuẩn MK2
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
-                b1.add("[cyan]CẤU HÌNH TIÊU CHUẨN (MK2)[]").row();
-                let b1D = b1.add("Cải tiến năng lực năng lượng xung kích:\n" +
-                                 " [white]• Máu pháo tăng lên [green]2860[] (+30%). Lá chắn tăng [green]6500[].[]\n" +
-                                 " [white]• Tầm bắn mở rộng vượt trội lên [green]468 pixel[] (+30%).[]\n" +
-                                 " [white]• Đạn tầm xa: Tốc độ tăng [green]10.4[] và đổi sang đạn MK2 tiêu chuẩn.[]\n" +
-                                 " [white]• Cận chiến: Mở rộng tầm kích hoạt shotgun và tăng sát thương đạn rải.[]\n" +
-                                 " [white]• Cơ chế: Cho phép sạc đầy lại khiên lập tức khi kẻ địch lọt vào tầm gần.[]");
+                b1.add("[cyan]===(MK2)===[]").row();
+                let b1D = b1.add("Cải tiến năng lực hỏa lực và năng lượng xung kích:\n" +
+                                 " [white]• Kết cấu HP pháo tăng mạnh lên [green]2860 HP[] (+30%).[]\n" + 
+                                 " [white]• Lõi khiên mở rộng, gia tăng độ bền màng chắn lên [cyan]6500[].[]\n" +
+                                 " [white]• Tầm bắn tầm xa mở rộng vượt trội đạt [green]468 pixel[] (+30%).[]\n" +
+                                 " [white]• Đạn tầm xa nâng cấp lên dạng MK2 (Vận tốc: 10.4, Sát thương: 56).[]\n" +
+                                 " [white]• Cận chiến: Giữ nguyên cự ly áp sát 100, cường hóa đạn rải lên [yellow]30.6[].[]\n" +
+                                 " [white]• Cơ chế đặc biệt: Cho phép sạc đầy lại màng khiên tức thời khi mục tiêu lọt vào tầm gần lần đầu.[]");
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                 b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
                     let core = this.team.core();
@@ -286,14 +296,15 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                     } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                 })).size(180, 38);
 
-                // Khối Nhánh 2: MK2B (Tương đương MK3 trong logic cấu trúc)
+                // Khối Nhánh 2: Biến thể Trọng lực Laser MK2B
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
-                b2.add("[purple]BIẾN THỂ TRỌNG LỰC LASER (MK2B)[]").row();
-                let b2D = b2.add("Chuyển đổi toàn diện sang dạng Trọng Pháo Laser:\n" +
-                                 " [white]• Kết cấu HP pháo đạt siêu cấp [green]4400[] (+100%). Lõi lá chắn đạt [green]12000[].[]\n" +
-                                 " [white]• Tầm bắn nén lại còn [red]252 pixel[] nhưng cường hóa cự ly shotgun (145).[]\n" +
-                                 " [white]• Tầm xa: Thay đạn thường bằng [orange]Laser hủy diệt[] sát thương cực đại [red]122[].[]\n" +
-                                 " [white]• Cận chiến: Giải phóng [scarlet]Hỏa lực hỗn hợp[] cực đại bao gồm 14 đạn rải đỏ kèm 6 tia đạn tỏa diện rộng.[]");
+                b2.add("[purple]===(MK2B)===[]").row();
+                let b2D = b2.add("Chuyển đổi toàn diện sang dạng Trọng Pháo Laser bạo nén:\n" +
+                                 " [white]• Kết cấu khung vững chắc nâng HP pháo lên mức siêu cấp [green]4400 HP[] (+100%).[]\n" +
+                                 " [white]• Lõi nén lá chắn hấp thụ đạt mốc tối đa [cyan]12000[] độ bền.[]\n" +
+                                 " [white]• Tầm bắn tầm xa thu hẹp còn [red]252 pixel[], bù lại chuyển sang dạng [orange]Chùm tia Laser xuyên phá[] tầm trung cực đại [red]122 sát thương[].[]\n" +
+                                 " [white]• Cận chiến: Tầm quét kích hoạt shotgun mở rộng lên [yellow]145 pixel[].[]\n" +
+                                 " [white]• Giải phóng hỏa lực shotgun hỗn hợp: Phóng đồng thời [scarlet]14 đạn rải đỏ[] kèm [orange]6 tia đạn tỏa diện rộng[] quét sạch vật cản xung quanh.[]");
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
                 b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                     let core = this.team.core();
@@ -304,80 +315,72 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                     } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
                 })).size(180, 38);
 
-                // Sắp xếp theo hàng dọc gọn gàng trong bảng điều hướng
+                // Sắp xếp các bảng theo hàng dọc chuẩn cấu trúc
                 branchesTable.add(b1).width(340); branchesTable.row();
-                branchesTable.add().height(12).row(); 
+                branchesTable.add().height(12).row();
                 branchesTable.add(b2).width(340);
 
-let scroll = new ScrollPane(branchesTable);
-scroll.setScrollingDisabled(true, false);
-dialog.cont.add(scroll).maxHeight(400);
+                let scroll = new ScrollPane(branchesTable);
+                scroll.setScrollingDisabled(true, false);
+                dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); dialog.show();
             })).size(50, 40).tooltip("Tiến hóa tháp pháo DTG Soldern");
         } else {
             table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
-                Vars.ui.showInfo("[scarlet]HỆ THỐNG ĐÃ ĐẠT GIỚI HẠN TIẾN HÓA CỦA NHÁNH ĐÃ CHỌN![]");
-            })).size(50, 40).tooltip("Đã đạt cấp tối đa");
+                Vars.ui.showInfo(this.getTier() == 1 ? "[cyan]HỆ THỐNG ĐANG HOẠT ĐỘNG Ở CẤU HÌNH TIÊU CHUẨN MK2![]" : "[purple]HỆ THỐNG ĐANG HOẠT ĐỘNG Ở BIẾN THỂ TRỌNG LỰC LASER MK2B![]");
+            })).size(50, 40).tooltip("Hệ thống đã khóa nhánh tiến hóa");
         }
 
-        // --- NÚT THÔNG TIN (PHONG CÁCH ĐẶC TRƯNG CỦA DTG SOLDERN) ---
+        // --- NÚT THÔNG TIN THÔNG SỐ CHÍNH XÁC (PHONG CÁCH BỐ CỰC ĐẶC TRƯNG CỦA DOR) ---
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-            let title = "📊 THÔNG SỐ PHÁO DTG SOLDERN: ";
+            let title = " Thông số pháo DTG Soldern: ";
             let descStr = "";
             let currentTier = this.getTier();
 
             if (currentTier == 0) {
-                title += "[yellow]Trạng thái gốc (MK1)[]";
+                title += "[yellow](MK1)[]";
                 descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[heart] Máu tháp pháo:[] [green]" + this.health + "[]\n" +
-                          "[shield] Độ bền lá chắn:[] [cyan]" + shieldHealthMK1 + "[]\n" +
-                          "[gray]📐 Kích thước khối:[] [white]" + this.block.size + "x" + this.block.size + "[]\n" +
-                          "[aim] Tầm bắn hiệu dụng:[] [orange]" + this.range() + " pixel[]\n" +
-                          "[zap] Sát thương tầm xa:[] [yellow]63.00[]\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[scarlet]⚠ GIỚI HẠN: Tối đa 10 cấu trúc/Đội trên sân[]\n\n" +
+                          "• [lightgray]Máu tháp pháo:[] [green]2200 HP[]\n" +
+                          "• [lightgray]Độ bền lá chắn:[] [cyan]" + shieldHealthMK1 + "[]\n" +
+                          "• [lightgray]Tầm bắn hiệu dụng:[] [orange]" + this.range() + " pixel[]\n" +
+                          "• [lightgray]Sát thương tầm xa:[] [yellow]63.0[] (Tốc độ đạn: 7)\n" +
+                          "[scarlet]⚠ Giới hạn dòng: Tối đa 10 cấu trúc/Đội trên chiến trường[]\n\n" +
                           "[sky]⚡ CƠ CHẾ ĐA DỤNG:[]\n" +
-                          "• Khiên năng lượng: Tạo màng chắn góc góc 120 độ theo hướng nòng khi bắn, chặn đạn địch.\n" +
-                          "• Chế độ Cận chiến (Shotgun): Tự động bung vuốt máy khi mục tiêu lọt vào tầm gần (100 pixel), xả loạt đạn tỏa liên thanh liên tục 10 băng.";
+                          "• [lightgray]Màng chắn năng lượng:[] Tự động bung góc chặn 120° theo hướng nòng súng khi bắn để triệt tiêu đạn địch.\n" +
+                          "• [lightgray]Chế độ Cận chiến (Shotgun):[] Kích hoạt vuốt máy khi mục tiêu lọt vào cự ly [yellow]100 pixel[]. Xả loạt 14 đạn rải (Sát thương: 21) liên thanh liên tục trong 10 băng đạn.";
             } 
             else if (currentTier == 1) {
-                title += "[cyan]CẤU HÌNH TIÊU CHUẨN (MK2)[]";
-                descStr = "[cyan]⚡ THÔNG SỐ NÂNG CẤP (MK2) ⚡[]\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[heart] Máu tháp pháo:[] [green]" + this.health + "[] [yellow](+30%)[]\n" +
-                          "[shield] Độ bền lá chắn:[] [cyan]" + shieldHealthMK2 + "[]\n" +
-                          "[aim] Tầm bắn hiệu dụng:[] [orange]" + this.range() + " pixel[] [yellow](+30%)[]\n" +
-                          "[zap] Sát thương tầm xa:[] [yellow]56.00[] (Vận tốc bay cực nhanh)\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[scarlet]⚠ GIỚI HẠN: Tối đa 10 cấu trúc/Đội trên sân[]\n\n" +
-                          "[lime]⚡ CƠ CHẾ ĐA DỤNG:[]\n" +
-                          "• Sạc khiên tức thời: Khiên tự động sạc đầy ngay lập tức khi kẻ địch lần đầu lọt vào tầm shotgun.\n" +
-                          "• Hỏa lực cận chiến: Đạn shotgun được tăng sát thương gốc lên [yellow]30.6[].";
+                title += "[cyan](MK2)[]";
+                descStr = "[cyan]⚡ THÔNG SỐ CẤU HÌNH NÂNG CẤP (MK2) ⚡[]\n" +
+                          "• [lightgray]Máu tháp pháo:[] [green]2860 HP [yellow](+30%)[]\n" +
+                          "• [lightgray]Độ bền lá chắn:[] [cyan]" + shieldHealthMK2 + "[]\n" +
+                          "• [lightgray]Tầm bắn hiệu dụng:[] [orange]" + this.range() + " pixel [yellow](+30%)[]\n" +
+                          "• [lightgray]Sát thương tầm xa:[] [yellow]56.0[] (Gia tốc đạn tăng vọt: 10.4)\n" +
+                          "[scarlet]⚠ Giới hạn dòng: Tối đa 10 cấu trúc/Đội trên chiến trường[]\n\n" +
+                          "[lime]⚡ CƠ CHẾ ĐA DỤNG BỔ SUNG:[]\n" +
+                          "• [lightgray]Nạp khiên tức thời:[] Khiên tự động sạc đầy lại hoàn toàn khi kẻ địch lần đầu tiên bước vào vùng cận chiến.\n" +
+                          "• [lightgray]Hỏa lực shotgun cải tiến:[] Tăng mạnh sát thương mỗi viên đạn rải trong loạt tỏa cận chiến lên [yellow]30.6[].";
             } 
             else if (currentTier == 2) {
-                title += "[purple]BIẾN THỂ TRỌNG LỰC LASER (MK2B)[]";
-                descStr = "[purple]⚡ THÔNG SỐ BIẾN THỂ (MK2B) ⚡[]\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[heart] Máu tháp pháo:[] [green]" + this.health + "[] [yellow](+100%)[]\n" +
-                          "[shield] Độ bền lá chắn:[] [cyan]" + shieldHealthMK3 + "[]\n" +
-                          "[aim] Tầm bắn hiệu dụng:[] [orange]" + this.range() + " pixel[] [coral](-30%)[]\n" +
-                          "[zap] Sát thương Laser:[] [yellow]122.00[]\n" +
-                          "━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-                          "[scarlet]⚠ GIỚI HẠN: Tối đa 10 cấu trúc/Đội trên sân[]\n\n" +
-                          "[purple]🔥 SỨC MẠNH CẬN CHIẾN TỐI THƯỢNG:[]\n" +
-                          "• Sát thương tầm xa chuyển sang dạng chùm tia Laser hủy diệt cự ly trung bình.\n" +
-                          "• Cận chiến mở rộng (145 pixel), kích hoạt loạt đạn Shotgun hỗn hợp bao gồm 14 đạn rải đỏ và 6 tia đạn tỏa chéo quét sạch vật cản xung quanh.";
+                title += "[purple](MK2B)[]";
+                descStr = "[purple]⚡ THÔNG SỐ BIẾN THỂ TRỌNG LỰC (MK2B) ⚡[]\n" +
+                          "• [lightgray]Máu tháp pháo:[] [green]4400 HP [yellow](+100%)[]\n" +
+                          "• [lightgray]Độ bền lá chắn:[] [cyan]" + shieldHealthMK3 + "[]\n" +
+                          "• [lightgray]Tầm bắn hiệu dụng:[] [orange]" + this.range() + " pixel [coral](Thu hẹp)[]\n" +
+                          "• [lightgray]Chế độ tầm xa:[] Chuyển hẳn thành [orange]Laser hủy diệt[] nén điểm gây [red]122 sát thương[] trực diện.\n" +
+                          "[scarlet]⚠ Giới hạn dòng: Tối đa 10 cấu trúc/Đội trên chiến trường[]\n\n" +
+                          "[purple]🔥 SỨC MẠNH ÁP SÁT TỐI THƯỢNG:[]\n" +
+                          "• [lightgray]Mở rộng tầm Shotgun:[] Ngưỡng kích hoạt tăng lên [yellow]145 pixel[].\n" +
+                          "• [lightgray]Hỏa lực hỗn hợp:[] Khai hỏa đồng loạt tổ hợp bạo kích gồm [scarlet]14 đạn rải đỏ[] (Sát thương: 23) đan xen [sharp]6 tia đạn tỏa chéo dạt góc 12°[] (Sát thương: 23) để xóa sổ quân địch trong tích tắc.";
             }
 
             let dialog = extend(BaseDialog, title, {});
-let infoTable = new Table();
-let cell = infoTable.add(descStr).width(360);
-cell.get().setWrap(true); cell.get().setAlignment(Align.left);
-let scroll = new ScrollPane(infoTable);
-scroll.setScrollingDisabled(true, false);
-dialog.cont.add(scroll).maxHeight(400);
+            let infoTable = new Table();
+            let cell = infoTable.add(descStr).width(360);
             cell.get().setWrap(true); cell.get().setAlignment(Align.left);
+            let scroll = new ScrollPane(infoTable);
+            scroll.setScrollingDisabled(true, false);
+            dialog.cont.add(scroll).maxHeight(400);
             dialog.addCloseButton(); dialog.show();
         })).size(50, 40).tooltip("Xem chi tiết thông số trạng thái");
     },

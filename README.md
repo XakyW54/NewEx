@@ -17,3 +17,9 @@
 - Tăng phạm vi bắn: 176 > 352.
 - Tăng độ dài của laser: 120 > 240.
 - Giảm sát thương đạn của tất cả cấp độ xuống 1.
+
+
+
+-------------------------------------------
+> Điều chỉnh cân bằng bản 0.4.6:
++ Pháo Blaw, Blixalum và Tyber sẽ giới hạn xây là 1

@@ -505,7 +505,7 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
             return;
         }
 
-        if(this.isShooting() && this.target != null && !this.target.dead){
+        if(this.isShooting && this.target != null && !this.target.dead){
             this.zoomAnimation = Math.min(1, this.zoomAnimation + Time.delta / 10);
             
             if(tier == 2 || tier == 3){
@@ -525,7 +525,7 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
             return;
         }
 
-        if(tier == 3 && this.isShooting() && this.target != null && !this.target.dead){
+        if(tier == 3 && this.isShooting && this.target != null && !this.target.dead){
             this.mk3Timer += Time.delta;
             if(this.mk3Timer >= 60){
                 this.mk3ChargePoints += 5;
@@ -600,7 +600,7 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
         if(this.zoomAnimation > 0){
             Draw.z(Layer.turret + 1); 
 
-            if(this.isShooting() && this.target != null && !this.target.dead){
+            if(this.isShooting && this.target != null && !this.target.dead){
                 if(Mathf.chance(0.12)){ 
                     Fx.smoke.at(this.x + Mathf.range(2), this.y + Mathf.range(2));
                 }
@@ -631,7 +631,7 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
             let currentBallSize = Interp.pow3Out.apply(0, 1, this.zoomAnimation);
             
             let baseRadius = 2.0 * currentBallSize; 
-            if(this.isShooting() && this.zoomAnimation >= 0.9 && !Vars.state.isPaused()){
+            if(this.isShooting && this.zoomAnimation >= 0.9 && !Vars.state.isPaused()){
                 baseRadius += Mathf.absin(Time.time, 3, 0.4); 
             }
 

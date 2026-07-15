@@ -1,4 +1,3 @@
-
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
@@ -13,34 +12,25 @@ const regenSpeedMK2 = 0.34;
 const lossPerShotMK2B = 0.003; 
 const regenSpeedMK2B = 0.40;   
 
-
-
 const bulletSlashEffect = new Effect(15, e => {
     let baseAngle = e.rotation;
-
-     
     let maxLength = 16.0;    
     let maxWidth = 6.0;     
     let maxStroke = 2.5;    
 
- 
     let len = maxLength * e.fout();
     let width = maxWidth * e.fout();
     let stroke = maxStroke * e.fout();
 
- 
     let cx = e.x;
     let cy = e.y;
 
- 
     let cosA = Math.cos(baseAngle * Mathf.degRad);
     let sinA = Math.sin(baseAngle * Mathf.degRad);
 
- 
     function getX(localX, localY) { return cx + (localX * cosA - localY * sinA); }
     function getY(localX, localY) { return cy + (localX * sinA + localY * cosA); }
 
- 
     let pTipX = getX(len, 0);           
     let pTipY = getY(len, 0);
 
@@ -53,22 +43,18 @@ const bulletSlashEffect = new Effect(15, e => {
     let pTailX = getX(-len * 0.2, 0);   
     let pTailY = getY(-len * 0.2, 0);
 
- 
     Draw.color(Color.valueOf("#ffe18f"));
     Lines.stroke(stroke);
     
-    // Vẽ khung nối các điểm lại thành hình đầu đạn
     Lines.line(pTailX, pTailY, pMidLeftX, pMidLeftY);
     Lines.line(pMidLeftX, pMidLeftY, pTipX, pTipY);
     Lines.line(pTipX, pTipY, pMidRightX, pMidRightY);
     Lines.line(pMidRightX, pMidRightY, pTailX, pTailY);
 
- 
     if (e.fout() > 0.15) {
         Draw.color(Color.white);
         Lines.stroke(stroke * 0.4);  
         
-         
         let cTipX = getX(len * 0.9, 0);
         let cTipY = getY(len * 0.9, 0);
         let cMidLeftX = getX(len * 0.4, width * 0.3);
@@ -83,61 +69,47 @@ const bulletSlashEffect = new Effect(15, e => {
         Lines.line(cTipX, cTipY, cMidRightX, cMidRightY);
         Lines.line(cMidRightX, cMidRightY, cTailX, cTailY);
     }
-
     Draw.reset();
 });
 
-
+// --- ĐẠN VENDICUM TIER 0 ---
 const vendicumBullet = extend(BasicBulletType, {
     speed: 8, damage: 45, lifetime: 48, width: 11, height: 16, 
     frontColor: Color.white, backColor: Color.valueOf("#e0b080"),
+    textType: "vendicumBullet",
     pierce: true, pierceCap: 3, pierceBuilding: true, knockback: 1, impact: true,
-
+    
+    // THAY THẾ: Dùng thuộc tính có sẵn thay vì override hàm hit/despawn gây lỗi
+    hitEffect: Fx.disperseTrail,
+    despawnEffect: Fx.disperseTrail,
 
     update(b) {
         this.super$update(b);
         if (Mathf.chance(0.20)) {  
             Fx.disperseTrail.at(b.x, b.y, b.rotation()); 
         }
-    },
-
- 
-    hit(b, x, y) {
-        this.super$hit(b, x, y);
-        Fx.disperseTrail.at(x, y, b.rotation()); 
-    },
-    
-    despawn(b) {
-        this.super$despawn(b);
-       Fx.disperseTrail.at(b.x, b.y, b.rotation()); 
     }
 });
 
+// --- ĐẠN VENDICUM MK2 ---
 const vendicumMK2Bullet = extend(BasicBulletType, {
-    speed: 10, damage: 65, lifetime: 45, width: 13, height: 20, frontColor: Color.white, backColor: Color.valueOf("#ffaa66"),
+    speed: 10, damage: 65, lifetime: 45, width: 13, height: 20, 
+    frontColor: Color.white, backColor: Color.valueOf("#ffaa66"),
     pierce: true, pierceCap: 5, pierceBuilding: true, knockback: 1.4, impact: true,
+    
+    // THAY THẾ:
+    hitEffect: Fx.disperseTrail,
+    despawnEffect: Fx.disperseTrail,
 
-
-        update(b) {
+    update(b) {
         this.super$update(b);
         if (Mathf.chance(0.40)) {  
             Fx.disperseTrail.at(b.x, b.y, b.rotation()); 
         }
-    },
-
- 
-    hit(b, x, y) {
-        this.super$hit(b, x, y);
-        Fx.disperseTrail.at(x, y, b.rotation()); 
-    },
-    
-    despawn(b) {
-        this.super$despawn(b);
-        Fx.disperseTrail.at(b.x, b.y, b.rotation()); 
     }
-
 });
 
+// --- ĐẠN VENDICUM MK2B ---
 const vendicumMK2BBullet = extend(BasicBulletType, {
     speed: 9, damage: 122.5, lifetime: 50, width: 5, height: 64, 
     frontColor: Color.white, backColor: Color.valueOf("#831006"),
@@ -145,35 +117,21 @@ const vendicumMK2BBullet = extend(BasicBulletType, {
     trailColor: Color.valueOf("#ff2525"),
     pierce: false, pierceBuilding: false, knockback: 2.8, impact: true, 
     homingPower: 0.15, homingRange: 200,
+    
+    // THAY THẾ:
+    hitEffect: Fx.disperseTrail,
+    despawnEffect: Fx.disperseTrail,
 
-update(b) {
+    update(b) {
         this.super$update(b);
         if (Mathf.chance(0.40)) {  
-
-            
             Fx.disperseTrail.at(b.x, b.y, b.rotation()); 
-            
-            // Trả lại trạng thái trộn màu mặc định để không lỗi game
             Draw.mixcol(); 
         }
-    },
-
-    hit(b, x, y) {
-        this.super$hit(b, x, y);
-
-        Fx.disperseTrail.at(x, y, b.rotation()); 
-        Draw.mixcol();
-    },
-    
-    despawn(b) {
-        this.super$despawn(b);
-
-        Fx.disperseTrail.at(b.x, b.y, b.rotation()); 
-        Draw.mixcol();
     }
 });
 
-
+// --- PHẦN LOGIC THÁP PHÁO GIỮ NGUYÊN ---
 const vendicum = extend(ItemTurret, "vendicum", {
     configurable: true
 });
@@ -206,13 +164,18 @@ vendicum.config(java.lang.Integer, packCons2((tile, value) => {
     }
 }));
 
-
 vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
     energyState: 1.0,
     tierState: 0, 
     limitCheck: 0,
-    
     customRecoil: 0.0,
+
+    peekAmmo(){
+        let tier = this.getTier();
+        if(tier == 1) return vendicumMK2Bullet;
+        if(tier == 2) return vendicumMK2BBullet;
+        return vendicumBullet;
+    },
 
     getTier(){ return this.tierState == null ? 0 : this.tierState; },
     setTier(val){ 
@@ -234,7 +197,6 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
         table.clear(); table.row();
         let tier = this.getTier();
 
-        // --- NÚT NÂNG CẤP (PHONG CÁCH HÀNG DỌC GỌN GÀNG TRONG 1 GUI CỦA LAVUNDER) ---
         if(tier == 0) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
                 let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Vendicum", {});
@@ -269,7 +231,6 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
 
                 let branchesTable = new Table();
 
-                // Nhánh 1: MK2 (Xuyên Phá)
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                 b1.add("[cyan]===(MK2 - XUYÊN PHÁ)===[]").row();
                 let b1D = b1.add("Cải tiến kết cấu rãnh nòng gia tốc từ tính:\n" +
@@ -288,7 +249,6 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                     } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                 })).size(180, 38);
 
-                // Nhánh 2: MK2B (Truy Đuổi)
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                 b2.add("[purple]===(MK2B - TRUY ĐUỔI)===[]").row();
                 let b2D = b2.add("Chuyển đổi sang cấu hình xung kích tầm nhiệt:\n" +
@@ -307,7 +267,6 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                     } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
                 })).size(180, 38);
 
-                // Xếp các bảng nhánh theo hàng dọc chuẩn Lavunder
                 branchesTable.add(b1).width(340); branchesTable.row();
                 branchesTable.add().height(12).row();
                 branchesTable.add(b2).width(340);
@@ -323,7 +282,6 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
             })).size(50, 40).tooltip("Đã đạt cấp tối đa");
         }
 
-        // --- NÚT THÔNG TIN (PHONG CÁCH BỐ CỰC ĐẶC TRƯNG CỦA DOR) ---
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
             let title = " Thông số pháo Vendicum: ";
             let descStr = "";
@@ -404,22 +362,13 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
     },
 
     shoot(type){
+        this.super$shoot(type); 
         let tier = this.getTier();
-        let bulletToShoot = vendicumBullet;
         let currentLoss = lossPerShotMK1;
+        if(tier == 1) currentLoss = lossPerShotMK2;
+        if(tier == 2) currentLoss = lossPerShotMK2B;
 
-        if(tier == 1) {
-            bulletToShoot = vendicumMK2Bullet;
-            currentLoss = lossPerShotMK2;
-        } else if(tier == 2) {
-            bulletToShoot = vendicumMK2BBullet;
-            currentLoss = lossPerShotMK2B;
-        }
-
-        this.super$shoot(bulletToShoot); 
         this.energyState = Math.max(this.energyState - currentLoss, 0.0); 
-        
- 
         this.customRecoil = 1.0;
     },
 
@@ -432,11 +381,8 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
     getDmgRatio(){ return this.energyState; }, 
     getAsRatio(){ return this.energyState; },
 
-
     draw(){
         let modName = this.block.name.split("-")[0]; 
-
- 
         let baseRegion = Core.atlas.find(this.block.basePrefix + "" + this.block.size);
         if(baseRegion.found()){
             Draw.rect(baseRegion, this.x, this.y);
@@ -449,12 +395,8 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
         let sin = Math.sin(rad);
 
         let maxBarrelRecoilDistance = -5.0; 
-
-
         let invEnergy = 1.0 - this.energyState; 
         let sideMoveDistance = invEnergy * 4.0; 
-
-
 
         let barrel1Region = Core.atlas.find(modName + "-vendicum-barrel1");
         if(barrel1Region.found()){
@@ -469,8 +411,6 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
             let b2y = this.y - (sideMoveDistance * cos);
             Draw.rect(barrel2Region, b2x, b2y, this.rotation);
         }
-
-
 
         let b1Offset = this.customRecoil * maxBarrelRecoilDistance;
         let b1Region = Core.atlas.find(modName + "-vendicum-b1");

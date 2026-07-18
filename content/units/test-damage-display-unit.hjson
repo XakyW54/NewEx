@@ -1,17 +1,17 @@
 type: legs
-name: Leolyr
+name: test-damage-display-unit
 
 outlineColor: 36363c
 hitSize: 12
-health: 99999
-armor: 400
+health: 1
+armor: 1
 drag: 0.4
 faceTarget: true
 range: 230
 flying: false
 legCount: 6
 hovering: true
-speed: 0.8
+speed: 0.0
 targetAir: true
 rotateSpeed: 3
 

@@ -1,0 +1,153 @@
+type: ItemTurret
+name: Tankani-4k
+description: Phiên bản tối thượng của dòng Tankani, tăng thêm 50% Máu và Sát thương so với bản 2k, giới hạn đặt tối đa 1 trụ mỗi đội (đặt thừa tự hủy). Bắn trúng liên tục tăng tối đa 80% sát thương. Đặc biệt, khi sạc đầy năng lượng, pháo sẽ kích hoạt thêm khả năng xuyên 40% giáp và giảm một nửa giáp của kẻ địch. Trạng thái cơ bản gây 1,673 sát thương lên cả mục tiêu mặt đất và trên không.
+size: 5
+health: 1565
+category: turret
+researchCostMultiplier: 0.7
+
+configurable: true
+
+coolant: {
+  type: ConsumeCoolant
+  allowGas: true
+  allowLiquid: true
+  amount: 0.2
+}
+
+ammoTypes: {
+  copper: {
+    type: BasicBulletType
+    speed: 15
+    damage: 30
+    width: 10
+    height: 33
+    pierceArmor: 0.5
+    lifetime: 60
+    frontColor: e0ea87
+    backColor: e5ff00
+    trailColor: daea80
+  }
+}
+
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+  parts: [
+    {
+      suffix: -2
+      layer: 51
+      y: 0
+      moveY: 0
+      recoilIndex: 0
+      progress: recoil
+      children: [
+        {
+          suffix: -2
+          outline: false
+          layer: 50.01
+        }
+      ]
+    }
+    {
+      suffix: -1
+      layer: 50.1
+      outline: false
+      layerOffset: -0.001
+      y: 2.5
+      moveY: -1.25
+      progress: reload
+    }
+
+    # --- NÒNG PHỤ 1 (-barreltre) XẾP THÀNH 2 NÒNG HAI BÊN ---
+    {
+      suffix: -barreltre
+      layer: 50.4
+      x: -6
+      y: 24.65
+      moveY: -6.25
+      progress: reload
+    }
+    {
+      suffix: -barreltre
+      layer: 50.4
+      x: 6
+      y: 24.65
+      moveY: -6.25
+      progress: reload
+    }
+
+    # --- NÒNG PHỤ 2 (-barrelduo) XẾP THÀNH 2 NÒNG HAI BÊN ---
+    {
+      suffix: -barrelduo
+      layer: 50.3
+      x: -6
+      y: 36.0
+      moveY: -21.55
+      progress: reload
+    }
+    {
+      suffix: -barrelduo
+      layer: 50.3
+      x: 6
+      y: 36.0
+      moveY: -21.55
+      progress: reload
+    }
+  ]
+}
+
+outlineColor: 313131FF
+targetAir: true
+targetGround: true
+reload: 300 
+range: 820
+inaccuracy: 1
+rotateSpeed: 0.7
+shootSound: minal
+shake: 1.5
+recoil: 0.7
+cooldownTime: 200
+
+shootY: 25.5
+
+# Cơ chế bắn đa điểm: Đã thêm 'source' để sửa lỗi mất dữ liệu gốc
+shoot: {
+  type: ShootMulti
+  
+  # Kiểu bắn gốc làm nền (bắn 1 phát mặc định)
+  source: {
+    type: ShootPattern
+    shots: 1
+  }
+  
+  # Nhân bản phát bắn gốc ra chính xác vị trí của 2 nòng riêng lẻ
+  dest: [
+    {
+      type: ShootBarrel
+      shots: 1
+      barrels: [
+        -6, 6, 0
+      ]
+    }
+    {
+      type: ShootBarrel
+      shots: 1
+      barrels: [
+        6, 6, 0
+      ]
+    }
+  ]
+}
+
+researchCostMultiplier: 0.1
+requirements: [
+  copper/3400
+  lead/1100
+  titanium/740
+  plastanium/250
+  silicon/450
+  thorium/450
+]
+category: turret
+research: tankani2k

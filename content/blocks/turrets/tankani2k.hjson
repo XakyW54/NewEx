@@ -1,0 +1,116 @@
+type: ItemTurret
+name: Tankani-2k
+description: Tháp pháo phòng thủ có độ chính xác tuyệt đối, giới hạn đặt tối đa 1 trụ mỗi đội (đặt thừa tự hủy). Bắn trúng liên tục giúp sạc năng lượng, tăng tối đa 80% sát thương. Ở trạng thái cơ bản, pháo bắn được cả mục tiêu mặt đất và trên không với 1,115 sát thương.
+size: 4
+health: 565
+category: turret
+researchCostMultiplier: 0.7
+
+configurable: true
+
+
+
+coolant: {
+  type: ConsumeCoolant
+  allowGas: true
+  allowLiquid: true
+  amount: 0.2
+}
+
+ammoTypes: {
+  copper: {
+    type: BasicBulletType
+    speed: 15
+    damage: 30
+    width: 10
+    height: 33
+    lifetime: 60
+    frontColor: e0ea87
+    backColor: e5ff00
+    trailColor: daea80
+  }
+}
+
+
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+  parts: [
+    {
+      suffix: -2
+      layer: 51
+      y: 0
+      moveY: 0
+      recoilIndex: 0
+      progress: recoil
+      children: [
+        {
+          suffix: -2
+          outline: false
+          layer: 50.01
+        }
+      ]
+    }
+    {
+      suffix: -1
+      layer: 50.1
+      outline: false
+      layerOffset: -0.001
+      y: 2.5
+      moveY: -1.25
+      progress: reload
+    }
+
+    # Nòng phụ: tankani2k-barreltre (Phía trước nòng chính 10px = +1.25 block)
+    # Tọa độ Y gốc của nòng chính là 2.5, tiến lên 1.25 -> Y = 3.75
+    {
+      suffix: -barreltre
+      layer: 50.4
+      y: 24.65
+      moveY: -6.25
+      progress: reload
+    }
+
+    # Nòng phụ: tankani2k-barrelduo (Phía trước nòng chính 20px = +2.5 block)
+    # Tọa độ Y gốc của nòng chính là 2.5, tiến lên 2.5 -> Y = 5.0
+    {
+      suffix: -barrelduo
+      layer: 50.3
+      y: 25.0
+      moveY: -12.55
+      progress: reload
+    }
+  ]
+}
+
+
+outlineColor: 313131FF
+targetAir: true
+targetGround: true
+reload: 300 
+range: 620
+inaccuracy: 4
+rotateSpeed: 0.7
+shootSound: minal
+shake: 1.5
+recoil: 0.7
+cooldownTime: 200
+
+shootY: 25.5
+shootX: 0
+
+shoot: {
+  shots: 1
+  shotDelay: 9
+  
+}
+researchCostMultiplier: 0.1
+requirements: [
+  copper/3400
+  lead/1100
+  titanium/740
+plastanium/250
+  silicon/450
+]
+category: turret
+research: Vendicum

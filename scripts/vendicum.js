@@ -1,3 +1,4 @@
+
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
@@ -294,7 +295,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                           "[lightgray]Tầm bắn hiệu dụng:[] [orange]320 pixel[]\n" +
                           "[lightgray]Sát thương cơ bản:[] [yellow]45.00[]\n" +
                           "[lightgray]Khả năng xuyên thấu:[] [white]3 mục tiêu[]\n" +
-                          "[scarlet]⚠ Giới hạn: Tối đa 10 cấu trúc cấu thành trên sân[]\n\n" +
+                          "[scarlet]⚠ Giới hạn: Tối đa 1 cấu trúc cấu thành trên sân[]\n\n" +
                           "[sky]⚡ CƠ CHẾ NĂNG LƯỢNG TIÊU HAO:[]\n" +
                           "• [lightgray]Tiêu hao (Energy Loss):[] Mỗi phát bắn làm tiêu trừ [red]1.0%[] năng lượng tích lũy của lõi. Sát thương đầu ra tỷ lệ thuận với lượng điện tích hiện có.\n" +
                           "• [lightgray]Tốc độ tái nạp:[] Mất khoảng [yellow]5.0 giây[] để nạp đầy lại từ thanh trống (0% -> 100%) khi ngừng khai hỏa.";
@@ -306,7 +307,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                           "[lightgray]Tầm bắn hiệu dụng:[] [orange]420 pixel [lime](+31.2%)[]\n" +
                           "[lightgray]Sát thương cơ bản:[] [yellow]65.00 [lime](+44.4%)[]\n" +
                           "[lightgray]Khả năng xuyên thấu:[] [yellow]5 mục tiêu [lime](+2 mục tiêu)[]\n" +
-                          "[scarlet]⚠ Giới hạn: Tối đa 10 cấu trúc cấu thành trên sân[]\n\n" +
+                          "[scarlet]⚠ Giới hạn: Tối đa 1 cấu trúc cấu thành trên sân[]\n\n" +
                           "[lime]⚡ CƠ CHẾ NĂNG LƯỢNG TIÊU HAO:[]\n" +
                           "• [lightgray]Tối ưu tiêu hao:[] Giảm thiểu mức tiêu hao năng lượng xuống chỉ còn [red]0.5%[] cho mỗi phát bắn (Giảm -50%).\n" +
                           "• [lightgray]Siêu sạc phản lực:[] Tốc độ nạp năng lượng đẩy mạnh vượt trội, chỉ mất [green]3.0 giây[] để hồi đầy bình tích lũy.";
@@ -318,7 +319,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                           "[lightgray]Tầm bắn hiệu dụng:[] [orange]360 pixel [lime](+12.5%)[]\n" +
                           "[lightgray]Sát thương cơ bản:[] [red]122.50 (+173%)[]\n" +
                           "[lightgray]Khả năng xuyên thấu:[] [red]Không (Mất khả năng xuyên)[]\n" +
-                          "[scarlet]⚠ Giới hạn: Tối đa 10 cấu trúc cấu thành trên sân[]\n\n" +
+                          "[scarlet]⚠ Giới hạn: Tối đa 1 cấu trúc cấu thành trên sân[]\n\n" +
                           "[purple]🔥 CƠ CHẾ NĂNG LƯỢNG TIÊU HAO:[]\n" +
                           "• [lightgray]Mạch định vị:[] Đổi khả năng xuyên lấy cảm biến tích hợp, đạn [pink]tự động bẻ lái tìm mục tiêu[] trong phạm vi 200 pixel.\n" +
                           "• [lightgray]Mức ổn định cao:[] Năng lượng tiêu hao mỗi phát bắn giảm cực hạn xuống còn [green]0.3%[] giúp duy trì hỏa lực cực kỳ ổn định và lâu dài.";
@@ -342,7 +343,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
         if(this.limitCheck >= 15){
             this.limitCheck = 0; let count = 0; let firstBuild = null;
             Groups.build.each(b => { if(b.block == vendicum && b.team == this.team) { count++; if(firstBuild == null) firstBuild = b; } });
-            if(count > 10 && this !== firstBuild){ Call.sendMessage("[red]Giới hạn: Chỉ được đặt tối đa 10 pháo Vendicum!"); this.kill(); return; }
+            if(count > 1 && this !== firstBuild){ Call.sendMessage("[red]Giới hạn: Chỉ được đặt tối đa 1 pháo Vendicum!"); this.kill(); return; }
         }
 
         this.super$updateTile();

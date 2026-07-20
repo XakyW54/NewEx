@@ -1,4 +1,6 @@
 {
+"name": "Glasor Factory",
+"description": "Giải pháp tối ưu hóa không gian thay thế cho các tổ hợp sản xuất Metaglass và Silicon riêng lẻ vốn cồng kềnh, phức tạp.Bằng cách nạp đồng thời Than, Cát và Chì vào một dây chuyền ép nhiệt quy mô lớn ($5\times5$), nhà máy xử lý vật liệu hàng loạt để cho ra sản lượng khổng lồ gồm 22 Silicon và 10 Metaglass trong cùng một chu kỳ. Giúp dọn sạch ma trận băng chuyền và đơn giản hóa logistics cho căn cứ của bạn.",
   "type": "GenericCrafter",
   "health": 2000,
   "size": 5,
@@ -80,6 +82,7 @@
       ]
     }
   },
+  "researchCostMultiplier": 0.5,
   "requirements": [
     "copper/1500",
     "lead/1200",

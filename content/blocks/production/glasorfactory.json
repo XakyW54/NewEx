@@ -1,0 +1,94 @@
+{
+  "type": "GenericCrafter",
+  "health": 2000,
+  "size": 5,
+  "hasItems": true,
+  "itemCapacity": 50,
+  "craftTime": 195,
+  "craftEffect": {
+    "type": "multiEffect",
+    "effects": [
+      {
+        "type": "WaveEffect",
+        "lifetime": 40,
+        "sizeFrom": 0,
+        "sizeTo": 45,
+        "strokeFrom": 6.0,
+        "strokeTo": 0,
+        "colorFrom": "ffffff",
+        "colorTo": "b0b0b0",
+        "sizeInterp": "pow3Out"
+      },
+      {
+        "type": "WaveEffect",
+        "lifetime": 40,
+        "sizeFrom": 0,
+        "sizeTo": 35,
+        "strokeFrom": 8.0,
+        "strokeTo": 0,
+        "colorFrom": "808080",
+        "colorTo": "404040",
+        "sizeInterp": "pow2Out"
+      },
+      {
+        "type": "ParticleEffect",
+        "particles": 15,
+        "lifetime": 35,
+        "length": 0,
+        "baseLength": 0,
+        "sizeFrom": 4,
+        "sizeTo": 0,
+        "colorFrom": "ffffff",
+        "colorTo": "808080",
+        "interp": "pow2Out"
+      }
+    ]
+  },
+  "drawer": {
+    "type": "DrawMulti",
+    "drawers": [
+      {
+        "type": "DrawDefault"
+      },
+      {
+        "type": "DrawFlame",
+        "flameColor": "808080"
+      }
+    ]
+  },
+  "hasPower": true,
+  "hasLiquids": false,
+  "updateEffect": {
+    "type": "ParticleEffect",
+    "particles": 2,
+    "length": 0,
+    "lifetime": 25,
+    "colorFrom": "ffffff",
+    "colorTo": "808080",
+    "sizeFrom": 3,
+    "sizeTo": 0
+  },
+  "ambientSound": "smelter",
+  "ambientSoundVolume": 0.07,
+  "consumes": {
+    "power": 10.95,
+    "items": {
+      "items": [
+        "coal/4",
+        "sand/7",
+        "lead/10"
+      ]
+    }
+  },
+  "requirements": [
+    "copper/1500",
+    "lead/1200",
+    "coal/1000"
+  ],
+  "category": "crafting",
+  "research": "newex",
+  "outputItems": [
+    "silicon/22",
+    "metaglass/10"
+  ]
+}

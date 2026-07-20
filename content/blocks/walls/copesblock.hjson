@@ -1,0 +1,12 @@
+type: Wall
+size: 1
+armor: 4
+health: 450
+requirements: [
+  copper/500
+]
+research: newex
+researchCost: [
+  copper/1500
+]
+category: production

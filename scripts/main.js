@@ -41,6 +41,12 @@ require("tankani4k");
 
 
 
+
+
+require("copesblock");
+
+
+
 require("global-damage-indicator");
 
 require("leolyr-summoner");

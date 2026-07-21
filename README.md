@@ -43,7 +43,7 @@
 > Điều chỉnh cân bằng bản 0.5.3:
 + Pháo Lavunder:
   - sẽ giới hạn xây là 1.
- Cấp 1: MK1 (Cơ bản)
+Cấp 1: MK1 (Cơ bản)
   - Sát thương cơ bản: 33 ST/giây. > 112 ST/giây.
   - Đạt 100 Sạc (Explosion):
     + Bộc phá diện rộng bán kính 40 px. > 60 px. 

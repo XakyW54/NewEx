@@ -119,7 +119,7 @@ blaw.reload = 30;
 blaw.deadZone = 0; 
 blaw.configurable = true;
 blaw.category = Category.turret;
-blaw.ammo(Items.lead, blawBlueMK1); 
+blaw.ammo(Items.titanium, blawBlueMK1); 
 
 blaw.config(java.lang.Integer, packCons2((tile, value) => {
     if (tile != null && tile.setTier !== undefined) {

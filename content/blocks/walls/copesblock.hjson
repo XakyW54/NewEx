@@ -1,9 +1,13 @@
 name: Copes Block
 description: Cấu trúc hỗ trợ công nghiệp đặc biệt. Tự động quét và gia tốc hiệu suất hoạt động của tất cả các Máy khoan (Drills) đồng minh trong phạm vi 10 ô lên +50%. Khối cấu trúc được tăng tốc sẽ hiển thị vòng sáng năng lượng màu tím xung quanh. Giới hạn tối đa 1 khối / đội.
 type: Wall
+range: 80
+health: 800
 size: 1
-armor: 4
-health: 450
+hasItems: false
+hasLiquids: false
+update: true
+solid: true
 requirements: [
   copper/50
 ]

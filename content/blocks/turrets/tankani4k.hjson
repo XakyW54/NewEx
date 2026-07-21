@@ -64,7 +64,7 @@ drawer: {
       suffix: -barreltre
       layer: 50.4
       x: -6
-      y: 24.65
+      y: 23.65
       moveY: -6.25
       progress: reload
     }
@@ -72,7 +72,7 @@ drawer: {
       suffix: -barreltre
       layer: 50.4
       x: 6
-      y: 24.65
+      y: 23.65
       moveY: -6.25
       progress: reload
     }

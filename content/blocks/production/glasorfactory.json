@@ -5,8 +5,8 @@
   "health": 2000,
   "size": 5,
   "hasItems": true,
-  "itemCapacity": 50,
-  "craftTime": 195,
+  "itemCapacity": 150,
+  "craftTime": 185,
   "craftEffect": {
     "type": "multiEffect",
     "effects": [
@@ -62,7 +62,7 @@
   "hasLiquids": false,
   "updateEffect": {
     "type": "ParticleEffect",
-    "particles": 2,
+    "particles": 20,
     "length": 0,
     "lifetime": 25,
     "colorFrom": "ffffff",
@@ -71,7 +71,7 @@
     "sizeTo": 0
   },
   "ambientSound": "smelter",
-  "ambientSoundVolume": 0.07,
+  "ambientSoundVolume": 10.07,
   "consumes": {
     "power": 10.95,
     "items": {
@@ -91,7 +91,7 @@
   "category": "crafting",
   "research": "newex",
   "outputItems": [
-    "silicon/22",
-    "metaglass/10"
+    "silicon/20",
+    "metaglass/20"
   ]
 }

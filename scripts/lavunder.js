@@ -15,6 +15,7 @@ const turretBurstTimerMap = new ObjectMap();
 const turretMilestoneMap = new ObjectMap();    
 const mk3TripleExplosionMap = new ObjectMap(); 
 const greenLaserRenderMap = new ObjectMap();
+const turretDamageTimerMap = new ObjectMap(); // Quản lý bộ đếm 1 giây gây sát thương
 
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
@@ -64,10 +65,12 @@ const lavunderLaserBullet = extend(BulletType, {
         if(!turretChargeMap.containsKey(turretId)) turretChargeMap.put(turretId, 0);
         if(!turretBurstTimerMap.containsKey(turretId)) turretBurstTimerMap.put(turretId, 0);
         if(!turretMilestoneMap.containsKey(turretId)) turretMilestoneMap.put(turretId, 0);
+        if(!turretDamageTimerMap.containsKey(turretId)) turretDamageTimerMap.put(turretId, 0);
 
         let tier = turretTierMap.get(turretId);
         let currentPoints = turretChargeMap.get(turretId);
         let burstTimer = turretBurstTimerMap.get(turretId);
+        let dmgTimer = turretDamageTimerMap.get(turretId);
 
         if(burstTimer > 0){
             burstTimer--;
@@ -83,11 +86,11 @@ const lavunderLaserBullet = extend(BulletType, {
             }
         }
 
-        let baseDamage = 33;
+        let baseDamage = 112; // Cập nhật sát thương cơ bản thành 112
         if(tier == 2){
-            baseDamage = 33 * 3.5; 
+            baseDamage = 112; // MK2 giữ nguyên sát thương cơ bản
         } else if(tier == 3){
-            baseDamage = 33 * 6.0; 
+            baseDamage = 112 * 1.71; // Giữ quy mô MK2B
         }
         let currentTickDamage = baseDamage * (1 + (currentPoints / 100));
 
@@ -133,11 +136,17 @@ const lavunderLaserBullet = extend(BulletType, {
             b.data.lastX = target.x;
             b.data.lastY = target.y;
 
-            target.damage(currentTickDamage / 60);
+            // Đổi cơ chế: Đủ 1 giây (60 ticks) mới gây sát thương 1 lần
+            dmgTimer++;
+            if(dmgTimer >= 60){
+                target.damage(currentTickDamage);
+                dmgTimer = 0;
+            }
+            turretDamageTimerMap.put(turretId, dmgTimer);
 
             if(currentPoints < 100){
                 let chargeSpeedMultiplier = 1 + Math.pow(currentPoints / 50, 2);
-                let speedBonus = (tier == 2) ? 1.8 : 1.0; 
+                let speedBonus = (tier == 2) ? 3.8 : 1.0; // MK2 sạc nhanh hơn 3.8x
                 
                 currentPoints += (1 / 60) * chargeSpeedMultiplier * speedBonus;
                 
@@ -148,9 +157,10 @@ const lavunderLaserBullet = extend(BulletType, {
                         
                         turretBurstTimerMap.put(turretId, 14);
 
-                        let explosionRadius = 40;
+                        // Cập nhật thông số nổ cho MK1 & MK2
+                        let explosionRadius = (tier == 2) ? 40 : 60; 
                         let hpPercent = (tier == 2) ? 0.02 : 0.01; 
-                        let flatDamage = (tier == 2) ? 320 : 100; 
+                        let flatDamage = (tier == 2) ? 3200 : 1000; 
 
                         Units.nearbyEnemies(b.team, target.x - explosionRadius, target.y - explosionRadius, explosionRadius * 2, explosionRadius * 2, u => {
                             if(u && !u.dead && !u.isFlying() && Mathf.dst(target.x, target.y, u.x, u.y) <= explosionRadius){
@@ -234,6 +244,8 @@ const lavunderLaserBullet = extend(BulletType, {
             b.data.hasTarget = false;
             b.data.lastX = b.x + Angles.trnsx(b.rotation(), range);
             b.data.lastY = b.y + Angles.trnsy(b.rotation(), range);
+
+            turretDamageTimerMap.put(turretId, 0); // Reset timer gây sát thương khi mất mục tiêu
 
             if(currentPoints > 0){
                 currentPoints -= (2 / 60); 
@@ -344,7 +356,7 @@ const lavunderLaserBullet = extend(BulletType, {
 });
 
 lavunderLaserBullet.speed = 0;
-lavunderLaserBullet.damage = 33; 
+lavunderLaserBullet.damage = 112; 
 lavunderLaserBullet.lifetime = 12; 
 lavunderLaserBullet.collides = false;
 
@@ -377,11 +389,9 @@ lavunder.consumePower(22);
 lavunder.configurable = true;
 lavunder.canControl = false;
 
-// SỬA LẠI ĐOẠN NÀY TRONG FILE CỦA BẠN:
 lavunder.config(java.lang.Integer, packCons2((tile, value) => {
     if(tile != null && value != null) {
         let turretId = tile.id;
-        // Sửa ở đây: Sử dụng trực tiếp 'value' thay vì 'value.intValue()'
         let valInt = Math.floor(value); 
         
         turretTierMap.put(turretId, valInt);
@@ -403,8 +413,9 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
         Groups.build.each(b => { 
             if(b.block == lavunder && b.team == this.team) count++;
         });
-        if(count > 2){
-            Call.sendMessage("[purple]Lavunder Giới hạn:[] Chỉ đặt tối đa 2 tháp pháo!");
+        // Cập nhật giới hạn xây dựng tối đa 1 pháo
+        if(count > 1){
+            Call.sendMessage("[purple]Lavunder Giới hạn:[] Chỉ đặt tối đa 1 tháp pháo!");
             this.kill(); 
         }
         this.downxOffset = 0;
@@ -420,6 +431,7 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
         turretMilestoneMap.remove(turretId);
         mk3TripleExplosionMap.remove(turretId);
         greenLaserRenderMap.remove(turretId);
+        turretDamageTimerMap.remove(turretId);
     },
 
     updateTile(){
@@ -513,13 +525,13 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
 
                 let branchesTable = new Table();
 
-                // Nhánh 1: MK2
+                // Nhánh 1: MK2 (Cập nhật thông số giao diện)
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                 b1.add("[cyan]===(MK2)===[]").row();
                 let b1D = b1.add("Mô-đun kích xung hỏa lực liên hoàn:\n" +
-                                 " [white]• Sát thương liên tục gia tăng cực mạnh lên mốc [yellow]+250%[] (115.5 đv/s).[]\n" +
-                                 " [white]• Tốc độ gia tốc sạc điểm năng lượng tăng trưởng nhanh [green]+80%[].[]\n" +
-                                 " [white]• Khi đạt [yellow]100 sạc[]: Gây [red]320 ST flat[] + [cyan]2% HP tối đa[] diện rộng.[]\n" +
+                                 " [white]• Sát thương cơ bản: [yellow]112.00 ST/giây[] (gây dmg mỗi 1s).[]\n" +
+                                 " [white]• Tốc độ gia tốc sạc điểm năng lượng tăng trưởng nhanh [green]+380% (3.8x)[].[]\n" +
+                                 " [white]• Khi đạt [yellow]100 sạc[]: Gây [red]3,200 ST flat[] + [cyan]2% HP tối đa[] (bán kính 40 px).[]\n" +
                                  " [white]• [green]Mạch Phản Hồi[]: Có [orange]50%[] tỷ lệ hoàn trả [yellow]80 điểm sạc[] ngay sau nổ.[]\n" +
                                  " [white]• Tăng [green]+52.17% Máu[] (3,500) và mở rộng [green]+6.25% Tầm bắn[] (340 px).");
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
@@ -539,11 +551,11 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                 b2.add("[purple]===(MK2B)===[]").row();
                 let b2D = b2.add("Lõi hội tụ quang phổ hủy diệt diện rộng:\n" +
-                                 " [white]• Sát thương liên tục đột biến chạm mốc kinh hoàng [red]+500%[] (198.0 đv/s).[]\n" +
+                                 " [white]• Sát thương cơ bản: [pink]191.52 ST/giây[] (gây dmg mỗi 1s).[]\n" +
                                  " [white]• [cyan]Cơ chế Sạc Đa Tầng[]: Tại mốc [yellow]20,40,60,80[] có [white]70%[] tỷ lệ nổ phụ tia.[]\n" +
                                  " [white]• Khi chạm [yellow]100 sạc[]: Kích hoạt chuỗi [orange]3 loạt bộc phá liên tiếp[] hủy diệt.[]\n" +
                                  " [white]• Siêu gia cố cấu trúc tăng [green]+82.6% Máu[] (4,200).[]\n" +
-                                 " [white]• Giữ nguyên [yellow]Tầm bắn[] (320 px) để duy trì mật độ tập trung năng lượng.");
+                                 " [white]• Giữ nguyên [yellow]Tầm bắn[] (320 px).");
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
                 b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                     let core = this.team.core();
@@ -557,7 +569,6 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
                     }
                 })).size(180, 38);
 
-                // Xếp các bảng nhánh theo hàng dọc chuẩn Lavunder
                 branchesTable.add(b1).width(340); branchesTable.row();
                 branchesTable.add().height(12).row();
                 branchesTable.add(b2).width(340);
@@ -573,7 +584,7 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
             })).size(50, 40).tooltip("Đã đạt cấp tối đa");
         }
 
-        // --- NÚT THÔNG TIN (PHONG CÁCH BỐ CỰC ĐẶC TRƯNG CỦA DOR / LAVUNDER) ---
+        // Cập nhật Dialog thông tin
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
             let title = " Thông số pháo Lavunder: ";
             let descStr = "";
@@ -584,25 +595,24 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
                 descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
                           "[lightgray]Máu tháp pháo:[] [green]2,300[]\n" +
                           "[lightgray]Tầm bắn phát xạ:[] [orange]320 pixel[] (Vùng mù: <40 px)\n" +
-                          "[lightgray]Sát thương liên tục:[] [white]33.00 hỏa lực/giây[]\n" +
+                          "[lightgray]Sát thương cơ bản:[] [white]112.00 hỏa lực/giây (Chu kỳ: 1s/lần)[]\n" +
                           "[lightgray]Năng lượng tiêu thụ:[] [gainsboro]22.00 đơn vị/giây[]\n\n" +
-                                                    "[scarlet]⚠ Giới hạn đặt: Tối đa 10 cấu trúc/đội[]\n\n" +
-
+                          "[scarlet]⚠ Giới hạn đặt: Tối đa 1 cấu trúc/đội[]\n\n" +
                           "[sky]⚡ CƠ CHẾ HOẠT ĐỘNG MẠCH XUNG KÍCH:[]\n" +
-                           "• [lightgray]Bám dính mục tiêu:[] Chỉ tấn công mặt đất, tự động tích lũy năng lượng sạc điểm khi duy trì tia bắn liên tục.\n" +
-                          "• [lightgray]Xung kích năng lượng:[] Khi đạt [yellow]100 điểm sạc[] phóng nổ diện rộng gây [red]100 sát thương[] + [cyan]1% HP tối đa[] mục tiêu.";
+                          "• [lightgray]Bám dính mục tiêu:[] Bắn đủ 1 giây liên tục sẽ gây sát thương 1 lần và tích lũy sạc.\n" +
+                          "• [lightgray]Xung kích năng lượng:[] Khi đạt [yellow]100 điểm sạc[] phóng nổ diện rộng (bán kính 60 px) gây [red]1,000 sát thương[] + [cyan]1% HP tối đa[] mục tiêu.";
             } 
             else if (currentTier == 2) {
                 title += "[cyan](MK2)[]";
                 descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
                           "[lightgray]Máu tháp pháo:[] [green]3,500 [lime](+52.17%)[]\n" +
                           "[lightgray]Tầm bắn phát xạ:[] [orange]340 pixel [lime](+6.25%)[]\n" +
-                          "[lightgray]Sát thương liên tục:[] [yellow]115.50 hỏa lực/giây (+250%)[]\n" +
+                          "[lightgray]Sát thương cơ bản:[] [yellow]112.00 hỏa lực/giây (Chu kỳ: 1s/lần)[]\n" +
                           "[lightgray]Năng lượng tiêu thụ:[] [gainsboro]22.00 đơn vị/giây[]\n\n" +
-                          "[scarlet]⚠ Giới hạn đặt: Tối đa 10 cấu trúc/đội[]\n\n" +
+                          "[scarlet]⚠ Giới hạn đặt: Tối đa 1 cấu trúc/đội[]\n\n" +
                           "[lime]⚡ CƠ CHẾ HOẠT ĐỘNG MẠCH XUNG KÍCH:[]\n" +
-                          "• [lightgray]Gia tốc dòng sạc:[] Tốc độ tích lũy năng lượng điểm được đẩy mạnh thêm [yellow]+80%[].\n" +
-                          "• [lightgray]Siêu áp suất nổ:[] Tại mốc [yellow]100 điểm sạc[] giải phóng chấn động cực đại: [red]320 sát thương[] + [cyan]2% HP tối đa[].\n" +
+                          "• [lightgray]Gia tốc dòng sạc:[] Tốc độ tích lũy năng lượng điểm được đẩy mạnh thêm [yellow]+380% (3.8x)[].\n" +
+                          "• [lightgray]Siêu áp suất nổ:[] Tại mốc [yellow]100 điểm sạc[] giải phóng chấn động (bán kính 40 px): [red]3,200 sát thương[] + [cyan]2% HP tối đa[].\n" +
                           "• [lightgray]Mạch hồi lưu sạc:[] Sở hữu [orange]50%[] tỷ lệ hoàn trả ngay lập tức [yellow]80 điểm sạc[] để kích chuỗi vụ nổ kế tiếp.";
             } 
             else if (currentTier == 3) {
@@ -610,12 +620,12 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
                 descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
                           "[lightgray]Máu tháp pháo:[] [green]4,200 [lime](+82.60%)[]\n" +
                           "[lightgray]Tầm bắn phát xạ:[] [orange]320 pixel [yellow](0%)[]\n" +
-                          "[lightgray]Sát thương liên tục:[] [pink]198.00 hỏa lực/giây (+500%)[]\n" +
+                          "[lightgray]Sát thương cơ bản:[] [pink]191.52 hỏa lực/giây (Chu kỳ: 1s/lần)[]\n" +
                           "[lightgray]Năng lượng tiêu thụ:[] [gainsboro]22.00 đơn vị/giây[]\n\n" +
-                          "[scarlet]⚠ Giới hạn đặt: Tối đa 10 cấu trúc/đội[]\n\n" +
+                          "[scarlet]⚠ Giới hạn đặt: Tối đa 1 cấu trúc/đội[]\n\n" +
                           "[purple]🔥 CƠ CHẾ HOẠT ĐỘNG ĐẠI QUANG PHỔ:[]\n" +
                           "• [lightgray]Sạc đa tầng quang phổ:[] Duy trì bắn tích năng lượng qua các mốc [yellow]20, 40, 60, 80[] có [white]70%[] cơ hội nổ phụ tia laser phụ.\n" +
-                          "• [lightgray]Đại bộc phá chu kỳ:[] Đạt đỉnh [yellow]100 điểm sạc[] kích nổ chuỗi [red]3 loạt bộc phá liên hoàn siêu cấp[] diện rộng, càn quét toàn bộ đội hình địch.";
+                          "• [lightgray]Đại bộc phá chu kỳ:[] Đạt đỉnh [yellow]100 điểm sạc[] kích nổ chuỗi [red]3 loạt bộc phá liên hoàn siêu cấp[] diện rộng.";
             }
 
             let dialog = extend(BaseDialog, title, {});

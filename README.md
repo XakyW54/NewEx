@@ -50,4 +50,4 @@
     + Gây 100 ST flat + 1% HP tối đa của mục tiêu. > 1000 ST flat.
   - Cấp 2: MK2 (Xung lực Hỏa lực Liên hoàn):
   - Tốc độ sạc: Tăng nhanh hơn 1.8x so với MK1. > 3.8x so vói MK1.
-  -Gây 320 ST flat + 2% HP tối đa diện rộng (bán kính 40 px). > Gây 3200 ST flat
+  - Gây 320 ST flat + 2% HP tối đa diện rộng (bán kính 40 px). > Gây 3200 ST flat

@@ -43,11 +43,11 @@
 > Điều chỉnh cân bằng bản 0.5.3:
 + Pháo Lavunder:
   - sẽ giới hạn xây là 1.
-Cấp 1: MK1 (Cơ bản)
+--Cấp 1: MK1 (Cơ bản)--
   - Sát thương cơ bản: 33 ST/giây. > 112 ST/giây.
   - Đạt 100 Sạc (Explosion):
     + Bộc phá diện rộng bán kính 40 px. > 60 px. 
     + Gây 100 ST flat + 1% HP tối đa của mục tiêu. > 1000 ST flat.
- Cấp 2: MK2 (Xung lực Hỏa lực Liên hoàn)
+ --Cấp 2: MK2 (Xung lực Hỏa lực Liên hoàn)--
   - Tốc độ sạc: Tăng nhanh hơn 1.8x so với MK1. > 3.8x so vói MK1.
   -Gây 320 ST flat + 2% HP tối đa diện rộng (bán kính 40 px). > Gây 3200 ST flat

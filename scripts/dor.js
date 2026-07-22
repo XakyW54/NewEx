@@ -2,17 +2,14 @@ const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
-const reqMK2 = {
-    copper: 4000,
-    lead: 4000,
-    titanium: 0
-};
+// Yêu cầu tài nguyên
+const reqMK2 = { copper: 4000, lead: 4000, titanium: 0 };
+const reqMK2B = { copper: 4000, lead: 4000, titanium: 2000 };
+const reqMK3 = { copper: 8000, lead: 8000, titanium: 4000 };
 
-const reqMK2B = {
-    copper: 4000,
-    lead: 4000,
-    titanium: 2000
-};
+// Tài nguyên rẽ nhánh cho MK2B
+const reqMK2B1 = { copper: 8000, lead: 8000, titanium: 4000 };
+const reqMK3B = { copper: 16000, lead: 16000, titanium: 8000 };
 
 const CHARGE_TIME_MK1 = 60;    
 const CHARGE_TIME_MK2 = 48;    
@@ -20,8 +17,9 @@ const CHARGE_TIME_MK2B = 72;
 
 const BERSERK_TIME_MK1 = 300;  
 const BERSERK_TIME_MK2 = 360;  
+const BERSERK_TIME_MK3 = 486;  
 
-
+// --- BULLET TYPES ---
 const dorNormalBullet = extend(BasicBulletType, {
     speed: 7, damage: 12, width: 7, height: 18, lifetime: 43,
     frontColor: Color.valueOf("#e0f7fa"), backColor: Color.valueOf("#00bcd4"),
@@ -50,6 +48,21 @@ const dormk2SmallSprayBullet = extend(BasicBulletType, {
     hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor
 });
 
+const dormk3NormalBullet = extend(BasicBulletType, {
+    speed: 8.5, damage: 28.35, width: 8.5, height: 21.5, lifetime: 45,      
+    frontColor: Color.valueOf("#fff59d"), backColor: Color.valueOf("#fbc02d"),
+    trailColor: Color.valueOf("#ffee58"), trailWidth: 1.8, trailLength: 7,    
+    hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor
+});
+
+const dormk3SmallSprayBullet = extend(BasicBulletType, {
+    speed: 9.5, damage: 34.425, width: 4.2, height: 11, lifetime: 35,
+    frontColor: Color.valueOf("#fff59d"), backColor: Color.valueOf("#fbc02d"),
+    trailColor: Color.valueOf("#ffee58"), trailWidth: 0.9, trailLength: 5,
+    hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor
+});
+
+// --- NHÁNH B BULLETS ---
 const normalBulletB = extend(BasicBulletType, {
     speed: 8, damage: 27, width: 8, height: 20, lifetime: 40, 
     frontColor: Color.valueOf("#ff8a80"), backColor: Color.valueOf("#ff1744"), 
@@ -61,6 +74,34 @@ const normalBulletB = extend(BasicBulletType, {
 const laserBulletB = extend(LaserBulletType, {
     length: 240, damage: 18, width: 24, lifetime: 25,
     colors: [Color.valueOf("#ff1744"), Color.valueOf("#b71c1c"), Color.white],
+    hitEffect: Fx.hitLaserColor, chargeEffect: Fx.lancerLaserCharge, smokeEffect: Fx.smoke
+});
+
+const normalBulletB1 = extend(BasicBulletType, {
+    speed: 8.8, damage: 29.7, width: 8.8, height: 22, lifetime: 40, 
+    frontColor: Color.valueOf("#ff8a80"), backColor: Color.valueOf("#ff1744"), 
+    trailColor: Color.valueOf("#ff5252"), trailWidth: 2.2, trailLength: 7,
+    hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor,
+    homingPower: 0.15, homingRange: 180
+});
+
+const laserBulletB1 = extend(LaserBulletType, {
+    length: 264, damage: 19.8, width: 26.4, lifetime: 25,
+    colors: [Color.valueOf("#ff1744"), Color.valueOf("#b71c1c"), Color.white],
+    hitEffect: Fx.hitLaserColor, chargeEffect: Fx.lancerLaserCharge, smokeEffect: Fx.smoke
+});
+
+const shotgunBulletB3 = extend(BasicBulletType, {
+    speed: 9.5, damage: 40.5, width: 9, height: 18, lifetime: 45, 
+    frontColor: Color.valueOf("#ea80fc"), backColor: Color.valueOf("#aa00ff"), 
+    trailColor: Color.valueOf("#e040fb"), trailWidth: 2.5, trailLength: 8,
+    hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor,
+    homingPower: 0.2, homingRange: 220
+});
+
+const laserBulletB3 = extend(LaserBulletType, {
+    length: 360, damage: 27, width: 36, lifetime: 25,
+    colors: [Color.valueOf("#ea80fc"), Color.valueOf("#aa00ff"), Color.white],
     hitEffect: Fx.hitLaserColor, chargeEffect: Fx.lancerLaserCharge, smokeEffect: Fx.smoke
 });
 
@@ -101,14 +142,20 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
         this.tierState = val;
         if(val == 0) this.health = 1450;
         if(val == 1) this.health = 1885;
-        if(val == 2) this.health = 2610;
+        if(val == 2) this.health = 2610; // MK2B
+        if(val == 3) this.health = 2545; // MK3
+        if(val == 4) this.health = 2871; // MK2B1 (+10% HP)
+        if(val == 5) this.health = 3915; // MK3B (+50% HP)
         this.maxHealth = this.health;
     },
 
     range(){
         let tier = this.getTier();
-        if(tier == 2) return 240; 
-        if(tier == 1) return 390; 
+        if(tier == 5) return 360;   // MK3B
+        if(tier == 4) return 264;   // MK2B1
+        if(tier == 3) return 526.5; // MK3
+        if(tier == 2) return 240;   // MK2B
+        if(tier == 1) return 390;   // MK2
         return 300;
     },
 
@@ -117,6 +164,7 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
         let tier = this.getTier();
 
         if(tier == 0) {
+            // MK1 -> MK2 / MK2B
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
                 let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Dor", {});
                 
@@ -150,14 +198,13 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
 
                 let branchesTable = new Table();
 
-                // Nhánh 1: MK2
+                // MK2
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                 b1.add("[cyan]===(MK2)===[]").row();
                 let b1D = b1.add("Nâng cấp mạch sạc xung điện cao cấp:\n" +
                                  " [white]• Tăng [green]+30% Máu[] (1,885) và mở rộng [green]+30% Tầm bắn[] (390 px).[]\n" +
-                                 " [white]• Đạn thường tăng [yellow]+75% Sát thương[] (21.00), vận tốc bay +10%.[]\n" +
-                                 " [white]• Tốc độ sạc tăng [orange]20%[] (Mất 0.8s), bão đạn tỏa tăng gấp đôi lên [sky]20 viên/loạt[].[]\n" +
-                                 " [white]• Trạng thái Nộ (Berserk) kích hoạt sau [pink]2 loạt sạc[], duy trì liên tục [pink]6.0 giây[] và tăng tốc xả đạn thường lên [orange]+260%[] (Gấp 2.6 lần).[]");
+                                 " [white]• Đạn thường tăng [yellow]+75% Sát thương[] (21.00).\n" +
+                                 " [white]• Sạc tốc độ cao 0.8s, xả đạn tỏa [sky]20 viên/loạt[].[]");
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                 b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
                     let core = this.team.core();
@@ -168,14 +215,12 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                     } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                 })).size(180, 38);
 
-                // Nhánh 2: MK2B
+                // MK2B
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                 b2.add("[purple]===(MK2B)===[]").row();
                 let b2D = b2.add("Chuyển đổi sang lõi cấu trúc trọng lực thô tuần hoàn:\n" +
-                                 " [white]• Tăng cực đại [green]+80% Máu[] (2,610) nhưng giảm tầm bắn [red]-20%[] (240 px).[]\n" +
-                                 " [white]• Cơ chế tuần hoàn mới: Bắn liên tiếp [orange]3 phát tia Laser[] siêu tải (18.00 đm), giãn cách [cyan]1.2 giây[] mỗi phát.[]\n" +
-                                 " [white]• Bão hòa chu kỳ: Xả bão đạn gồm [pink]100 viên Trọng Đạn[] tự dẫn đường (27.00 đm), tốc độ bay giảm [red]-20%[]. Nghỉ hồi nạp lại [cyan]1.2 giây[].[]\n" +
-                                 " [white]• [scarlet]Lưu ý:[] Loại bỏ hoàn toàn cơ chế tích tụ sạc đạn chùm tỏa và trạng thái nộ cũ.[]");
+                                 " [white]• Tăng cực đại [green]+80% Máu[] (2,610).\n" +
+                                 " [white]• Bắn [orange]3 phát Laser[] liên tiếp, sau đó xả [pink]100 viên Trọng Đạn[] tự dẫn đường.[]");
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
                 b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                     let core = this.team.core();
@@ -186,7 +231,6 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                     } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
                 })).size(180, 38);
 
-                // Bố cục xếp dọc chuẩn Lavunder bằng ScrollPane
                 branchesTable.add(b1).width(340); branchesTable.row();
                 branchesTable.add().height(12).row();
                 branchesTable.add(b2).width(340);
@@ -196,54 +240,182 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                 dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); dialog.show();
             })).size(50, 40).tooltip("Nâng cấp tháp pháo Dor");
+        } else if (tier == 1) {
+            // MK2 -> MK3
+            table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
+                let dialog = extend(BaseDialog, "Trung tâm tiến hóa MK3 - Dor", {});
+
+                let reqCell = dialog.cont.label(packProv(() => {
+                    let core = this.team.core();
+                    if(core == null) return "[red]Không tìm thấy Lõi Đội![]";
+                    let currentcopper = core.items.get(Items.copper);
+                    let currentlead = core.items.get(Items.lead);
+                    let currenttitanium = core.items.get(Items.titanium);
+
+                    let copColor = currentcopper >= reqMK3.copper ? "[green]" : "[red]";
+                    let leaColor = currentlead >= reqMK3.lead ? "[green]" : "[red]";
+                    let titColor = currenttitanium >= reqMK3.titanium ? "[green]" : "[red]";
+
+                    return "[yellow]YÊU CẦU TÀI NGUYÊN TIẾN HÓA MK3:[]\n" +
+                           " • Đồng: " + copColor + currentcopper + "[] / " + reqMK3.copper + "\n" +
+                           " • Chì: " + leaColor + currentlead + "[] / " + reqMK3.lead + "\n" +
+                           " • Titan: " + titColor + currenttitanium + "[] / " + reqMK3.titanium;
+                }));
+
+                reqCell.width(360).get().setWrap(true); reqCell.get().setAlignment(Align.left);
+                dialog.cont.row(); dialog.cont.add().height(10).row();
+
+                let b3 = new Table(); b3.background(Styles.black6); b3.margin(12);
+                b3.add("[gold]===(TIẾN HÓA CẤP MK3)===[]").row();
+                let b3D = b3.add("Toàn bộ thông số tăng trưởng [gold]+35%[] so với MK2.");
+                b3D.width(340).get().setWrap(true); b3D.get().setAlignment(Align.left); b3.row();
+                b3.button("[gold]KÍCH HOẠT MK3[]", packRun(() => {
+                    let core = this.team.core();
+                    if(core != null && core.items.get(Items.copper) >= reqMK3.copper && core.items.get(Items.lead) >= reqMK3.lead && core.items.get(Items.titanium) >= reqMK3.titanium){
+                        core.items.remove(Items.copper, reqMK3.copper); core.items.remove(Items.lead, reqMK3.lead); core.items.remove(Items.titanium, reqMK3.titanium);
+                        Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(8, 8, this.x, this.y);
+                        this.configure(java.lang.Integer(3)); dialog.hide(); this.deselect();
+                    } else { Vars.ui.showInfo("[red]Không đủ tài nguyên nâng cấp MK3![]"); }
+                })).size(180, 38);
+
+                dialog.cont.add(b3).width(360);
+                dialog.addCloseButton(); dialog.show();
+            })).size(50, 40).tooltip("Nâng cấp pháo lên MK3");
+        } else if (tier == 2) {
+            // MK2B -> RẼ NHÁNH (MK2B1 HOẶC MK3B)
+            table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
+                let dialog = extend(BaseDialog, "Trung tâm Rẽ Nhánh Tiến Hóa MK2B", {});
+
+                let reqCell = dialog.cont.label(packProv(() => {
+                    let core = this.team.core();
+                    if(core == null) return "[red]Không tìm thấy Lõi Đội![]";
+                    let currentcopper = core.items.get(Items.copper);
+                    let currentlead = core.items.get(Items.lead);
+                    let currenttitanium = core.items.get(Items.titanium);
+
+                    let copColor1 = currentcopper >= reqMK2B1.copper ? "[green]" : "[red]";
+                    let leaColor1 = currentlead >= reqMK2B1.lead ? "[green]" : "[red]";
+                    let titColor1 = currenttitanium >= reqMK2B1.titanium ? "[green]" : "[red]";
+
+                    let copColor2 = currentcopper >= reqMK3B.copper ? "[green]" : "[red]";
+                    let leaColor2 = currentlead >= reqMK3B.lead ? "[green]" : "[red]";
+                    let titColor2 = currenttitanium >= reqMK3B.titanium ? "[green]" : "[red]";
+
+                    return "[yellow]YÊU CẦU TÀI NGUYÊN (CHỌN 1 TRONG 2 NHÁNH):[]\n" +
+                           "[purple]Cấu Hình MK2B1:[]\n" +
+                           " • Đồng: " + copColor1 + currentcopper + "[] / " + reqMK2B1.copper +
+                           " | Chì: " + leaColor1 + currentlead + "[] / " + reqMK2B1.lead +
+                           " | Titan: " + titColor1 + currenttitanium + "[] / " + reqMK2B1.titanium + "\n" +
+                           "[pink]Cấu Hình Tối Thượng MK3B:[]\n" +
+                           " • Đồng: " + copColor2 + currentcopper + "[] / " + reqMK3B.copper +
+                           " | Chì: " + leaColor2 + currentlead + "[] / " + reqMK3B.lead +
+                           " | Titan: " + titColor2 + currenttitanium + "[] / " + reqMK3B.titanium;
+                }));
+
+                reqCell.width(360).get().setWrap(true); reqCell.get().setAlignment(Align.left);
+                dialog.cont.row(); dialog.cont.add().height(10).row();
+
+                let branchesTable = new Table();
+
+                // NÚT 1: CHỌN MK2B1
+                let b4 = new Table(); b4.background(Styles.black6); b4.margin(12);
+                b4.add("[purple]===(NHÁNH 1: CẤU HÌNH MK2B1)===[]").row();
+                let b4D = b4.add(" [white]• Tăng [green]+10% chỉ số[] (Máu: 2,871 HP, Tầm: 264 px).\n" +
+                                 " [white]• Bắn [orange]2 tia Laser song song[] cùng lúc.\n" +
+                                 " [white]• Xả gấp đôi lên [pink]200 viên Trọng Đạn[] liên hoàn.");
+                b4D.width(340).get().setWrap(true); b4D.get().setAlignment(Align.left); b4.row();
+                b4.button("[purple]CHỌN MK2B1[]", packRun(() => {
+                    let core = this.team.core();
+                    if(core != null && core.items.get(Items.copper) >= reqMK2B1.copper && core.items.get(Items.lead) >= reqMK2B1.lead && core.items.get(Items.titanium) >= reqMK2B1.titanium){
+                        core.items.remove(Items.copper, reqMK2B1.copper); core.items.remove(Items.lead, reqMK2B1.lead); core.items.remove(Items.titanium, reqMK2B1.titanium);
+                        Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(8, 8, this.x, this.y);
+                        this.configure(java.lang.Integer(4)); dialog.hide(); this.deselect();
+                    } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho MK2B1![]"); }
+                })).size(180, 38);
+
+                // NÚT 2: CHỌN MK3B
+                let b5 = new Table(); b5.background(Styles.black6); b5.margin(12);
+                b5.add("[pink]===(NHÁNH 2: TỐI THƯỢNG MK3B)===[]").row();
+                let b5D = b5.add(" [white]• Tăng [green]+50% chỉ số[] (Máu: 3,915 HP, Tầm: 360 px).\n" +
+                                 " [white]• Laser Siêu Tải chùm rộng.\n" +
+                                 " [white]• Chuyển đạn xả lẻ thành [magenta]Loạt Shotgun Chùm Bão Tỏa 200 viên[] diện rộng.");
+                b5D.width(340).get().setWrap(true); b5D.get().setAlignment(Align.left); b5.row();
+                b5.button("[pink]CHỌN MK3B[]", packRun(() => {
+                    let core = this.team.core();
+                    if(core != null && core.items.get(Items.copper) >= reqMK3B.copper && core.items.get(Items.lead) >= reqMK3B.lead && core.items.get(Items.titanium) >= reqMK3B.titanium){
+                        core.items.remove(Items.copper, reqMK3B.copper); core.items.remove(Items.lead, reqMK3B.lead); core.items.remove(Items.titanium, reqMK3B.titanium);
+                        Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(12, 12, this.x, this.y);
+                        this.configure(java.lang.Integer(5)); dialog.hide(); this.deselect();
+                    } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho MK3B![]"); }
+                })).size(180, 38);
+
+                branchesTable.add(b4).width(340); branchesTable.row();
+                branchesTable.add().height(12).row();
+                branchesTable.add(b5).width(340);
+
+                let scroll = new ScrollPane(branchesTable);
+                scroll.setScrollingDisabled(true, false);
+                dialog.cont.add(scroll).maxHeight(400);
+                dialog.addCloseButton(); dialog.show();
+            })).size(50, 40).tooltip("Lựa chọn nhánh nâng cấp cho MK2B");
         } else {
+            // Khóa nâng cấp
             table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
-                Vars.ui.showInfo("[scarlet]HỆ THỐNG DOR ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]");
-            })).size(50, 40).tooltip("Đã đạt cấp tối đa");
+                Vars.ui.showInfo("[scarlet]HỆ THỐNG DOR ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA CẤP CAO![]");
+            })).size(50, 40).tooltip("Đã đạt cấp tối đa của nhánh");
         }
 
-        // --- NÚT THÔNG TIN ---
+        // --- NÚT THÔNG TIN (I) - ĐÃ KHÔI PHỤC TOÀN BỘ CHỈ SỐ ---
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
+            let currentTier = this.getTier();
             let title = " Thông số pháo Dor: ";
             let descStr = "";
-            let currentTier = this.getTier();
 
             if (currentTier == 0) {
                 title += "[yellow](MK1)[]";
                 descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]1,450[]\n" +
-                          "📐 Kích thước khối:[] [white]3x3[]\n" +
-                          "Tầm bắn hiệu dụng:[] [orange]300 pixel[]\n" +
-                          "Sát thương đạn gốc:[] [yellow]12.00[]\n" +
-                          "[scarlet]⚠ Giới hạn đặt: Tối đa 10 cấu trúc/đội[]\n\n" +
-                          "[sky]⚡ CƠ CHẾ HOẠT ĐỘNG XUNG ĐIỆN:[]\n" +
-                          "• [lightgray]Chế độ Sạc:[] Chu kỳ sạc diễn ra mỗi [yellow]1.0 giây[]. Tích đủ điện tự động bắn ra loạt [cyan]10 viên đạn chùm tỏa[] (Sát thương [white]21.00[]/viên).\n" +
-                          "• [lightgray]Trạng thái Nộ (Berserk):[] Khi xả đủ [yellow]3 loạt đạn sạc chùm[], kích hoạt trạng thái cuồng bạo trong [yellow]5.0 giây[]. Tốc độ bắn đạn thường tăng thêm [green]+50%[] (Gấp 1.5 lần tốc độ gốc).";
-            } 
-            else if (currentTier == 1) {
+                          "[lightgray]Máu tháp pháo:[] [green]1,450[] | [lightgray]Tầm bắn:[] [orange]300 px[]\n\n" +
+                          "[cyan]🔥 CƠ CHẾ NỘ XẢ ĐẠN THƯỜNG:[]\n" +
+                          "• Bắn thường: [white]Sát thương 12.00[]\n" +
+                          "• Tích sạc 1.0s (60 ticks) -> Xả loạt 10 viên đạn tỏa (21.00 đm)\n" +
+                          "• Bắn đủ 3 đợt tỏa -> Kích hoạt [red]Trạng thái Điên Cường[] trong 5 giây (x1.5 tốc bắn).";
+            } else if (currentTier == 1) {
                 title += "[cyan](MK2)[]";
-                descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]1,885 [lime](+30%)[]\n" +
-                          "📐 Kích thước khối:[] [white]3x3[]\n" +
-                          "Tầm bắn hiệu dụng:[] [orange]390 pixel [lime](+30%)[]\n" +
-                          "Sát thương đạn gốc:[] [yellow]21.00 [lime](+75%)[]\n" +
-                          "[scarlet]⚠ Giới hạn đặt: Tối đa 10 cấu trúc/đội[]\n\n" +
-                          "[lime]⚡ CƠ CHẾ HOẠT ĐỘNG NÂNG CAO:[]\n" +
-                          "• [lightgray]Sạc tốc độ cao:[] Thời gian sạc giảm [green]-20%[] còn [yellow]0.8 giây[], giải phóng loạt bão đạn tỏa lên tới [sky]20 viên[] (Sát thương [white]25.50[]/viên).\n" +
-                          "• [lightgray]Nộ mở rộng:[] Chu kỳ tích nộ rút ngắn chỉ cần [yellow]2 loạt đạn sạc[]. Thời gian nộ tăng lên [green]6.0 giây[], cường hóa hỏa lực đạn thường siêu tốc đạt [orange]260%[] (Gấp 2.6 lần).";
-            } 
-            else if (currentTier == 2) {
+                descStr = "[cyan]⚡ THÔNG SỐ NÂNG CẤP (MK2) ⚡[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]1,885 (+30%)[] | [lightgray]Tầm bắn:[] [orange]390 px (+30%)[]\n\n" +
+                          "[cyan]🔥 CƠ CHẾ NỘ TĂNG CƯỜNG:[]\n" +
+                          "• Bắn thường: [white]Sát thương 21.00 (+75%)[]\n" +
+                          "• Tích sạc nhanh 0.8s -> Xả loạt 20 viên đạn tỏa (25.50 đm)\n" +
+                          "• Bắn đủ 2 đợt tỏa -> Kích hoạt [red]Điên Cường Cấp 2[] trong 6 giây (x2.6 tốc bắn).";
+            } else if (currentTier == 2) {
                 title += "[purple](MK2B)[]";
-                descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]2,610 [lime](+80%)[]\n" +
-                          "📐 Kích thước khối:[] [white]3x3[]\n" +
-                          "Tầm bắn hiệu dụng:[] [red]240 pixel (-20%)[]\n" +
-                          "Sát thương tuần hoàn:[] [yellow]Laser: 18.00 | Trọng Đạn: 27.00[]\n" +
-                          "[scarlet]⚠ Giới hạn đặt: Tối đa 10 cấu trúc/đội[]\n\n" +
-                          "[purple]🔥 CƠ CHẾ HOẠT ĐỘNG TUẦN HOÀN TRỌNG LỰC:[]\n" +
-                          "• Loại bỏ hoàn toàn cơ chế tích tụ sạc đạn chùm và thanh nộ cuồng bạo.\n" +
-                          "• [lightgray]Giai đoạn Tích Điện:[] Bắn ra [orange]3 phát tia Laser[] liên tiếp, giãn cách hồi giữa mỗi phát bắn là [cyan]1.2 giây[].\n" +
-                          "• [lightgray]Giai đoạn Giải Phóng:[] Ngay sau phát Laser thứ 3, kích nổ mạch xả liên hoàn chuỗi [pink]100 viên Trọng Đạn[] khổng lồ có tự dẫn đường. Vận tốc đạn bay chậm đi [red]-20%[]. Khi dứt chuỗi, hệ thống tốn [cyan]1.2 giây[] ngắt nhiệt hồi nạp chu kỳ.";
+                descStr = "[purple]⚡ THÔNG SỐ TRỌNG LỰC (MK2B) ⚡[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]2,610 (+80%)[] | [lightgray]Tầm bắn:[] [red]240 px[]\n\n" +
+                          "[purple]🔥 CƠ CHẾ TUẦN HOÀN TRỌNG LỰC:[]\n" +
+                          "• Bắn 3 phát [orange]Laser Trọng Lực[] liên tiếp (18.00 đm, xuyên thấu 240px).\n" +
+                          "• Ngay sau đó xả liên hoàn [pink]100 viên Trọng Đạn[] tự dẫn đường (27.00 đm/viên).";
+            } else if (currentTier == 3) {
+                title += "[gold](MK3)[]";
+                descStr = "[gold]⚡ THÔNG SỐ TIẾN HÓA (MK3) ⚡[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]2,545 (+35% MK2)[] | [lightgray]Tầm bắn:[] [orange]526.5 px (+35% MK2)[]\n\n" +
+                          "[gold]🔥 CƠ CHẾ SIÊU NỘ TỐI THƯỢNG:[]\n" +
+                          "• Bắn thường: [white]Sát thương 28.35[]\n" +
+                          "• Bão đạn tỏa [yellow]27 viên/loạt[] (34.42 đm/viên)\n" +
+                          "• Trạng thái [red]Cuồng Báo Tối Thượng[] kéo dài 8.1 giây (x3.51 tốc bắn).";
+            } else if (currentTier == 4) {
+                title += "[purple](MK2B1)[]";
+                descStr = "[purple]⚡ THÔNG SỐ CẤU HÌNH (MK2B1) ⚡[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]2,871 (+10% MK2B)[] | [lightgray]Tầm bắn:[] [orange]264 px (+10% MK2B)[]\n\n" +
+                          "[purple]🔥 CƠ CHẾ ĐỘT PHÁ CẤU HÌNH:[]\n" +
+                          "• [orange]Bắn Laser Kép:[] Phát ra 2 tia Laser song song cùng lúc (19.80 đm/tia, dài 264px).\n" +
+                          "• [pink]Bão Đạn Nhân Đôi:[] Xả bão đạn cuồng bạo [pink]200 viên Trọng Đạn[] liên hoàn tự dẫn đường (29.70 đm/viên).";
+            } else if (currentTier == 5) {
+                title += "[pink](MK3B)[]";
+                descStr = "[pink]👑 THÔNG SỐ TỐI THƯỢNG (MK3B) 👑[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]3,915 (+50% MK2B)[] | [lightgray]Tầm bắn:[] [orange]360 px (+50% MK2B)[]\n\n" +
+                          "[pink]🔥 CHẾ ĐỘ CỰC HẠN TRỌNG LỰC:[]\n" +
+                          "• Bắn ra 3 đợt Laser Siêu Tải chùm rộng (27.00 đm, dài 360px).\n" +
+                          "• Chuyển đổi đạn xả lẻ thành [magenta]Loạt Shotgun Chùm Bão Tỏa 200 viên[] (40.50 đm/viên) dội thẳng diện rộng cực đại.";
             }
 
             let dialog = extend(BaseDialog, title, {});
@@ -277,7 +449,7 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
         this.super$updateTile();
         let tier = this.getTier();
 
-        if(tier == 2){
+        if(tier == 2 || tier == 4 || tier == 5){
             if (this.burstTimer > 0) {
                 if (this.isShooting && this.hasAmmo()) { this.reloadCounter += this.block.reload; }
             } else {
@@ -287,8 +459,8 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                 }
             }
         } else {
-            let speedBoost = (tier == 1) ? 2.6 : 1.5;
-            let currentChargeMax = (tier == 1) ? CHARGE_TIME_MK2 : CHARGE_TIME_MK1;
+            let speedBoost = (tier == 3) ? 3.51 : ((tier == 1) ? 2.6 : 1.5);
+            let currentChargeMax = (tier == 1 || tier == 3) ? CHARGE_TIME_MK2 : CHARGE_TIME_MK1;
 
             if (this.berserkTimer > 0) {
                 this.berserkTimer -= Time.delta;
@@ -309,24 +481,57 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
     shoot(type){
         let tier = this.getTier();
 
-        if(tier == 2){
+        // --- XỬ LÝ NHÁNH B (MK2B - Tier 2 | MK2B1 - Tier 4 | MK3B - Tier 5) ---
+        if(tier == 2 || tier == 4 || tier == 5){
             if(this.burstTimer > 0){
-                this.super$shoot(normalBulletB); 
-                this.rotation += Mathf.range(45); 
-                this.burstShotsFired++;
+                if(tier == 5){
+                    // MK3B: Shotgun Chùm Bão Tỏa
+                    for(let i = 0; i < 40; i++){
+                        let angleOffset = Mathf.range(35);
+                        shotgunBulletB3.create(this, this.team, this.x, this.y, this.rotation + angleOffset);
+                    }
+                    this.burstShotsFired += 40;
 
-                if(this.burstShotsFired >= 100){ 
-                    this.burstTimer = 0;
-                    this.burstShotsFired = 0;
-                    this.laserCount = 0; 
-                    this.customReloadTimer = CHARGE_TIME_MK2B; 
+                    if(this.burstShotsFired >= 200){ 
+                        this.burstTimer = 0;
+                        this.burstShotsFired = 0;
+                        this.laserCount = 0; 
+                        this.customReloadTimer = CHARGE_TIME_MK2B; 
+                    }
+                } else {
+                    // MK2B (100 viên) & MK2B1 (200 viên)
+                    let activeBullet = (tier == 4) ? normalBulletB1 : normalBulletB;
+                    let maxShots = (tier == 4) ? 200 : 100;
+
+                    this.super$shoot(activeBullet); 
+                    this.rotation += Mathf.range(45); 
+                    this.burstShotsFired++;
+
+                    if(this.burstShotsFired >= maxShots){ 
+                        this.burstTimer = 0;
+                        this.burstShotsFired = 0;
+                        this.laserCount = 0; 
+                        this.customReloadTimer = CHARGE_TIME_MK2B; 
+                    }
                 }
             } 
             else {
                 if (this.customReloadTimer <= 0) {
-                    this.super$shoot(laserBulletB); 
+                    if(tier == 4){
+                        // MK2B1: Laser Kép Song Song
+                        let tr = new Vec2();
+                        tr.trns(this.rotation + 90, 8);
+                        laserBulletB1.create(this, this.team, this.x + tr.x, this.y + tr.y, this.rotation);
+                        laserBulletB1.create(this, this.team, this.x - tr.x, this.y - tr.y, this.rotation);
+                    } else if(tier == 5){
+                        // MK3B: Laser Siêu Tải
+                        this.super$shoot(laserBulletB3);
+                    } else {
+                        // MK2B
+                        this.super$shoot(laserBulletB);
+                    }
+
                     Fx.lightningCharge.at(this.x, this.y);
-                    
                     this.laserCount++;
                     this.customReloadTimer = CHARGE_TIME_MK2B; 
 
@@ -340,15 +545,25 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
             return;
         }
 
-        let currentChargeMax = (tier == 1) ? CHARGE_TIME_MK2 : CHARGE_TIME_MK1;
-        let currentBerserkMax = (tier == 1) ? BERSERK_TIME_MK2 : BERSERK_TIME_MK1;
-        let activeNormalBullet = (tier == 1) ? dormk2NormalBullet : dorNormalBullet;
-        let requiredSuperShots = (tier == 1) ? 2 : 3;
+        // --- XỬ LÝ NHÁNH A (MK1 - Tier 0 | MK2 - Tier 1 | MK3 - Tier 3) ---
+        let currentChargeMax = (tier == 1 || tier == 3) ? CHARGE_TIME_MK2 : CHARGE_TIME_MK1;
+        let currentBerserkMax = (tier == 3) ? BERSERK_TIME_MK3 : ((tier == 1) ? BERSERK_TIME_MK2 : BERSERK_TIME_MK1);
+        
+        let activeNormalBullet = dorNormalBullet;
+        if (tier == 1) activeNormalBullet = dormk2NormalBullet;
+        if (tier == 3) activeNormalBullet = dormk3NormalBullet;
+
+        let requiredSuperShots = (tier == 1 || tier == 3) ? 2 : 3;
 
         if (this.chargeTimer >= currentChargeMax && this.berserkTimer <= 0) {
             Fx.lightningCharge.at(this.x, this.y);
             
-            if(tier == 1){
+            if(tier == 3){
+                for(let i = 0; i < 27; i++){
+                    let angleOffset = Mathf.range(8); 
+                    dormk3SmallSprayBullet.create(this, this.team, this.x, this.y, this.rotation + angleOffset);
+                }
+            } else if(tier == 1){
                 for(let i = 0; i < 20; i++){
                     let angleOffset = Mathf.range(6); 
                     dormk2SmallSprayBullet.create(this, this.team, this.x, this.y, this.rotation + angleOffset);
@@ -367,7 +582,7 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                 this.berserkTimer = currentBerserkMax;
                 this.superShotCount = 0;
                 
-                if(tier == 1) {
+                if(tier == 1 || tier == 3) {
                     Fx.upgradeCore.at(this.x, this.y);
                 } else {
                     Fx.bigShockwave.at(this.x, this.y);

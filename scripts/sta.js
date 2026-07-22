@@ -1,3 +1,4 @@
+// ==================== KHAI BÁO GLOBAL & STATUS EFFECTS ====================
 global.deotLastHealth = {};  
 global.deotDamagedTime = {}; 
 global.doteiStacks = {};     
@@ -21,7 +22,7 @@ const dotei = extend(StatusEffect, "dotei", {
         let damagePerTick = (1 * global.doteiStacks[id]) / 60;
         
         isDoteiDamageActive = true;
-        unit.damagePierce(damagePerTick); 
+        unit.damage(damagePerTick, true); 
         isDoteiDamageActive = false; 
     },
     onRemoved(unit) {
@@ -48,48 +49,33 @@ const deot = extend(StatusEffect, "deot", {
     }
 });
 
-
-
-// --- HIỆU ỨNG HẠT HÌNH "^" DI CHUYỂN TỪ DƯỚI LÊN ---
-// --- HIỆU ỨNG TỰ VẼ HÌNH ^ DI CHUYỂN TỪ DƯỚI LÊN ---
 // --- HIỆU ỨNG TỰ VẼ HÌNH ^ ĐƯỢC ÉP LAYER LÊN TRÊN CÙNG ---
 const customAtkSpeedFx = new Effect(45, cons(e => {
-    // Ép Mindustry đưa lệnh vẽ này lên trên cùng layer hiệu ứng, không bị unit hay khiên che khuất
-    Draw.draw(Layer.effect + 0.01, run(() => {
-        Draw.color(Color.valueOf("ff6e6e"));
-        Lines.stroke(1.5); // Tăng độ dày lên một chút để nhìn rõ hơn
-        
-        // Tạo vị trí ngang X ngẫu nhiên xung quanh tâm Unit
-        let randX = Mathf.randomSeed(e.id * 2, -14, 14);
-        
-        // Xuất phát ngẫu nhiên từ phần thân dưới của unit
-        let startY = Mathf.randomSeed(e.id * 3, -12, 4);
-        
-        // Hạt tịnh tiến bay dần lên trên (Trục Y tăng dần) theo vòng đời e.fin()
-        let moveUpY = e.fin() * (16 + Mathf.randomSeed(e.id, 10)); 
-        
-        // Tọa độ đỉnh nhọn của hình ^
-        let topX = e.x + randX;
-        let topY = e.y + startY + moveUpY;
-        
-        // Vẽ hai nhánh của hình ^
-        Lines.line(topX - 3.5, topY - 3.5, topX, topY);
-        Lines.line(topX + 3.5, topY - 3.5, topX, topY);
-        
-        Draw.reset();
-    }));
+    Draw.z(Layer.effect + 0.01);
+    Draw.color(Color.valueOf("ff6e6e"));
+    Lines.stroke(1.5);
+    
+    let randX = Mathf.randomSeed(e.id * 2, -14, 14);
+    let startY = Mathf.randomSeed(e.id * 3, -12, 4);
+    let moveUpY = e.fin() * (16 + Mathf.randomSeed(e.id, 10)); 
+    
+    let topX = e.x + randX;
+    let topY = e.y + startY + moveUpY;
+    
+    Lines.line(topX - 3.5, topY - 3.5, topX, topY);
+    Lines.line(topX + 3.5, topY - 3.5, topX, topY);
+    
+    Draw.reset();
 }));
 
-
-
-// --- TRẠNG THÁI ATKSPEED ĐÃ ĐƯỢC TÍCH HỢP HIỆU ỨNG VÀ CHỈ SỐ ---
 const atkspeed = extend(StatusEffect, "atkspeed", {
-    reloadMultiplier: 2.5,       // Đảm bảo tăng 2.5 lần tốc độ đánh
-    effect: customAtkSpeedFx,    // Gán hiệu ứng hạt hình ^ vừa tạo ở trên vào đây
-    effectChance: 0.18,          // Tỉ lệ xuất hiện hạt liên tục rõ ràng hơn
+    reloadMultiplier: 2.5,
+    effect: customAtkSpeedFx,
+    effectChance: 0.18,
     color: Color.sky
 });
 
+// ==================== XỬ LÝ SỰ KIỆN DEOT & DOTEI ====================
 Events.on(UnitDamageEvent, cons(e => {
     let unit = e.unit;
     if (unit != null && unit.hasEffect(deot)) {
@@ -110,22 +96,22 @@ Events.on(UnitDamageEvent, cons(e => {
                 if (unit.health > unit.maxHealth) unit.health = unit.maxHealth;
             }
         }
-    }
-    
-    if (unit != null) {
-        global.deotLastHealth[unit.id] = unit.health;
+        
+        global.deotLastHealth[id] = unit.health;
     }
 }));
 
-Events.on(Trigger.update, cons(() => {
+// FIX LỖI CRASH: Thay Events.on bằng Events.run cho Trigger.update
+Events.run(Trigger.update, () => {
     Groups.unit.each(cons(unit => {
         if (unit.hasEffect(deot)) {
-            if (global.deotLastHealth[unit.id] === undefined || unit.health > global.deotLastHealth[unit.id]) {
-                global.deotLastHealth[unit.id] = unit.health;
+            let id = unit.id;
+            if (global.deotLastHealth[id] === undefined || unit.health > global.deotLastHealth[id]) {
+                global.deotLastHealth[id] = unit.health;
             }
         }
     }));
-}));
+});
 
 Events.on(UnitDestroyEvent, cons(e => {
     let id = e.unit.id;

@@ -1,0 +1,52 @@
+type: legs
+name: Elorix
+
+speed: 0.8
+hitSize: 12
+health: 890
+armor: 4
+drag: 0.4
+faceTarget: true
+range: 180
+flying: false
+targetAir: true
+rotateSpeed: 3
+legCount: 6
+legMaxLength: 1.1
+legMinLength: 0.6
+legLengthScl: 0.96
+legForwardScl: 2
+legExtension: -4
+legStraightness: 0.3
+legPhysicsLayer: false
+legContinuousMove: true
+lockLegBase: true
+rippleScale: 0.2
+legBaseOffset: 3
+legMoveSpace: 0.6
+legLength: 18
+allowLegStep: true
+hovering: true
+
+immunities: [
+  freezing
+]
+
+weapons: [
+  {
+    name: leolyr-left-weapon
+    x: 9
+    y: 2
+    top: false
+    mirror: true      // Tự động tạo 2 nòng (Trái & Phải) cho phù hợp với JS
+    shootSound: minal
+    reload: 180
+    inaccuracy: 4
+    bullet: {
+      type: BasicBulletType
+      damage: 12
+      speed: 4
+      lifetime: 45
+    }
+  }
+]

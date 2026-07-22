@@ -1,4 +1,5 @@
-function getUpgradeRequirements(currentLevel) {
+// 1. Hàm yêu cầu tài nguyên nâng cấp riêng cho Leolyr
+function getLeolyrUpgradeRequirements(currentLevel) {
     return {
         copperNeeded: 400,
         siliconNeeded: 400,
@@ -6,25 +7,27 @@ function getUpgradeRequirements(currentLevel) {
         siliconItem: Items.silicon
     };
 }
- 
-const leftBullet = extend(BasicBulletType, { speed: 9.0, damage: 15, width: 6, height: 11, lifetime: 35 });
-const rightBullet = extend(BasicBulletType, { speed: 9.0, damage: 15, width: 6, height: 11, lifetime: 35 });
 
-let lastTapTime = 0;
-const doubleTapInterval = 250; 
+// 2. Loại đạn riêng cho Leolyr (đã tách biệt khỏi Elorix)
+const leolyrLeftBullet = extend(BasicBulletType, { speed: 9.0, damage: 15, width: 6, height: 11, lifetime: 35 });
+const leolyrRightBullet = extend(BasicBulletType, { speed: 9.0, damage: 65, width: 6, height: 11, lifetime: 35 });
 
-let mk2TargetX = 0;
-let mk2TargetY = 0;
-let isMarkedMK2 = false;
+// 3. Biến quản lý trạng thái riêng của Leolyr
+let leolyrLastTapTime = 0;
+const leolyrDoubleTapInterval = 250; 
 
-let staticShields = []; 
-let globalStarSpeedsMap = new ObjectMap();
+let leolyrMk2TargetX = 0;
+let leolyrMk2TargetY = 0;
+let leolyrIsMarkedMK2 = false;
 
-function getUnitStarSpeeds(unitId, currentLevel) {
-    let speeds = globalStarSpeedsMap.get(unitId);
+let leolyrStaticShields = []; 
+let leolyrStarSpeedsMap = new ObjectMap();
+
+function getLeolyrStarSpeeds(unitId, currentLevel) {
+    let speeds = leolyrStarSpeedsMap.get(unitId);
     if (speeds == null) {
         speeds = [];
-        globalStarSpeedsMap.put(unitId, speeds);
+        leolyrStarSpeedsMap.put(unitId, speeds);
     }
     while (speeds.length <= currentLevel) {
         speeds.push(1.2 + Math.random() * 2.3);
@@ -32,7 +35,7 @@ function getUnitStarSpeeds(unitId, currentLevel) {
     return speeds;
 }
 
-function drawStar4C(x, y, radius, rotation) {
+function drawLeolyrStar4C(x, y, radius, rotation) {
     for(let i = 0; i < 4; i++) {
         let angle = rotation + (i * 90);
         let x1 = x + Angles.trnsx(angle, radius); let y1 = y + Angles.trnsy(angle, radius);
@@ -43,17 +46,17 @@ function drawStar4C(x, y, radius, rotation) {
     }
 }
 
-let wing1Region = null;
-let wing2Region = null;
+let leolyrWing1Region = null;
+let leolyrWing2Region = null;
 
 Events.on(ClientLoadEvent, () => {
-    wing1Region = Core.atlas.find("newex-leolyr-wing1");
-    wing2Region = Core.atlas.find("newex-leolyr-wing2");
+    leolyrWing1Region = Core.atlas.find("newex-leolyr-wing1");
+    leolyrWing2Region = Core.atlas.find("newex-leolyr-wing2");
     
-    if(wing1Region == null || !wing1Region.found()){ wing1Region = Core.atlas.find("leolyr-wing1"); }
-    if(wing2Region == null || !wing2Region.found()){ wing2Region = Core.atlas.find("leolyr-wing2"); }
+    if(leolyrWing1Region == null || !leolyrWing1Region.found()){ leolyrWing1Region = Core.atlas.find("leolyr-wing1"); }
+    if(leolyrWing2Region == null || !leolyrWing2Region.found()){ leolyrWing2Region = Core.atlas.find("leolyr-wing2"); }
 
-    // Lấy trạng thái tăng tốc độ đánh từ content
+    // Trạng thái tăng tốc độ đánh
     let atkSpeedStatus = Vars.content.getByName(ContentType.status, "newex-atkspeed");
     if(atkSpeedStatus == null) {
         atkSpeedStatus = Vars.content.getByName(ContentType.status, "atkspeed");
@@ -62,8 +65,8 @@ Events.on(ClientLoadEvent, () => {
     const leolyrUnit = Vars.content.getByName(ContentType.unit, "newex-leolyr");
     if(leolyrUnit != null){
         if(leolyrUnit.weapons.size >= 2){
-            leolyrUnit.weapons.get(0).bullet = leftBullet;
-            leolyrUnit.weapons.get(1).bullet = rightBullet;
+            leolyrUnit.weapons.get(0).bullet = leolyrLeftBullet;
+            leolyrUnit.weapons.get(1).bullet = leolyrRightBullet;
         }
 
         leolyrUnit.constructor = () => {
@@ -90,7 +93,7 @@ Events.on(ClientLoadEvent, () => {
                 },
 
                 update(){
-                    // 1. CƠ CHẾ GIỚI HẠN UNIT AN TOÀN
+                    // 1. CƠ CHẾ GIỚI HẠN UNIT AN TOÀN (Tối đa 2 con trên sân)
                     if (Math.floor(Time.time) % 20 === 0) {
                         let currentCount = 0;
                         let myType = this.type;
@@ -123,7 +126,7 @@ Events.on(ClientLoadEvent, () => {
                     let currentMaxShield = 100 + (this.level * 250); 
                     let currentShieldRadius = (7 * 8) * (1.0 + (this.level * 0.10)); 
 
-                     if(this.shieldHealth > 0){
+                    if(this.shieldHealth > 0){
                         let currentShield = this;
                         Groups.bullet.intersect(this.x - currentShieldRadius - 16, this.y - currentShieldRadius - 16, (currentShieldRadius + 16) * 2, (currentShieldRadius + 16) * 2, cons(b => {
                             if(b.team != currentShield.team && b.type != null && b.type.damage > 0){
@@ -150,9 +153,9 @@ Events.on(ClientLoadEvent, () => {
                     }
                     this.ignoreNextDamage = false; 
 
-                    staticShields = staticShields.filter(s => s.lifetime > 0); 
+                    leolyrStaticShields = leolyrStaticShields.filter(s => s.lifetime > 0); 
                     let currentUnit = this;
-                    staticShields.forEach(s => {
+                    leolyrStaticShields.forEach(s => {
                         s.lifetime -= Time.delta;
                         if(s.hp > 0){
                             Groups.bullet.intersect(s.x - s.rad - 16, s.y - s.rad - 16, (s.rad + 16) * 2, (s.rad + 16) * 2, cons(b => {
@@ -173,7 +176,7 @@ Events.on(ClientLoadEvent, () => {
                         }
                     });
 
-                    let req = getUpgradeRequirements(this.level);
+                    let req = getLeolyrUpgradeRequirements(this.level);
                     if(this.level < this.maxLevel && this.stack != null){
                         if(this.copperAbsorbed < req.copperNeeded && this.stack.item == req.copperItem && this.stack.amount > 0){
                             let consumeAmt = Math.min(2, this.stack.amount); this.stack.amount -= consumeAmt; this.copperAbsorbed += consumeAmt;
@@ -198,21 +201,21 @@ Events.on(ClientLoadEvent, () => {
                         let isTouchedNow = Core.input.isTouched();
                         if(isTouchedNow && !this.wasTouchedPrev){
                             let currentTime = Time.millis();
-                            if((currentTime - lastTapTime) < doubleTapInterval){
+                            if((currentTime - leolyrLastTapTime) < leolyrDoubleTapInterval){
                                 
                                 if(this.level >= 10){
-                                     if(!isMarkedMK2 && this.dashCooldown <= 0){
-                                         mk2TargetX = Vars.player.mouseX;
-                                         mk2TargetY = Vars.player.mouseY;
-                                         isMarkedMK2 = true;
+                                     if(!leolyrIsMarkedMK2 && this.dashCooldown <= 0){
+                                         leolyrMk2TargetX = Vars.player.mouseX;
+                                         leolyrMk2TargetY = Vars.player.mouseY;
+                                         leolyrIsMarkedMK2 = true;
                                         
-                                         Fx.shieldBreak.at(mk2TargetX, mk2TargetY, this.hexSize * 2, Color.sky);
-                                         Fx.shieldApply.at(mk2TargetX, mk2TargetY, 0, Color.sky);
-                                    } else if(isMarkedMK2 && this.dashCooldown <= 0){
+                                         Fx.shieldBreak.at(leolyrMk2TargetX, leolyrMk2TargetY, this.hexSize * 2, Color.sky);
+                                         Fx.shieldApply.at(leolyrMk2TargetX, leolyrMk2TargetY, 0, Color.sky);
+                                    } else if(leolyrIsMarkedMK2 && this.dashCooldown <= 0){
                                          executeDash = true;
-                                         finalX = mk2TargetX;
-                                         finalY = mk2TargetY;
-                                         isMarkedMK2 = false; 
+                                         finalX = leolyrMk2TargetX;
+                                         finalY = leolyrMk2TargetY;
+                                         leolyrIsMarkedMK2 = false; 
                                     }
                                 } else {
                                      if(this.dashCooldown <= 0){
@@ -224,7 +227,7 @@ Events.on(ClientLoadEvent, () => {
                                     }
                                 }
                             }
-                            lastTapTime = currentTime;
+                            leolyrLastTapTime = currentTime;
                         }
                         this.wasTouchedPrev = isTouchedNow;
                     } else {
@@ -247,12 +250,11 @@ Events.on(ClientLoadEvent, () => {
                         this.dashCooldown = maxDashCooldown;
                         this.shieldHealth = currentMaxShield; 
                         
-                        // THÊM STATUS VÀO ĐÂY: Áp dụng hiệu ứng atkspeed trong 5 giây (5 * 60 = 300 ticks)
                         if(atkSpeedStatus != null){
                             this.apply(atkSpeedStatus, 300);
                         }
 
-                        staticShields.push({
+                        leolyrStaticShields.push({
                             x: oldX, y: oldY, 
                             rad: currentShieldRadius, 
                             hp: currentMaxShield * 0.8, 
@@ -264,9 +266,17 @@ Events.on(ClientLoadEvent, () => {
                 updateWeapons(){
                     let reloadMultiplier = 1 + (this.level * 2);
                     let damageMultiplier = 1.0 + (this.level * 0.20);
-                    leftBullet.damage = 15 * damageMultiplier; rightBullet.damage = 65 * damageMultiplier;
+                    
+                    leolyrLeftBullet.damage = 15 * damageMultiplier; 
+                    leolyrRightBullet.damage = 65 * damageMultiplier;
+
                     if(this.isShooting && this.weapons.size >= 2){
-                        let leftW = this.weapons.get(0); let rightW = this.weapons.get(1);
+                        let leftW = this.weapons.get(0); 
+                        let rightW = this.weapons.get(1);
+
+                        leftW.bullet = leolyrLeftBullet;
+                        rightW.bullet = leolyrRightBullet;
+
                         if(leftW.reload > 0) leftW.reload -= (reloadMultiplier - 1) * Time.delta;
                         if(rightW.reload > 0) rightW.reload -= (reloadMultiplier - 1) * Time.delta;
                         if(leftW.reload <= 0 && this.shotCount % 2 === 0){ leftW.shoot(this); this.shotCount++; } 
@@ -278,13 +288,13 @@ Events.on(ClientLoadEvent, () => {
                 draw(){
                     Draw.z(Layer.flyingUnit - 2.0); Lines.stroke(1.2);
                     let totalStars = this.level + 1; let baseRadius = this.hitSize * 0.65;
-                    let speeds = getUnitStarSpeeds(this.id, this.level);
+                    let speeds = getLeolyrStarSpeeds(this.id, this.level);
                     
                     for(let i = 0; i < totalStars; i++){
                         let colorPulse = (Math.sin(Time.time / 5 + i) + 1) / 2; Draw.color(Color.white.cpy().lerp(Color.blue, colorPulse));
                         let speed = speeds[i] ? speeds[i] : 2.0; let direction = (i % 2 === 0) ? 1 : -1;
                         let orbitAngle = (Time.time * speed * direction) + (i * (360 / totalStars));
-                        drawStar4C(this.x + Angles.trnsx(orbitAngle, baseRadius + (i * 2.0)), this.y + Angles.trnsy(orbitAngle, baseRadius + (i * 2.0)), 1.5, Time.time * (speed * 1.8) * direction);
+                        drawLeolyrStar4C(this.x + Angles.trnsx(orbitAngle, baseRadius + (i * 2.0)), this.y + Angles.trnsy(orbitAngle, baseRadius + (i * 2.0)), 1.5, Time.time * (speed * 1.8) * direction);
                     }
                     
                     let dashProgress = 0; let isRetracting = false;
@@ -296,12 +306,12 @@ Events.on(ClientLoadEvent, () => {
                     Draw.z(Layer.flyingUnit - 0.001); Draw.color();
                     let upwardY = 8 * dashProgress; let baseSideOffset = 14; let sideExpand = 10 * dashProgress;
                     let w1X = this.x, w1Y = this.y; let w2X = this.x, w2Y = this.y;
-                    if(wing1Region != null && wing2Region != null){
+                    if(leolyrWing1Region != null && leolyrWing2Region != null){
                         w1X = this.x + Angles.trnsx(this.rotation + 90, baseSideOffset + sideExpand) + Angles.trnsx(this.rotation, upwardY);
                         w1Y = this.y + Angles.trnsy(this.rotation + 90, baseSideOffset + sideExpand) + Angles.trnsy(this.rotation, upwardY);
                         w2X = this.x + Angles.trnsx(this.rotation - 90, baseSideOffset + sideExpand) + Angles.trnsx(this.rotation, upwardY);
                         w2Y = this.y + Angles.trnsy(this.rotation - 90, baseSideOffset + sideExpand) + Angles.trnsy(this.rotation, upwardY);
-                        Draw.rect(wing1Region, w1X, w1Y, this.rotation); Draw.rect(wing2Region, w2X, w2Y, this.rotation);
+                        Draw.rect(leolyrWing1Region, w1X, w1Y, this.rotation); Draw.rect(leolyrWing2Region, w2X, w2Y, this.rotation);
                     }
 
                     if(isRetracting){
@@ -318,12 +328,12 @@ Events.on(ClientLoadEvent, () => {
                         Draw.color(Color.white); Fill.circle(laserOriginX, laserOriginY, ballRadius * 0.6); Draw.color();
                     }
 
-                     if(isMarkedMK2 && Vars.player.unit() == this && this.level >= 10){
+                    if(leolyrIsMarkedMK2 && Vars.player.unit() == this && this.level >= 10){
                         Draw.z(Layer.effect);
                         Draw.color(Color.sky, 0.4 + Mathf.absin(Time.time, 3.0, 0.2));
                         Lines.stroke(1.0);
-                        Lines.poly(mk2TargetX, mk2TargetY, 6, this.hexSize * 1.8, Time.time * 2);
-                        Lines.circle(mk2TargetX, mk2TargetY, 4);
+                        Lines.poly(leolyrMk2TargetX, leolyrMk2TargetY, 6, this.hexSize * 1.8, Time.time * 2);
+                        Lines.circle(leolyrMk2TargetX, leolyrMk2TargetY, 4);
                         Draw.reset();
                     }
 
@@ -355,7 +365,7 @@ Events.on(ClientLoadEvent, () => {
                         Lines.circle(this.x, this.y, DynamicRadius); Draw.reset();
                     }
 
-                    staticShields.forEach(s => {
+                    leolyrStaticShields.forEach(s => {
                         if(s.hp > 0){
                             Draw.z(Layer.effect);
                             let hSpacing = this.hexSize * 1.5; let vSpacing = this.hexSize * Math.sqrt(3);

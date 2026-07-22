@@ -39,13 +39,13 @@ require("tankani2k");
 require("tankani4k");
 
 
-
+require("elorix");
 
 
 
 require("copesblock");
 
-
+require("sta");
 
 require("global-damage-indicator");
 
@@ -53,7 +53,7 @@ require("leolyr-summoner");
 
 require("leolyr");
 
-require("sta");
+
 
 
 

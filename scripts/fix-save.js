@@ -2,7 +2,7 @@
 function getTargetUnitNames() {
     return [
         "newex-leolyr",   
-        "newex-kepber"  
+        "newex-elorix"  
     ];
 }
  

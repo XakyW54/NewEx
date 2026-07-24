@@ -1,19 +1,16 @@
-const lastUnitHpMap = new ObjectMap();
-const lastBuildHpMap = new ObjectMap();
 const damagePopups = new Seq();
-
-// Tái sử dụng tempColor để tối ưu bộ nhớ
 const tempColor = new Color();
+
+ 
+const entityHpCache = new ObjectMap();
 
 Events.on(ClientLoadEvent, () => {
     Vars.ui.settings.game.checkPref("show-damage-popup", true);
 });
 
-// Xóa cache khi đổi map mới
 Events.on(WorldLoadEvent, () => {
-    lastUnitHpMap.clear();
-    lastBuildHpMap.clear();
     damagePopups.clear();
+    entityHpCache.clear();
 });
 
 function createIndicatorPopup(x, y, currentHp, previousHp, hitSize) {
@@ -36,50 +33,64 @@ function createIndicatorPopup(x, y, currentHp, previousHp, hitSize) {
         y: y + (hitSize / 4),
         text: text,
         id: Mathf.random(99999),
-        life: 45.0,
-        maxLife: 45.0
+        life: 40.0,
+        maxLife: 40.0
     });
 }
 
+ 
 Events.run(Trigger.update, () => {
     if (!Core.settings.getBool("show-damage-popup", true) || Vars.state.isPaused()) return;
 
-    // 1. Quét danh sách Unit
-    Groups.unit.each(u => {
-        if (u == null || !u.isValid()) return;
+ 
+    let bounds = Core.camera.bounds(new Rect());
+    
+ 
+    Groups.unit.intersect(bounds.x, bounds.y, bounds.width, bounds.height, cons(u => {
+        if (!u.isValid()) return;
 
-        let prev = lastUnitHpMap.get(u.id);
-        if (prev !== null && prev !== undefined) {
-            createIndicatorPopup(u.x, u.y, u.health, prev, u.hitSize);
-        }
-        lastUnitHpMap.put(u.id, u.health);
-    });
-
-    // 2. Quét tất cả Building thông qua các Teams đang hoạt động (Nhanh, Chính xác, Hết lag)
-    let teams = Vars.state.teams.active;
-    for (let i = 0; i < teams.size; i++) {
-        let teamData = teams.get(i);
-        if (teamData == null) continue;
-
-        // Lấy danh sách tất cả các Building của team này
-        let builds = teamData.buildings;
-        if (builds == null) continue;
-
-        let iterator = builds.iterator();
-        while (iterator.hasNext()) {
-            let b = iterator.next();
-            if (b == null || !b.isValid()) continue;
-
-            let prev = lastBuildHpMap.get(b.id);
-            if (prev !== null && prev !== undefined) {
-                createIndicatorPopup(b.x, b.y, b.health, prev, b.block.size * Vars.tilesize);
+        let lastHp = entityHpCache.get(u.id);
+        if (lastHp !== null && lastHp !== undefined) {
+            if (u.health !== lastHp) {
+     
+                createIndicatorPopup(u.x, u.y, u.health, lastHp, u.hitSize);
+                entityHpCache.put(u.id, u.health);
             }
-            lastBuildHpMap.put(b.id, b.health);
+        } else {
+            entityHpCache.put(u.id, u.health);
         }
+    }));
+
+ 
+    let startX = Math.max(0, Math.floor(bounds.x / Vars.tilesize));
+    let startY = Math.max(0, Math.floor(bounds.y / Vars.tilesize));
+    let endX = Math.min(Vars.world.width() - 1, Math.ceil((bounds.x + bounds.width) / Vars.tilesize));
+    let endY = Math.min(Vars.world.height() - 1, Math.ceil((bounds.y + bounds.height) / Vars.tilesize));
+
+    for (let x = startX; x <= endX; x += 2) {   
+        for (let y = startY; y <= endY; y += 2) {
+            let b = Vars.world.build(x, y);
+            if (b != null && b.isValid()) {
+                let lastHp = entityHpCache.get(b.id);
+                if (lastHp !== null && lastHp !== undefined) {
+                    if (b.health !== lastHp) {
+                       
+                        createIndicatorPopup(b.x, b.y, b.health, lastHp, b.block.size * Vars.tilesize);
+                        entityHpCache.put(b.id, b.health);
+                    }
+                } else {
+                    entityHpCache.put(b.id, b.health);
+                }
+            }
+        }
+    }
+ 
+    if (entityHpCache.size > 1000) {
+        entityHpCache.clear();
     }
 });
 
-// Render Popup
+ 
 Events.run(Trigger.draw, () => {
     if (!Core.settings.getBool("show-damage-popup", true) || damagePopups.size === 0) return;
 
@@ -96,10 +107,10 @@ Events.run(Trigger.draw, () => {
         let progress = (popup.maxLife - popup.life) / popup.maxLife;
         let fadeOut = popup.life / popup.maxLife;
 
-        let curX = popup.x + (Mathf.randomSeed(popup.id, -10, 10) * progress);
-        let curY = popup.y + (Mathf.randomSeed(popup.id + 1, 12, 24) * Interp.pow2Out.apply(progress));
+        let curX = popup.x + (Mathf.randomSeed(popup.id, -8, 8) * progress);
+        let curY = popup.y + (Mathf.randomSeed(popup.id + 1, 10, 20) * Interp.pow2Out.apply(progress));
 
-        let size = Math.max(0.15, 0.32 * Interp.pow2Out.apply(fadeOut));
+        let size = Math.max(0.15, 0.3 * Interp.pow2Out.apply(fadeOut));
 
         font.getData().setScale(size);
         

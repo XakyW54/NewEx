@@ -9,14 +9,10 @@ const reqMK2B = { copper: 8000, lead: 4000, titanium: 2000 };
 // --- EFFECT HẠT BAY TRƯỚC VÀ SAU VIÊN ĐẠN ---
 const heliyronParticleEffect = new Effect(18, e => {
     Draw.color(e.color);
-    
-    // 4 góc cần phun (0°, 90°, 180°, 270° so với hướng đạn - hoặc bạn có thể chỉnh thành 45, 135, 225, 315)
     let angles = [0, 90, 180, 270];
     
     for (let i = 0; i < angles.length; i++) {
- 
         Angles.randLenVectors(e.id + i * 10, 3, 8 + e.fin() * 12, e.rotation + angles[i], 25, (x, y) => {
- 
             Fill.circle(e.x + x, e.y + y, 1.5 * e.fout());
         });
     }
@@ -98,7 +94,6 @@ heliyron.config(java.lang.Integer, packCons2((tile, value) => {
 // --- BUILD TYPE ---
 heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
     tierState: 0, // 0: MK1 | 1: MK2 | 2: MK2B
-    limitCheck: 0,
 
     getTier(){ return this.tierState == null ? 0 : this.tierState; },
     setTier(val){ 
@@ -109,7 +104,6 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
         this.maxHealth = this.health;
     },
 
-    // Trừ 1% HP tối đa khi hit kẻ địch (Dừng khi HP <= 1%)
     damageSelfPercent(percent){
         let minHealthLimit = this.maxHealth * 0.01;
         if(this.health > minHealthLimit){
@@ -121,17 +115,14 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
         }
     },
 
-    // Tỉ lệ sát thương nhân thêm theo máu thiếu
     getDamageMultiplier(){
         let missingHpPercent = Math.max(0, (1 - (this.health / this.maxHealth)) * 100);
         let steps = Math.floor(missingHpPercent / 10);
         
         let tier = this.getTier();
         if(tier == 1){
-            // MK2: Cứ 10% máu tụt -> tăng 50% dmg gốc
             return 1 + (steps * 0.50);
         } else {
-            // MK1 & MK2B: Cứ 10% máu tụt -> tăng 20% dmg gốc
             return 1 + (steps * 0.20);
         }
     },
@@ -148,7 +139,6 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
         let tier = this.getTier();
 
         if(tier == 0) {
-            // Menu lựa chọn từ MK1 -> MK2 hoặc MK2B
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
                 let dialog = extend(BaseDialog, "Trung tâm Nâng cấp Heliyron", {});
                 
@@ -218,7 +208,6 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
                 dialog.addCloseButton(); dialog.show();
             })).size(50, 40).tooltip("Nâng cấp pháo Heliyron");
         } else {
-            // Đã nâng cấp lên MK2 hoặc MK2B -> Khóa
             table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
                 Vars.ui.showInfo("[scarlet]PHÁO HELIYRON ĐÃ ĐẠT CẤP TỐI ĐA TRONG NHÁNH![]");
             })).size(50, 40).tooltip("Đã đạt cấp tối đa");
@@ -269,28 +258,12 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
     config() { return java.lang.Integer(this.getTier()); },
 
     updateTile(){
-        // Giới hạn đặt tối đa 10 pháo trên bản đồ
-        this.limitCheck += Time.delta;
-        if(this.limitCheck >= 15){
-            this.limitCheck = 0; let count = 0; let firstBuild = null;
-            Groups.build.each(b => {
-                if(b.block == heliyron && b.team == this.team) { 
-                    count++; if(firstBuild == null) firstBuild = b; 
-                }
-            });
-            if(count > 10 && this !== firstBuild){
-                Call.sendMessage("[red]Giới hạn: Chỉ được đặt tối đa 10 tháp pháo Heliyron! Cấu trúc thừa tự hủy![]"); 
-                this.kill(); return;
-            }
-        }
-
+        // TỐI ƯU HÓA: Bỏ hoàn toàn đoạn code limitCheck quét Groups.build lặp đi lặp lại[cite: 3]
         this.super$updateTile();
 
-        // Xử lý tăng tốc bắn cho MK2B khi dưới 50% HP
         let tier = this.getTier();
         if(tier == 2 && (this.health / this.maxHealth) < 0.50){
             if(this.isShooting && this.hasAmmo()){
-                // Tăng thêm 200% tốc độ bắn (Tốc độ tổng = x3)
                 this.reloadCounter += Time.delta * (this.efficiency * 2.0);
             }
         }

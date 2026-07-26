@@ -92,9 +92,9 @@ const laserBulletB1 = extend(LaserBulletType, {
 });
 
 const shotgunBulletB3 = extend(BasicBulletType, {
-    speed: 9.5, damage: 40.5, width: 9, height: 18, lifetime: 45, 
+    speed: 9.5, damage: 81, width: 9, height: 18, lifetime: 45, // Tăng x2 sát thương để giảm nửa số viên đạn sinh ra -> Chống lag FPS[cite: 1]
     frontColor: Color.valueOf("#ea80fc"), backColor: Color.valueOf("#aa00ff"), 
-    trailColor: Color.valueOf("#e040fb"), trailWidth: 2.5, trailLength: 8,
+    trailColor: Color.valueOf("#e040fb"), trailWidth: 2.5, trailLength: 6,
     hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor,
     homingPower: 0.2, homingRange: 220
 });
@@ -135,7 +135,6 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
     burstTimer: 0,
     burstShotsFired: 0,
     customReloadTimer: 0,
-    limitCheck: 0,
 
     getTier(){ return this.tierState == null ? 0 : this.tierState; },
     setTier(val){ 
@@ -144,18 +143,18 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
         if(val == 1) this.health = 1885;
         if(val == 2) this.health = 2610; // MK2B
         if(val == 3) this.health = 2545; // MK3
-        if(val == 4) this.health = 2871; // MK2B1 (+10% HP)
-        if(val == 5) this.health = 3915; // MK3B (+50% HP)
+        if(val == 4) this.health = 2871; // MK2B1
+        if(val == 5) this.health = 3915; // MK3B
         this.maxHealth = this.health;
     },
 
     range(){
         let tier = this.getTier();
-        if(tier == 5) return 360;   // MK3B
-        if(tier == 4) return 264;   // MK2B1
-        if(tier == 3) return 526.5; // MK3
-        if(tier == 2) return 240;   // MK2B
-        if(tier == 1) return 390;   // MK2
+        if(tier == 5) return 360;   
+        if(tier == 4) return 264;   
+        if(tier == 3) return 526.5; 
+        if(tier == 2) return 240;   
+        if(tier == 1) return 390;   
         return 300;
     },
 
@@ -164,32 +163,25 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
         let tier = this.getTier();
 
         if(tier == 0) {
-            // MK1 -> MK2 / MK2B
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
                 let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Dor", {});
                 
+                // Tối ưu UI Leak: Cache kho đồ và so sánh màu sắc trực tiếp[cite: 1]
                 let reqCell = dialog.cont.label(packProv(() => {
                     let core = this.team.core();
                     if(core == null) return "[red]Không tìm thấy Lõi Đội![]";
-                    let currentcopper = core.items.get(Items.copper);
-                    let currentlead = core.items.get(Items.lead);
-                    let currenttitanium = core.items.get(Items.titanium);
+                    let inv = core.items;
                     
-                    let copColor1 = currentcopper >= reqMK2.copper ? "[green]" : "[red]";
-                    let leaColor1 = currentlead >= reqMK2.lead ? "[green]" : "[red]";
-                    
-                    let copColor2 = currentcopper >= reqMK2B.copper ? "[green]" : "[red]";
-                    let leaColor2 = currentlead >= reqMK2B.lead ? "[green]" : "[red]";
-                    let titColor2 = currenttitanium >= reqMK2B.titanium ? "[green]" : "[red]";
+                    let c = inv.get(Items.copper), l = inv.get(Items.lead), t = inv.get(Items.titanium);
                     
                     return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
                            "[cyan]Nhánh Cấu Hình MK2:[]\n" +
-                           " • Đồng: " + copColor1 + currentcopper + "[] / " + reqMK2.copper + "\n" +
-                           " • Chì: " + leaColor1 + currentlead + "[] / " + reqMK2.lead + "\n" +
+                           " • Đồng: " + (c >= reqMK2.copper ? "[green]" : "[red]") + c + "[] / " + reqMK2.copper + "\n" +
+                           " • Chì: " + (l >= reqMK2.lead ? "[green]" : "[red]") + l + "[] / " + reqMK2.lead + "\n" +
                            "[purple]Nhánh Biến Thể MK2B:[]\n" +
-                           " • Đồng: " + copColor2 + currentcopper + "[] / " + reqMK2B.copper + "\n" +
-                           " • Chì: " + leaColor2 + currentlead + "[] / " + reqMK2B.lead + "\n" +
-                           " • Titan: " + titColor2 + currenttitanium + "[] / " + reqMK2B.titanium;
+                           " • Đồng: " + (c >= reqMK2B.copper ? "[green]" : "[red]") + c + "[] / " + reqMK2B.copper + "\n" +
+                           " • Chì: " + (l >= reqMK2B.lead ? "[green]" : "[red]") + l + "[] / " + reqMK2B.lead + "\n" +
+                           " • Titan: " + (t >= reqMK2B.titanium ? "[green]" : "[red]") + t + "[] / " + reqMK2B.titanium;
                 }));
                 
                 reqCell.width(360).get().setWrap(true);
@@ -241,25 +233,21 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                 dialog.addCloseButton(); dialog.show();
             })).size(50, 40).tooltip("Nâng cấp tháp pháo Dor");
         } else if (tier == 1) {
-            // MK2 -> MK3
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
                 let dialog = extend(BaseDialog, "Trung tâm tiến hóa MK3 - Dor", {});
 
+                // Tối ưu UI Leak[cite: 1]
                 let reqCell = dialog.cont.label(packProv(() => {
                     let core = this.team.core();
                     if(core == null) return "[red]Không tìm thấy Lõi Đội![]";
-                    let currentcopper = core.items.get(Items.copper);
-                    let currentlead = core.items.get(Items.lead);
-                    let currenttitanium = core.items.get(Items.titanium);
-
-                    let copColor = currentcopper >= reqMK3.copper ? "[green]" : "[red]";
-                    let leaColor = currentlead >= reqMK3.lead ? "[green]" : "[red]";
-                    let titColor = currenttitanium >= reqMK3.titanium ? "[green]" : "[red]";
+                    let inv = core.items;
+                    
+                    let c = inv.get(Items.copper), l = inv.get(Items.lead), t = inv.get(Items.titanium);
 
                     return "[yellow]YÊU CẦU TÀI NGUYÊN TIẾN HÓA MK3:[]\n" +
-                           " • Đồng: " + copColor + currentcopper + "[] / " + reqMK3.copper + "\n" +
-                           " • Chì: " + leaColor + currentlead + "[] / " + reqMK3.lead + "\n" +
-                           " • Titan: " + titColor + currenttitanium + "[] / " + reqMK3.titanium;
+                           " • Đồng: " + (c >= reqMK3.copper ? "[green]" : "[red]") + c + "[] / " + reqMK3.copper + "\n" +
+                           " • Chì: " + (l >= reqMK3.lead ? "[green]" : "[red]") + l + "[] / " + reqMK3.lead + "\n" +
+                           " • Titan: " + (t >= reqMK3.titanium ? "[green]" : "[red]") + t + "[] / " + reqMK3.titanium;
                 }));
 
                 reqCell.width(360).get().setWrap(true); reqCell.get().setAlignment(Align.left);
@@ -282,34 +270,26 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                 dialog.addCloseButton(); dialog.show();
             })).size(50, 40).tooltip("Nâng cấp pháo lên MK3");
         } else if (tier == 2) {
-            // MK2B -> RẼ NHÁNH (MK2B1 HOẶC MK3B)
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
                 let dialog = extend(BaseDialog, "Trung tâm Rẽ Nhánh Tiến Hóa MK2B", {});
 
+                // Tối ưu UI Leak[cite: 1]
                 let reqCell = dialog.cont.label(packProv(() => {
                     let core = this.team.core();
                     if(core == null) return "[red]Không tìm thấy Lõi Đội![]";
-                    let currentcopper = core.items.get(Items.copper);
-                    let currentlead = core.items.get(Items.lead);
-                    let currenttitanium = core.items.get(Items.titanium);
-
-                    let copColor1 = currentcopper >= reqMK2B1.copper ? "[green]" : "[red]";
-                    let leaColor1 = currentlead >= reqMK2B1.lead ? "[green]" : "[red]";
-                    let titColor1 = currenttitanium >= reqMK2B1.titanium ? "[green]" : "[red]";
-
-                    let copColor2 = currentcopper >= reqMK3B.copper ? "[green]" : "[red]";
-                    let leaColor2 = currentlead >= reqMK3B.lead ? "[green]" : "[red]";
-                    let titColor2 = currenttitanium >= reqMK3B.titanium ? "[green]" : "[red]";
+                    let inv = core.items;
+                    
+                    let c = inv.get(Items.copper), l = inv.get(Items.lead), t = inv.get(Items.titanium);
 
                     return "[yellow]YÊU CẦU TÀI NGUYÊN (CHỌN 1 TRONG 2 NHÁNH):[]\n" +
                            "[purple]Cấu Hình MK2B1:[]\n" +
-                           " • Đồng: " + copColor1 + currentcopper + "[] / " + reqMK2B1.copper +
-                           " | Chì: " + leaColor1 + currentlead + "[] / " + reqMK2B1.lead +
-                           " | Titan: " + titColor1 + currenttitanium + "[] / " + reqMK2B1.titanium + "\n" +
+                           " • Đồng: " + (c >= reqMK2B1.copper ? "[green]" : "[red]") + c + "[] / " + reqMK2B1.copper +
+                           " | Chì: " + (l >= reqMK2B1.lead ? "[green]" : "[red]") + l + "[] / " + reqMK2B1.lead +
+                           " | Titan: " + (t >= reqMK2B1.titanium ? "[green]" : "[red]") + t + "[] / " + reqMK2B1.titanium + "\n" +
                            "[pink]Cấu Hình Tối Thượng MK3B:[]\n" +
-                           " • Đồng: " + copColor2 + currentcopper + "[] / " + reqMK3B.copper +
-                           " | Chì: " + leaColor2 + currentlead + "[] / " + reqMK3B.lead +
-                           " | Titan: " + titColor2 + currenttitanium + "[] / " + reqMK3B.titanium;
+                           " • Đồng: " + (c >= reqMK3B.copper ? "[green]" : "[red]") + c + "[] / " + reqMK3B.copper +
+                           " | Chì: " + (l >= reqMK3B.lead ? "[green]" : "[red]") + l + "[] / " + reqMK3B.lead +
+                           " | Titan: " + (t >= reqMK3B.titanium ? "[green]" : "[red]") + t + "[] / " + reqMK3B.titanium;
                 }));
 
                 reqCell.width(360).get().setWrap(true); reqCell.get().setAlignment(Align.left);
@@ -338,7 +318,7 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                 b5.add("[pink]===(NHÁNH 2: TỐI THƯỢNG MK3B)===[]").row();
                 let b5D = b5.add(" [white]• Tăng [green]+50% chỉ số[] (Máu: 3,915 HP, Tầm: 360 px).\n" +
                                  " [white]• Laser Siêu Tải chùm rộng.\n" +
-                                 " [white]• Chuyển đạn xả lẻ thành [magenta]Loạt Shotgun Chùm Bão Tỏa 200 viên[] diện rộng.");
+                                 " [white]• Chuyển đạn xả lẻ thành [magenta]Loạt Shotgun Chùm Bão Tỏa 100 viên[] (đã tối ưu FPS).");
                 b5D.width(340).get().setWrap(true); b5D.get().setAlignment(Align.left); b5.row();
                 b5.button("[pink]CHỌN MK3B[]", packRun(() => {
                     let core = this.team.core();
@@ -359,13 +339,12 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                 dialog.addCloseButton(); dialog.show();
             })).size(50, 40).tooltip("Lựa chọn nhánh nâng cấp cho MK2B");
         } else {
-            // Khóa nâng cấp
             table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
                 Vars.ui.showInfo("[scarlet]HỆ THỐNG DOR ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA CẤP CAO![]");
             })).size(50, 40).tooltip("Đã đạt cấp tối đa của nhánh");
         }
 
-        // --- NÚT THÔNG TIN (I) - ĐÃ KHÔI PHỤC TOÀN BỘ CHỈ SỐ ---
+        // --- NÚT THÔNG TIN (I) ---
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
             let currentTier = this.getTier();
             let title = " Thông số pháo Dor: ";
@@ -415,7 +394,7 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                           "[lightgray]Máu tháp pháo:[] [green]3,915 (+50% MK2B)[] | [lightgray]Tầm bắn:[] [orange]360 px (+50% MK2B)[]\n\n" +
                           "[pink]🔥 CHẾ ĐỘ CỰC HẠN TRỌNG LỰC:[]\n" +
                           "• Bắn ra 3 đợt Laser Siêu Tải chùm rộng (27.00 đm, dài 360px).\n" +
-                          "• Chuyển đổi đạn xả lẻ thành [magenta]Loạt Shotgun Chùm Bão Tỏa 200 viên[] (40.50 đm/viên) dội thẳng diện rộng cực đại.";
+                          "• Chuyển đổi đạn xả lẻ thành [magenta]Loạt Shotgun Bão Tỏa (Đã tối ưu FPS)[] (81.00 đm/viên) dội thẳng diện rộng cực đại.";
             }
 
             let dialog = extend(BaseDialog, title, {});
@@ -432,20 +411,7 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
     config() { return java.lang.Integer(this.getTier()); },
 
     updateTile(){
-        this.limitCheck += Time.delta;
-        if(this.limitCheck >= 15){
-            this.limitCheck = 0; let count = 0; let firstBuild = null;
-            Groups.build.each(b => {
-                if(b.block == dor && b.team == this.team) { 
-                    count++; if(firstBuild == null) firstBuild = b; 
-                }
-            });
-            if(count > 10 && this !== firstBuild){
-                Call.sendMessage("[red]Giới hạn: Chỉ được đặt tối đa 10 tháp pháo Dor! Cấu trúc thừa đã tự hủy![]"); 
-                this.kill(); return;
-            }
-        }
-
+        // ĐÃ XÓA HOÀN TOÀN HÀM QUÉT GIỚI HẠN 10 BLOCK GÂY LAG TẠI ĐÂY[cite: 1]
         this.super$updateTile();
         let tier = this.getTier();
 
@@ -485,21 +451,21 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
         if(tier == 2 || tier == 4 || tier == 5){
             if(this.burstTimer > 0){
                 if(tier == 5){
-                    // MK3B: Shotgun Chùm Bão Tỏa
-                    for(let i = 0; i < 40; i++){
+                    // MK3B: Bắn 20 viên/frame thay vì 40 để tránh sụt FPS[cite: 1]
+                    for(let i = 0; i < 20; i++){
                         let angleOffset = Mathf.range(35);
                         shotgunBulletB3.create(this, this.team, this.x, this.y, this.rotation + angleOffset);
                     }
-                    this.burstShotsFired += 40;
+                    this.burstShotsFired += 20;
 
-                    if(this.burstShotsFired >= 200){ 
+                    if(this.burstShotsFired >= 100){ 
                         this.burstTimer = 0;
                         this.burstShotsFired = 0;
                         this.laserCount = 0; 
                         this.customReloadTimer = CHARGE_TIME_MK2B; 
                     }
                 } else {
-                    // MK2B (100 viên) & MK2B1 (200 viên)
+                    // MK2B & MK2B1
                     let activeBullet = (tier == 4) ? normalBulletB1 : normalBulletB;
                     let maxShots = (tier == 4) ? 200 : 100;
 

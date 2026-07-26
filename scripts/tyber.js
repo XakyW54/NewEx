@@ -1,7 +1,6 @@
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
-
 const reqMK2 = {
     titanium: 4000,
     silicon: 4000,
@@ -13,7 +12,6 @@ const reqMK2B = {
     silicon: 8200,
     plastanium: 4100
 };
-
 
 const tyberExplosionFx = new Effect(40, cons(e => {
     Draw.color(Color.valueOf("d1efff"), Color.valueOf("66b1ff"), e.fin());
@@ -66,7 +64,7 @@ Events.on(EventType.ContentInitEvent, () => {
             lastRocketTime: 0.0,     
             lastExplosionTime: 0.0,  
             evolution: 0, 
-            limitCheck: 0, // Thêm biến đếm thời gian kiểm tra giới hạn giống pháo Dor
+            lastAppliedEvo: -1, // Biến phụ tránh lặp hàm set thông số ở peekAmmo
 
             range(){
                 if(this.evolution == 1) return this.super$range() * 1.5;
@@ -75,7 +73,8 @@ Events.on(EventType.ContentInitEvent, () => {
 
             peekAmmo(){
                 let ammo = this.super$peekAmmo();
-                if(ammo != null){
+                if(ammo != null && this.lastAppliedEvo !== this.evolution){
+                    this.lastAppliedEvo = this.evolution;
                     if(this.evolution == 1){
                         tyberBase.shoot = shootMK2; 
                         tyberBase.reload = 80; 
@@ -100,22 +99,6 @@ Events.on(EventType.ContentInitEvent, () => {
             },
 
             updateTile(){
-                // --- ĐOẠN CODE KIỂM TRA GIỚI HẠN ĐƯỢC THÊM VÀO (GIỚI HẠN LÀ 1) ---
-                this.limitCheck += Time.delta;
-                if(this.limitCheck >= 15){
-                    this.limitCheck = 0; let count = 0; let firstBuild = null;
-                    Groups.build.each(b => {
-                        if(b.block == tyberBase && b.team == this.team) { 
-                            count++; if(firstBuild == null) firstBuild = b; 
-                        }
-                    });
-                    if(count > 1 && this !== firstBuild){
-                        Call.sendMessage("[red]Giới hạn: Chỉ được phép đặt tối đa 1 tháp pháo thuộc dòng Tyber System! Cấu trúc thừa đã tự hủy![]"); 
-                        this.kill(); return;
-                    }
-                }
-                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
                 this.super$updateTile();
                 
                 if(this.isShooting && this.hasAmmo() && this.isActive()){
@@ -176,7 +159,6 @@ Events.on(EventType.ContentInitEvent, () => {
                 table.clear(); table.row();
                 let ev = this.evolution;
 
-                // --- NÚT TIẾN HÓA (PHONG CÁCH HÀNG DỌC GỌN GÀNG TRONG 1 GUI CỦA LAVUNDER) ---
                 if(ev == 0){
                     table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => { 
                         let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Tyber", {}); 
@@ -212,7 +194,6 @@ Events.on(EventType.ContentInitEvent, () => {
 
                         let branchesTable = new Table();
                         
-                        // Nhánh MK2: Oanh tạc Diện Rộng
                         let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                         b1.add("[cyan]===(MK2)===[]").row(); 
                         let b1D = b1.add("Cải tiến hệ thống lên 5 nòng xả đạn luân phiên:\n" +
@@ -231,7 +212,6 @@ Events.on(EventType.ContentInitEvent, () => {
                             } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho cấu hình MK2![]"); } 
                         })).size(180, 38); 
 
-                        // Nhánh MK2B: Biến thể phòng thủ Bạo Kích Tập Trung
                         let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                         b2.add("[purple]===(MK2B)===[]").row(); 
                         let b2D = b2.add("Nén loạt bắn thành 1 nòng tâm bạo kích hội tụ:\n" +
@@ -255,7 +235,6 @@ Events.on(EventType.ContentInitEvent, () => {
                             } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho cấu hình MK2B![]"); } 
                         })).size(180, 38); 
 
-                        // Xếp các bảng nhánh theo hàng dọc chuẩn Lavunder
                         branchesTable.add(b1).width(340); branchesTable.row(); 
                         branchesTable.add().height(12).row(); 
                         branchesTable.add(b2).width(340);
@@ -271,7 +250,6 @@ Events.on(EventType.ContentInitEvent, () => {
                     })).size(50, 40).tooltip("Đã khóa nhánh tiến hóa");
                 }
 
-                // --- NÚT THÔNG TIN THÔNG SỐ CHÍNH XÁC (PHONG CÁCH BỐ CỰC ĐẶC TRƯNG CỦA DOR) ---
                 table.button(Icon.info, Styles.cleari, 40, packRun(() => {
                     let title = " Thông số pháo Tyber: ";
                     let descStr = "";
@@ -280,12 +258,10 @@ Events.on(EventType.ContentInitEvent, () => {
                         title += (ev == 0) ? "[yellow](MK1)[]" : "[cyan](MK2)[]";
                         descStr = (ev == 0) ? "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" : "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n";
                         descStr += "[lightgray]Máu tháp pháo:[] [green]565 HP[]\n" +
-                                  "[lightgray]Tầm bắn hiệu dụng:[] " + (ev == 1 ? "[orange]930 pixel [lime](+50%)[]" : "[orange]620 pixel[]") + "\n" +
-                                  "[scarlet]⚠ Giới hạn dòng: Tối đa 1 cấu trúc/Đội trên chiến trường[]\n\n" +
+                                  "[lightgray]Tầm bắn hiệu dụng:[] " + (ev == 1 ? "[orange]930 pixel [lime](+50%)[]" : "[orange]620 pixel[]") + "\n\n" +
                                   "[sky]⚡ CƠ CHẾ HỎA LỰC CHÍNH:[]\n" +
                                   "• [lightgray]Hệ thống nòng súng:[] " + (ev == 1 ? "Cải tiến [cyan]5 nòng song song[] bắn luân phiên liên tục (Giãn cách: 4)." : "Mặc định gồm [yellow]3 nòng cốt lõi[] xả loạt đạn luân phiên (Giãn cách: 6).") + "\n" +
                                   "• [lightgray]Đạn chính (Titanium):[] Triệu hồi Tên lửa hạng nặng Tyber vọt tầm xa.\n\n" +
-                                  "[scarlet]⚠ Giới hạn đặt: Tối đa 1 cấu trúc/đội[]\n\n" +
                                   "[lime]⚡ HỆ THỐNG PHỤ TRỢ TỰ ĐỘNG:[]\n" +
                                   "• [lightgray]Tên lửa định vị phụ (Tốc độ 3):[] Phóng tầm nhiệt sườn định kỳ mỗi " + (ev == 1 ? "[green]4.0 giây[]" : "[yellow]5.0 giây[]") + ". Khi chạm nổ giải phóng phá hủy diện rộng cực đại lên tới [orange]300 bán kính[] (Sát thương nổ: 235).\n" +
                                   "• [lightgray]Xung nổ đại địa:[] Kích nổ lõi nhiệt hạch tại tâm pháo định kỳ mỗi " + (ev == 1 ? "[green]6.0 giây[]" : "[yellow]7.0 giây[]") + ", gây [red]1700 Sát thương diện rộng[] trong phạm vi [lightgray]176 ô[] giúp chống tiếp cận.";
@@ -294,11 +270,9 @@ Events.on(EventType.ContentInitEvent, () => {
                         title += "[purple](MK2B)[]";
                         descStr = "[purple]⚡ THÔNG SỐ BIẾN THỂ (MK2B) ⚡[]\n" +
                                   "[lightgray]Máu tháp pháo:[] [green]565 HP[]\n" +
-                                  "[lightgray]Tầm bắn hiệu dụng:[] [orange]620 pixel[]\n" +
-                                  "[scarlet]⚠ Giới hạn dòng: Tối đa 1 cấu trúc/Đội trên chiến trường[]\n\n" +
+                                  "[lightgray]Tầm bắn hiệu dụng:[] [orange]620 pixel[]\n\n" +
                                   "[purple]🔥 HỎA LỰC HỘI TỤ SIÊU TRỌNG:[]\n" +
                                   "• [lightgray]Chế độ nòng tâm:[] Gom hỏa lực xả [red]1 viên bạo kích duy nhất[] tập trung, giảm Reload xuống chỉ còn [green]40 tích tắc[] (Tốc độ bắn nhanh gấp đôi).\n\n" +
-                                  "[scarlet]⚠ Giới hạn đặt: Tối đa 1 cấu trúc/đội[]\n\n" +
                                   "[lime]⚡ HỆ THỐNG PHỤ TRỢ TỰ ĐỘNG (MK2B):[]\n" +
                                   "• [lightgray]Cặp tên lửa bạo kích phụ (Tốc độ 6):[] Khai hỏa đồng thời [yellow]2 tên lửa phụ dạt góc 12°[] liên tục mỗi [green]3.0 giây[]. Đòn nổ nén điểm tập trung gây [red]1350 sát thương bạo kích[] cực lớn trong phạm vi hẹp [lightgray]30[].\n" +
                                   "• [lightgray]Xung nổ đại địa cấp tốc:[] Tốc độ nạp xung kích tại tâm rút ngắn kỷ lục xuống còn [green]3.0 giây/lần[], giải phóng sóng chấn động tỏa hạt đỏ hạt nhân, gây [red]1700 Sát thương[] diện rộng phạm vi [lightgray]176 ô[].";

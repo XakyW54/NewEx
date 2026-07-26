@@ -1,4 +1,3 @@
-
 function dashCircle(x, y, radius, color) {
     Draw.color(color);
     let segments = 48;
@@ -201,7 +200,6 @@ dtgSoldernTurret.config(java.lang.Integer, packCons2((tile, value) => {
 
 dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldernTurret, {
     dtgSoldernInternalTier: 0, 
-    limitCheck: 0,
     wasInShotgunRange: false,
     canInstantRegenShield: true, 
 
@@ -343,8 +341,7 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                           "• [lightgray]Máu tháp pháo:[] [green]2200 HP[]\n" +
                           "• [lightgray]Độ bền lá chắn:[] [cyan]" + shieldHealthMK1 + "[]\n" +
                           "• [lightgray]Tầm bắn hiệu dụng:[] [orange]" + this.range() + " pixel[]\n" +
-                          "• [lightgray]Sát thương tầm xa:[] [yellow]63.0[] (Tốc độ đạn: 7)\n" +
-                          "[scarlet]⚠ Giới hạn dòng: Tối đa 10 cấu trúc/Đội trên chiến trường[]\n\n" +
+                          "• [lightgray]Sát thương tầm xa:[] [yellow]63.0[] (Tốc độ đạn: 7)\n\n" +
                           "[sky]⚡ CƠ CHẾ ĐA DỤNG:[]\n" +
                           "• [lightgray]Màng chắn năng lượng:[] Tự động bung góc chặn 120° theo hướng nòng súng khi bắn để triệt tiêu đạn địch.\n" +
                           "• [lightgray]Chế độ Cận chiến (Shotgun):[] Kích hoạt vuốt máy khi mục tiêu lọt vào cự ly [yellow]100 pixel[]. Xả loạt 14 đạn rải (Sát thương: 21) liên thanh liên tục trong 10 băng đạn.";
@@ -355,8 +352,7 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                           "• [lightgray]Máu tháp pháo:[] [green]2860 HP [yellow](+30%)[]\n" +
                           "• [lightgray]Độ bền lá chắn:[] [cyan]" + shieldHealthMK2 + "[]\n" +
                           "• [lightgray]Tầm bắn hiệu dụng:[] [orange]" + this.range() + " pixel [yellow](+30%)[]\n" +
-                          "• [lightgray]Sát thương tầm xa:[] [yellow]56.0[] (Gia tốc đạn tăng vọt: 10.4)\n" +
-                          "[scarlet]⚠ Giới hạn dòng: Tối đa 10 cấu trúc/Đội trên chiến trường[]\n\n" +
+                          "• [lightgray]Sát thương tầm xa:[] [yellow]56.0[] (Gia tốc đạn tăng vọt: 10.4)\n\n" +
                           "[lime]⚡ CƠ CHẾ ĐA DỤNG BỔ SUNG:[]\n" +
                           "• [lightgray]Nạp khiên tức thời:[] Khiên tự động sạc đầy lại hoàn toàn khi kẻ địch lần đầu tiên bước vào vùng cận chiến.\n" +
                           "• [lightgray]Hỏa lực shotgun cải tiến:[] Tăng mạnh sát thương mỗi viên đạn rải trong loạt tỏa cận chiến lên [yellow]30.6[].";
@@ -367,8 +363,7 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                           "• [lightgray]Máu tháp pháo:[] [green]4400 HP [yellow](+100%)[]\n" +
                           "• [lightgray]Độ bền lá chắn:[] [cyan]" + shieldHealthMK3 + "[]\n" +
                           "• [lightgray]Tầm bắn hiệu dụng:[] [orange]" + this.range() + " pixel [coral](Thu hẹp)[]\n" +
-                          "• [lightgray]Chế độ tầm xa:[] Chuyển hẳn thành [orange]Laser hủy diệt[] nén điểm gây [red]122 sát thương[] trực diện.\n" +
-                          "[scarlet]⚠ Giới hạn dòng: Tối đa 10 cấu trúc/Đội trên chiến trường[]\n\n" +
+                          "• [lightgray]Chế độ tầm xa:[] Chuyển hẳn thành [orange]Laser hủy diệt[] nén điểm gây [red]122 sát thương[] trực diện.\n\n" +
                           "[purple]🔥 SỨC MẠNH ÁP SÁT TỐI THƯỢNG:[]\n" +
                           "• [lightgray]Mở rộng tầm Shotgun:[] Ngưỡng kích hoạt tăng lên [yellow]145 pixel[].\n" +
                           "• [lightgray]Hỏa lực hỗn hợp:[] Khai hỏa đồng loạt tổ hợp bạo kích gồm [scarlet]14 đạn rải đỏ[] (Sát thương: 23) đan xen [sharp]6 tia đạn tỏa chéo dạt góc 12°[] (Sát thương: 23) để xóa sổ quân địch trong tích tắc.";
@@ -391,24 +386,6 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
         let tier = this.getTier();
         
         this.super$updateTile();
-
-        this.limitCheck += Time.delta;
-        if(this.limitCheck >= 15){
-            this.limitCheck = 0;
-            let count = 0;
-            let firstBuild = null;
-            Groups.build.each(b => {
-                if(b.block == dtgSoldernTurret && b.team == this.team) {
-                    count++;
-                    if(firstBuild == null) firstBuild = b;
-                }
-            });
-            if(count > 10 && this !== firstBuild){
-                Call.sendMessage("[red]Giới hạn: Chỉ được đặt tối đa 10 tháp pháo DTG Soldern! Cấu trúc thừa đã tự hủy![]");
-                this.kill();
-                return;
-            }
-        }
 
         let currentMaxShield = getMaxShieldHealth(tier);
         let targetInShotgunRange = false;

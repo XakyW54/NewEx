@@ -1,13 +1,9 @@
 print("LYVERVON SYSTEM CORE - BREATHING HALO ENERGY UPDATE");
 
-// =========================================================================
-// 1. ĐỊNH NGHĨA HIỆU ỨNG ĐỒ HỌA (EFFECTS FX)
-// =========================================================================
 const lightningColor = Color.valueOf("7fd4ff");
 const lyvervonColor = Color.valueOf("#a488ff");
 const deadZone = 80;
 
-// Hiệu ứng tia điện chính (Dùng mảng tọa độ cố định - Tự động ngưng đọng khi pause)
 const arcmotLightningEffect = new Effect(14, e => {
     if(!(e.data instanceof Seq)) return;
     const points = e.data;
@@ -42,7 +38,7 @@ const mk3ExplosionFX = new Effect(30, e => {
 
 function dashCircle(x, y, radius, color){
     Draw.color(color);
-    let segments = 48;
+    let segments = 24; // Giảm bớt segments vẽ hình từ 48 -> 24 để đỡ tốn card đồ họa
     for(let i = 0; i < segments; i += 2){
         let a1 = i / segments * 360;
         let a2 = (i + 1) / segments * 360;
@@ -70,25 +66,7 @@ const packProv = (func) => new Prov({ get: func });
 const reqMK2 = { titanium: 1200, thorium: 5000 };
 const reqMK3 = { copper: 8000, plastanium: 2900 };
 
-const checkLyvervonLimitation = (buildInstance, targetBlock, maxCount, message) => {
-    let count = 0;
-    Groups.build.each(b => {
-        let blockName = b.block.name;
-        if(b.block == targetBlock || blockName == "newex-" + targetBlock.name || blockName == targetBlock.name){
-            if(b.team == buildInstance.team) count++;
-        }
-    });
-    if(count > maxCount){
-        Call.sendMessage(message);
-        buildInstance.kill();
-        return true;
-    }
-    return false;
-};
-
-// =========================================================================
-// 2. HÀM TẠO SÉT (CHÍNH & CHAOS ĐỂ TẤN CÔNG)
-// =========================================================================
+// LOẠI BỎ CHỨC NĂNG TÍNH GIỚI HẠN BLOCK CỦA LYVERVON
 function createLightningStandard(x1, y1, x2, y2, thickness){
     let dst = Mathf.dst(x1, y1, x2, y2);
     let segs = Math.max(4, Math.floor(dst / 7));
@@ -172,9 +150,6 @@ lyvervonBulletSystem.speed = 0;
 lyvervonBulletSystem.lifetime = 1;
 lyvervonBulletSystem.collides = false;
 
-// =========================================================================
-// 3. BLOCK PHÁO CHÍNH
-// =========================================================================
 const lyvervon = extend(PowerTurret, "lyvervon", {
     init(){
         this.super$init();
@@ -191,9 +166,8 @@ lyvervon.health = 1700; lyvervon.size = 4; lyvervon.targetAir = false; lyvervon.
 lyvervon.range = 300; lyvervon.reload = 6; 
 lyvervon.shootType = lyvervonBulletSystem;
 
-// ================= CẤU HÌNH LƯU TRỮ VÀ TIÊU THỤ ĐIỆN NĂNG =================
-lyvervon.powerCapacity = 5000;         // Khả năng lưu trữ điện của pháo chứa được 5000 đơn vị
-lyvervon.consumePower(100 / 60);       // Giá trị khởi tạo mặc định cho MK1 (100 điện / 60 ticks = 1s)
+lyvervon.powerCapacity = 5000;         
+lyvervon.consumePower(100 / 60);       
 lyvervon.configurable = true;
 
 lyvervon.config(java.lang.Integer, packCons2((tile, value) => {
@@ -212,8 +186,7 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
     
     placed(){
         this.super$placed();
-        checkLyvervonLimitation(this, lyvervon, 2, "[red]Giới hạn: Chỉ được đặt tối đa 2 pháo lyvervon![]");
-        // Đảm bảo cập nhật chính xác lượng điện tiêu thụ ngay khi đặt tháp pháo xuống
+        // Đã gỡ bỏ hàm giới hạn pháo checkLyvervonLimitation
         this.setTier(this.getTier());
     },
 
@@ -223,16 +196,15 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
 
     setTier(val){
         this.lyvervonTier = val;
-        // Chia cho 60 vì Mindustry xử lý lượng tiêu thụ năng lượng theo từng tick (60 ticks = 1 giây)
         if(val == 1){
             this.health = 1700; this.block.reload = 6; this.block.range = 300;
-            this.block.consPower.usage = 100 / 60;   // MK1 tiêu tốn 100 điện để bắn trong 1s
+            this.block.consPower.usage = 100 / 60;   
         } else if(val == 2){
             this.health = 2950; this.block.reload = 6; this.block.range = 350;
-            this.block.consPower.usage = 1200 / 60;  // MK2 tiêu tốn 1200 điện để bắn trong 1s
+            this.block.consPower.usage = 1200 / 60;  
         } else if(val == 3){
             this.health = 3600; this.block.reload = 6; this.block.range = 380;
-            this.block.consPower.usage = 850 / 60;   // MK2b tiêu tốn 850 điện để bắn trong 1s
+            this.block.consPower.usage = 850 / 60;   
         }
     },
     getTier() { return this.lyvervonTier !== undefined ? this.lyvervonTier : 1; },
@@ -372,7 +344,6 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
 
                 let branchesTable = new Table();
 
-                // Nhánh 1: MK2
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                 b1.add("[cyan]===(MK2)===[]").row();
                 let b1D = b1.add("Mô-đun tối ưu hóa chuỗi dẫn mạch liên tục:\n" +
@@ -391,7 +362,6 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                     } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                 })).size(180, 38);
 
-                // Nhánh 2: MK2b
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                 b2.add("[purple]===(MK2B)===[]").row();
                 let b2D = b2.add("Lõi cộng hưởng bão điện Chaos hỗn mang cực đại:\n" +
@@ -410,7 +380,6 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                     } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2b![]"); }
                 })).size(180, 38);
 
-                // Sắp xếp bố cục hàng dọc chuẩn Lavunder
                 branchesTable.add(b1).width(340); branchesTable.row();
                 branchesTable.add().height(12).row();
                 branchesTable.add(b2).width(340);
@@ -426,7 +395,6 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
             })).size(50, 40).tooltip("Đã đạt cấp tối đa");
         }
 
-        // --- NÚT BẢNG THÔNG TIN CHI TIẾT (PHONG CÁCH BỐ CỰC DOR) ---
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
             let title = " Thông số pháo Lyvervon: ";
             let descStr = "";
@@ -440,9 +408,7 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                           "[lightgray]Tầm bắn mặc định:[] [orange]300 ô[] | [green]Tốc độ xả: 0.1s/phát[]\n" +
                           "[lightgray]Yêu cầu năng lượng:[] [lightning]100 điện / giây[] (Trữ lượng: 5000)\n" +
                           "[lightgray]Vùng mù (Deadzone):[] [scarlet]80 ô xung quanh tâm pháo[]\n" +
-                          "[lightgray]Mục tiêu ưu tiên:[] Chỉ quét mục tiêu [lightgray]Mặt Đất[]\n\n" +
-                          "[orange]⚠ GIỚI HẠN LẮP ĐẶT ĐẶC BIỆT:[]\n" +
-                          "Do lượng xung từ trường cực đại làm nhiễu loạn mạng lưới dòng điện, mỗi đội chỉ cho phép xây dựng tối đa [red]2 tháp pháo Lyvervon[] trên toàn bản đồ.";
+                          "[lightgray]Mục tiêu ưu tiên:[] Chỉ quét mục tiêu [lightgray]Mặt Đất[]";
             } 
             else if (currentTier == 2) {
                 title += "[cyan](MK2)[]";
@@ -652,22 +618,11 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
             
             Draw.z(Layer.effect + 5);
             drawPolyHex(this.x, this.y, radius, stroke, rotationAngle, hexColor);
-            
-            let text = Math.floor(this.damageBonus) + "%";
-            Draw.color(Color.white);
-            Draw.alpha(this.zoomAnimation);
-            let font = Fonts.outline; font.getData().setScale(0.11);
-            font.draw(text, this.x, this.y + 5, Align.center);
             Draw.reset();
         }
 
         if(tier == 3 && this.mk3ChargePoints > 0){
             Draw.z(Layer.effect + 10);
-            Draw.color(Color.white);
-            let font = Fonts.outline; font.getData().setScale(0.12);
-            let textPoints = "[purple]CHARGE:[] " + this.mk3ChargePoints + "/25";
-            font.draw(textPoints, this.x, this.y + 18, Align.center);
-
             let barWidth = 28;
             let progress = this.mk3ChargePoints / 25;
             Draw.color(Color.black, 0.5); Lines.stroke(3);

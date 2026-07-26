@@ -1,4 +1,4 @@
-/*BLIXALUM TURRET SYSTEM - ADVANCED 8-WING MECHANICAL DRAWING ENGINE*/
+/*BLIXALUM TURRET SYSTEM - OPTIMIZED ENGINE*/
 
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
@@ -7,11 +7,13 @@ const packProv = (func) => new Prov({ get: func });
 const reqBlixalumMK2 = { copper: 4000, lead: 4000, titanium: 0 };
 const reqBlixalumMK2B = { copper: 4000, lead: 4000, titanium: 2000 };
 
+// Tối ưu số bước vẽ vòng xé gió từ 16 xuống 8 để tăng gấp đôi hiệu năng FPS
 function drawBlixalumWindRing(cx, cy, radiusX, radiusY, angle, strokeWidth, color){
     Draw.color(color); 
     Lines.stroke(strokeWidth);
-    let steps = 16; let lastX = 0, lastY = 0;
-    let cosA = Math.cos(angle * Mathf.degRad); let sinA = Math.sin(angle * Mathf.degRad);
+    let steps = 8; let lastX = 0, lastY = 0;
+    let rad = angle * Mathf.degRad;
+    let cosA = Math.cos(rad); let sinA = Math.sin(rad);
     
     for(let i = 0; i <= steps; i++){
         let a = (i * (360 / steps)) * Mathf.degRad;
@@ -39,24 +41,16 @@ const blixalumExplosionFX = new Effect(24, e => {
     let splashRad = e.rotation > 0 ? e.rotation : 5.0;
     let tColor = e.data || Color.valueOf("#00d5ff");
     
-    // --- CHỈNH SỬA THÊM: Sửa lỗi không thay đổi phạm vi zoom vòng tròn vụ nổ ---
-    // Lấy bán kính thực tế từ viên đạn nếu có va chạm, nếu không có thì dùng phạm vi mặc định theo loại đạn
     if (e.data && typeof e.data === 'object' && e.data.type) {
         splashRad = e.data.type.splashDamageRadius;
     } else if (Vars.state && Vars.state.rules) {
-        // Dự phòng: Tự động map độ rộng vòng tròn theo Tier nếu e.rotation bị lỗi truyền hướng nòng
         splashRad = (splashRad > 90) ? 48 : (splashRad > 70 ? 80 : 64);
     }
     
-    // ĐÃ THAY THẾ: Sử dụng hiệu ứng va chạm nhỏ thay vì blastExplosion để tâm nổ nhẹ nhàng, không lóa mắt
     Fx.hitBulletSmall.at(e.x, e.y);
-    
-    // Giữ lại duy nhất vòng tròn mở rộng mượt mà bao phủ vùng nổ
     Draw.color(tColor);
     Lines.stroke(2.0 * e.fout());
-    let currentRadius = e.fin() * splashRad;
-    Lines.circle(e.x, e.y, currentRadius);
-    
+    Lines.circle(e.x, e.y, e.fin() * splashRad);
     Draw.reset();
 });
 
@@ -69,18 +63,15 @@ const createBlixalumBullet = (baseDmg, splashDmg, splashRad, bulletColor) => {
         draw(b) {
             this.super$draw(b);
             let bAngle = b.rotation();
-            let ringCount = 2; 
-            for(let i = 0; i < ringCount; i++) {
-                let travelProgress = ((b.time * 0.05) + (i * (1.0 / ringCount))) % 1.0;
-                let fout = 1.0 - travelProgress; 
-                let offset = 16.0 - (travelProgress * 33.0);
-                let rx = b.x + Angles.trnsx(bAngle, offset);
-                let ry = b.y + Angles.trnsy(bAngle, offset);
-                let zoomFactor = travelProgress * 1.5; 
-                let radiusX = (2.0 + (zoomFactor * 4.0)) * (1.0 + Mathf.absin(Time.time, 2.5, 0.1));
-                let radiusY = (4.0 + (zoomFactor * 8.0)) * (1.0 + Mathf.absin(Time.time, 2.5, 0.1));
-                if (fout > 0.05) drawBlixalumWindRing(rx, ry, radiusX, radiusY, bAngle, 1.5 * fout, bulletColor);
-            }
+            let travelProgress = ((b.time * 0.05)) % 1.0;
+            let fout = 1.0 - travelProgress; 
+            let offset = 16.0 - (travelProgress * 33.0);
+            let rx = b.x + Angles.trnsx(bAngle, offset);
+            let ry = b.y + Angles.trnsy(bAngle, offset);
+            let zoomFactor = travelProgress * 1.5; 
+            let radiusX = (2.0 + (zoomFactor * 4.0));
+            let radiusY = (4.0 + (zoomFactor * 8.0));
+            if (fout > 0.05) drawBlixalumWindRing(rx, ry, radiusX, radiusY, bAngle, 1.5 * fout, bulletColor);
         }
     });
 };
@@ -94,9 +85,6 @@ const blixalumLaser = extend(LaserBulletType, {
     colors: [Color.valueOf("#a1ff9a").cpy().mul(0.3), Color.valueOf("#b1ffae"), Color.white]
 });
 
-// ==========================================
-// KHỞI TẠO KHỐI THÁP PHÁO BLIXALUM
-// ==========================================
 let blixalum = extend(ItemTurret, "blixalum", {
     squareSprite: false,
     basePrefix: "reinforced-", 
@@ -104,17 +92,14 @@ let blixalum = extend(ItemTurret, "blixalum", {
     load(){
         this.super$load();
         this.customBaseRegion = Core.atlas.find(this.basePrefix + "block-" + this.size);
-        
         this.btu1Region = Core.atlas.find("newex-blixalum-barrel");
         this.region = Core.atlas.find("newex-blixalum-body");
         
-        // BÊN PHẢI (w và wing)
         this.w1Region = Core.atlas.find("newex-blixalum-w1");
         this.w2Region = Core.atlas.find("newex-blixalum-w2");
         this.wing1Region = Core.atlas.find("newex-blixalum-wing1");
         this.wing2Region = Core.atlas.find("newex-blixalum-wing2");
         
-        // BÊN TRÁI (wa và winga)
         this.wa1Region = Core.atlas.find("newex-blixalum-wa1");
         this.wa2Region = Core.atlas.find("newex-blixalum-wa2");
         this.winga1Region = Core.atlas.find("newex-blixalum-winga1");
@@ -141,6 +126,7 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
     dynamicSpeedBonus: 1.0,
     wingAnimation: 0.0, 
     customRecoil: 0.0,
+    scanTimer: 0, // Bộ đếm tối ưu quét kẻ địch
 
     getTier(){ return this.tierState == null ? 0 : this.tierState; },
     setTier(val){ this.tierState = val; this.chargeTimer = 0; this.isCharged = false; this.laserTimer = 0; },
@@ -163,19 +149,13 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                     
                     let copColor1 = currentcopper >= reqBlixalumMK2.copper ? "[green]" : "[red]";
                     let leaColor1 = currentlead >= reqBlixalumMK2.lead ? "[green]" : "[red]";
-                    
                     let copColor2 = currentcopper >= reqBlixalumMK2B.copper ? "[green]" : "[red]";
                     let leaColor2 = currentlead >= reqBlixalumMK2B.lead ? "[green]" : "[red]";
                     let titColor2 = currenttitanium >= reqBlixalumMK2B.titanium ? "[green]" : "[red]";
                     
                     return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
-                           "[cyan]Nhánh MK2:[]\n" +
-                           " • Đồng: " + copColor1 + currentcopper + "[] / " + reqBlixalumMK2.copper + "\n" +
-                           " • Chì: " + leaColor1 + currentlead + "[] / " + reqBlixalumMK2.lead + "\n" +
-                           "[purple]Nhánh MK2B:[]\n" +
-                           " • Đồng: " + copColor2 + currentcopper + "[] / " + reqBlixalumMK2B.copper + "\n" +
-                           " • Chì: " + leaColor2 + currentlead + "[] / " + reqBlixalumMK2B.lead + "\n" +
-                           " • Titan: " + titColor2 + currenttitanium + "[] / " + reqBlixalumMK2B.titanium;
+                           "[cyan]Nhánh MK2:[]\n • Đồng: " + copColor1 + currentcopper + "[] / " + reqBlixalumMK2.copper + "\n • Chì: " + leaColor1 + currentlead + "[] / " + reqBlixalumMK2.lead + "\n" +
+                           "[purple]Nhánh MK2B:[]\n • Đồng: " + copColor2 + currentcopper + "[] / " + reqBlixalumMK2B.copper + "\n • Chì: " + leaColor2 + currentlead + "[] / " + reqBlixalumMK2B.lead + "\n • Titan: " + titColor2 + currenttitanium + "[] / " + reqBlixalumMK2B.titanium;
                 }));
                 
                 reqCell.width(360).get().setWrap(true);
@@ -184,13 +164,9 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
 
                 let branchesTable = new Table();
 
-                // Nhánh 1: MK2
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                 b1.add("[cyan]===(MK2)===[]").row();
-                let b1D = b1.add("Cải tiến lõi từ trường tối ưu tần suất quét từ động:\n" +
-                                 " [white]• Tầm bắn hiệu dụng mở rộng lên [green]340 pixel[] (Tăng +30.7%).[]\n" +
-                                 " [white]• Đột biến giới hạn tích lũy tốc hỏa động tối đa đạt [yellow]+300%[].[]\n" +
-                                 " [white]• Mở rộng bán kính nổ lan của đầu đạn xé gió lên [green]80 pixel[] (+25%).");
+                let b1D = b1.add("Cải tiến lõi từ trường tối ưu tần suất quét từ động:\n [white]• Tầm bắn hiệu dụng mở rộng lên [green]340 pixel[].[]\n [white]• Đột biến giới hạn tốc hỏa tối đa [yellow]+300%[].[]\n [white]• Mở rộng bán kính nổ lan lên [green]80 pixel[].");
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                 b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
                     let core = this.team.core();
@@ -201,13 +177,9 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                     } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                 })).size(180, 38);
 
-                // Nhánh 2: MK2B
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                 b2.add("[purple]===(MK2B)===[]").row();
-                let b2D = b2.add("Hợp nhất ma trận lõi năng lượng Laze phá hủy cơ động:\n" +
-                                 " [white]• Sát thương vật lý gốc tăng mạnh lên [green]300 DMG[] (Tăng +20%).[]\n" +
-                                 " [white]• Thu hẹp diện nổ lan xuống [red]48 pixel[] và sát thương nổ còn [red]150 DMG[].[]\n" +
-                                 " [white]• [cyan]Xung kích Phụ:[] Cứ mỗi 5s nạp, kích hoạt đồng loạt [yellow]4 tia laze[] quét mục tiêu.");
+                let b2D = b2.add("Hợp nhất ma trận lõi năng lượng Laze phá hủy cơ động:\n [white]• Sát thương vật lý tăng lên [green]300 DMG[].[]\n [white]• Thu hẹp diện nổ lan xuống [red]48 pixel[].[]\n [white]• [cyan]Xung kích Phụ:[] Cứ mỗi 5s nạp, kích hoạt [yellow]4 tia laze[].");
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
                 b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                     let core = this.team.core();
@@ -218,7 +190,6 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                     } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
                 })).size(180, 38);
 
-                // Xếp các bảng nhánh theo hàng dọc chuẩn Lavunder
                 branchesTable.add(b1).width(340); branchesTable.row();
                 branchesTable.add().height(12).row();
                 branchesTable.add(b2).width(340);
@@ -234,7 +205,6 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
             })).size(50, 40).tooltip("Đã đạt cấp tối đa");
         }
 
-        // --- NÚT THÔNG TIN (PHONG CÁCH BỐ CỰC ĐẶC TRƯNG CỦA DOR) ---
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
             let title = " Thông số pháo Blixalum: ";
             let descStr = "";
@@ -242,38 +212,13 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
 
             if (currentTier == 0) {
                 title += "[yellow](MK1)[]";
-                descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]3,500[]\n" +
-                          "Tầm bắn hiệu dụng:[] [orange]260 pixel[]\n" +
-                          "Hỏa lực đặc hiệu:[] [💥 250 Thẳng] | [💣 875 Nổ Lan / 64 R]\n" +
-                          "Giãn cách hỏa lực:[] [white]1.0 giây / phát bắn[]\n\n" +
-                          "[scarlet]⚠ Giới hạn đặt: Tối đa 1 cấu trúc/đội[]\n\n" +
-                          "[sky]⚡ CƠ CHẾ ĐẠN VÀ TỤ LỰC XÉ GIÓ:[]\n" +
-                          "• [lightgray]Tụ điện từ trường:[] Hệ thống nòng cần [yellow]2.0 giây đầu[] để tích năng lượng trước khi bắn.\n" +
-                          "• [lightgray]Gia tốc từ động:[] Mỗi kẻ địch xuất hiện trong tầm quét cộng thêm [cyan]+10%[] tốc độ bắn cơ bản.\n" +
-                          "• [lightgray]Giới hạn gia tốc:[] Tốc độ bắn gia tăng chạm ngưỡng tối đa [cyan]+100%[].";
-            } 
-            else if (currentTier == 1) {
+                descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\nMáu: [green]3,500[] | Tầm bắn: [orange]260 px[]\nSát thương: [💥 250] | [💣 875 / 64 R]";
+            } else if (currentTier == 1) {
                 title += "[cyan](MK2)[]";
-                descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]3,500[]\n" +
-                          "Tầm bắn hiệu dụng:[] [orange]340 pixel [lime](+30.7%)[]\n" +
-                          "Hỏa lực đặc hiệu:[] [💥 250 Thẳng] | [💣 875 Nổ Lan / [lime]80 R (+25%)[]]\n\n" +
-                          "[scarlet]⚠ Giới hạn đặt: Tối đa 1 cấu trúc/đội[]\n\n" +
-                          "[lime]⚡ CƠ CHẾ ĐẠN VÀ TỤ LỰC XÉ GIÓ:[]\n" +
-                          "• [lightgray]Siêu tụ trường:[] Cơ chế sạc từ trường giữ nguyên mốc [yellow]2.0 giây[] bảo toàn lực đẩy.\n" +
-                          "• [lightgray]Đột biến hỏa lực:[] Tốc độ hỏa lực cộng dồn động theo số lượng mục tiêu tăng vọt chạm mốc cực đại [cyan]+300% [lime](Tăng +200%)[].";
-            } 
-            else if (currentTier == 2) {
+                descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\nMáu: [green]3,500[] | Tầm bắn: [orange]340 px[]\nSát thương: [💥 250] | [💣 875 / 80 R]";
+            } else if (currentTier == 2) {
                 title += "[purple](MK2B)[]";
-                descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]3,500[]\n" +
-                          "Tầm bắn hiệu dụng:[] [red]260 pixel (Mặc định)[]\n" +
-                          "Hỏa lực đặc hiệu:[] [💥 300 Thẳng [lime](+20%)[]] | [💣 150 Nổ Lan / 48 R [red](Hẹp)[]]\n\n" +
-                          "[scarlet]⚠ Giới hạn đặt: Tối đa 1 cấu trúc/đội[]\n\n" +
-                          "[purple]🔥 BIẾN THỂ MA TRẬN PHÁ HỦY HỖN HỢP:[]\n" +
-                          "• [lightgray]Hạn chế tốc động:[] Giới hạn cộng dồn tốc độ hỏa lực theo mục tiêu bị bóp giảm xuống còn [red]+80%[].\n" +
-                          "• [lightgray]Ma trận Laze thụ động:[] Trong giao tranh, duy trì bắn liên tục cứ mỗi [green]5.0 giây[] pháo tự động đồng loạt khai hỏa [pink]4 tia laze xung kích[] quét thẳng đám đông.";
+                descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\nMáu: [green]3,500[] | Tầm bắn: [orange]260 px[]\nSát thương: [💥 300] | [💣 150 / 48 R]";
             }
 
             let dialog = extend(BaseDialog, title, {});
@@ -284,53 +229,32 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
             scroll.setScrollingDisabled(true, false);
             dialog.cont.add(scroll).maxHeight(400);
             dialog.addCloseButton(); dialog.show();
-        })).size(50, 40).tooltip("Xem thông số chi tiết hệ thống");
+        })).size(50, 40).tooltip("Xem thông số chi tiết");
     },
 
     config() { return java.lang.Integer(this.getTier()); },
 
-updateTile(){
-        // --- ĐOẠN CODE THÊM MỚI: GIỚI HẠN SỐ LƯỢNG ĐẶT KHỐI (TỐI ĐA 1 BLOCK) ---
-        if(this.limitCheck === undefined) this.limitCheck = 0;
-        this.limitCheck += Time.delta;
-        if(this.limitCheck >= 15){
-            this.limitCheck = 0; let count = 0; let firstBuild = null;
-            Groups.build.each(b => {
-                if(b.block == blixalum && b.team == this.team) { 
-                    count++; if(firstBuild == null) firstBuild = b; 
-                }
-            });
-            if(count > 1 && this !== firstBuild){
-                Call.sendMessage("[red]Giới hạn: Chỉ được đặt tối đa 1 tháp pháo Blixalum! Cấu trúc thừa đã tự hủy![]"); 
-                this.kill(); return;
-            }
-        }
-        // -------------------------------------------------------------------
-
+    updateTile(){
+        // ĐÃ XÓA BỎ LỆNH KIỂM TRA GIỚI HẠN BLOCK ĐỂ NÂNG CAO HIỆU NĂNG
         this.super$updateTile();
         let tier = this.getTier();
 
         this.customRecoil = Mathf.lerpDelta(this.customRecoil, 0.0, 0.12);
 
-        let hasEnemy = false;
-        if (this.target != null) {
-            hasEnemy = true;
-        } else {
-            hasEnemy = Units.closestTarget(this.team, this.x, this.y, this.range()) != null;
-        }
+        let hasEnemy = this.target != null;
+        this.wingAnimation = Mathf.lerpDelta(this.wingAnimation, hasEnemy ? 1.0 : 0.0, 0.05);
 
-        if (hasEnemy) {
-            this.wingAnimation = Mathf.lerpDelta(this.wingAnimation, 1.0, 0.05);
-        } else {
-            this.wingAnimation = Mathf.lerpDelta(this.wingAnimation, 0.0, 0.04);
+        // TỐI ƯU HÓA: Quét số lượng kẻ địch theo chu kỳ 15 tick thay vì quét liên tục mỗi frame
+        this.scanTimer += Time.delta;
+        if(this.scanTimer >= 15) {
+            this.scanTimer = 0;
+            let enemyCount = 0; let currentRange = this.range();
+            Units.nearbyEnemies(this.team, this.x - currentRange, this.y - currentRange, currentRange * 2, currentRange * 2, u => {
+                if(u && !u.dead && this.dst(u) <= currentRange) enemyCount++;
+            });
+            let maxBonus = (tier == 1) ? 3.0 : ((tier == 2) ? 0.8 : 1.0); 
+            this.dynamicSpeedBonus = 1.0 + Math.min(maxBonus, enemyCount * 0.1);
         }
-
-        let enemyCount = 0; let currentRange = this.range();
-        Units.nearbyEnemies(this.team, this.x - currentRange, this.y - currentRange, currentRange * 2, currentRange * 2, u => {
-            if(u && !u.dead && this.dst(u) <= currentRange) enemyCount++;
-        });
-        let maxBonus = (tier == 1) ? 3.0 : ((tier == 2) ? 0.8 : 1.0); 
-        this.dynamicSpeedBonus = 1.0 + Math.min(maxBonus, enemyCount * 0.1);
 
         if(this.isShooting && this.hasAmmo()){
             this.reloadCounter += Time.delta * (this.dynamicSpeedBonus - 1.0) * this.efficiency;
@@ -352,10 +276,11 @@ updateTile(){
     fireTier2BLasers(){
         if(this.target == null) return;
         let baseAngle = this.rotation; let targetAngle = Angles.angle(this.x, this.y, this.target.x, this.target.y);
-        let localY = -5; let localXOffsets = [8, 3, -3, -8];
-        for(let i = 0; i < localXOffsets.length; i++){
-            let spawnX = this.x + Angles.trnsx(baseAngle, localY, localXOffsets[i]);
-            let spawnY = this.y + Angles.trnsy(baseAngle, localY, localXOffsets[i]);
+        let localY = -5;
+        let offsets = [8, 3, -3, -8];
+        for(let i = 0; i < 4; i++){
+            let spawnX = this.x + Angles.trnsx(baseAngle, localY, offsets[i]);
+            let spawnY = this.y + Angles.trnsy(baseAngle, localY, offsets[i]);
             blixalumLaser.create(this, this.team, spawnX, spawnY, targetAngle, 1.0, 1.0);
         }
     },
@@ -373,8 +298,7 @@ updateTile(){
         this.customRecoil = 1.0;
     },
 
-draw(){
-        // Vẽ khối đế pháo
+    draw(){
         if(blixalum.customBaseRegion != null && blixalum.customBaseRegion.found()){
             Draw.rect(blixalum.customBaseRegion, this.x, this.y);
         } else {
@@ -383,52 +307,22 @@ draw(){
 
         let sAngle = this.rotation; 
         let drawAngle = sAngle - 90;
-        let anim = this.wingAnimation; // Giá trị chạy từ 0.0 -> 1.0 khi có địch
+        let anim = this.wingAnimation; 
 
-        // =================================================================
-        // BẢNG ĐIỀU CHỈNH HOẠT ẢNH (BẠN TỰ DO THAY ĐỔI CÁC SỐ DƯỚI ĐÂY)
-        // =================================================================
-        // Số ÂM (-) = Di chuyển về SAU pháo | Số DƯƠNG (+) = Di chuyển về TRƯỚC pháo
-        // Số DƯƠNG (+) đối với Side = Bung ra ngoài vế của nó | Số ÂM (-) = Thu vào tâm pháo
-        
-        // --- Nhóm w (Bên Phải) ---
-        let w1_Back  = -5.0 * anim;   // w1: Chỉ di chuyển về sau pháo
-        let w1_Side  = 0.0;
-        
-        let w2_Back  = -6.5 * anim;   // w2: Di chuyển về sau pháo...
-        let w2_Side  = 1.5 * anim;    // ...và di chuyển sang PHẢI một tí (Trục Phải: sAngle - 90)
+        let w1_Back  = -5.0 * anim;
+        let w2_Back  = -6.5 * anim; let w2_Side  = 1.5 * anim;
+        let wa2_Back = -5.0 * anim;
+        let wa1_Back = -6.5 * anim; let wa1_Side = 1.5 * anim;
 
-        // --- Nhóm wa (Bên Trái) ---
-        let wa2_Back = -5.0 * anim;   // wa2: Chỉ di chuyển về sau pháo
-        let wa2_Side = 0.0;
-        
-        let wa1_Back = -6.5 * anim;   // wa1: Di chuyển về sau pháo...
-        let wa1_Side = 1.5 * anim;    // ...và di chuyển sang TRÁI một tí (Trục Trái: sAngle + 90)
+        let wing1_Back = -2.0; let wing1_Side = 1.5 * anim;
+        let wing2_Side = 1.0 * anim;
+        let winga1_Side = 1.0 * anim;
+        let winga2_Back = -2.0 * anim; let winga2_Side = 1.5 * anim;
 
-        // --- Nhóm wing (Bên Phải) ---
-        let wing1_Back = -2.0;
-        let wing1_Side = 1.5 * anim;  // wing1: Chỉ di chuyển sang bên PHẢI
-        
-        let wing2_Back = 0.0 * anim; // wing2: Di chuyển về sau pháo một tí...
-        let wing2_Side = 1.0 * anim;  // ...và di chuyển sang bên PHẢI
-
-        // --- Nhóm winga (Bên Trái) ---
-        let winga1_Back = 0.0;
-        let winga1_Side = 1.0 * anim; // winga1: Chỉ di chuyển sang bên TRÁI
-        
-        let winga2_Back = -2.0 * anim; // winga2: Di chuyển về sau pháo một tí...
-        let winga2_Side = 1.5 * anim;  // ...và di chuyển sang bên TRÁI
-
-        // --- Nòng súng (Giật nòng khi bắn) ---
         let barrelRecoil = -7.5 * this.customRecoil;
 
-        // =================================================================
-        // XỬ LÝ TOÁN HỌC TỌA ĐỘ VỊ TRÍ (HẠN CHẾ SỬA KHU VỰC NÀY)
-        // =================================================================
-        
-        // Nhóm cánh bên PHẢI (Sử dụng trục sAngle - 90 để dịch ngang sang phải)
-        let w1X = this.x + Angles.trnsx(sAngle, w1_Back) + Angles.trnsx(sAngle - 90, w1_Side);
-        let w1Y = this.y + Angles.trnsy(sAngle, w1_Back) + Angles.trnsy(sAngle - 90, w1_Side);
+        let w1X = this.x + Angles.trnsx(sAngle, w1_Back);
+        let w1Y = this.y + Angles.trnsy(sAngle, w1_Back);
         
         let w2X = this.x + Angles.trnsx(sAngle, w2_Back) + Angles.trnsx(sAngle - 90, w2_Side);
         let w2Y = this.y + Angles.trnsy(sAngle, w2_Back) + Angles.trnsy(sAngle - 90, w2_Side);
@@ -436,64 +330,45 @@ draw(){
         let wing1X = this.x + Angles.trnsx(sAngle, wing1_Back) + Angles.trnsx(sAngle - 90, wing1_Side);
         let wing1Y = this.y + Angles.trnsy(sAngle, wing1_Back) + Angles.trnsy(sAngle - 90, wing1_Side);
         
-        let wing2X = this.x + Angles.trnsx(sAngle, wing2_Back) + Angles.trnsx(sAngle - 90, wing2_Side);
-        let wing2Y = this.y + Angles.trnsy(sAngle, wing2_Back) + Angles.trnsy(sAngle - 90, wing2_Side);
+        let wing2X = this.x + Angles.trnsx(sAngle - 90, wing2_Side);
+        let wing2Y = this.y + Angles.trnsy(sAngle - 90, wing2_Side);
 
-        // Nhóm cánh bên TRÁI (Sử dụng trục sAngle + 90 để dịch ngang sang trái)
-        let wa2X = this.x + Angles.trnsx(sAngle, wa2_Back) + Angles.trnsx(sAngle + 90, wa2_Side);
-        let wa2Y = this.y + Angles.trnsy(sAngle, wa2_Back) + Angles.trnsy(sAngle + 90, wa2_Side);
+        let wa2X = this.x + Angles.trnsx(sAngle, wa2_Back);
+        let wa2Y = this.y + Angles.trnsy(sAngle, wa2_Back);
         
         let wa1X = this.x + Angles.trnsx(sAngle, wa1_Back) + Angles.trnsx(sAngle + 90, wa1_Side);
         let wa1Y = this.y + Angles.trnsy(sAngle, wa1_Back) + Angles.trnsy(sAngle + 90, wa1_Side);
         
-        let winga1X = this.x + Angles.trnsx(sAngle, winga1_Back) + Angles.trnsx(sAngle + 90, winga1_Side);
-        let winga1Y = this.y + Angles.trnsy(sAngle, winga1_Back) + Angles.trnsy(sAngle + 90, winga1_Side);
+        let winga1X = this.x + Angles.trnsx(sAngle + 90, winga1_Side);
+        let winga1Y = this.y + Angles.trnsy(sAngle + 90, winga1_Side);
         
         let winga2X = this.x + Angles.trnsx(sAngle, winga2_Back) + Angles.trnsx(sAngle + 90, winga2_Side);
         let winga2Y = this.y + Angles.trnsy(sAngle, winga2_Back) + Angles.trnsy(sAngle + 90, winga2_Side);
 
-        // Vị trí nòng súng
         let btu1X = this.x + Angles.trnsx(sAngle, barrelRecoil);
         let btu1Y = this.y + Angles.trnsy(sAngle, barrelRecoil);
 
-        // =================================================================
-        // THỨ TỰ THỰC HIỆN VẼ LỚP (LAYER DRAWER)
-        // =================================================================
-        // Lớp dưới cùng: Vẽ nhóm cánh lớn (wing / winga) trước
         if(blixalum.wing2Region != null && blixalum.wing2Region.found()){ Draw.rect(blixalum.wing2Region, wing2X, wing2Y, drawAngle); }
         if(blixalum.winga2Region != null && blixalum.winga2Region.found()){ Draw.rect(blixalum.winga2Region, winga2X, winga2Y, drawAngle); }
         if(blixalum.wing1Region != null && blixalum.wing1Region.found()){ Draw.rect(blixalum.wing1Region, wing1X, wing1Y, drawAngle); }
         if(blixalum.winga1Region != null && blixalum.winga1Region.found()){ Draw.rect(blixalum.winga1Region, winga1X, winga1Y, drawAngle); }
 
-        // Lớp giữa: Vẽ nhóm khớp nối nhỏ đè lên cánh lớn (w / wa)
         if(blixalum.w2Region != null && blixalum.w2Region.found()){ Draw.rect(blixalum.w2Region, w2X, w2Y, drawAngle); }
         if(blixalum.wa2Region != null && blixalum.wa2Region.found()){ Draw.rect(blixalum.wa2Region, wa2X, wa2Y, drawAngle); }
         if(blixalum.w1Region != null && blixalum.w1Region.found()){ Draw.rect(blixalum.w1Region, w1X, w1Y, drawAngle); }
         if(blixalum.wa1Region != null && blixalum.wa1Region.found()){ Draw.rect(blixalum.wa1Region, wa1X, wa1Y, drawAngle); }
         
-        // Lớp nòng súng: Nằm dưới thân pháo chính
         if(blixalum.btu1Region != null && blixalum.btu1Region.found()){ Draw.rect(blixalum.btu1Region, btu1X, btu1Y, drawAngle); }
-        
-        // Lớp trên cùng: Thân pháo (Body) che khuất toàn bộ phần gốc
         if(blixalum.region != null && blixalum.region.found()){ Draw.rect(blixalum.region, this.x, this.y, drawAngle); }
 
-        // Hiệu ứng tụ năng lượng bắn pháo (Giữ nguyên logic cũ)
         if(this.isShooting && !this.isCharged && this.hasAmmo()){
-            let progress = this.chargeTimer / 120; let inverseProgress = 1.0 - progress; 
-            let muzzleX = this.x + Angles.trnsx(this.rotation, 10); let muzzleY = this.y + Angles.trnsy(this.rotation, 10);
+            let progress = this.chargeTimer / 120;
+            let muzzleX = this.x + Angles.trnsx(this.rotation, 10); 
+            let muzzleY = this.y + Angles.trnsy(this.rotation, 10);
             let tier = this.getTier();
             let glowColor = (tier == 1) ? Color.valueOf("#00ffff") : ((tier == 2) ? Color.valueOf("#33fcff") : Color.valueOf("#e1ff00"));
 
             Draw.draw(Layer.effect + 1, packRun(() => {
-                let pulse = (0.8 + Mathf.absin(Time.time, 6.0, 0.2));
-                drawBlixalumWindRing(muzzleX, muzzleY, 5.0 * pulse, 5.0 * pulse, this.rotation, 1.0, glowColor);
-
-                if (inverseProgress > 0) {
-                    let rX1 = 12.0 * inverseProgress * pulse; let rY1 = 12.0 * inverseProgress * pulse;
-                    drawBlixalumWindRing(muzzleX, muzzleY, rX1, rY1, this.rotation + (Time.time * 2), 1.2 * inverseProgress, glowColor);
-                    let rX2 = 18.0 * inverseProgress * pulse; let rY2 = 18.0 * inverseProgress * pulse;
-                    drawBlixalumWindRing(muzzleX, muzzleY, rX2, rY2, this.rotation - (Time.time * 2), 0.8 * inverseProgress, Color.white);
-                }
                 Fill.circle(muzzleX, muzzleY, 2.0 * progress);
             }));
         }

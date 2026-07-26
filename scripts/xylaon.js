@@ -25,12 +25,12 @@ xylaon.range = 420;
 xylaon.configurable = true;
 xylaon.category = Category.turret;
 
- xylaon.itemCapacity = 30;     
+xylaon.itemCapacity = 30;     
 xylaon.ammoPerShot = 1;        
 xylaon.shots = 5;              
 xylaon.inaccuracy = 4.5;       
 
- const applyBulletUpgrades = (bullet) => {
+const applyBulletUpgrades = (bullet) => {
     bullet.pierce = true;             
     bullet.pierceCap = 3;             
     bullet.homingPower = 0.04;        
@@ -43,7 +43,7 @@ xylaonBullet.damage = 20;
 xylaonBullet.lifetime = 35;
 xylaonBullet.width = 4;
 xylaonBullet.height = 18;
-xylaonBullet.trailChance = 0.5;
+xylaonBullet.trailChance = 0.2; // Giảm xuống 0.2 để đỡ lag particle
 xylaonBullet.trailEffect = Fx.disperseTrail;
 xylaonBullet.trailColor = Color.valueOf("#66ccff");
 xylaonBullet.backColor = Color.valueOf("#88ddff");
@@ -57,7 +57,7 @@ xylaonMK2Bullet.lifetime = 35;
 xylaonMK2Bullet.width = 5.2; 
 xylaonMK2Bullet.height = 23.4; 
 xylaonMK2Bullet.hitSize = 13;
-xylaonMK2Bullet.trailChance = 0.5; 
+xylaonMK2Bullet.trailChance = 0.2; // Giảm xuống 0.2
 xylaonMK2Bullet.trailEffect = Fx.disperseTrail; 
 xylaonMK2Bullet.trailColor = Color.valueOf("#ffaa66");
 xylaonMK2Bullet.backColor = Color.valueOf("#ffcc88"); 
@@ -87,59 +87,49 @@ applyBulletUpgrades(xylaonMK2BBullet);
 
 xylaon.ammo(Items.graphite, xylaonBullet);
 
-xylaon.addBar("heat", new Func({
-    get: function(e){
-        let tier = e.getTier();
-        let cooldownCap = cooldownCapTable[tier];
-        let overheatCap = overheatCapTable[tier];
-        return new Bar(
-            new Prov({
-                get: function(){
-                    let heat = e.getHeat();
-                    return heat < 0 ? 
-                        "COOLING: " + Math.floor(Math.abs(heat / 6)) / 10 + "s" : 
-                        "HEAT: " + Math.floor(heat / 6) / 10 + "s";
-                }
-            }),
-            new Prov({
-                get: function(){ return e.getHeat() < 0 ? Pal.heal : Pal.lightOrange; }
-            }),
-            new Floatp({
-                get: function(){
-                    let heat = e.getHeat();
-                    return heat < 0 ? Math.min(Math.abs(heat) / cooldownCap, 1) : Math.min(heat / overheatCap, 1);
-                }
-            })
-        );
-    }
-}));
+xylaon.addBar("heat", e => new Bar(
+    new Prov({
+        get: function(){
+            let heat = e.getHeat();
+            return heat < 0 ? 
+                "COOLING: " + (Math.floor(Math.abs(heat / 6)) / 10) + "s" : 
+                "HEAT: " + (Math.floor(heat / 6) / 10) + "s";
+        }
+    }),
+    new Prov({
+        get: function(){ return e.getHeat() < 0 ? Pal.heal : Pal.lightOrange; }
+    }),
+    new Floatp({
+        get: function(){
+            let heat = e.getHeat();
+            let tier = e.getTier();
+            return heat < 0 ? Math.min(Math.abs(heat) / cooldownCapTable[tier], 1) : Math.min(heat / overheatCapTable[tier], 1);
+        }
+    })
+));
 
-xylaon.addBar("as", new Func({
-    get: function(e){
-        let tier = e.getTier();
-        let maxAsCap = maxAsCapTable[tier];
-        let asMultiplier = asMultiplierTable[tier];
-        return new Bar(
-            new Prov({
-                get: function(){
-                    let heat = Math.max(e.getHeat(), 0);
-                    let currentAsBonus = Math.min(heat / maxAsCap, 1) * asMultiplier * 100;
-                    return "+" + Math.floor(currentAsBonus) + "% AS";
-                }
-            }),
-            new Prov({
-                get: function(){ return Color.cyan; }
-            }),
-            new Floatp({
-                get: function(){ return Math.min(Math.max(e.getHeat(), 0) / maxAsCap, 1); }
-            })
-        );
-    }
-}));
+xylaon.addBar("as", e => new Bar(
+    new Prov({
+        get: function(){
+            let tier = e.getTier();
+            let heat = Math.max(e.getHeat(), 0);
+            let currentAsBonus = Math.min(heat / maxAsCapTable[tier], 1) * asMultiplierTable[tier] * 100;
+            return "+" + Math.floor(currentAsBonus) + "% AS";
+        }
+    }),
+    new Prov({
+        get: function(){ return Color.cyan; }
+    }),
+    new Floatp({
+        get: function(){ 
+            let tier = e.getTier();
+            return Math.min(Math.max(e.getHeat(), 0) / maxAsCapTable[tier], 1); 
+        }
+    })
+));
 
 xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
     thermalstate: 0,
-    checkTimer: 0, 
     tierState: 0, 
 
     getTier(){ return this.tierState == null ? 0 : this.tierState; },
@@ -162,8 +152,7 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
 
         if(tier == 0) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-        let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Xylaon", {});
-                
+                let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Xylaon", {});
 
                 let reqCell = dialog.cont.label(packProv(() => {
                     let core = this.team.core();
@@ -229,7 +218,6 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                     } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
                 })).size(180, 38);
 
-                // Xếp các bảng nhánh theo hàng dọc chuẩn Lavunder
                 branchesTable.add(b1).width(340); branchesTable.row();
                 branchesTable.add().height(12).row();
                 branchesTable.add(b2).width(340);
@@ -245,7 +233,7 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
             })).size(50, 40).tooltip("Đã đạt cấp tối đa");
         }
 
-        // --- NÚT THÔNG TIN (PHONG CÁCH BỐ CỰC ĐẶC TRƯNG CỦA DOR) ---
+        // --- NÚT THÔNG TIN ---
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
             let title = "📊 THÔNG SỐ PHÁO XYLAON: ";
             let descStr = "";
@@ -254,12 +242,11 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
             if (currentTier == 0) {
                 title += "[yellow]Cấu hình gốc (MK1)[]";
                 descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                           "[lightgray]Máu tháp pháo:[] [green]1,600[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]1,600[]\n" +
                           "[gray]📐 Kích thước khối:[] [white]4x4[]\n" +
                           "Tầm bắn hiệu dụng:[] [orange]420 pixel[]\n" +
-                          "[lightning] Tốc độ bắn cơ bản:[] [white]30.00 hỏa lực[]\n" +
-                         "[scarlet]⚠ Giới hạn đặt: Tối đa 10 cấu trúc/đội[]\n\n" +
-                           "[sky]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
+                          "[lightning] Tốc độ bắn cơ bản:[] [white]30.00 hỏa lực[]\n\n" +
+                          "[sky]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
                           "• [lightgray]Quá nhiệt (Overheat):[] Mỗi phát bắn tích lũy [red]1%[] nhiệt lượng. Khi đạt ngưỡng [red]540 điểm[] nhiệt, lõi sẽ rơi vào trạng thái quá tải bảo vệ.\n" +
                           "• [lightgray]Đóng băng hệ thống:[] Khi quá tải, pháo ngừng hoạt động hoàn toàn trong [yellow]4.0 giây[] để xả hoàn toàn thanh nhiệt.\n" +
                           "• [lightgray]Gia tốc hỏa lực (AS):[] Nhiệt lượng tích lũy liên tục trong [cyan]3.0 giây[] sẽ kích hoạt tối đa [cyan]+350%[] tốc độ bắn cơ bản.";
@@ -267,12 +254,11 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
             else if (currentTier == 1) {
                 title += "[cyan]CẤU HÌNH TIÊU CHUẨN (MK2)[]";
                 descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
-                           "[lightgray]Máu tháp pháo:[] [green]2,080 [lime](+30%)[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]2,080 [lime](+30%)[]\n" +
                           "[gray]📐 Kích thước khối:[] [white]4x4[]\n" +
                           "Tầm bắn hiệu dụng:[] [orange]544 pixel [lime](+29.5%)[]\n" +
-                          "[lightning] Tốc độ bắn gia tốc:[] [yellow]Tối đa +450%[]\n" +
-                          "[scarlet]⚠ Giới hạn đặt: Tối đa 10 cấu trúc/đội[]\n\n" +
-                           "[lime]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
+                          "[lightning] Tốc độ bắn gia tốc:[] [yellow]Tối đa +450%[]\n\n" +
+                          "[lime]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
                           "• [lightgray]Quá nhiệt nâng cao:[] Giới hạn chịu nhiệt tối đa đạt [red]480 điểm[] (Mỗi phát tích 1%).\n" +
                           "• [lightgray]Rút ngắn xả tải:[] Thời gian khóa hệ thống làm mát giảm xuống còn [yellow]3.0 giây[] [lime](Giảm -25%)[].\n" +
                           "• [lightgray]Gia tốc hỏa lực (AS):[] Duy trì bắn liên tục trong [cyan]3.0 giây[] để đạt mốc gia tốc cực đại [cyan]+450%[].";
@@ -280,12 +266,11 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
             else if (currentTier == 2) {
                 title += "[purple]BIẾN THỂ SIÊU XUNG (MK2B)[]";
                 descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
-                           "[lightgray]Máu tháp pháo:[] [green]2,500 [lime](+56.25%)[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]2,500 [lime](+56.25%)[]\n" +
                           "[gray]📐 Kích thước khối:[] [white]4x4[]\n" +
                           "Tầm bắn hiệu dụng:[] [red]294 pixel (-30%)[]\n" +
-                          "[lightning] Tốc độ bắn bùng nổ:[] [pink]Tối đa +999%[]\n" +
-                          "[scarlet]⚠ Giới hạn đặt: Tối đa 10 cấu trúc/đội[]\n\n" +
-                           "[purple]🔥 CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
+                          "[lightning] Tốc độ bắn bùng nổ:[] [pink]Tối đa +999%[]\n\n" +
+                          "[purple]🔥 CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
                           "• [lightgray]Chu kỳ siêu ngắn:[] Giới hạn chịu nhiệt [red]480 điểm[], xả đạn bùng nổ chạm ngưỡng kinh hoàng [red]+999%[] tốc độ bắn.\n" +
                           "• [lightgray]Siêu làm mát phản lực:[] Thời gian khóa hệ thống để xả sập sàn toàn bộ nhiệt lượng giảm cực hạn chỉ còn [green]1.5 giây[] [lime](Giảm -62.5%)].\n" +
                           "• [lightgray]Gia tốc hỏa lực (AS):[] Đạt mốc gia tốc điên rồ [pink]+999%[] chỉ sau [cyan]3.0 giây[] duy trì hỏa lực liên tục.";
@@ -304,21 +289,6 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
 
     update(){
         let tier = this.getTier();
-        
-        this.checkTimer += Time.delta;
-        if(this.checkTimer >= 15){
-            this.checkTimer = 0;
-            let count = 0, firstBuild = null;
-            Groups.build.each(b => { 
-                if(b.block == xylaon && b.team == this.team) {
-                    count++; if(firstBuild == null) firstBuild = b; 
-                }
-            });
-            if(count > 10 && this !== firstBuild){
-                Call.sendMessage("[red]Giới hạn: Hệ thống chỉ được phép tồn tại tối đa 10 pháo thuộc chuỗi Xylaon trên sân!");
-                this.kill(); return;     
-            }
-        }
 
         let cooldownCap = cooldownCapTable[tier];
         if(this.thermalstate == null) this.thermalstate = -cooldownCap;

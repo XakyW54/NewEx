@@ -1,22 +1,10 @@
-
 const chargeTimeMax = 180;   
 const berserkTimeMax = 300;  
 const chargeTimeMaxMK2 = 140;   
 const berserkTimeMaxMK2 = 360;  
 
-
-const reqRangtatursMK2 = {
-    copper: 8000,
-    lead: 7000,
-    silicon: 0
-};
-
-const reqRangtatursMK2B = {
-    copper: 12000,
-    lead: 9500,
-    silicon: 5500
-};
-
+const reqRangtatursMK2 = { copper: 8000, lead: 7000, silicon: 0 };
+const reqRangtatursMK2B = { copper: 12000, lead: 9500, silicon: 5500 };
 
 const acidCorrosionEffect = new Effect(30, cons(e => {
     Draw.color(Color.valueOf("#a3e635"), Color.valueOf("#65a30d"), e.fin());
@@ -29,7 +17,6 @@ const acidCorrosionEffect = new Effect(30, cons(e => {
         Lines.circle(e.x + Angles.trnsx(angle, len), e.y + Angles.trnsy(angle, len), size);
     }
 }));
-
 
 const rangtatursNormalBlasted = extend(BasicBulletType, {
     speed: 7, damage: 1, width: 7, height: 18, lifetime: 43,
@@ -83,7 +70,6 @@ const rangtatursNormalCorroded = extend(BasicBulletType, {
 
 const rangtatursNormalBullet = rangtatursNormalBlasted; 
 
-
 const rangtatursmk2NormalBlasted = extend(BasicBulletType, {
     speed: 7.7, damage: 1, width: 7.7, height: 19.8, lifetime: 43,      
     frontColor: Color.valueOf("#ffab40"), backColor: Color.valueOf("#ff6d00"),
@@ -133,7 +119,6 @@ const rangtatursmk2NormalCorroded = extend(BasicBulletType, {
     splashDamage: 17, splashDamageRadius: 30, knockback: 0.4, statusDuration: 160,
     hitEffect: acidCorrosionEffect, despawnEffect: acidCorrosionEffect, status: StatusEffects.corroded
 });
-
 
 const normalBulletBBlasted = extend(BasicBulletType, {
     speed: 8.5, damage: 1, width: 8, height: 20, lifetime: 40,
@@ -185,7 +170,6 @@ const normalBulletBCorroded = extend(BasicBulletType, {
     hitEffect: acidCorrosionEffect, despawnEffect: acidCorrosionEffect, status: StatusEffects.corroded
 });
 
-
 const createLaser = (dmg, w, lt, col, st, hitEf) => {
     return extend(LaserBulletType, {
         length: 240, damage: dmg, width: w, lifetime: lt, colors: col, status: st, statusDuration: 180,
@@ -221,7 +205,6 @@ const laserB_Freezing  = createLaser(65, 28, 30, colorsRed, StatusEffects.freezi
 const laserB_Shocked   = createLaser(65, 28, 30, colorsRed, StatusEffects.shocked, Fx.lightning);
 const laserB_Wet       = createLaser(60, 30, 30, colorsBlue, StatusEffects.wet, Fx.freezing);
 const laserB_Corroded  = createLaser(70, 26, 30, colorsGreen, StatusEffects.corroded, acidCorrosionEffect);
-
 
 const handleShotgunShoot = (build, poolType, pellets, spread, damageMultiplier, speedMultiplier) => {
     let muzzleX = build.x + Angles.trnsx(build.rotation, 12);
@@ -267,7 +250,6 @@ const handleShotgunShoot = (build, poolType, pellets, spread, damageMultiplier, 
     }
 };
 
-
 const rangtaturs = extend(ItemTurret, "rangtaturs", {
     squareSprite: false,
 });
@@ -279,18 +261,15 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
     evolutionTier: 0, 
     chargeTimer: 0, superShotCount: 0, berserkTimer: 0,
     laserCount: 0, burstTimer: 0, customReloadTimer: 0,
-    checkTimer: 0, 
 
     buildConfiguration(table) {
         table.clear(); table.row();
         let tier = this.evolutionTier;
 
-        // 1. NÚT NÂNG CẤP (^)
         if(tier == 0) {
             table.button(Icon.upOpen, Styles.cleari, 40, run(() => {
                 let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Rangtaturs", {});
                 
-                // Sử dụng hàm prov chuẩn của Mindustry JS
                 let reqCell = dialog.cont.label(prov(() => {
                     let core = this.team.core();
                     if(!core) return "[red]Không tìm thấy Kho cốt lõi![]";
@@ -322,7 +301,6 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
 
                 let branchesTable = new Table();
 
-                // Nhánh 1: MK2
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                 b1.add("[cyan]===(MK2)===[]").row();
                 let b1D = b1.add("Cấu hình tăng cường mật độ mảnh hỏa lực:\n" +
@@ -345,7 +323,6 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                     }
                 })).size(180, 38);
 
-                // Nhánh 2: MK2B
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                 b2.add("[purple]===(MK2B)===[]").row();
                 let b2D = b2.add("Cấu hình tối thượng hủy diệt bão đạn diện rộng:\n" +
@@ -369,7 +346,6 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                     }
                 })).size(180, 38);
 
-                // Bố cục ScrollPane dọc chống tràn
                 branchesTable.add(b1).width(340); branchesTable.row();
                 branchesTable.add().height(12).row();
                 branchesTable.add(b2).width(340);
@@ -385,7 +361,6 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
             })).size(50, 40).tooltip("Đã đạt cấp tối đa");
         }
 
-        // 2. NÚT THÔNG TIN (i)
         table.button(Icon.info, Styles.cleari, 40, run(() => {
             let title = " Thông số pháo Rangtaturs: ";
             let descStr = "";
@@ -397,8 +372,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                           "[lightgray]Máu tháp pháo:[] [green]" + this.health + "[]\n" +
                           "📐 Kích thước khối:[] [white]" + this.block.size + "x" + this.block.size + "[]\n" +
                           "Tầm bắn hiệu dụng:[] [orange]" + this.block.range + " pixel[]\n" +
-                          "Mục tiêu phát xạ:[] [yellow]Mặt đất (Không bắn phòng không)[]\n" +
-                          "[scarlet]⚠ Giới hạn đặt: Tối đa 10 cấu trúc dòng Rangtaturs[]\n\n" +
+                          "Mục tiêu phát xạ:[] [yellow]Mặt đất (Không bắn phòng không)[]\n\n" +
                           "[sky]⚡ ĐẶC TÍNH HỎA LỰC VÀ CHU KỲ CƠ CHẾ:[]\n" +
                           "• [lightgray]Bắn Shotgun thường:[] Phóng loạt gồm [green]9 viên đạn mảnh[] mang ngẫu nhiên hiệu ứng bộ 7 trạng thái bất lợi.\n" +
                           "• [lightgray]Chu kỳ Tích tụ (Sạc điểm):[] Bắn thường liên tục trong [yellow]3.0 giây (180 tick)[] kích hoạt Đại Pháo Laser gây sát thương nhân tiến lên [gold]280%[].[]\n" +
@@ -408,8 +382,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                 descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
                           "[lightgray]Máu tháp pháo:[] [green]" + this.health + "[]\n" +
                           "📐 Kích thước khối:[] [white]" + this.block.size + "x" + this.block.size + "[]\n" +
-                          "Tầm bắn hiệu dụng:[] [orange]" + this.block.range + " pixel[]\n" +
-                          "[scarlet]⚠ Giới hạn đặt: Tối đa 10 cấu trúc dòng Rangtaturs[]\n\n" +
+                          "Tầm bắn hiệu dụng:[] [orange]" + this.block.range + " pixel[]\n\n" +
                           "[lime]⚡ ĐẶC TÍNH HỎA LỰC VÀ CHU KỲ CƠ CHẾ:[]\n" +
                           "• [lightgray]Mưa đạn trạng thái:[] Số lượng đạn Shotgun tăng mạnh lên [green]39 viên mảnh[] [lime](+333.3%)[].\n" +
                           "• [lightgray]Sạc xung ngắn mạch:[] Thời gian tích tụ năng lượng Laser rút xuống còn [yellow]2.33 giây (140 tick) [lime](Giảm -22.2%)[], sát thương Laser lõi tăng vọt đạt [red]310%[].[]\n" +
@@ -419,8 +392,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                 descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
                           "[lightgray]Máu tháp pháo:[] [green]" + this.health + "[]\n" +
                           "📐 Kích thước khối:[] [white]" + this.block.size + "x" + this.block.size + "[]\n" +
-                          "Tầm bắn hiệu dụng:[] [orange]" + this.block.range + " pixel[]\n" +
-                          "[scarlet]⚠ Giới hạn đặt: Tối đa 10 cấu trúc dòng Rangtaturs[]\n\n" +
+                          "Tầm bắn hiệu dụng:[] [orange]" + this.block.range + " pixel[]\n\n" +
                           "[purple]🔥 🔥 CƠ CHẾ SIÊU BÃO LOẠN TRẠNG THÁI TRỌNG LỰC:[]\n" +
                           "• Hệ thống loại bỏ hoàn toàn cơ chế sạc tích tụ điểm và thanh cuồng nộ cũ.\n" +
                           "• [lightgray]Bão Shotgun hỗn hợp:[] Phóng ra tia Laze nén kèm chùm đạn shotgun tập trung mật độ cao lên tới [green]50 viên đạn[] [lime](+455.5%)[].\n" +
@@ -440,31 +412,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
     },
 
     updateTile(){
-        this.checkTimer += Time.delta;
-        if(this.checkTimer >= 15){
-            this.checkTimer = 0;
-            let count = 0;      
-            let firstBuild = null;
-            
-            Groups.build.each(b => {
-                let mk2Block = Vars.content.getByName(ContentType.block, "newex-rangtatursmk2") || Vars.content.getByName(ContentType.block, "rangtatursmk2");
-                let mk2bBlock = Vars.content.getByName(ContentType.block, "newex-rangtatursmk2b") || Vars.content.getByName(ContentType.block, "rangtatursmk2b");
-                
-                if((b.block == rangtaturs || b.block == mk2Block || b.block == mk2bBlock) && b.team == this.team) {
-                    count++;
-                    if(firstBuild == null) firstBuild = b;
-                }
-            });
-
-            if(count > 10){
-                if(this !== firstBuild){
-                    Call.sendMessage("[red]Giới hạn: Chỉ được phép đặt tối đa 10 pháo thuộc dòng Rangtaturs![]");
-                    this.kill(); 
-                    return;    
-                }
-            }
-        }
-
+        // LOẠI BỎ TOÀN BỘ VÒNG LẶP KIỂM TRA GIỚI HẠN BLOCK TẠI ĐÂY
         this.super$updateTile();
 
         if(this.evolutionTier == 2){

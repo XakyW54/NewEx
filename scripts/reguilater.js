@@ -106,21 +106,6 @@ function makeReguBuild() {
 
         canControl() { return false; },
 
-        // --- BẮT ĐẦU LOGIC GIỚI HẠN BLOCK ĐẶT RA LÀ 4 ---
-        placed() {
-            this.super$placed();
-            let count = 0;
-            Groups.build.each(b => {
-                if (b.block == reguilater && b.team == this.team) count++;
-            });
-            if (count > 4) {
-                Call.sendMessage("[red]Giới hạn: Mỗi đội chỉ được phép xây dựng tối đa 4 tháp pháo Reguilater trên sân!");
-                this.kill();
-                return;
-            }
-        },
-        // --- KẾT THÚC LOGIC GIỚI HẠN ---
-
         setTier(val) { this.reguTier = val; },
         getTier() { return this.reguTier !== undefined ? this.reguTier : 1; },
         config() { return java.lang.Integer(this.getTier()); },
@@ -203,7 +188,6 @@ function makeReguBuild() {
                         }
                     })).size(180, 38);
 
-                    // Xếp các bảng nhánh theo hàng dọc chuẩn Lavunder
                     branchesTable.add(b1).width(340); branchesTable.row();
                     branchesTable.add().height(12).row();
                     branchesTable.add(b2).width(340);
@@ -219,7 +203,6 @@ function makeReguBuild() {
                 })).size(50, 40).tooltip("Đã đạt cấp tối đa");
             }
 
-            // --- NÚT THÔNG TIN (PHONG CÁCH BỐ CỰC ĐẶC TRƯNG CỦA DOR) ---
             table.button(Icon.info, Styles.cleari, 40, packRun(() => {
                 let title = " Thông số pháo Reguilater: ";
                 let descStr = "";
@@ -232,7 +215,6 @@ function makeReguBuild() {
                               "Tầm bắn hiệu dụng:[] [orange]280 pixel[] (35 Ô)\n" +
                               "Sát thương cơ bản:[] [yellow]120 hỏa lực[] / phát bắn\n" +
                               "Năng lượng yêu cầu:[] [gainsboro]12.00 đơn vị/giây[]\n\n" +
-                              "[scarlet]⚠ Giới hạn đặt: Tối đa 4 cấu trúc/đội[]\n\n" +
                               "[sky]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
                               "• [lightgray]Điện từ đơn tầng:[] Tập trung năng lượng khóa và bắn mục tiêu hỗn hợp Không & Đất.\n" +
                               "• [lightgray]Gia tốc nòng:[] Tốc độ xoay nòng tăng tiến liên tục theo thời gian bám đuổi mục tiêu.\n" +
@@ -245,7 +227,6 @@ function makeReguBuild() {
                               "Tầm bắn hiệu dụng:[] [orange]420 pixel [lime](+50%)[]\n" +
                               "Sát thương cơ bản:[] [yellow]300 hỏa lực [lime](+150%)[]\n" +
                               "Năng lượng yêu cầu:[] [gainsboro]12.00 đơn vị/giây[]\n\n" +
-"[scarlet]⚠ Giới hạn đặt: Tối đa 4 cấu trúc/đội[]\n\n" +
                               "[lime]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
                               "• [lightgray]Nén áp suất kép:[] Gia tốc mật độ hạt trường điện từ, mở rộng cự ly bắn cực đại.\n" +
                               "• [lightgray]Cơ chế Burst-Shot:[] Kích hoạt tỷ lệ bắn bồi siêu tốc (giảm khóa mục tiêu xuống 2 tick).\n" +
@@ -258,7 +239,6 @@ function makeReguBuild() {
                               "Tầm bắn hiệu dụng:[] [red]280 pixel (-30%)[] để tập trung hỏa lực tầm gần\n" +
                               "Sát thương cơ bản:[] [pink]720 hỏa lực [red](Hủy Diệt)[]\n" +
                               "Năng lượng yêu cầu:[] [gainsboro]12.00 đơn vị/giây[]\n\n" +
-"[scarlet]⚠ Giới hạn đặt: Tối đa 4 cấu trúc/đội[]\n\n" +
                               "[purple]🔥 CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
                               "• [lightgray]Hạt nhân mật độ cao:[] Đồng trục nòng pháo tích tụ quả cầu năng lượng màu đỏ tối thượng.\n" +
                               "• [lightgray]Bão hòa hủy diệt:[] Khi bắn trúng kẻ địch chính, tự động phân tách phóng chuỗi liên laser phụ (tối đa 6 tia) thiêu rụi mục tiêu lân cận.\n" +

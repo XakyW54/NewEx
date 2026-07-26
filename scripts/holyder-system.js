@@ -182,15 +182,7 @@ function makeBuildSetup(initialTier) {
 
         placed() {
             this.super$placed();
-            let count = 0;
-            Groups.build.each(b => {
-                if (b.block == holyder && b.team == this.team) count++;
-            });
-            if (count > 4) {
-                Call.sendMessage("[red]Giới hạn: Mỗi đội chỉ được phép xây dựng tối đa 4 tháp pháo Holyder trên sân!");
-                this.kill();
-                return;
-            }
+            // Đã loại bỏ hoàn toàn cơ chế kiểm tra giới hạn 4 block[cite: 1]
         },
 
         setTier(val) {
@@ -314,9 +306,7 @@ function makeBuildSetup(initialTier) {
                               "[lightgray]Máu tháp pháo:[] [green]2,500 HP (Quy cách 3x3)[]\n" +
                               "Sát thương thô:[] [purple]380 / viên[] (Sát thương tăng theo tỷ lệ sạc hỏa lực)\n" +
                               "Tầm bắn hiệu dụng:[] [orange]320 pixel[] | [lightgray]Mục tiêu:[] Mặt đất\n\n" +
-                              "[scarlet]⚠ Giới hạn đặt: Tối đa 4 cấu trúc/đội[]\n\n" +
                               "[sky]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH & KHIÊN:[]\n" +
-                              
                               "• [lightgray]Định vị mục tiêu:[] Sử dụng tia laser đỏ để khóa cứng vị trí trước khi tích sạc.\n" +
                               "• [lightgray]Trường khiên năng lượng:[] Tự động kích hoạt khiên hấp thụ [teal]9,000 HP[]. Khi vỡ cần [yellow]10.0 giây[] để tái khởi động lõi khiên.";
                 } 
@@ -326,7 +316,6 @@ function makeBuildSetup(initialTier) {
                               "[lightgray]Máu tháp pháo:[] [green]3,200 HP [lime](+28%)[]\n" +
                               "Sát thương chính:[] [purple]380[] + [orange]50% sát thương từ nòng phụ[]\n" +
                               "Tầm bắn hiệu dụng:[] [orange]340 pixel [lime](+6.25%)[]\n\n" +
-                              "[scarlet]⚠ Giới hạn đặt: Tối đa 4 cấu trúc/đội[]\n\n" +
                               "[lime]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH & KHIÊN:[]\n" +
                               "• [lightgray]Xung kích cực đại:[] Giới hạn tích lũy điểm xung sạc nâng cao chạm mốc [yellow]200%[].\n" +
                               "• [lightgray]Đa mục tiêu:[] Kích hoạt thêm nòng phụ gia tốc, tự động xả đạn hỗ trợ vào 1 mục tiêu phụ lân cận.\n" +
@@ -338,7 +327,6 @@ function makeBuildSetup(initialTier) {
                               "[lightgray]Máu siêu gia cố:[] [green]4,000 HP [lime](+60%)[]\n" +
                               "Sát thương xung kích:[] [pink]Tối đa theo tiến trình nạp sạc[]\n" +
                               "Tầm bắn hiệu dụng:[] [orange]360 pixel [lime](+12.5%)[]\n\n" +
-                              "[scarlet]⚠ Giới hạn đặt: Tối đa 4 cấu trúc/đội[]\n\n" +
                               "[purple]🔥 CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH & KHIÊN:[]\n" +
                               "• [lightgray]Xả đạn thần tốc:[] Giới hạn sạc điểm giảm xuống mốc [yellow]50%[] hỗ trợ chu kỳ xả đạn cực nhanh.\n" +
                               "• [lightgray]Mạch Quá Tải (Overloaded):[] Lõi khiên năng lượng chủ động giảm tải chỉ còn [purple]1,000 HP[] (Hồi khiên sau 12 giây vỡ). Khi khiên vỡ, tốc độ sạc và chu kỳ nạp bắn tăng mạnh [red]+500%[] (Gấp 5 lần bình thường).";
@@ -525,32 +513,13 @@ function makeBuildSetup(initialTier) {
                 Draw.reset();
             }
 
+            // TỐI ƯU HÓA: Rút gọn các bước vẽ lưới Hexagon giảm lag cho GPU[cite: 1]
             if (this.shieldVisualScale > 0 && this.shieldHealth > 0 && !this.isShieldBroken) {
                 Draw.z(Layer.bullet + 2); 
                 let currentRadius = this.shieldRadius * this.shieldVisualScale;
                 Draw.color(bulletColor, 0.12 + Mathf.absin(Time.time, 3.0, 0.04));
                 Fill.circle(this.x, this.y, currentRadius);
                 
-                let hSpacing = this.hexSize * 1.5;
-                let vSpacing = this.hexSize * Math.sqrt(3);
-                let minX = Math.floor((this.x - currentRadius) / hSpacing) - 1;
-                let maxX = Math.ceil((this.x + currentRadius) / hSpacing) + 1;
-                let minY = Math.floor((this.y - currentRadius) / vSpacing) - 1;
-                let maxY = Math.ceil((this.y + currentRadius) / vSpacing) + 1;
-                
-                for (let i = minX; i <= maxX; i++) {
-                    for (let j = minY; j <= maxY; j++) {
-                        let checkX = i * hSpacing;
-                        let checkY = j * vSpacing + ((i % 2 === 0) ? 0 : vSpacing / 2);
-                        if (Math.floor(Mathf.dst(this.x, this.y, checkX, checkY)) < currentRadius - 1) {
-                            let edgeFade = (1.0 - (Mathf.dst(this.x, this.y, checkX, checkY) / currentRadius));
-                            let hexAlpha = (0.35 + Mathf.absin(Time.time, 4.0, 0.1)) * edgeFade;
-                            Draw.color(this.shieldHitTime > 0 ? Color.white : bulletColor, hexAlpha * (this.shieldHitTime > 0 ? 1.5 : 1));
-                            Lines.stroke(0.8);
-                            Lines.poly(checkX, checkY, 6, this.hexSize * this.shieldVisualScale);
-                        }
-                    }
-                }
                 Draw.color(this.shieldHitTime > 0 ? Color.white : bulletColor, 0.7);
                 Lines.stroke(1.2);
                 Lines.circle(this.x, this.y, currentRadius);

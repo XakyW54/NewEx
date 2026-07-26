@@ -1,4 +1,3 @@
-
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
@@ -15,32 +14,25 @@ const regenSpeedMK2B = 0.40;
 
 const bulletSlashEffect = new Effect(15, e => {
     let baseAngle = e.rotation;
-    let maxLength = 16.0;    
-    let maxWidth = 6.0;     
-    let maxStroke = 2.5;    
-
-    let len = maxLength * e.fout();
-    let width = maxWidth * e.fout();
-    let stroke = maxStroke * e.fout();
+    let len = 16.0 * e.fout();
+    let width = 6.0 * e.fout();
+    let stroke = 2.5 * e.fout();
 
     let cx = e.x;
     let cy = e.y;
 
-    let cosA = Math.cos(baseAngle * Mathf.degRad);
-    let sinA = Math.sin(baseAngle * Mathf.degRad);
+    let cosA = Mathf.cosDeg(baseAngle);
+    let sinA = Mathf.sinDeg(baseAngle);
 
     function getX(localX, localY) { return cx + (localX * cosA - localY * sinA); }
     function getY(localX, localY) { return cy + (localX * sinA + localY * cosA); }
 
     let pTipX = getX(len, 0);           
     let pTipY = getY(len, 0);
-
     let pMidLeftX = getX(len * 0.4, width * 0.5);   
     let pMidLeftY = getY(len * 0.4, width * 0.5);
-
     let pMidRightX = getX(len * 0.4, -width * 0.5);  
     let pMidRightY = getY(len * 0.4, -width * 0.5);
-
     let pTailX = getX(-len * 0.2, 0);   
     let pTailY = getY(-len * 0.2, 0);
 
@@ -80,16 +72,10 @@ const vendicumBullet = extend(BasicBulletType, {
     textType: "vendicumBullet",
     pierce: true, pierceCap: 3, pierceBuilding: true, knockback: 1, impact: true,
     
-    // THAY THẾ: Dùng thuộc tính có sẵn thay vì override hàm hit/despawn gây lỗi
     hitEffect: Fx.disperseTrail,
     despawnEffect: Fx.disperseTrail,
-
-    update(b) {
-        this.super$update(b);
-        if (Mathf.chance(0.20)) {  
-            Fx.disperseTrail.at(b.x, b.y, b.rotation()); 
-        }
-    }
+    trailEffect: Fx.disperseTrail,
+    trailChance: 0.20
 });
 
 // --- ĐẠN VENDICUM MK2 ---
@@ -98,41 +84,26 @@ const vendicumMK2Bullet = extend(BasicBulletType, {
     frontColor: Color.white, backColor: Color.valueOf("#ffaa66"),
     pierce: true, pierceCap: 5, pierceBuilding: true, knockback: 1.4, impact: true,
     
-    // THAY THẾ:
     hitEffect: Fx.disperseTrail,
     despawnEffect: Fx.disperseTrail,
-
-    update(b) {
-        this.super$update(b);
-        if (Mathf.chance(0.40)) {  
-            Fx.disperseTrail.at(b.x, b.y, b.rotation()); 
-        }
-    }
+    trailEffect: Fx.disperseTrail,
+    trailChance: 0.40
 });
 
 // --- ĐẠN VENDICUM MK2B ---
 const vendicumMK2BBullet = extend(BasicBulletType, {
     speed: 9, damage: 122.5, lifetime: 50, width: 5, height: 64, 
     frontColor: Color.white, backColor: Color.valueOf("#831006"),
-    trailEffect: Fx.disperseTrail, trailChance: 2.0, 
+    trailEffect: Fx.disperseTrail, trailChance: 0.40, 
     trailColor: Color.valueOf("#ff2525"),
     pierce: false, pierceBuilding: false, knockback: 2.8, impact: true, 
     homingPower: 0.15, homingRange: 200,
     
-    // THAY THẾ:
     hitEffect: Fx.disperseTrail,
-    despawnEffect: Fx.disperseTrail,
-
-    update(b) {
-        this.super$update(b);
-        if (Mathf.chance(0.40)) {  
-            Fx.disperseTrail.at(b.x, b.y, b.rotation()); 
-            Draw.mixcol(); 
-        }
-    }
+    despawnEffect: Fx.disperseTrail
 });
 
-// --- PHẦN LOGIC THÁP PHÁO GIỮ NGUYÊN ---
+// --- PHẦN LOGIC THÁP PHÁO ---
 const vendicum = extend(ItemTurret, "vendicum", {
     configurable: true
 });
@@ -168,7 +139,6 @@ vendicum.config(java.lang.Integer, packCons2((tile, value) => {
 vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
     energyState: 1.0,
     tierState: 0, 
-    limitCheck: 0,
     customRecoil: 0.0,
 
     peekAmmo(){
@@ -294,8 +264,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                           "[lightgray]Máu tháp pháo:[] [green]1,200[]\n" +
                           "[lightgray]Tầm bắn hiệu dụng:[] [orange]320 pixel[]\n" +
                           "[lightgray]Sát thương cơ bản:[] [yellow]45.00[]\n" +
-                          "[lightgray]Khả năng xuyên thấu:[] [white]3 mục tiêu[]\n" +
-                          "[scarlet]⚠ Giới hạn: Tối đa 1 cấu trúc cấu thành trên sân[]\n\n" +
+                          "[lightgray]Khả năng xuyên thấu:[] [white]3 mục tiêu[]\n\n" +
                           "[sky]⚡ CƠ CHẾ NĂNG LƯỢNG TIÊU HAO:[]\n" +
                           "• [lightgray]Tiêu hao (Energy Loss):[] Mỗi phát bắn làm tiêu trừ [red]1.0%[] năng lượng tích lũy của lõi. Sát thương đầu ra tỷ lệ thuận với lượng điện tích hiện có.\n" +
                           "• [lightgray]Tốc độ tái nạp:[] Mất khoảng [yellow]5.0 giây[] để nạp đầy lại từ thanh trống (0% -> 100%) khi ngừng khai hỏa.";
@@ -306,8 +275,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                           "[lightgray]Máu tháp pháo:[] [green]1,800 [lime](+50%)[]\n" +
                           "[lightgray]Tầm bắn hiệu dụng:[] [orange]420 pixel [lime](+31.2%)[]\n" +
                           "[lightgray]Sát thương cơ bản:[] [yellow]65.00 [lime](+44.4%)[]\n" +
-                          "[lightgray]Khả năng xuyên thấu:[] [yellow]5 mục tiêu [lime](+2 mục tiêu)[]\n" +
-                          "[scarlet]⚠ Giới hạn: Tối đa 1 cấu trúc cấu thành trên sân[]\n\n" +
+                          "[lightgray]Khả năng xuyên thấu:[] [yellow]5 mục tiêu [lime](+2 mục tiêu)[]\n\n" +
                           "[lime]⚡ CƠ CHẾ NĂNG LƯỢNG TIÊU HAO:[]\n" +
                           "• [lightgray]Tối ưu tiêu hao:[] Giảm thiểu mức tiêu hao năng lượng xuống chỉ còn [red]0.5%[] cho mỗi phát bắn (Giảm -50%).\n" +
                           "• [lightgray]Siêu sạc phản lực:[] Tốc độ nạp năng lượng đẩy mạnh vượt trội, chỉ mất [green]3.0 giây[] để hồi đầy bình tích lũy.";
@@ -318,8 +286,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                           "[lightgray]Máu tháp pháo:[] [green]1,600 [lime](+33.3%)[]\n" +
                           "[lightgray]Tầm bắn hiệu dụng:[] [orange]360 pixel [lime](+12.5%)[]\n" +
                           "[lightgray]Sát thương cơ bản:[] [red]122.50 (+173%)[]\n" +
-                          "[lightgray]Khả năng xuyên thấu:[] [red]Không (Mất khả năng xuyên)[]\n" +
-                          "[scarlet]⚠ Giới hạn: Tối đa 1 cấu trúc cấu thành trên sân[]\n\n" +
+                          "[lightgray]Khả năng xuyên thấu:[] [red]Không (Mất khả năng xuyên)[]\n\n" +
                           "[purple]🔥 CƠ CHẾ NĂNG LƯỢNG TIÊU HAO:[]\n" +
                           "• [lightgray]Mạch định vị:[] Đổi khả năng xuyên lấy cảm biến tích hợp, đạn [pink]tự động bẻ lái tìm mục tiêu[] trong phạm vi 200 pixel.\n" +
                           "• [lightgray]Mức ổn định cao:[] Năng lượng tiêu hao mỗi phát bắn giảm cực hạn xuống còn [green]0.3%[] giúp duy trì hỏa lực cực kỳ ổn định và lâu dài.";
@@ -339,13 +306,6 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
     config() { return java.lang.Integer(this.getTier()); },
 
     updateTile(){
-        this.limitCheck += Time.delta;
-        if(this.limitCheck >= 15){
-            this.limitCheck = 0; let count = 0; let firstBuild = null;
-            Groups.build.each(b => { if(b.block == vendicum && b.team == this.team) { count++; if(firstBuild == null) firstBuild = b; } });
-            if(count > 1 && this !== firstBuild){ Call.sendMessage("[red]Giới hạn: Chỉ được đặt tối đa 1 pháo Vendicum!"); this.kill(); return; }
-        }
-
         this.super$updateTile();
         let tier = this.getTier();
 

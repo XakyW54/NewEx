@@ -4,7 +4,6 @@ const deadZone = 40;
 const laserColor = Color.valueOf("bf7fff"); 
 const particleColor = Color.valueOf("e8bfff"); 
 const greenLaserColor = Color.valueOf("33ff55"); 
-const amberTextColor = Color.valueOf("ffaa00"); 
 
 const reqMK2 = { copper: 4000, graphite: 4000 };
 const reqMK3 = { lead: 4500, silicon: 5700 };
@@ -162,8 +161,6 @@ const flazerdLaserBullet = extend(BulletType, {
             if(tier == 3) {
                 subTargetsList.clear(); // Làm mới các tia phụ mỗi tick
 
-                // Xác định số lượng tia phụ tối đa được mở dựa trên mốc điểm hiện tại
-                // Điểm sạc đạt mốc nào, tháp pháo kích hoạt mốc đó (Ví dụ: 85 điểm sạc => mở 4 tia phụ)
                 let activeMilestones = 0;
                 let milestoneLimits = [20, 40, 60, 80, 100, 120, 140, 160, 180, 200];
                 for(let k = 0; k < milestoneLimits.length; k++) {
@@ -173,7 +170,6 @@ const flazerdLaserBullet = extend(BulletType, {
                 }
 
                 if(activeMilestones > 0) {
-                    // Thu thập toàn bộ kẻ địch trong tầm bắn trừ mục tiêu chính
                     let poolEnemies = new java.util.ArrayList();
                     Units.nearbyEnemies(b.team, centerX - range, centerY - range, range * 2, range * 2, u => {
                         if(isValidTarget(u, centerX, centerY, range) && u.id != mainTarget.id){
@@ -181,7 +177,6 @@ const flazerdLaserBullet = extend(BulletType, {
                         }
                     });
 
-                    // Sắp xếp ưu tiên mục tiêu gần điểm va chạm của tia chính trước
                     if(poolEnemies.size() > 0) {
                         poolEnemies.sort((o1, o2) => {
                             let d1 = Mathf.dst(mainTarget.x, mainTarget.y, o1.x, o1.y);
@@ -189,7 +184,6 @@ const flazerdLaserBullet = extend(BulletType, {
                             return d1 < d2 ? -1 : (d1 > d2 ? 1 : 0);
                         });
 
-                        // Sát thương của tia phụ bằng chính xác 50% sát thương tia chính đang có
                         let subDamageTick = (currentTickDamage * 0.5) / 60;
                         let countToShoot = Math.min(activeMilestones, poolEnemies.size());
 
@@ -197,7 +191,6 @@ const flazerdLaserBullet = extend(BulletType, {
                             let chosen = poolEnemies.get(i);
                             subTargetsList.add({ id: chosen.id, x: chosen.x, y: chosen.y });
 
-                            // Gây sát thương liên tục lên mục tiêu phụ tương ứng
                             chosen.damage(subDamageTick);
 
                             if(Mathf.chance(0.15)){
@@ -249,7 +242,6 @@ const flazerdLaserBullet = extend(BulletType, {
         Draw.color(laserColor); Lines.stroke(3.6 * thicknessScale); Lines.line(startX, startY, endX, endY);
         Draw.color(Color.white); Lines.stroke(1.2 * thicknessScale); Lines.line(startX, startY, endX, endY);
 
-        // CHUẨN MK2 (Tier 2): Thêm 2 tia phụ uốn lượn hình sin chạy dọc bám đối xứng trục chính
         if (tier == 2 && currentPoints > 2) {
             Draw.color(particleColor);
             let subThickness = 0.8 * thicknessScale;
@@ -257,14 +249,12 @@ const flazerdLaserBullet = extend(BulletType, {
             drawCurvedSubLaser(startX, startY, endX, endY, laserAngle, subThickness, -1.0); 
         }
 
-        // CHUẨN MK2B (Tier 3): Vẽ chùm tia phụ rẽ nhánh từ tia chính bắn sang các mục tiêu thuộc mốc điểm kích hoạt
         if (tier == 3) {
             let subTargetsList = subTargetsMap.get(turretId);
             if(subTargetsList && subTargetsList.size() > 0){
                 for(let m = 0; m < subTargetsList.size(); m++){
                     let node = subTargetsList.get(m);
                     
-                    // Vẽ tia phụ màu xanh lá đặc trưng phóng ra từ đầu va chạm của tia chính
                     Draw.color(greenLaserColor);
                     Lines.stroke(1.8 * thicknessScale);
                     Lines.line(endX, endY, node.x, node.y);
@@ -370,14 +360,7 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
 
     placed(){
         this.super$placed();
-        let count = 0;
-        Groups.build.each(b => { 
-            if(b.block == flazerd && b.team == this.team) count++;
-        });
-        if(count > 2){
-            Call.sendMessage("[purple]Flazerd Giới hạn:[] Chỉ đặt tối đa 2 tháp pháo!");
-            this.kill(); 
-        }
+        // Đã gỡ bỏ logic giới hạn số lượng đặt tháp pháo ở đây
         this.wingsOffset = 0;
     },
 
@@ -516,7 +499,6 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
                     } else { Vars.ui.showInfoToast("[red]Không đủ tài nguyên cho nhánh MK2B![]", 2); }
                 })).size(180, 38);
 
-                // Xếp các bảng nhánh theo hàng dọc chuẩn Lavunder
                 branchesTable.add(b1).width(340); branchesTable.row();
                 branchesTable.add().height(12).row();
                 branchesTable.add(b2).width(340);
@@ -532,7 +514,6 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
             })).size(50, 40).tooltip("Đã đạt cấp tối đa");
         }
 
-        // --- NÚT THÔNG TIN (PHONG CÁCH BỐ CỰC ĐẶC TRƯNG CỦA DOR) ---
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
             let title = " Thông số pháo Flazerd: ";
             let descStr = "";
@@ -543,8 +524,7 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
                 descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
                           "[lightgray]Máu tháp pháo:[] [green]2,300[]\n" +
                           "Tầm bắn hiệu dụng:[] [orange]320 pixel[]\n" +
-                          "Sát thương liên tục:[] [white]33.00 hỏa lực/s[]\n" +
-                          "[scarlet]⚠ Giới hạn đặt: Tối đa 2 cấu trúc/đội[]\n\n" +
+                          "Sát thương liên tục:[] [white]33.00 hỏa lực/s[]\n\n" +
                           "[sky]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
                           "• [lightgray]Phát xạ mục tiêu:[] Phóng chùm tia laze đơn liên tục bám khóa chặt kẻ địch mặt đất.\n" +
                           "• [lightgray]Màn hình Holyder:[] Giao diện kỹ thuật số hiển thị thời gian thực số % sạc tụ lõi tâm.\n" +
@@ -555,8 +535,7 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
                 descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
                           "[lightgray]Máu tháp pháo:[] [green]3,500 [lime](+52%)[]\n" +
                           "Tầm bắn hiệu dụng:[] [orange]340 pixel [lime](+6.25%)[]\n" +
-                          "Sát thương cơ bản:[] [white]115.50 hỏa lực/s[]\n" +
-                          "[scarlet]⚠ Giới hạn đặt: Tối đa 2 cấu trúc/đội[]\n\n" +
+                          "Sát thương cơ bản:[] [white]115.50 hỏa lực/s[]\n\n" +
                           "[lime]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
                           "• [lightgray]Mạch hỏa tốc:[] Tốc độ sạc tụ năng lượng gia tốc vượt bậc đạt ngưỡng đỉnh [yellow]150%[].\n" +
                           "• [lightgray]Xung lực hỏa lực:[] Cứ mỗi 1% điểm sạc tích lũy cộng trực tiếp [red]+2% sát thương[] tổng.\n" +
@@ -568,8 +547,7 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
                 descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
                           "[lightgray]Máu tháp pháo:[] [green]4,200 [lime](+82.6%)[]\n" +
                           "Tầm bắn hiệu dụng:[] [orange]320 pixel[]\n" +
-                          "Sát thương cơ bản:[] [white]198.00 hỏa lực/s[]\n" +
-                          "[scarlet]⚠ Giới hạn đặt: Tối đa 2 cấu trúc/đội[]\n\n" +
+                          "Sát thương cơ bản:[] [white]198.00 hỏa lực/s[]\n\n" +
                           "[purple]🔥 CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
                           "• [lightgray]Phân chùm đa mốc:[] Tách thêm tia laze phụ xanh lá bắn phá mục tiêu xung quanh khi điểm sạc vượt qua các mốc [yellow]20, 40, 60, 80, 100, 120, 140, 160, 180, 200[].\n" +
                           "• [lightgray]Hỏa lực rẽ nhánh:[] Mỗi tia phụ rẽ nhánh tự động gây sát thương bằng [red]chính xác 50%[] hỏa lực tia chính.\n" +

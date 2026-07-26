@@ -1,4 +1,4 @@
-print("LAVUNDER - ULTIMATE BALANCE & OVERLOAD SYSTEM (MK2 & MK2B) LOADED");
+print("LAVUNDER - OPTIMIZED & NO-LIMIT SYSTEM LOADED");
 
 const deadZone = 40; 
 const laserColor = Color.valueOf("bf7fff"); 
@@ -15,7 +15,7 @@ const turretBurstTimerMap = new ObjectMap();
 const turretMilestoneMap = new ObjectMap();    
 const mk3TripleExplosionMap = new ObjectMap(); 
 const greenLaserRenderMap = new ObjectMap();
-const turretDamageTimerMap = new ObjectMap(); // Quản lý bộ đếm 1 giây gây sát thương
+const turretDamageTimerMap = new ObjectMap(); 
 
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
@@ -86,11 +86,11 @@ const lavunderLaserBullet = extend(BulletType, {
             }
         }
 
-        let baseDamage = 112; // Cập nhật sát thương cơ bản thành 112
+        let baseDamage = 112; 
         if(tier == 2){
-            baseDamage = 112; // MK2 giữ nguyên sát thương cơ bản
+            baseDamage = 112; 
         } else if(tier == 3){
-            baseDamage = 112 * 1.71; // Giữ quy mô MK2B
+            baseDamage = 112 * 1.71; 
         }
         let currentTickDamage = baseDamage * (1 + (currentPoints / 100));
 
@@ -136,7 +136,6 @@ const lavunderLaserBullet = extend(BulletType, {
             b.data.lastX = target.x;
             b.data.lastY = target.y;
 
-            // Đổi cơ chế: Đủ 1 giây (60 ticks) mới gây sát thương 1 lần
             dmgTimer++;
             if(dmgTimer >= 60){
                 target.damage(currentTickDamage);
@@ -146,7 +145,7 @@ const lavunderLaserBullet = extend(BulletType, {
 
             if(currentPoints < 100){
                 let chargeSpeedMultiplier = 1 + Math.pow(currentPoints / 50, 2);
-                let speedBonus = (tier == 2) ? 3.8 : 1.0; // MK2 sạc nhanh hơn 3.8x
+                let speedBonus = (tier == 2) ? 3.8 : 1.0; 
                 
                 currentPoints += (1 / 60) * chargeSpeedMultiplier * speedBonus;
                 
@@ -157,7 +156,6 @@ const lavunderLaserBullet = extend(BulletType, {
                         
                         turretBurstTimerMap.put(turretId, 14);
 
-                        // Cập nhật thông số nổ cho MK1 & MK2
                         let explosionRadius = (tier == 2) ? 40 : 60; 
                         let hpPercent = (tier == 2) ? 0.02 : 0.01; 
                         let flatDamage = (tier == 2) ? 3200 : 1000; 
@@ -245,7 +243,7 @@ const lavunderLaserBullet = extend(BulletType, {
             b.data.lastX = b.x + Angles.trnsx(b.rotation(), range);
             b.data.lastY = b.y + Angles.trnsy(b.rotation(), range);
 
-            turretDamageTimerMap.put(turretId, 0); // Reset timer gây sát thương khi mất mục tiêu
+            turretDamageTimerMap.put(turretId, 0); 
 
             if(currentPoints > 0){
                 currentPoints -= (2 / 60); 
@@ -291,7 +289,7 @@ const lavunderLaserBullet = extend(BulletType, {
 
         if(currentPoints > 2) {
             let scaleFactor = 1 + (currentPoints / 180); 
-            let ringCount = 3;
+            let ringCount = 2; // TỐI ƯU: Giảm số lượng vòng laser rendered
             for(let r = 0; r < ringCount; r++){
                 let ringProgress = ((Time.time * 0.8) + (r * (dist / ringCount))) % dist;
                 let rt = ringProgress / dist;
@@ -299,10 +297,10 @@ const lavunderLaserBullet = extend(BulletType, {
                 drawLaserRing(rx, ry, 1.5 * scaleFactor, 4.0 * scaleFactor, laserAngle, 0.4 * Mathf.sin(rt * Math.PI), laserColor);
             }
 
-            let particleCount = Math.floor(Mathf.lerp(8, 48, currentPoints / 100));
+            // TỐI ƯU: Giảm số lượng hạt particle tối đa từ 48 -> 16[cite: 2]
+            let particleCount = Math.floor(Mathf.lerp(4, 16, currentPoints / 100));
             Draw.color(particleColor);
             for(let i = 0; i < particleCount; i++){
-                let speedSeed = i * 17.3 + (turretId % 11);
                 let progress = ((Time.time * (0.4 + (i % 3) * 0.25)) + (i * (dist / particleCount))) % dist;
                 let t = progress / dist;
                 let px = Mathf.lerp(startX, endX, t); let py = Mathf.lerp(startY, endY, t);
@@ -327,7 +325,7 @@ const lavunderLaserBullet = extend(BulletType, {
             Draw.color(Color.white);
             Fill.circle(endX, endY, baseRadius * 0.55); 
 
-            let pCount = Math.floor(Mathf.lerp(4, 15, currentPoints / 100));
+            let pCount = Math.floor(Mathf.lerp(3, 8, currentPoints / 100)); // TỐI ƯU: Giảm hạt hiệu ứng
             Draw.color(particleColor);
             for(let i = 0; i < pCount; i++){
                 let hSeed = i * 45.7 + turretId;
@@ -409,15 +407,7 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
 
     placed(){
         this.super$placed();
-        let count = 0;
-        Groups.build.each(b => { 
-            if(b.block == lavunder && b.team == this.team) count++;
-        });
-        // Cập nhật giới hạn xây dựng tối đa 1 pháo
-        if(count > 1){
-            Call.sendMessage("[purple]Lavunder Giới hạn:[] Chỉ đặt tối đa 1 tháp pháo!");
-            this.kill(); 
-        }
+        // Đã loại bỏ hoàn toàn cơ chế kiểm tra giới hạn 1 pháo[cite: 2]
         this.downxOffset = 0;
         this.wingsOffset = 0;
     },
@@ -525,7 +515,7 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
 
                 let branchesTable = new Table();
 
-                // Nhánh 1: MK2 (Cập nhật thông số giao diện)
+                // Nhánh 1: MK2 
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                 b1.add("[cyan]===(MK2)===[]").row();
                 let b1D = b1.add("Mô-đun kích xung hỏa lực liên hoàn:\n" +
@@ -597,7 +587,6 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
                           "[lightgray]Tầm bắn phát xạ:[] [orange]320 pixel[] (Vùng mù: <40 px)\n" +
                           "[lightgray]Sát thương cơ bản:[] [white]112.00 hỏa lực/giây (Chu kỳ: 1s/lần)[]\n" +
                           "[lightgray]Năng lượng tiêu thụ:[] [gainsboro]22.00 đơn vị/giây[]\n\n" +
-                          "[scarlet]⚠ Giới hạn đặt: Tối đa 1 cấu trúc/đội[]\n\n" +
                           "[sky]⚡ CƠ CHẾ HOẠT ĐỘNG MẠCH XUNG KÍCH:[]\n" +
                           "• [lightgray]Bám dính mục tiêu:[] Bắn đủ 1 giây liên tục sẽ gây sát thương 1 lần và tích lũy sạc.\n" +
                           "• [lightgray]Xung kích năng lượng:[] Khi đạt [yellow]100 điểm sạc[] phóng nổ diện rộng (bán kính 60 px) gây [red]1,000 sát thương[] + [cyan]1% HP tối đa[] mục tiêu.";
@@ -609,7 +598,6 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
                           "[lightgray]Tầm bắn phát xạ:[] [orange]340 pixel [lime](+6.25%)[]\n" +
                           "[lightgray]Sát thương cơ bản:[] [yellow]112.00 hỏa lực/giây (Chu kỳ: 1s/lần)[]\n" +
                           "[lightgray]Năng lượng tiêu thụ:[] [gainsboro]22.00 đơn vị/giây[]\n\n" +
-                          "[scarlet]⚠ Giới hạn đặt: Tối đa 1 cấu trúc/đội[]\n\n" +
                           "[lime]⚡ CƠ CHẾ HOẠT ĐỘNG MẠCH XUNG KÍCH:[]\n" +
                           "• [lightgray]Gia tốc dòng sạc:[] Tốc độ tích lũy năng lượng điểm được đẩy mạnh thêm [yellow]+380% (3.8x)[].\n" +
                           "• [lightgray]Siêu áp suất nổ:[] Tại mốc [yellow]100 điểm sạc[] giải phóng chấn động (bán kính 40 px): [red]3,200 sát thương[] + [cyan]2% HP tối đa[].\n" +
@@ -622,7 +610,6 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
                           "[lightgray]Tầm bắn phát xạ:[] [orange]320 pixel [yellow](0%)[]\n" +
                           "[lightgray]Sát thương cơ bản:[] [pink]191.52 hỏa lực/giây (Chu kỳ: 1s/lần)[]\n" +
                           "[lightgray]Năng lượng tiêu thụ:[] [gainsboro]22.00 đơn vị/giây[]\n\n" +
-                          "[scarlet]⚠ Giới hạn đặt: Tối đa 1 cấu trúc/đội[]\n\n" +
                           "[purple]🔥 CƠ CHẾ HOẠT ĐỘNG ĐẠI QUANG PHỔ:[]\n" +
                           "• [lightgray]Sạc đa tầng quang phổ:[] Duy trì bắn tích năng lượng qua các mốc [yellow]20, 40, 60, 80[] có [white]70%[] cơ hội nổ phụ tia laser phụ.\n" +
                           "• [lightgray]Đại bộc phá chu kỳ:[] Đạt đỉnh [yellow]100 điểm sạc[] kích nổ chuỗi [red]3 loạt bộc phá liên hoàn siêu cấp[] diện rộng.";

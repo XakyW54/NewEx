@@ -1,6 +1,6 @@
 
 name: Heliyron
-description: "Pháo  ."
+description: "Pháo Heliyron: Càng mất máu bắn càng đau! Tự gây sát thương lên bản thân để đổi lấy khả năng kích hoạt mưa đạn phụ truy đuổi diện rộng và bùng nổ tốc bắn khi máu xuống thấp."
 health: 1450
 size: 5
 reload: 20
@@ -28,35 +28,7 @@ ammoTypes: {
 drawer: {
   type: DrawTurret
   basePrefix: reinforced-
-  parts: [
-    {
-      suffix: -2
-                layer: 51
-      y: 0
-      moveY: -0
-      recoilIndex: 0
-      progress: recoil
-                    children: [
-            {
-              suffix: -2
-              outline: false
-              layer: 50.01
-            }
 
-            {
-              suffix: -1
-              layer: 50.1
-              outline: false
-              layerOffset: -0.001
-              y: 2.5
-              moveY: -1.25
-              progress: reload
-            }
-
-              ]
-    }
-
-  ]
 }
 
 researchCostMultiplier: 0.1

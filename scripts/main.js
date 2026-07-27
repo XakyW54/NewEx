@@ -52,7 +52,7 @@ require("copesblock");
 
 require("sta");
 
- 
+require("global-damage-indicator");
 
 require("leolyr-summoner");
 

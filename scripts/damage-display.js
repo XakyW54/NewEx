@@ -1,6 +1,6 @@
 // ==========================================
 // Damage Display Mod for Mindustry
-// Auto-disable on High Zoom Out
+// Optimized with Aggregation & Pause Freeze
 // ==========================================
 
 const damagePopups = new Seq();
@@ -26,8 +26,6 @@ Events.on(StateChangeEvent, e => {
 
 // Kiểm tra xem camera có đang zoom quá xa hay không
 function isZoomedTooFar() {
-    // Core.camera.width tính theo world unit (1 tile = 8 world units)
-    // 120 tile ngang (~960 units) là khoảng zoom xa bắt đầu khó nhìn chữ
     return Core.camera.width > 1024; 
 }
 
@@ -35,24 +33,56 @@ function isDisplayEnabled() {
     return Core.settings.getBool("show-damage-popup", true) && !isZoomedTooFar();
 }
 
-// Hàm tạo popup với phong cách Text & Màu sắc chuẩn
-function createPopup(x, y, amount, isHeal, hitSize) {
+// Format chữ cho Popup
+function formatPopupText(amount, isHeal) {
+    let absAmount = Math.round(Math.abs(amount));
+    if (isHeal) {
+        return "[lime]+" + absAmount + "[]";
+    } else {
+        return absAmount >= 1000 
+            ? "[scarlet]💥 " + absAmount + "[]" 
+            : "[orange]" + absAmount + "[]";
+    }
+}
+
+// Hàm tạo hoặc GỘP Popup (Damage Aggregation)
+function createPopup(x, y, amount, isHeal, hitSize, entityId) {
     if (!isDisplayEnabled() || Math.abs(amount) < 0.5) return;
 
-    let text = "";
-    if (!isHeal) {
-        let dmgAmount = Math.abs(amount);
-        text = dmgAmount >= 1000 
-            ? "[scarlet]💥 " + Math.round(dmgAmount) + "[]" 
-            : "[orange]" + Math.round(dmgAmount) + "[]";
-    } else {
-        text = "[lime]+" + Math.round(amount) + "[]";
+    // Khoảng cách tối đa để tính là cùng một chỗ (dựa theo kích thước entity)
+    let mergeRadius = Math.max(8.0, hitSize / 2);
+
+    // 1. Tìm xem có Popup nào cùng loại (Hồi máu / Sát thương) gần đó vừa tạo gần đây không
+    for (let i = 0; i < damagePopups.size; i++) {
+        let p = damagePopups.get(i);
+        
+        // Nếu cùng ID entity (hoặc ở sát vị trí) và mới xuất hiện (life còn lớn hơn 25/40)
+        let isSameEntity = (entityId !== null && entityId !== undefined && p.entityId === entityId);
+        let isNear = Mathf.dst(p.x, p.y) < mergeRadius;
+
+        if ((isSameEntity || isNear) && p.isHeal === isHeal && p.life > 25.0) {
+            // Cộng dồn lượng sát thương / hồi máu
+            p.amount += amount;
+            p.hitCount++;
+            
+            // Cập nhật lại Text hiển thị tổng
+            p.text = formatPopupText(p.amount, isHeal);
+            
+            // Reset nhẹ thời gian sống để chữ không bị biến mất quá nhanh khi đang dồn dmg
+            p.life = Math.min(p.maxLife, p.life + 10.0);
+            return;
+        }
     }
 
+    // 2. Nếu không tìm thấy Popup cũ phù hợp thì tạo mới
     damagePopups.add({
-        x: x + Mathf.random(-6, 6),
+        x: x + Mathf.random(-4, 4),
         y: y + (hitSize / 4),
-        text: text,
+        amount: amount,
+        isHeal: isHeal,
+        entityId: entityId,
+        hitCount: 1,
+        text: formatPopupText(amount, isHeal),
         id: Mathf.random(99999),
         life: 40.0,
         maxLife: 40.0
@@ -69,7 +99,7 @@ Events.on(UnitDamageEvent, e => {
     
     let dmg = e.bullet ? e.bullet.damage : 0;
     if (dmg > 0) {
-        createPopup(e.unit.x, e.unit.y, dmg, false, e.unit.hitSize);
+        createPopup(e.unit.x, e.unit.y, dmg, false, e.unit.hitSize, e.unit.id);
     }
 });
 
@@ -79,15 +109,18 @@ Events.on(BuildDamageEvent, e => {
     
     let dmg = e.source ? e.source.damage : 0;
     if (dmg > 0) {
-        createPopup(e.build.x, e.build.y, dmg, false, e.build.block.size * Vars.tilesize);
+        createPopup(e.build.x, e.build.y, dmg, false, e.build.block.size * Vars.tilesize, e.build.id);
     }
 });
 
 // Vòng lặp cập nhật theo dõi hồi máu & các thay đổi máu khác
 Events.run(Trigger.update, () => {
-    // Tự động dừng hoàn toàn nếu người chơi zoom quá xa hoặc Pause game
-    if (!isDisplayEnabled() || Vars.state.isPaused()) {
+    if (!isDisplayEnabled()) {
         if (damagePopups.size > 0) damagePopups.clear();
+        return;
+    }
+
+    if (Vars.state.isPaused()) {
         return;
     }
 
@@ -101,7 +134,7 @@ Events.run(Trigger.update, () => {
         if (lastHp !== null && lastHp !== undefined) {
             let diff = u.health - lastHp;
             if (Math.abs(diff) >= 0.5) {
-                createPopup(u.x, u.y, diff, diff > 0, u.hitSize);
+                createPopup(u.x, u.y, diff, diff > 0, u.hitSize, u.id);
                 entityHpCache.put(u.id, u.health);
             }
         } else {
@@ -124,7 +157,7 @@ Events.run(Trigger.update, () => {
                 if (lastHp !== null && lastHp !== undefined) {
                     let diff = b.health - lastHp;
                     if (Math.abs(diff) >= 0.5) {
-                        createPopup(b.x, b.y, diff, diff > 0, b.block.size * Vars.tilesize);
+                        createPopup(b.x, b.y, diff, diff > 0, b.block.size * Vars.tilesize, b.id);
                         entityHpCache.put(b.id, b.health);
                     }
                 } else {
@@ -162,7 +195,9 @@ Events.run(Trigger.draw, () => {
         let curX = popup.x + (Mathf.randomSeed(popup.id, -8, 8) * progress);
         let curY = popup.y + (Mathf.randomSeed(popup.id + 1, 10, 20) * Interp.pow2Out.apply(progress));
 
-        let size = Math.max(0.15, 0.3 * Interp.pow2Out.apply(fadeOut));
+        // Nếu nhận nhiều hơn 3 lần sát thương/hồi máu thì phóng to chữ nhẹ một chút để tạo cảm giác "chắc tay"
+        let baseScale = popup.hitCount >= 3 ? 0.38 : 0.3;
+        let size = Math.max(0.15, baseScale * Interp.pow2Out.apply(fadeOut));
 
         font.getData().setScale(size);
 

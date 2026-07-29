@@ -1,4 +1,4 @@
-/*BLAW TURRET SYSTEM - OPTIMIZED ENGINE*/
+/*BLAW TURRET SYSTEM - OPTIMIZED ENGINE WITH FAST CIRCLE HIT EFFECT*/
 
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
@@ -6,6 +6,27 @@ const packProv = (func) => new Prov({ get: func });
 
 const reqBlawMK2 = { copper: 4000, lead: 4000, titanium: 0 };
 const reqBlawMK2B = { copper: 4000, lead: 4000, titanium: 2000 };
+
+// --- HIỆU ỨNG VÒNG TRÒN SÓNG XUNG KÍCH (ĐÃ GIẢM KÍCH THƯỚC & TĂNG TỐC ĐỘ BIẾN MẤT) ---
+const nhCircleHitEffect = new Effect(40, cons(e => {
+    // Lấy màu sắc trực tiếp theo màu hiệu ứng đạn
+    Draw.color(e.color);
+
+    // 1. Vòng tròn mờ (Bán kính nở ra tối đa 35)
+    let smoothRadius = 35 * Interp.pow2Out.apply(e.fin());
+    Draw.alpha(0.35 * e.fout());
+    Fill.circle(e.x, e.y, smoothRadius);
+
+    // 2. Vòng sóng lớn (Bán kính 40, dày 2.5px)
+    Lines.stroke(2.5 * e.fout());
+    Lines.circle(e.x, e.y, 40 * Interp.pow2Out.apply(e.fin()));
+
+    // 3. Vòng sóng nhỏ (Bán kính 20, dày 1.5px)
+    Lines.stroke(1.5 * e.fout());
+    Lines.circle(e.x, e.y, 20 * Interp.pow2Out.apply(e.fin()));
+
+    Draw.reset();
+}));
 
 var doubleSparks = extend(ParticleEffect, {
     particles: 3, line: true, length: 8, lifetime: 8, lenFrom: 6, lenTo: 1,
@@ -17,9 +38,12 @@ var mirrorSparks = extend(RadialEffect, {
     rotationSpacing: 180, amount: 2, effect: doubleSparks,
 });
 
+// --- CÁC LOẠI ĐẠN ĐÃ ĐƯỢC GÁN nhCircleHitEffect ---
 const blawBlueMK1 = extend(BasicBulletType, {
     speed: 2.5, damage: 20, width: 9, height: 22, lifetime: 60,
-    sprite: "newex-diamond-shard", hitEffect: mirrorSparks, despawnEffect: mirrorSparks,
+    sprite: "newex-diamond-shard", 
+    hitEffect: nhCircleHitEffect, despawnEffect: nhCircleHitEffect,
+    hitColor: Color.valueOf("0031FFFF"),
     frontColor: Color.valueOf("0031FFFF"), backColor: Color.white,
     status: StatusEffects.freezing, statusDuration: 600, pierce: true, pierceCap: 3
 });
@@ -27,35 +51,40 @@ const blawBlueMK1 = extend(BasicBulletType, {
 const blawRedMK1 = extend(BasicBulletType, {
     speed: 2.5, damage: 20, width: 9, height: 22, lifetime: 60,
     frontColor: Color.valueOf("FF0000FF"), backColor: Color.white, 
-    hitEffect: Fx.blastExplosion, despawnEffect: Fx.blastExplosion,
+    hitEffect: nhCircleHitEffect, despawnEffect: nhCircleHitEffect,
+    hitColor: Color.valueOf("FF0000FF"),
     splashDamage: 80, splashDamageRadius: 24, status: StatusEffects.blasted, statusDuration: 80
 });
 
 const blawBlueMK2 = extend(BasicBulletType, {
     speed: 2.8, damage: 20, width: 10, height: 24, lifetime: 60,
     frontColor: Color.valueOf("0031FFFF"), backColor: Color.white,
-    hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor,
+    hitEffect: nhCircleHitEffect, despawnEffect: nhCircleHitEffect,
+    hitColor: Color.valueOf("0031FFFF"),
     status: StatusEffects.freezing, statusDuration: 600, pierce: true, pierceCap: 3
 });
 
 const blawRedMK2 = extend(BasicBulletType, {
     speed: 2.8, damage: 20, width: 10, height: 24, lifetime: 160,
     frontColor: Color.valueOf("FF0000FF"), backColor: Color.white,
-    hitEffect: Fx.blastExplosion, despawnEffect: Fx.blastExplosion,
+    hitEffect: nhCircleHitEffect, despawnEffect: nhCircleHitEffect,
+    hitColor: Color.valueOf("FF0000FF"),
     splashDamage: 120, splashDamageRadius: 32, status: StatusEffects.blasted, statusDuration: 80
 });
 
 const blawBlueBulletMK2B = extend(BasicBulletType, {
     speed: 12.2, damage: 220, width: 5, height: 12, lifetime: 10,
     frontColor: Color.valueOf("0031FFFF"), backColor: Color.white, 
-    hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor,
+    hitEffect: nhCircleHitEffect, despawnEffect: nhCircleHitEffect,
+    hitColor: Color.valueOf("0031FFFF"),
     pierce: true, pierceCap: 2, status: StatusEffects.freezing, statusDuration: 300
 });
 
 const blawRedBulletMK2B = extend(BasicBulletType, {
     speed: 12.2, damage: 220, width: 5, height: 12, lifetime: 10,
     frontColor: Color.valueOf("FF5A00FF"), backColor: Color.white, 
-    hitEffect: Fx.blastExplosion, despawnEffect: Fx.blastExplosion,
+    hitEffect: nhCircleHitEffect, despawnEffect: nhCircleHitEffect,
+    hitColor: Color.valueOf("FF5A00FF"),
     splashDamage: 40, splashDamageRadius: 16, status: StatusEffects.blasted, statusDuration: 80
 });
 
@@ -206,7 +235,6 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
     config() { return java.lang.Integer(this.getTier()); },
 
     updateTile(){
-        // ĐÃ XÓA BỎ LỆNH KIỂM TRA GIỚI HẠN BLOCK ĐỂ NÂNG CAO HIỆU NĂNG
         this.super$updateTile();
         let tier = this.getTier();
         
@@ -303,7 +331,6 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
             Draw.rect(blaw.region, this.x, this.y, this.rotation - 90);
         }
 
-        // TỐI ƯU HÓA ĐỒ HỌA LÕI NĂNG LƯỢNG
         let sideAngleRad = (this.rotation + 90) * Mathf.degRad;
         let ballSideCos = Math.cos(sideAngleRad) * 6; 
         let ballSideSin = Math.sin(sideAngleRad) * 6;
@@ -317,14 +344,12 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
         let baseRadius = 1.5; 
 
         Draw.draw(Layer.effect + 1, packRun(() => {
-            // Nòng trái
             let zoomLeft = baseRadius * (1.0 + this.recoilLeft * 1.5);
             Draw.color(Color.valueOf("0031FFFF"), 0.35);
             Fill.circle(bxLeft, byLeft, zoomLeft * 2.0);
             Draw.color(Color.white);
             Fill.circle(bxLeft, byLeft, zoomLeft);
 
-            // Nòng phải
             let zoomRight = baseRadius * (1.0 + this.recoilRight * 1.5);
             Draw.color(Color.valueOf("FF3B00FF"), 0.35);
             Fill.circle(bxRight, byRight, zoomRight * 2.0);

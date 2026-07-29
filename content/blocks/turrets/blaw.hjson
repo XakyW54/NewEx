@@ -15,6 +15,7 @@ ammoTypes: {
     type: BasicBulletType
     speed: 10
     damage: 30
+    shieldDamageMultiplier: 0.1
     width: 7
     height: 9
     lifetime: 10

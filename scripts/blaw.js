@@ -18,28 +18,28 @@ var mirrorSparks = extend(RadialEffect, {
 });
 
 const blawBlueMK1 = extend(BasicBulletType, {
-    speed: 2.5, damage: 200, width: 9, height: 22, lifetime: 60,
+    speed: 2.5, damage: 20, width: 9, height: 22, lifetime: 60,
     sprite: "newex-diamond-shard", hitEffect: mirrorSparks, despawnEffect: mirrorSparks,
     frontColor: Color.valueOf("0031FFFF"), backColor: Color.white,
     status: StatusEffects.freezing, statusDuration: 600, pierce: true, pierceCap: 3
 });
 
 const blawRedMK1 = extend(BasicBulletType, {
-    speed: 2.5, damage: 200, width: 9, height: 22, lifetime: 60,
+    speed: 2.5, damage: 20, width: 9, height: 22, lifetime: 60,
     frontColor: Color.valueOf("FF0000FF"), backColor: Color.white, 
     hitEffect: Fx.blastExplosion, despawnEffect: Fx.blastExplosion,
     splashDamage: 80, splashDamageRadius: 24, status: StatusEffects.blasted, statusDuration: 80
 });
 
 const blawBlueMK2 = extend(BasicBulletType, {
-    speed: 2.8, damage: 200, width: 10, height: 24, lifetime: 60,
+    speed: 2.8, damage: 20, width: 10, height: 24, lifetime: 60,
     frontColor: Color.valueOf("0031FFFF"), backColor: Color.white,
     hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor,
     status: StatusEffects.freezing, statusDuration: 600, pierce: true, pierceCap: 3
 });
 
 const blawRedMK2 = extend(BasicBulletType, {
-    speed: 2.8, damage: 200, width: 10, height: 24, lifetime: 160,
+    speed: 2.8, damage: 20, width: 10, height: 24, lifetime: 160,
     frontColor: Color.valueOf("FF0000FF"), backColor: Color.white,
     hitEffect: Fx.blastExplosion, despawnEffect: Fx.blastExplosion,
     splashDamage: 120, splashDamageRadius: 32, status: StatusEffects.blasted, statusDuration: 80

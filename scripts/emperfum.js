@@ -1,10 +1,12 @@
-/* EMPERFUM TURRET SYSTEM - CUSTOM DISTORTED MUZZLE RINGS */
+/* EMPERFUM TURRET SYSTEM - EXACT DOR UI STYLE */
 
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
-// Chi phí nâng cấp
+// ==========================================
+// --- CHI PHÍ NÂNG CẤP TÙY CHỈNH ---
+// ==========================================
 const reqMK2 = { surgeAlloy: 500, plastanium: 1200, copper: 9000 };
 const reqMK2B = { thorium: 1900, titanium: 2400, silicon: 3100 };
 
@@ -36,7 +38,6 @@ const emperfumMuzzleEffect = new Effect(20, e => {
     let tColor = e.data || Color.valueOf("#80deea");
     let baseAngle = e.rotation;
     
-    // Vòng 1 & 2
     let offset1 = 12 - (e.fin() * 18); 
     let bx1 = e.x + Angles.trnsx(baseAngle, offset1);
     let by1 = e.y + Angles.trnsy(baseAngle, offset1);
@@ -47,24 +48,17 @@ const emperfumMuzzleEffect = new Effect(20, e => {
     let by2 = e.y + Angles.trnsy(baseAngle, offset2);
     drawWindRing(bx2, by2, 4.0 + (e.fin() * 7.0), e.fin() * 22.0, baseAngle, 1.8 * e.fout(), Color.white);
 
-    // Vòng 3: Bắt đầu từ 35px, lùi về 15px trước nòng (Kích thước lớn hơn vòng 4)
     let offset3 = 35 - (e.fin() * 20); 
     let bx3 = e.x + Angles.trnsx(baseAngle, offset3);
     let by3 = e.y + Angles.trnsy(baseAngle, offset3);
-    let zoomX3 = 2.0 + (e.fin() * 10.0);
-    let zoomY3 = e.fin() * 28.0;
-    drawWindRing(bx3, by3, zoomX3, zoomY3, baseAngle, 2.0 * e.fout(), tColor);
+    drawWindRing(bx3, by3, 2.0 + (e.fin() * 10.0), e.fin() * 28.0, baseAngle, 2.0 * e.fout(), tColor);
 
-    // Vòng 4: Bắt đầu từ 55px, lùi về 15px trước nòng (Kích thước nhỏ hơn vòng 3)
     let offset4 = 55 - (e.fin() * 40); 
     let bx4 = e.x + Angles.trnsx(baseAngle, offset4);
     let by4 = e.y + Angles.trnsy(baseAngle, offset4);
-    let zoomX4 = 1.0 + (e.fin() * 7.0);
-    let zoomY4 = e.fin() * 20.0;
-    drawWindRing(bx4, by4, zoomX4, zoomY4, baseAngle, 1.6 * e.fout(), Color.white);
+    drawWindRing(bx4, by4, 1.0 + (e.fin() * 7.0), e.fin() * 20.0, baseAngle, 1.6 * e.fout(), Color.white);
 });
 
-// Flash vòng tròn khi đẻ đạn
 const clusterFlashEffect = new Effect(18, e => {
     Draw.color(Color.white, Color.valueOf("#80deea"), e.fin());
     Lines.stroke(e.fout() * 4);
@@ -391,119 +385,205 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
     },
 
     buildConfiguration(table){
-        table.clear(); table.defaults().size(40);
+        table.clear(); 
+        table.row();
         let tier = this.getTier();
 
-        // NÚT THÔNG TIN (i)
-        table.button(Icon.info, Styles.cleari, packRun(() => {
-            let infoDialog = extend(BaseDialog, "THÔNG SỐ PHÁO EMPERFUM", {});
-            
-            let infoText = "";
-            if(tier == 0){
-                infoText = "[yellow]== CẤU HÌNH CƠ BẢN (MK1) ==[]\n\n" +
-                           "• [stat]Máu (HP):[] 1,450\n" +
-                           "• [stat]Sát thương gốc:[] 500 (Thẳng) + Tách 12 đạn Cluster\n" +
-                           "• [stat]Phạm vi bắn:[] " + (emperfum.range / 8) + " ô (" + emperfum.range + "px)\n" +
-                           "• [stat]Mục tiêu:[] Đất & Không\n" +
-                           "• [stat]Cơ chế bắn:[] Bắn đạn xuyên thấu, tách thành 12 đạn con khi va chạm hoặc hết thời gian bay. Cần nạp Pyratite & Chất làm lạnh.";
-            } else if(tier == 1){
-                infoText = "[cyan]== CẤU HÌNH NÂNG CẤP (MK2 - CHUYÊN ĐẤT) ==[]\n\n" +
-                           "• [stat]Máu (HP):[] 1,885 (+30%)\n" +
-                           "• [stat]Sát thương gốc:[] 500 (Gốc) + 750 (Nổ AoE)\n" +
-                           "• [stat]Phạm vi bắn:[] " + (emperfum.range / 8) + " ô (" + emperfum.range + "px)\n" +
-                           "• [stat]Mục tiêu:[] Chỉ MẶT ĐẤT\n" +
-                           "• [stat]Cơ chế bắn:[] Định vị theo con trỏ chuột, bay tới điểm chỉ định sẽ lập tức phát nổ AoE và đẻ đạn tầng 2-3-4 tự động truy đuổi.";
-            } else if(tier == 2){
-                infoText = "[purple]== CẤU HÌNH PHÒNG KHÔNG (MK2B) ==[]\n\n" +
-                           "• [stat]Máu (HP):[] 2,610 (+80%)\n" +
-                           "• [stat]Sát thương gốc:[] 1,175 (Gốc) + 1,762.5 (Nổ AoE)\n" +
-                           "• [stat]Phạm vi bắn:[] " + (emperfum.range / 8) + " ô (" + emperfum.range + "px)\n" +
-                           "• [stat]Mục tiêu:[] Chỉ TRÊN KHÔNG\n" +
-                           "• [stat]Cơ chế bắn:[] Siêu tăng cường +135% toàn bộ sát thương! Định vị bay theo con trỏ chuột và kích nổ diện rộng khắc chế hoàn toàn không quân.";
-            }
-
-            let cell = infoDialog.cont.add(infoText);
-            cell.width(360).get().setWrap(true);
-            cell.get().setAlignment(Align.left);
-            infoDialog.addCloseButton();
-            infoDialog.show();
-        })).tooltip("Thông tin thông số pháo");
-
-        // NÚT NÂNG CẤP (^)
         if(tier == 0) {
-            table.button(Icon.upOpen, Styles.cleari, packRun(() => {
+            table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
                 let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Emperfum", {});
                 
-                let reqCell = dialog.cont.label(packProv(() => {
-                    let core = this.team.core();
-                    if(core == null) return "[red]Không tìm thấy Lõi Đội![]";
-                    let inv = core.items;
-                    let c = inv.get(Items.copper), s = inv.get(Items.surgeAlloy), p = inv.get(Items.plastanium);
-                    let th = inv.get(Items.thorium), ti = inv.get(Items.titanium), si = inv.get(Items.silicon);
-                    
-                    return "[yellow]YÊU CẦU TÀI NGUYÊN NÂNG CẤP:[]\n\n" +
-                           "[cyan]Cấu Hình MK2 (Chuyên Đất - Định Vị Trỏ Chuột):[]\n" +
-                           " • Surge Alloy: " + (s >= reqMK2.surgeAlloy ? "[green]" : "[red]") + s + "[] / " + reqMK2.surgeAlloy + "\n" +
-                           " • Plastanium: " + (p >= reqMK2.plastanium ? "[green]" : "[red]") + p + "[] / " + reqMK2.plastanium + "\n" +
-                           " • Đồng: " + (c >= reqMK2.copper ? "[green]" : "[red]") + c + "[] / " + reqMK2.copper + "\n\n" +
-                           "[purple]Cấu Hình MK2B (Chuyên Không - Siêu Tăng Cường +135% Stats):[]\n" +
-                           " • Thorium: " + (th >= reqMK2B.thorium ? "[green]" : "[red]") + th + "[] / " + reqMK2B.thorium + "\n" +
-                           " • Titan: " + (ti >= reqMK2B.titanium ? "[green]" : "[red]") + ti + "[] / " + reqMK2B.titanium + "\n" +
-                           " • Silicon: " + (si >= reqMK2B.silicon ? "[green]" : "[red]") + si + "[] / " + reqMK2B.silicon;
-                }));
-                
-                reqCell.width(380).get().setWrap(true);
-                reqCell.get().setAlignment(Align.left);
-                dialog.cont.row(); dialog.cont.add().height(10).row();
+                // --- BẢNG YÊU CẦU TÀI NGUYÊN ---
+                let reqTable = new Table();
+                reqTable.background(Styles.black6);
+                reqTable.margin(10);
 
+                let reqCell = reqTable.add("").width(320).get();
+                reqCell.setWrap(true);
+                reqCell.setAlignment(Align.left);
+
+                reqTable.update(packRun(() => {
+                    let core = this.team.core();
+                    if(core == null) {
+                        reqCell.setText("[red]⚠️ KHÔNG THẤY LÕI ĐỘI![]");
+                        return;
+                    }
+                    
+                    // Lấy tài nguyên Lõi hiện có
+                    let cSurge = core.items.get(Items.surgeAlloy);
+                    let cPla = core.items.get(Items.plastanium);
+                    let cCop = core.items.get(Items.copper);
+
+                    let cTho = core.items.get(Items.thorium);
+                    let cTit = core.items.get(Items.titanium);
+                    let cSil = core.items.get(Items.silicon);
+
+                    // Đổi màu hiển thị (Xanh: Đủ / Đỏ: Thiếu)
+                    let surCol1 = cSurge >= reqMK2.surgeAlloy ? "[lime]" : "[scarlet]";
+                    let plaCol1 = cPla >= reqMK2.plastanium ? "[lime]" : "[scarlet]";
+                    let copCol1 = cCop >= reqMK2.copper ? "[lime]" : "[scarlet]";
+                    
+                    let thoCol2 = cTho >= reqMK2B.thorium ? "[lime]" : "[scarlet]";
+                    let titCol2 = cTit >= reqMK2B.titanium ? "[lime]" : "[scarlet]";
+                    let silCol2 = cSil >= reqMK2B.silicon ? "[lime]" : "[scarlet]";
+
+                    reqCell.setText(
+                        "[gold]📦 KHO TÀI NGUYÊN LÕI CẦN THIẾT:[]\n\n" +
+                        "[cyan]🔹 Nhánh MK2 (Xuyên Phá / Đánh Đất):[]\n" +
+                        " • Hợp kim Surge: " + surCol1 + cSurge + "[] / " + reqMK2.surgeAlloy + "\n" +
+                        " • Nhựa Plastanium: " + plaCol1 + cPla + "[] / " + reqMK2.plastanium + "\n" +
+                        " • Đồng (Copper): " + copCol1 + cCop + "[] / " + reqMK2.copper + "\n\n" +
+                        "[pink]🔸 Nhánh MK2B (Tầm Nhiệt / Phòng Không):[]\n" +
+                        " • Thorium: " + thoCol2 + cTho + "[] / " + reqMK2B.thorium + "\n" +
+                        " • Titan: " + titCol2 + cTit + "[] / " + reqMK2B.titanium + "\n" +
+                        " • Silicon: " + silCol2 + cSil + "[] / " + reqMK2B.silicon
+                    );
+                }));
+
+                dialog.cont.add(reqTable).width(340).padBottom(10).row();
+
+                // --- BẢNG CÁC NHÁNH NÂNG CẤP ---
                 let branchesTable = new Table();
 
-                let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
-                b1.add("[cyan]===(CẤU HÌNH MK2)===[]").row();
-                let b1D = b1.add("Mạch định vị con trỏ chuột & Nổ trong tầm bắn:\n" +
-                                 " • Bay tới vị trí con trỏ nổ ngay.\n" +
-                                 " • Tăng +200% bán kính nổ AoE.\n" +
-                                 " • Tỷ lệ đẻ đạn tầng 4 tăng lên 80%.");
-                b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
-                b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
+                // NHÁNH MK2
+                let b1 = new Table(); b1.background(Styles.black8); b1.margin(10);
+                b1.add("[cyan]⚡ [BOLD]CẤU HÌNH MK2 - GIA TỐC XUYÊN PHÁ[] ⚡").center().row();
+                b1.add().height(6).row();
+                let b1D = b1.add(
+                    "[lightgray]Tối ưu hóa rãnh nòng từ tính, gia tăng hỏa lực càn quét mặt đất:\n" +
+                    "• [white]Máu tháp pháo: [green]1,885 HP[] [lime](+30%)[]\n" +
+                    "• [white]Tầm bắn: [orange]420 pixel[]\n" +
+                    "• [white]Sát thương: [yellow]500 thô + 750 nổ diện rộng[]\n" +
+                    "• [white]Đặc tính: [gold]Xuyên qua 15 mục tiêu[], phân tách đạn chùm 2 tầng càn quét công trình/kẻ địch."
+                ).width(300).get();
+                b1D.setWrap(true); b1D.setAlignment(Align.left); b1.row();
+                b1.add().height(8).row();
+                b1.button("[cyan]KÍCH HOẠT MK2[]", packRun(() => {
                     let core = this.team.core();
-                    if(core != null && core.items.get(Items.surgeAlloy) >= reqMK2.surgeAlloy && core.items.get(Items.plastanium) >= reqMK2.plastanium && core.items.get(Items.copper) >= reqMK2.copper){
-                        core.items.remove(Items.surgeAlloy, reqMK2.surgeAlloy); core.items.remove(Items.plastanium, reqMK2.plastanium); core.items.remove(Items.copper, reqMK2.copper);
-                        Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
-                        this.configure(java.lang.Integer(1)); dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho MK2![]"); }
-                })).size(180, 38);
+                    if(core != null && 
+                       core.items.get(Items.surgeAlloy) >= reqMK2.surgeAlloy && 
+                       core.items.get(Items.plastanium) >= reqMK2.plastanium && 
+                       core.items.get(Items.copper) >= reqMK2.copper){
+                        
+                        // Trừ tài nguyên Lõi
+                        core.items.remove(Items.surgeAlloy, reqMK2.surgeAlloy); 
+                        core.items.remove(Items.plastanium, reqMK2.plastanium);
+                        core.items.remove(Items.copper, reqMK2.copper);
 
-                let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
-                b2.add("[purple]===(CẤU HÌNH MK2B)===[]").row();
-                let b2D = b2.add("Chế độ Phòng Không Cao Cấp:\n" +
-                                 " • CHỈ bắn và gây sát thương mục tiêu TRÊN KHÔNG.\n" +
-                                 " • Bay theo con trỏ chuột & nổ trong tầm bắn tối đa.\n" +
-                                 " • Tăng +135% TOÀN BỘ CHỈ SỐ sát thương!");
-                b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
-                b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
+                        Fx.upgradeCore.at(this.x, this.y); 
+                        Fx.mineHuge.at(this.x, this.y); 
+                        Effect.shake(4, 4, this.x, this.y);
+                        this.configure(java.lang.Integer(1)); 
+                        dialog.hide(); 
+                        this.deselect();
+                    } else { 
+                        Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); 
+                    }
+                })).size(200, 40).center();
+
+                // NHÁNH MK2B
+                let b2 = new Table(); b2.background(Styles.black8); b2.margin(10);
+                b2.add("[pink]🔥 [BOLD]CẤU HÌNH MK2B - XUNG KÍCH TẦM NHIỆT[] 🔥").center().row();
+                b2.add().height(6).row();
+                let b2D = b2.add(
+                    "[lightgray]Chuyển đổi sang hệ thống phòng không tầm xa chuyên dụng:\n" +
+                    "• [white]Máu tháp pháo: [green]2,610 HP[] [lime](+80%)[]\n" +
+                    "• [white]Tầm bắn: [orange]380 pixel[]\n" +
+                    "• [white]Sát thương: [red]1,175 thô + 1,762 nổ diện rộng[]\n" +
+                    "• [white]Đặc tính: [pink]Tự động bẻ lái khóa mục tiêu bay[], đạn nổ tỏa ra 40 mảnh đạn truy đuổi phụ."
+                ).width(300).get();
+                b2D.setWrap(true); b2D.setAlignment(Align.left); b2.row();
+                b2.add().height(8).row();
+                b2.button("[pink]KÍCH HOẠT MK2B[]", packRun(() => {
                     let core = this.team.core();
-                    if(core != null && core.items.get(Items.thorium) >= reqMK2B.thorium && core.items.get(Items.titanium) >= reqMK2B.titanium && core.items.get(Items.silicon) >= reqMK2B.silicon){
-                        core.items.remove(Items.thorium, reqMK2B.thorium); core.items.remove(Items.titanium, reqMK2B.titanium); core.items.remove(Items.silicon, reqMK2B.silicon);
-                        Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
-                        this.configure(java.lang.Integer(2)); dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho MK2B![]"); }
-                })).size(180, 38);
+                    if(core != null && 
+                       core.items.get(Items.thorium) >= reqMK2B.thorium && 
+                       core.items.get(Items.titanium) >= reqMK2B.titanium && 
+                       core.items.get(Items.silicon) >= reqMK2B.silicon){
+                        
+                        // Trừ tài nguyên Lõi
+                        core.items.remove(Items.thorium, reqMK2B.thorium); 
+                        core.items.remove(Items.titanium, reqMK2B.titanium); 
+                        core.items.remove(Items.silicon, reqMK2B.silicon);
 
-                branchesTable.add(b1).width(340); branchesTable.row();
-                branchesTable.add().height(12).row();
-                branchesTable.add(b2).width(340);
+                        Fx.bigShockwave.at(this.x, this.y); 
+                        Fx.mineHuge.at(this.x, this.y); 
+                        Effect.shake(4, 4, this.x, this.y);
+                        this.configure(java.lang.Integer(2)); 
+                        dialog.hide(); 
+                        this.deselect();
+                    } else { 
+                        Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]"); 
+                    }
+                })).size(200, 40).center();
+
+                branchesTable.add(b1).width(320).padBottom(10).row();
+                branchesTable.add(b2).width(320).row();
 
                 let scroll = new ScrollPane(branchesTable);
                 scroll.setScrollingDisabled(true, false);
-                dialog.cont.add(scroll).maxHeight(400);
-                dialog.addCloseButton(); dialog.show();
-            })).tooltip("Nâng cấp tháp pháo Emperfum");
+                dialog.cont.add(scroll).width(340).maxHeight(320);
+                dialog.addCloseButton(); 
+                dialog.show();
+            })).size(50, 40).tooltip("Nâng cấp hệ thống Emperfum");
         } else {
-            table.button(Icon.lock, Styles.cleari, packRun(() => {
-                Vars.ui.showInfo("[scarlet]HỆ THỐNG EMPERFUM ĐÃ ĐẠT CẤP ĐỘ TỐI ĐA![]");
-            })).tooltip("Đã đạt cấp tối đa");
+            table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
+                Vars.ui.showInfo("[scarlet]HỆ THỐNG EMPERFUM ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]");
+            })).size(50, 40).tooltip("Đã đạt cấp tối đa");
         }
+
+        // --- NÚT XEM BẢNG THÔNG TIN MÔ TẢ PHÁO ---
+        table.button(Icon.info, Styles.cleari, 40, packRun(() => {
+            let title = " Thông số pháo Emperfum: ";
+            let descStr = "";
+            let currentTier = this.getTier();
+
+            if (currentTier == 0) {
+                title += "[yellow](MK1)[]";
+                descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1 - CƠ BẢN) ⚡[]\n\n" +
+                          "• [lightgray]Máu pháo:[] [green]1,450 HP[]\n" +
+                          "• [lightgray]Tầm bắn:[] [orange]380 pixel[]\n" +
+                          "• [lightgray]Mục tiêu:[] Đất & Khai hỏa Pyro\n" +
+                          "• [lightgray]Sát thương:[] [yellow]500 thô[] + đạn chùm phân tách\n" +
+                          "• [lightgray]Khả năng xuyên:[] [white]15 mục tiêu[]\n\n" +
+                          "[sky]💡 Mô tả: Pháo càn quét diện rộng giai đoạn đầu. Bắn đạn chính tích tụ vòng năng lượng oval, khi chạm mục tiêu sẽ giải phóng 12 đạn con bộc phá.[]";
+            } 
+            else if (currentTier == 1) {
+                title += "[cyan](MK2)[]";
+                descStr = "[cyan]⚡ THÔNG SỐ CẤU HÌNH (MK2 - XUYÊN PHÁ) ⚡[]\n\n" +
+                          "• [lightgray]Máu pháo:[] [green]1,885 HP [lime](+30%)[]\n" +
+                          "• [lightgray]Tầm bắn:[] [orange]420 pixel[]\n" +
+                          "• [lightgray]Mục tiêu:[] Chuyên Đánh Đất\n" +
+                          "• [lightgray]Sát thương:[] [yellow]500 thô + 750 nổ diện rộng[]\n" +
+                          "• [lightgray]Khả năng xuyên:[] [yellow]15 mục tiêu[]\n\n" +
+                          "[lime]💡 Mô tả: Tăng cường kết cấu nòng từ tính xanh lam. Đạn chính bay nhanh hơn, xuyên qua toàn bộ đội hình địch và kích hoạt chuỗi nổ bộc phá liên hoàn.[]";
+            } 
+            else if (currentTier == 2) {
+                title += "[pink](MK2B)[]";
+                descStr = "[pink]⚡ THÔNG SỐ CẤU HÌNH (MK2B - TRUY ĐUỔI TẦM NHIỆT) ⚡[]\n\n" +
+                          "• [lightgray]Máu pháo:[] [green]2,610 HP [lime](+80%)[]\n" +
+                          "• [lightgray]Tầm bắn:[] [orange]380 pixel[]\n" +
+                          "• [lightgray]Mục tiêu:[] Chuyên Phòng Không (Bay)\n" +
+                          "• [lightgray]Sát thương:[] [red]1,175 thô + 1,762 nổ diện rộng[]\n" +
+                          "• [lightgray]Khả năng bẻ lái:[] [pink]Truy đuổi tầm nhiệt 200px[]\n\n" +
+                          "[purple]🔥 Mô tả: Chuyển đổi toàn bộ mạch năng lượng sang sắc hồng xung kích. Tự động bẻ lái đuổi theo các đơn vị không quân địch, phát nổ thành hàng chục mảnh đạn truy đuổi phụ.[]";
+            }
+
+            let dialog = extend(BaseDialog, title, {});
+            let infoTable = new Table();
+            infoTable.background(Styles.black6);
+            infoTable.margin(12);
+
+            let cell = infoTable.add(descStr).width(320);
+            cell.get().setWrap(true); 
+            cell.get().setAlignment(Align.left);
+
+            let scroll = new ScrollPane(infoTable);
+            scroll.setScrollingDisabled(true, false);
+            dialog.cont.add(scroll).width(340).maxHeight(360);
+            dialog.addCloseButton(); 
+            dialog.show();
+        })).size(50, 40).tooltip("Xem thông số chi tiết hệ thống");
     },
 
     config() { return java.lang.Integer(this.getTier()); },

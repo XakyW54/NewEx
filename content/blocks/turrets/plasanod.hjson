@@ -1,0 +1,33 @@
+name: plasanod
+description: "Pháo Plasanod: Tháp pháo điện từ phân cực siêu cấp (phát triển dựa trên cơ chế Parallax). Sử dụng 100% năng lượng điện để tạo ra chùm laser từ trường công suất cao, khóa chặt, kéo chìm mục tiêu và liên tục giật điện/thiêu đốt đối phương."
+health: 4200
+size: 3
+range: 280
+force: 18
+scaledForce: 24
+damage: 35
+laserWidth: 1.5
+targetAir: true
+targetGround: true
+
+# Chỉ sử dụng điện năng, không cần cấp đạn
+hasPower: true
+consumes: {
+  power: 15.0
+}
+
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+}
+
+researchCostMultiplier: 0.2
+requirements: [
+  copper/1200
+  lead/1000
+  silicon/800
+  plastanium/400
+  surge-alloy/150
+]
+category: turret
+research: blaw

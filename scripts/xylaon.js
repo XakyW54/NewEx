@@ -184,13 +184,12 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
 
                 let branchesTable = new Table();
 
-                // Nhánh 1: MK2
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                 b1.add("[cyan]===(MK2)===[]").row();
-                let b1D = b1.add("Mô-đun tối ưu hóa hệ thống sả nhiệt bán dẫn:\n" +
-                                 " [white]• Rút ngắn thời gian khóa làm mát xuống [green]3.0 giây[] (Giảm -25%).[]\n" +
-                                 " [white]• Tốc độ xả đạn gia tăng tối đa [yellow]+450%[] dựa theo nhiệt tích lũy.[]\n" +
-                                 " [white]• Tăng [green]+30% Máu[] và tăng [green]+29.5% Tầm bắn[].");
+                let b1D = b1.add("[white]• Máu cấu trúc: [green]+30%[] (2,080 HP)\n" +
+                                 "• Tầm bắn: [green]+29.5%[] (544 px)\n" +
+                                 "• sát thương gốc: [green]+30%[] (26 DMG/viên)\n\n" +
+                                 "[lightgray]Kỹ năng đặc biệt: Tản Nhiệt Bán Dẫn Gia Tốc — Tốc độ xả đạn gia tăng tối đa +450% theo nhiệt tích lũy, đồng thời giảm thời gian khóa xả nhiệt xuống chỉ còn 3.0 giây.[]");
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                 b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
                     let core = this.team.core();
@@ -201,13 +200,12 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                     } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                 })).size(180, 38);
 
-                // Nhánh 2: MK2B
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                 b2.add("[purple]===(MK2B)===[]").row();
-                let b2D = b2.add("Cấu hình mạch xung kích bùng nổ chu kỳ ngắn:\n" +
-                                 " [white]• Thời gian khóa làm mát tự động giảm siêu tốc xuống còn [green]1.5 giây[] (Giảm -62.5%).[]\n" +
-                                 " [white]• Tốc độ xả đạn tăng trưởng chạm mốc điên rồ [red]+999%[].[]\n" +
-                                 " [white]• Tăng [green]+56.25% Máu[] nhưng giảm [red]-30% Tầm bắn[] để tập trung hỏa lực tầm gần.");
+                let b2D = b2.add("[white]• Máu cấu trúc: [green]+56.25%[] (2,500 HP)\n" +
+                                 "• Tầm bắn: [red]-30%[] (294 px)\n" +
+                                 "• sát thương gốc: [red]-35%[] (13 DMG/viên)\n\n" +
+                                 "[lightgray]Kỹ năng đặc biệt: Siêu Xung Bùng Nổ Chu Kỳ Tốc Độ — Tốc độ bắn gia tốc chạm mốc bùng nổ +999%, tự động kích hoạt xả nhiệt cực nhanh chỉ trong 1.5 giây để duy trì mật độ hỏa lực tầm gần liên tục.[]");
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
                 b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                     let core = this.team.core();
@@ -233,7 +231,6 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
             })).size(50, 40).tooltip("Đã đạt cấp tối đa");
         }
 
-        // --- NÚT THÔNG TIN ---
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
             let title = "📊 THÔNG SỐ PHÁO XYLAON: ";
             let descStr = "";
@@ -245,6 +242,7 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                           "[lightgray]Máu tháp pháo:[] [green]1,600[]\n" +
                           "[gray]📐 Kích thước khối:[] [white]4x4[]\n" +
                           "Tầm bắn hiệu dụng:[] [orange]420 pixel[]\n" +
+                          "[lightgray]sát thương gốc:[] [white]20.00 DMG/viên[]\n" +
                           "[lightning] Tốc độ bắn cơ bản:[] [white]30.00 hỏa lực[]\n\n" +
                           "[sky]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
                           "• [lightgray]Quá nhiệt (Overheat):[] Mỗi phát bắn tích lũy [red]1%[] nhiệt lượng. Khi đạt ngưỡng [red]540 điểm[] nhiệt, lõi sẽ rơi vào trạng thái quá tải bảo vệ.\n" +
@@ -257,6 +255,7 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                           "[lightgray]Máu tháp pháo:[] [green]2,080 [lime](+30%)[]\n" +
                           "[gray]📐 Kích thước khối:[] [white]4x4[]\n" +
                           "Tầm bắn hiệu dụng:[] [orange]544 pixel [lime](+29.5%)[]\n" +
+                          "[lightgray]sát thương gốc:[] [white]26.00 DMG/viên [lime](+30%)[]\n" +
                           "[lightning] Tốc độ bắn gia tốc:[] [yellow]Tối đa +450%[]\n\n" +
                           "[lime]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
                           "• [lightgray]Quá nhiệt nâng cao:[] Giới hạn chịu nhiệt tối đa đạt [red]480 điểm[] (Mỗi phát tích 1%).\n" +
@@ -269,6 +268,7 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                           "[lightgray]Máu tháp pháo:[] [green]2,500 [lime](+56.25%)[]\n" +
                           "[gray]📐 Kích thước khối:[] [white]4x4[]\n" +
                           "Tầm bắn hiệu dụng:[] [red]294 pixel (-30%)[]\n" +
+                          "[lightgray]sát thương gốc:[] [white]13.00 DMG/viên [red](-35%)[]\n" +
                           "[lightning] Tốc độ bắn bùng nổ:[] [pink]Tối đa +999%[]\n\n" +
                           "[purple]🔥 CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
                           "• [lightgray]Chu kỳ siêu ngắn:[] Giới hạn chịu nhiệt [red]480 điểm[], xả đạn bùng nổ chạm ngưỡng kinh hoàng [red]+999%[] tốc độ bắn.\n" +

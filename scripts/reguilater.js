@@ -116,7 +116,7 @@ function makeReguBuild() {
 
             if (tier == 1) {
                 table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-                    let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Reguilater", {});
+                    let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo", {});
                     
                     let reqCell = dialog.cont.label(packProv(() => {
                         let core = this.team.core();
@@ -133,10 +133,10 @@ function makeReguBuild() {
                         let tiColor = tiAmt >= reguReqMK3.titanium ? "[green]" : "[red]";
 
                         return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
-                               "[cyan]Nhánh MK2:[]\n" +
+                               "[cyan]Nhánh Cấu Hình MK2[]\n" +
                                " • Đồng: " + coColor + coAmt + "[] / " + reguReqMK2.copper + "\n" +
                                " • Silicon: " + siColor + siAmt + "[] / " + reguReqMK2.silicon + "\n" +
-                               "[purple]Nhánh MK2b:[]\n" +
+                               "[purple]Nhánh Biến Thể MK2B[]\n" +
                                " • Thori: " + thColor + thAmt + "[] / " + reguReqMK3.thorium + "\n" +
                                " • Titan: " + tiColor + tiAmt + "[] / " + reguReqMK3.titanium;
                     }));
@@ -147,13 +147,12 @@ function makeReguBuild() {
 
                     let branchesTable = new Table();
 
-                    // Nhánh 1: MK2
                     let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                     b1.add("[cyan]===(MK2)===[]").row();
-                    let b1D = b1.add("Mô-đun nén áp suất kép kỹ thuật cao:\n" +
-                                     " [white]• Tầm bắn đột phá tăng mạnh tối đa [green]420 pixel[] (Tăng +50%).[]\n" +
-                                     " [white]• Sát thương cơ bản gia tăng vượt bậc chạm ngưỡng [green]300 hỏa lực[].[]\n" +
-                                     " [white]• Mở khóa cơ chế bắn bồi [orange]Burst-Shot[] siêu tốc và bạo kích Crit gấp đôi sát thương.[]");
+                    let b1D = b1.add("[white]• Tầm bắn: [green]+50%[]\n" +
+                                     "• sát thương gốc: [green]+150%[]\n" +
+                                     "• Tốc độ ngắm: [green]+60%[]\n\n" +
+                                     "[lightgray]Kỹ năng đặc biệt: Nén Áp Suất Kép — Mở khóa cơ chế bắn bồi Burst-Shot siêu tốc và bộc phát đòn bạo kích Crit gây gấp đôi sát thương.[]");
                     b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                     b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
                         let core = this.team.core();
@@ -167,15 +166,14 @@ function makeReguBuild() {
                         }
                     })).size(180, 38);
 
-                    // Nhánh 2: MK2b
                     let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
-                    b2.add("[purple]===(MK2b)===[]").row();
-                    let b2D = b2.add("Xung lực hủy diệt hạt nhân tối thượng:\n" +
-                                     " [white]• Duy trì lớp giáp thành trì siêu kiên cố vững chãi [green]250,000 HP[].[]\n" +
-                                     " [white]• Sát thương lõi xung kích đạt ngưỡng hủy diệt kinh hoàng [red]720 hỏa lực[].[]\n" +
-                                     " [white]• Kích hoạt [red]Mạch Bão Hòa Hủy Diệt[]: Tự động phân tách chuỗi liên laser phụ thiêu rụi mục tiêu lân cận.[]");
+                    b2.add("[purple]===(MK2B)===[]").row();
+                    let b2D = b2.add("[white]• Máu cấu trúc: [green]250,000 HP[]\n" +
+                                     "• Tầm bắn: [red]-30%[]\n" +
+                                     "• sát thương gốc: [green]+500%[]\n\n" +
+                                     "[lightgray]Kỹ năng đặc biệt: Mạch Bão Hòa Hủy Diệt — Tự động phân tách chuỗi liên laser phụ (tối đa 6 tia) thiêu rụi mục tiêu lân cận khi đánh trúng kẻ địch.[]");
                     b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
-                    b2.button("[orange]KÍCH HOẠT MK2b[]", packRun(() => {
+                    b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                         let core = this.team.core();
                         if (core && core.items.get(Items.thorium) >= reguReqMK3.thorium && core.items.get(Items.titanium) >= reguReqMK3.titanium) {
                             core.items.remove(Items.thorium, reguReqMK3.thorium);
@@ -184,7 +182,7 @@ function makeReguBuild() {
                             this.health = 250000;   
                             Fx.bigShockwave.at(this.x, this.y); dialog.hide(); this.deselect();
                         } else {
-                            Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2b![]");
+                            Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]");
                         }
                     })).size(180, 38);
 
@@ -196,15 +194,15 @@ function makeReguBuild() {
                     scroll.setScrollingDisabled(true, false);
                     dialog.cont.add(scroll).maxHeight(400);
                     dialog.addCloseButton(); dialog.show();
-                })).size(50, 40).tooltip("Nâng cấp cấu trúc Reguilater");
+                })).size(50, 40).tooltip("Nâng cấp tháp pháo lên");
             } else {
                 table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
-                    Vars.ui.showInfo("[scarlet]HỆ THỐNG REGUILATER ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]");
-                })).size(50, 40).tooltip("Đã đạt cấp tối đa");
+                    Vars.ui.showInfo("[scarlet]Nâng cấp tháp pháo đã đạt giới hạn![]");
+                })).size(50, 40).tooltip("Nâng cấp tháp pháo");
             }
 
             table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-                let title = " Thông số pháo Reguilater: ";
+                let title = " Thông số pháo \"Reguilater\": ";
                 let descStr = "";
                 let currentTier = this.getTier();
 
@@ -212,37 +210,37 @@ function makeReguBuild() {
                     title += "[yellow](MK1)[]";
                     descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
                               "[lightgray]Máu cấu trúc:[] [green]250,000[]\n" +
-                              "Tầm bắn hiệu dụng:[] [orange]280 pixel[] (35 Ô)\n" +
-                              "Sát thương cơ bản:[] [yellow]120 hỏa lực[] / phát bắn\n" +
-                              "Năng lượng yêu cầu:[] [gainsboro]12.00 đơn vị/giây[]\n\n" +
-                              "[sky]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
-                              "• [lightgray]Điện từ đơn tầng:[] Tập trung năng lượng khóa và bắn mục tiêu hỗn hợp Không & Đất.\n" +
-                              "• [lightgray]Gia tốc nòng:[] Tốc độ xoay nòng tăng tiến liên tục theo thời gian bám đuổi mục tiêu.\n" +
-                              "• [lightgray]Xung kích duy trì:[] Sát thương tăng tiến tuyến tính, đạt tối đa [green]+100%[] khi duy trì xả súng liên tục.";
+                              "[lightgray]Tầm bắn hiệu dụng:[] [orange]280 pixel[] (35 Ô)\n" +
+                              "[lightgray]sát thương gốc:[] [yellow]120 DMG / phát bắn[]\n" +
+                              "[lightgray]Năng lượng yêu cầu:[] [gainsboro]12.00 đơn vị/giây[]\n\n" +
+                              "[sky]⚡ CƠ CHẾ KỸ NĂNG ĐẶC BIỆT:[]\n" +
+                              "• Tập trung năng lượng khóa và bắn mục tiêu hỗn hợp Không & Đất.\n" +
+                              "• Tốc độ xoay nòng tăng tiến liên tục theo thời gian bám đuổi mục tiêu.\n" +
+                              "• Sát thương tăng tiến tuyến tính, đạt tối đa +100% khi duy trì xả súng liên tục.";
                 } 
                 else if (currentTier == 2) {
-                    title += "[cyan](MK2)[]";
-                    descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
+                    title += "[cyan]THÔNG SỐ NÂNG CẤP MK2[]";
+                    descStr = "[cyan]⚡ THÔNG SỐ NÂNG CẤP MK2 ⚡[]\n" +
                               "[lightgray]Máu cấu trúc:[] [green]250,000[]\n" +
-                              "Tầm bắn hiệu dụng:[] [orange]420 pixel [lime](+50%)[]\n" +
-                              "Sát thương cơ bản:[] [yellow]300 hỏa lực [lime](+150%)[]\n" +
-                              "Năng lượng yêu cầu:[] [gainsboro]12.00 đơn vị/giây[]\n\n" +
-                              "[lime]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
-                              "• [lightgray]Nén áp suất kép:[] Gia tốc mật độ hạt trường điện từ, mở rộng cự ly bắn cực đại.\n" +
-                              "• [lightgray]Cơ chế Burst-Shot:[] Kích hoạt tỷ lệ bắn bồi siêu tốc (giảm khóa mục tiêu xuống 2 tick).\n" +
-                              "• [lightgray]Bạo kích (Crit):[] Tích tụ hạt chuyển màu cam rực, mở khóa tỷ lệ bộc phát chí mạng gây gấp đôi sát thương lên mục tiêu.";
+                              "[lightgray]Tầm bắn hiệu dụng:[] [orange]420 pixel (+50%)[]\n" +
+                              "[lightgray]sát thương gốc:[] [yellow]300 DMG / phát bắn (+150%)[]\n" +
+                              "[lightgray]Năng lượng yêu cầu:[] [gainsboro]12.00 đơn vị/giây[]\n\n" +
+                              "[lime]⚡ CƠ CHẾ KỸ NĂNG ĐẶC BIỆT:[]\n" +
+                              "• Nén áp suất mật độ hạt trường điện từ giúp mở rộng cự ly bắn cực đại.\n" +
+                              "• Kích hoạt tỷ lệ bắn bồi Burst-Shot siêu tốc.\n" +
+                              "• Tự động tích tụ hạt chuyển màu cam, mở khóa tỷ lệ đòn bạo kích Crit gây gấp đôi sát thương.";
                 } 
                 else if (currentTier == 3) {
-                    title += "[purple](MK2b)[]";
-                    descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2b) ⚡[]\n" +
-                              "[lightgray]Máu cấu trúc:[] [green]250,000 [lime](Siêu Thành Trì)[]\n" +
-                              "Tầm bắn hiệu dụng:[] [red]280 pixel (-30%)[] để tập trung hỏa lực tầm gần\n" +
-                              "Sát thương cơ bản:[] [pink]720 hỏa lực [red](Hủy Diệt)[]\n" +
-                              "Năng lượng yêu cầu:[] [gainsboro]12.00 đơn vị/giây[]\n\n" +
-                              "[purple]🔥 CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
-                              "• [lightgray]Hạt nhân mật độ cao:[] Đồng trục nòng pháo tích tụ quả cầu năng lượng màu đỏ tối thượng.\n" +
-                              "• [lightgray]Bão hòa hủy diệt:[] Khi bắn trúng kẻ địch chính, tự động phân tách phóng chuỗi liên laser phụ (tối đa 6 tia) thiêu rụi mục tiêu lân cận.\n" +
-                              "• [lightgray]Hỏa lực bão hòa:[] Hủy diệt diện rộng nhưng hy sinh cự ly bắn để đổi lấy mật độ phá hủy tối đa.";
+                    title += "[purple]THÔNG SỐ NÂNG CẤP MK2B[]";
+                    descStr = "[purple]⚡ THÔNG SỐ NÂNG CẤP MK2B ⚡[]\n" +
+                              "[lightgray]Máu cấu trúc:[] [green]250,000[]\n" +
+                              "[lightgray]Tầm bắn hiệu dụng:[] [red]280 pixel (-30%)[]\n" +
+                              "[lightgray]sát thương gốc:[] [pink]720 DMG / phát bắn (+500%)[]\n" +
+                              "[lightgray]Năng lượng yêu cầu:[] [gainsboro]12.00 đơn vị/giây[]\n\n" +
+                              "[purple]🔥 CƠ CHẾ KỸ NĂNG ĐẶC BIỆT:[]\n" +
+                              "• Tích tụ quả cầu hạt nhân năng lượng tối thượng tại đồng trục nòng pháo.\n" +
+                              "• Khi bắn trúng kẻ địch chính, tự động phân tách chuỗi liên laser phụ (tối đa 6 tia) thiêu rụi các mục tiêu lân cận.\n" +
+                              "• Hy sinh cự ly bắn để tập trung mật độ phá hủy tối đa ở tầm gần.";
                 }
 
                 let dialog = extend(BaseDialog, title, {});
@@ -253,7 +251,7 @@ function makeReguBuild() {
                 scroll.setScrollingDisabled(true, false);
                 dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); dialog.show();
-            })).size(50, 40).tooltip("Xem thông số chi tiết hệ thống");
+            })).size(50, 40).tooltip("Trung tâm nâng cấp pháo");
         },
 
         range() {
@@ -320,7 +318,7 @@ function makeReguBuild() {
                             }
 
                             let dmgMultiplier = 1.0 + (this.continuousShotCount / this.maxContinuousBonus);
-                            let baseDmg = 120 * dmgMultiplier; 
+                            let baseDmg = (tier == 3 ? 720 : (tier == 2 ? 300 : 120)) * dmgMultiplier; 
 
                             let chance = Mathf.random(100);
 

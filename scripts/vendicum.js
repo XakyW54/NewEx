@@ -204,11 +204,10 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
 
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                 b1.add("[cyan]===(MK2 - XUYÊN PHÁ)===[]").row();
-                let b1D = b1.add("Cải tiến kết cấu rãnh nòng gia tốc từ tính:\n" +
-                                 " [white]• Sát thương tăng mạnh lên [green]65 đơn vị[] và mở rộng tầm bắn [green]420 pixel[].[]\n" +
-                                 " [white]• Đạn bắn xuyên qua tối đa [yellow]5 mục tiêu[] kẻ địch hoặc công trình.[]\n" +
-                                 " [white]• Tối ưu hóa mạch sạc, thời gian hồi đầy năng lượng rút xuống còn [pink]3.0 giây[].[]\n" +
-                                 " [white]• Nâng cấp kết cấu bền vững, tăng [green]+50% Máu[] tháp pháo.[]");
+                let b1D = b1.add("[white]• Máu cấu trúc: [green]+50%[] (1,800 HP)\n" +
+                                 "• Tầm bắn: [green]+31.25%[] (420 px)\n" +
+                                 "• sát thương gốc: [green]+44.4%[] (65 DMG)\n\n" +
+                                 "[lightgray]Kỹ năng đặc biệt: Gia Tốc Từ Tính Xuyên Thấu — Đạn mở rộng khả năng xuyên qua tối đa 5 mục tiêu kẻ địch hoặc công trình, tích hợp mạch siêu sạc giúp rút ngắn thời gian hồi đầy năng lượng xuống 3.0 giây.[]");
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                 b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
                     let core = this.team.core();
@@ -222,11 +221,10 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
 
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                 b2.add("[purple]===(MK2B - TRUY ĐUỔI)===[]").row();
-                let b2D = b2.add("Chuyển đổi sang cấu hình xung kích tầm nhiệt:\n" +
-                                 " [white]• Tích hợp chip cảm biến thông minh [orange]tự động bẻ lái truy đuổi[] kẻ địch xung quanh.[]\n" +
-                                 " [white]• Tăng sát thương thô lên [red]122.5[] và tăng nhẹ tầm bắn lên [green]360 pixel[].[]\n" +
-                                 " [white]• Tiêu hao năng lượng cực thấp ([green]-70% mỗi phát bắn[]), giữ mức buff hỏa lực siêu ổn định.[]\n" +
-                                 " [white]• Loại bỏ hoàn toàn khả năng xuyên thấu mục tiêu.[]");
+                let b2D = b2.add("[white]• Máu cấu trúc: [green]+33.3%[] (1,600 HP)\n" +
+                                 "• Tầm bắn: [green]+12.5%[] (360 px)\n" +
+                                 "• sát thương gốc: [green]+172.2%[] (122.5 DMG)\n\n" +
+                                 "[lightgray]Kỹ năng đặc biệt: Xung Kích Tầm Nhiệt Truy Đuổi — Loại bỏ xuyên thấu để tích hợp chip cảm biến thông minh tự động bẻ lái truy đuổi mục tiêu xung quanh, tiết kiệm 70% năng lượng mỗi phát bắn.[]");
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
                 b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                     let core = this.team.core();
@@ -263,7 +261,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                 descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
                           "[lightgray]Máu tháp pháo:[] [green]1,200[]\n" +
                           "[lightgray]Tầm bắn hiệu dụng:[] [orange]320 pixel[]\n" +
-                          "[lightgray]Sát thương cơ bản:[] [yellow]45.00[]\n" +
+                          "[lightgray]sát thương gốc:[] [yellow]45.00 DMG[]\n" +
                           "[lightgray]Khả năng xuyên thấu:[] [white]3 mục tiêu[]\n\n" +
                           "[sky]⚡ CƠ CHẾ NĂNG LƯỢNG TIÊU HAO:[]\n" +
                           "• [lightgray]Tiêu hao (Energy Loss):[] Mỗi phát bắn làm tiêu trừ [red]1.0%[] năng lượng tích lũy của lõi. Sát thương đầu ra tỷ lệ thuận với lượng điện tích hiện có.\n" +
@@ -274,7 +272,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                 descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
                           "[lightgray]Máu tháp pháo:[] [green]1,800 [lime](+50%)[]\n" +
                           "[lightgray]Tầm bắn hiệu dụng:[] [orange]420 pixel [lime](+31.2%)[]\n" +
-                          "[lightgray]Sát thương cơ bản:[] [yellow]65.00 [lime](+44.4%)[]\n" +
+                          "[lightgray]sát thương gốc:[] [yellow]65.00 DMG [lime](+44.4%)[]\n" +
                           "[lightgray]Khả năng xuyên thấu:[] [yellow]5 mục tiêu [lime](+2 mục tiêu)[]\n\n" +
                           "[lime]⚡ CƠ CHẾ NĂNG LƯỢNG TIÊU HAO:[]\n" +
                           "• [lightgray]Tối ưu tiêu hao:[] Giảm thiểu mức tiêu hao năng lượng xuống chỉ còn [red]0.5%[] cho mỗi phát bắn (Giảm -50%).\n" +
@@ -285,7 +283,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                 descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
                           "[lightgray]Máu tháp pháo:[] [green]1,600 [lime](+33.3%)[]\n" +
                           "[lightgray]Tầm bắn hiệu dụng:[] [orange]360 pixel [lime](+12.5%)[]\n" +
-                          "[lightgray]Sát thương cơ bản:[] [red]122.50 (+173%)[]\n" +
+                          "[lightgray]sát thương gốc:[] [red]122.50 DMG (+172.2%)[]\n" +
                           "[lightgray]Khả năng xuyên thấu:[] [red]Không (Mất khả năng xuyên)[]\n\n" +
                           "[purple]🔥 CƠ CHẾ NĂNG LƯỢNG TIÊU HAO:[]\n" +
                           "• [lightgray]Mạch định vị:[] Đổi khả năng xuyên lấy cảm biến tích hợp, đạn [pink]tự động bẻ lái tìm mục tiêu[] trong phạm vi 200 pixel.\n" +

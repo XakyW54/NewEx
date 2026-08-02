@@ -1,5 +1,3 @@
-/*BLAW TURRET SYSTEM - OPTIMIZED ENGINE WITH FAST CIRCLE HIT EFFECT*/
-
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
@@ -7,21 +5,16 @@ const packProv = (func) => new Prov({ get: func });
 const reqBlawMK2 = { copper: 4000, lead: 4000, titanium: 0 };
 const reqBlawMK2B = { copper: 4000, lead: 4000, titanium: 2000 };
 
-// --- HIỆU ỨNG VÒNG TRÒN SÓNG XUNG KÍCH (ĐÃ GIẢM KÍCH THƯỚC & TĂNG TỐC ĐỘ BIẾN MẤT) ---
 const nhCircleHitEffect = new Effect(40, cons(e => {
-    // Lấy màu sắc trực tiếp theo màu hiệu ứng đạn
     Draw.color(e.color);
 
-    // 1. Vòng tròn mờ (Bán kính nở ra tối đa 35)
     let smoothRadius = 35 * Interp.pow2Out.apply(e.fin());
     Draw.alpha(0.35 * e.fout());
     Fill.circle(e.x, e.y, smoothRadius);
 
-    // 2. Vòng sóng lớn (Bán kính 40, dày 2.5px)
     Lines.stroke(2.5 * e.fout());
     Lines.circle(e.x, e.y, 40 * Interp.pow2Out.apply(e.fin()));
 
-    // 3. Vòng sóng nhỏ (Bán kính 20, dày 1.5px)
     Lines.stroke(1.5 * e.fout());
     Lines.circle(e.x, e.y, 20 * Interp.pow2Out.apply(e.fin()));
 
@@ -38,7 +31,6 @@ var mirrorSparks = extend(RadialEffect, {
     rotationSpacing: 180, amount: 2, effect: doubleSparks,
 });
 
-// --- CÁC LOẠI ĐẠN ĐÃ ĐƯỢC GÁN nhCircleHitEffect ---
 const blawBlueMK1 = extend(BasicBulletType, {
     speed: 2.5, damage: 20, width: 9, height: 22, lifetime: 60,
     sprite: "newex-diamond-shard", 
@@ -139,7 +131,7 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
 
         if(tier == 0) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-                let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Blaw", {});
+                let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo", {});
                 let reqCell = dialog.cont.label(packProv(() => {
                     let core = this.team.core();
                     if(core == null) return "[red]Không tìm thấy Lõi Đội![]";
@@ -154,8 +146,8 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
                     let titColor2 = currentTitanium >= reqBlawMK2B.titanium ? "[green]" : "[red]";
                     
                     return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
-                           "[cyan]Nhánh MK2:[]\n • Đồng: " + copColor1 + currentCopper + "[] / " + reqBlawMK2.copper + "\n • Chì: " + leaColor1 + currentLead + "[] / " + reqBlawMK2.lead + "\n" +
-                           "[purple]Nhánh MK2B:[]\n • Đồng: " + copColor2 + currentCopper + "[] / " + reqBlawMK2B.copper + "\n • Chì: " + leaColor2 + currentLead + "[] / " + reqBlawMK2B.lead + "\n • Titan: " + titColor2 + currentTitanium + "[] / " + reqBlawMK2B.titanium;
+                           "[cyan]Nhánh Cấu Hình MK2[]\n • Đồng: " + copColor1 + currentCopper + "[] / " + reqBlawMK2.copper + "\n • Chì: " + leaColor1 + currentLead + "[] / " + reqBlawMK2.lead + "\n" +
+                           "[purple]Nhánh Biến Thể MK2B[]\n • Đồng: " + copColor2 + currentCopper + "[] / " + reqBlawMK2B.copper + "\n • Chì: " + leaColor2 + currentLead + "[] / " + reqBlawMK2B.lead + "\n • Titan: " + titColor2 + currentTitanium + "[] / " + reqBlawMK2B.titanium;
                 }));
                 
                 reqCell.width(360).get().setWrap(true);
@@ -166,7 +158,10 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
 
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                 b1.add("[cyan]===(MK2)===[]").row();
-                let b1D = b1.add("Cải tiến Băng Hỏa tầm xa:\n [white]• Tầm bắn +50% (390 px).[]\n [white]• Tốc độ nòng +20%.[]\n [white]• [sky]Băng MK2:[] Xuyên 3 mục tiêu.[]\n [white]• [scarlet]Hỏa MK2:[] Nổ lan 120 DMG.[]");
+                let b1D = b1.add("[white]• Tầm bắn: [green]+50%[]\n" +
+                                 "• Sát thương nổ nòng Hỏa: [green]+50%[]\n" +
+                                 "• Tốc độ nạp đạn: [green]+20%[]\n\n" +
+                                 "[lightgray]Kỹ năng đặc biệt: Cải Tiến Băng Hỏa — Nòng Băng đóng băng và xuyên 3 mục tiêu, nòng Hỏa gây nổ lan 120 DMG. Tăng mạnh khả năng khuếch đại sát thương theo HP đối thủ.[]");
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                 b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
                     let core = this.team.core();
@@ -179,7 +174,10 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
 
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                 b2.add("[purple]===(MK2B)===[]").row();
-                let b2D = b2.add("Cấu trúc phòng thủ cận chiến hạng nặng:\n [white]• Máu tăng 4,500 HP (+150%).[]\n [white]• Tầm bắn bóp giảm (182 px).[]\n [white]• Bắn chùm [yellow]20 viên đạn hỗn hợp[].[]");
+                let b2D = b2.add("[white]• Máu cấu trúc: [green]+150%[] (4,500 HP)\n" +
+                                 "• Tầm bắn: [red]-30%[]\n" +
+                                 "• sát thương gốc: [green]+1000%[] / viên\n\n" +
+                                 "[lightgray]Kỹ năng đặc biệt: Cận Chiến Shotgun — Bắn tỏa chùm 20 viên đạn hỗn hợp Băng Hỏa cực đại, tối ưu diệt Boss tầm gần kèm cơ chế Xả-Hồi.[]");
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
                 b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                     let core = this.team.core();
@@ -198,27 +196,48 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
                 scroll.setScrollingDisabled(true, false);
                 dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); dialog.show();
-            })).size(50, 40).tooltip("Nâng cấp tháp pháo Blaw");
+            })).size(50, 40).tooltip("Nâng cấp tháp pháo lên");
         } else {
             table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
                 Vars.ui.showInfo(tier == 1 ? "[cyan]ĐANG HOẠT ĐỘNG Ở CẤU HÌNH BLAW MK2![]" : "[purple]ĐANG HOẠT ĐỘNG Ở CẤU HÌNH BLAW MK2B![]");
-            })).size(50, 40).tooltip("Đã đạt giới hạn tiến hóa");
+            })).size(50, 40).tooltip("Nâng cấp tháp pháo");
         }
 
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-            let title = " Thông số pháo Blaw: ";
+            let title = " Thông số pháo \"Blaw\": ";
             let descStr = "";
             let currentTier = this.getTier();
 
             if (currentTier == 0) {
                 title += "[yellow](MK1)[]";
-                descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\nMáu: [green]3,000 HP[] | Tầm bắn: [orange]260 px[]\nSát thương: [white]200 DMG[]";
+                descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
+                          "[lightgray]Máu cấu trúc:[] [green]3,000 HP[]\n" +
+                          "[lightgray]Tầm bắn hiệu dụng:[] [orange]260 pixel[]\n" +
+                          "[lightgray]sát thương gốc:[] [white]20 DMG / viên[]\n\n" +
+                          "[cyan]⚡ CƠ CHẾ KỸ NĂNG ĐẶC BIỆT:[]\n" +
+                          "• Băng Hỏa Song Nòng: Luân phiên bắn nòng trái (Đóng băng + Xuyên 3 mục tiêu) và nòng phải (Nổ lan 80 DMG).\n" +
+                          "• Khuếch đại sát thương: Tăng +1% DMG cho mỗi 100 HP của mục tiêu khi HP > 100.\n" +
+                          "• Xung nhịp tốc độ bắn ngẫu nhiên từ 0% đến 200%.";
             } else if (currentTier == 1) {
-                title += "[cyan](MK2)[]";
-                descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\nMáu: [green]3,000 HP[] | Tầm bắn: [orange]390 px[]\nTốc độ nạp: [lime]+20%[]";
+                title += "[cyan]THÔNG SỐ NÂNG CẤP MK2[]";
+                descStr = "[cyan]⚡ THÔNG SỐ NÂNG CẤP MK2 ⚡[]\n" +
+                          "[lightgray]Máu cấu trúc:[] [green]3,000 HP[]\n" +
+                          "[lightgray]Tầm bắn hiệu dụng:[] [orange]390 pixel (+50%)[]\n" +
+                          "[lightgray]sát thương gốc:[] [white]20 DMG / viên[]\n\n" +
+                          "[cyan]⚡ CƠ CHẾ KỸ NĂNG ĐẶC BIỆT:[]\n" +
+                          "• Băng Hỏa Tăng Cường: Nỏ lan nòng Hỏa tăng lên 120 DMG / 32px.\n" +
+                          "• Sát thương Trảm Tướng: Tăng +2% DMG cho mỗi 100 HP mục tiêu, cộng thêm +1% DMG mỗi 1,000 HP khi HP > 1,000.\n" +
+                          "• Tăng cố định +20% tốc độ nạp đạn kết hợp xung nhịp ngẫu nhiên.";
             } else if (currentTier == 2) {
-                title += "[purple](MK2B)[]";
-                descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B SHOTGUN) ⚡[]\nMáu: [green]4,500 HP[] | Tầm bắn: [red]182 px[]\nSát thương: [pink]220 DMG / viên[]";
+                title += "[purple]THÔNG SỐ NÂNG CẤP MK2B[]";
+                descStr = "[purple]⚡ THÔNG SỐ NÂNG CẤP MK2B ⚡[]\n" +
+                          "[lightgray]Máu cấu trúc:[] [green]4,500 HP (+150%)[]\n" +
+                          "[lightgray]Tầm bắn hiệu dụng:[] [red]182 pixel (-30%)[]\n" +
+                          "[lightgray]sát thương gốc:[] [white]220 DMG / viên (+1000%)[]\n\n" +
+                          "[purple]🔥 CƠ CHẾ KỸ NĂNG ĐẶC BIỆT:[]\n" +
+                          "• Cận chiến Shotgun: Bắn tỏa chùm 20 viên đạn hỗn hợp Băng Hỏa (2 đợt x 10 viên).\n" +
+                          "• Sát thương Diệt Boss: Tăng +5% DMG cho mỗi 100 HP của mục tiêu khi HP > 100.\n" +
+                          "• Cơ chế Xả-Hồi: Đi vào thời gian hồi chiêu 3 giây sau mỗi 2 đợt xả chùm đạn.";
             }
 
             let dialog = extend(BaseDialog, title, {});
@@ -229,7 +248,7 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
             scroll.setScrollingDisabled(true, false);
             dialog.cont.add(scroll).maxHeight(400);
             dialog.addCloseButton(); dialog.show();
-        })).size(50, 40).tooltip("Xem thông số chi tiết");
+        })).size(50, 40).tooltip("Trung tâm nâng cấp pháo");
     },
 
     config() { return java.lang.Integer(this.getTier()); },

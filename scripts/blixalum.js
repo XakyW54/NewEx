@@ -1,5 +1,3 @@
-/* BLIXALUM TURRET SYSTEM - FIXED CRASH & OPTIMIZED */
-
 const packCons = (func) => new Cons({ get: func });
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
@@ -8,7 +6,6 @@ const packProv = (func) => new Prov({ get: func });
 const reqBlixalumMK2 = { copper: 4000, lead: 4000, titanium: 0 };
 const reqBlixalumMK2B = { copper: 4000, lead: 4000, titanium: 2000 };
 
-// Tối ưu số bước vẽ vòng xé gió
 function drawBlixalumWindRing(cx, cy, radiusX, radiusY, angle, strokeWidth, color) {
     Draw.color(color); 
     Lines.stroke(strokeWidth);
@@ -43,21 +40,17 @@ const blixalumMuzzleDistort = new Effect(16, e => {
     drawBlixalumWindRing(bx, by, zoomRadiusX, zoomRadiusY, baseAngle, thickness, tColor);
 });
 
-// Hiệu ứng nổ sóng vòng tròn khi đạn va chạm / hết thời gian sống
 const circleOut = new Effect(45, 500, packCons(e => {
     let maxRadius = (e.rotation > 0 && e.rotation <= 120) ? e.rotation : 56; 
     let currentRad = maxRadius * e.fin(Interp.pow3Out);
 
     Draw.color(e.color);
 
-    // 1. Lõi đặc trung tâm
     Fill.circle(e.x, e.y, (maxRadius * 0.35) * e.fout());
 
-    // 2. Viền ngoài dày
     Lines.stroke(8.0 * e.fout(), e.color);
     Lines.circle(e.x, e.y, currentRad);
 
-    // 3. Viền phụ bên trong
     Lines.stroke(4.0 * e.fout(), Color.white);
     Lines.circle(e.x, e.y, currentRad * 0.85);
 }));
@@ -76,9 +69,6 @@ const createBlixalumBullet = (baseDmg, splashDmg, splashRad, bulletColor) => {
         hitColor: bulletColor,
         splashDamage: splashDmg, 
         splashDamageRadius: splashRad,
-
-        // ĐÃ SỬA: Loại bỏ việc override hit/despawn gây đệ quy. 
-        // Hiệu ứng circleOut đã được gán sẵn qua hitEffect và despawnEffect ở trên.
 
         draw(b) {
             this.super$draw(b);
@@ -162,24 +152,23 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
 
         if (tier == 0) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-                let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Blixalum", {});
+                let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo", {});
                 
                 let reqCell = dialog.cont.label(packProv(() => {
                     let core = this.team.core();
                     if (core == null) return "[red]Không tìm thấy Lõi Đội![]";
-                    let currentcopper = core.items.get(Items.copper);
-                    let currentlead = core.items.get(Items.lead);
-                    let currenttitanium = core.items.get(Items.titanium);
+                    let inv = core.items;
                     
-                    let copColor1 = currentcopper >= reqBlixalumMK2.copper ? "[green]" : "[red]";
-                    let leaColor1 = currentlead >= reqBlixalumMK2.lead ? "[green]" : "[red]";
-                    let copColor2 = currentcopper >= reqBlixalumMK2B.copper ? "[green]" : "[red]";
-                    let leaColor2 = currentlead >= reqBlixalumMK2B.lead ? "[green]" : "[red]";
-                    let titColor2 = currenttitanium >= reqBlixalumMK2B.titanium ? "[green]" : "[red]";
+                    let c = inv.get(Items.copper), l = inv.get(Items.lead), t = inv.get(Items.titanium);
                     
                     return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
-                           "[cyan]Nhánh MK2:[]\n • Đồng: " + copColor1 + currentcopper + "[] / " + reqBlixalumMK2.copper + "\n • Chì: " + leaColor1 + currentlead + "[] / " + reqBlixalumMK2.lead + "\n" +
-                           "[purple]Nhánh MK2B:[]\n • Đồng: " + copColor2 + currentcopper + "[] / " + reqBlixalumMK2B.copper + "\n • Chì: " + leaColor2 + currentlead + "[] / " + reqBlixalumMK2B.lead + "\n • Titan: " + titColor2 + currenttitanium + "[] / " + reqBlixalumMK2B.titanium;
+                           "[cyan]Nhánh Cấu Hình MK2[]\n" +
+                           " • Đồng: " + (c >= reqBlixalumMK2.copper ? "[green]" : "[red]") + c + "[] / " + reqBlixalumMK2.copper + "\n" +
+                           " • Chì: " + (l >= reqBlixalumMK2.lead ? "[green]" : "[red]") + l + "[] / " + reqBlixalumMK2.lead + "\n" +
+                           "[purple]Nhánh Biến Thể MK2B[]\n" +
+                           " • Đồng: " + (c >= reqBlixalumMK2B.copper ? "[green]" : "[red]") + c + "[] / " + reqBlixalumMK2B.copper + "\n" +
+                           " • Chì: " + (l >= reqBlixalumMK2B.lead ? "[green]" : "[red]") + l + "[] / " + reqBlixalumMK2B.lead + "\n" +
+                           " • Titan: " + (t >= reqBlixalumMK2B.titanium ? "[green]" : "[red]") + t + "[] / " + reqBlixalumMK2B.titanium;
                 }));
                 
                 reqCell.width(360).get().setWrap(true);
@@ -193,7 +182,10 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                 b1.background(Styles.black6); 
                 b1.margin(12);
                 b1.add("[cyan]===(MK2)===[]").row();
-                let b1D = b1.add("Cải tiến lõi từ trường tối ưu tần suất quét từ động:\n [white]• Tầm bắn hiệu dụng mở rộng lên [green]340 pixel[].[]\n [white]• Đột biến giới hạn tốc hỏa tối đa [yellow]+300%[].[]\n [white]• Mở rộng bán kính nổ lan lên [green]80 pixel[].");
+                let b1D = b1.add("[white]• Tầm bắn: [green]+30%[] (340 px)\n" +
+                                 "• Tốc độ bắn tối đa: [green]+200%[]\n" +
+                                 "• Bán kính nổ lan: [green]+25%[] (80 px)\n\n" +
+                                 "[lightgray]Kỹ năng đặc biệt: Tần Tốc Thông Minh — Tự động quét từ trường xung quanh và gia tăng tốc độ hỏa lực đột biến theo mật độ kẻ địch trong tầm bắn.[]");
                 b1D.width(340).get().setWrap(true); 
                 b1D.get().setAlignment(Align.left); 
                 b1.row();
@@ -217,13 +209,16 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                 b2.background(Styles.black6); 
                 b2.margin(12);
                 b2.add("[purple]===(MK2B)===[]").row();
-                let b2D = b2.add("Hợp nhất ma trận lõi năng lượng Laze phá hủy cơ động:\n [white]• Sát thương vật lý tăng lên [green]300 DMG[].[]\n [white]• Thu hẹp diện nổ lan xuống [red]48 pixel[].[]\n [white]• [cyan]Xung kích Phụ:[] Cứ mỗi 5s nạp, kích hoạt [yellow]4 tia laze[].");
+                let b2D = b2.add("[white]• sát thương gốc: [green]+20%[] (300 DMG)\n" +
+                                 "• Bán kính nổ lan: [red]-25%[] (48 px)\n" +
+                                 "• Tốc độ bắn tối đa: [red]-20%[]\n\n" +
+                                 "[lightgray]Kỹ năng đặc biệt: Bảo Táp Laser — Tích tụ ma trận lõi năng lượng và tự động kích hoạt phóng 4 tia Laser hội tụ thiêu rụi mục tiêu mỗi 5 giây.[]");
                 b2D.width(340).get().setWrap(true); 
                 b2D.get().setAlignment(Align.left); 
                 b2.row();
                 b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                     let core = this.team.core();
-                    if (core != null && core.items.get(Items.copper) >= reqBlixalumMK2B.copper && core.items.get(Items.lead) >= reqBlixalumMK2B.lead && core.items.get(Items.titanium) >= reqBlixalumMK2B.titanium) {
+                    if (core != null && core.items.get(Items.copper) >= reqBlixalumMK2B.copper && core.items.get(Items.lead) >= reqBlixalumMK2B.lead && core.items.get(Items.titanium) >= reqBlawMK2B.titanium) {
                         core.items.remove(Items.copper, reqBlixalumMK2B.copper); 
                         core.items.remove(Items.lead, reqBlixalumMK2B.lead); 
                         core.items.remove(Items.titanium, reqBlixalumMK2B.titanium);
@@ -248,27 +243,48 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                 dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); 
                 dialog.show();
-            })).size(50, 40).tooltip("Nâng cấp tháp pháo Blixalum");
+            })).size(50, 40).tooltip("Nâng cấp tháp pháo lên");
         } else {
             table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
-                Vars.ui.showInfo("[scarlet]HỆ THỐNG BLIXALUM ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]");
-            })).size(50, 40).tooltip("Đã đạt cấp tối đa");
+                Vars.ui.showInfo("[scarlet]Nâng cấp tháp pháo đã đạt giới hạn![]");
+            })).size(50, 40).tooltip("Nâng cấp tháp pháo");
         }
 
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-            let title = " Thông số pháo Blixalum: ";
-            let descStr = "";
             let currentTier = this.getTier();
+            let title = " Thông số pháo \"Blixalum\": ";
+            let descStr = "";
 
             if (currentTier == 0) {
                 title += "[yellow](MK1)[]";
-                descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\nMáu: [green]3,500[] | Tầm bắn: [orange]260 px[]\nSát thương: [💥 250] | [💣 875 / 64 R]";
+                descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
+                          "[lightgray]Máu cấu trúc:[] [green]3,500 HP[]\n" +
+                          "[lightgray]Tầm bắn hiệu dụng:[] [orange]260 pixel[]\n" +
+                          "[lightgray]sát thương gốc:[] [white]250 DMG / phát bắn[]\n" +
+                          "[lightgray]Sát thương nổ lan:[] [white]875 DMG (64 px)[]\n\n" +
+                          "[cyan]⚡ CƠ CHẾ KỸ NĂNG ĐẶC BIỆT:[]\n" +
+                          "• Tích Năng Lượng Từ Trường: Cần 2 giây nạp sạc trước khi xả đạn xung kích.\n" +
+                          "• Tốc hỏa thích ứng: Tự động tăng +10% tốc độ bắn với mỗi kẻ địch xuất hiện trong tầm bắn (tối đa +100%).";
             } else if (currentTier == 1) {
-                title += "[cyan](MK2)[]";
-                descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\nMáu: [green]3,500[] | Tầm bắn: [orange]340 px[]\nSát thương: [💥 250] | [💣 875 / 80 R]";
+                title += "[cyan]THÔNG SỐ NÂNG CẤP MK2[]";
+                descStr = "[cyan]⚡ THÔNG SỐ NÂNG CẤP MK2 ⚡[]\n" +
+                          "[lightgray]Máu cấu trúc:[] [green]3,500 HP[]\n" +
+                          "[lightgray]Tầm bắn hiệu dụng:[] [orange]340 pixel (+30%)[]\n" +
+                          "[lightgray]sát thương gốc:[] [white]250 DMG / phát bắn[]\n" +
+                          "[lightgray]Sát thương nổ lan:[] [white]875 DMG (80 px) (+25%)[]\n\n" +
+                          "[cyan]⚡ CƠ CHẾ KỸ NĂNG ĐẶC BIỆT:[]\n" +
+                          "• Mở Rộng Tần Tốc Thông Minh: Cải tiến lõi từ trường tối ưu tần suất quét tự động.\n" +
+                          "• Tốc hỏa đột biến: Tăng +10% tốc độ bắn cho mỗi kẻ địch trong tầm bắn (tối đa +300%).";
             } else if (currentTier == 2) {
-                title += "[purple](MK2B)[]";
-                descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\nMáu: [green]3,500[] | Tầm bắn: [orange]260 px[]\nSát thương: [💥 300] | [💣 150 / 48 R]";
+                title += "[purple]THÔNG SỐ NÂNG CẤP MK2B[]";
+                descStr = "[purple]⚡ THÔNG SỐ NÂNG CẤP MK2B ⚡[]\n" +
+                          "[lightgray]Máu cấu trúc:[] [green]3,500 HP[]\n" +
+                          "[lightgray]Tầm bắn hiệu dụng:[] [red]260 pixel[]\n" +
+                          "[lightgray]sát thương gốc:[] [white]300 DMG / phát bắn (+20%)[]\n" +
+                          "[lightgray]Sát thương nổ lan:[] [white]150 DMG (48 px) (-25%)[]\n\n" +
+                          "[purple]🔥 CƠ CHẾ KỸ NĂNG ĐẶC BIỆT:[]\n" +
+                          "• Bảo Táp Laser Đột Phá: Hợp nhất ma trận lõi năng lượng laser phá hủy cơ động.\n" +
+                          "• Xung kích phụ: Mỗi 5 giây nạp sạc sẽ tự động bắn 4 tia Laser (150 DMG/tia) dội thẳng vào mục tiêu.";
             }
 
             let dialog = extend(BaseDialog, title, {});
@@ -281,7 +297,7 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
             dialog.cont.add(scroll).maxHeight(400);
             dialog.addCloseButton(); 
             dialog.show();
-        })).size(50, 40).tooltip("Xem thông số chi tiết");
+        })).size(50, 40).tooltip("Trung tâm nâng cấp pháo");
     },
 
     config() { return java.lang.Integer(this.getTier()); },

@@ -17,6 +17,96 @@ const reqMK2 = { titanium: 500, silicon: 300 };
 const reqMK2B = { titanium: 800, silicon: 400, plastanium: 200 }; 
 const reqSpecial = { copper: 4000, lead: 4000, silicon: 4000 };
 
+// --- EFFECT VÒNG TRÒN VIỀN ĐẬM & KÍCH THƯỚC NGẪU NHIÊN CHẠY THEO ĐUÔI ĐẠN ---
+const bulletCircleTrailFx = new Effect(12, cons(e => {
+    Draw.z(Layer.bullet - 0.01);
+
+    let col = Color.valueOf("#ffcc00");
+    let randomMaxRadius = Mathf.randomSeed(e.id, 10, 20); 
+    let currentRadius = randomMaxRadius * Interp.pow2Out.apply(e.fin()); 
+    let alpha = 0.6 * (1.0 - e.fin());
+
+    Draw.color(col);
+    Draw.alpha(alpha * 0.4);
+    Fill.circle(e.x, e.y, currentRadius);
+
+    Draw.color(col);
+    Draw.alpha(alpha); 
+    Lines.stroke(3.0 * (1.0 - e.fin()));
+    Lines.circle(e.x, e.y, currentRadius);
+
+    Draw.reset();
+}));
+
+// --- EFFECT HÌNH TRÒN ZOOM TO/NHỎ THEO 2/3 KÍCH THƯỚC PHÁO ĐƯỢC BUFF ---
+const buffTurretPulseFx = new Effect(40, cons(e => {
+    Draw.z(Layer.effect + 0.05);
+
+    let col = Color.valueOf("#00ffcc");
+    
+    let targetSize = (e.data != null && typeof e.data === "number") ? e.data : 16;
+    let baseRadius = (targetSize * (2 / 3)) / 2; 
+
+    let pulse = Math.sin(e.fin() * Math.PI * 2) * (baseRadius * 0.25); 
+    let currentRadius = Math.max(2, baseRadius + pulse);
+    let alpha = 0.8 * (1.0 - e.fin());
+
+    Draw.color(col);
+    Draw.alpha(alpha * 0.25);
+    Fill.circle(e.x, e.y, currentRadius);
+
+    Draw.color(col);
+    Draw.alpha(alpha);
+    Lines.stroke(2.0 * (1.0 - e.fin()));
+    Lines.circle(e.x, e.y, currentRadius);
+
+    Draw.reset();
+}));
+
+// --- EFFECT TIA ĐIỆN LI TI "HEL" NỐI TỪ INDENITER SANG PHÁO ĐƯỢC BUFF ---
+const hel = new Effect(35, cons(e => {
+    Draw.z(Layer.effect + 0.01);
+
+    if (e.data == null || typeof e.data.tx === "undefined") return;
+
+    let x1 = e.x, y1 = e.y;
+    let x2 = e.data.tx, y2 = e.data.ty;
+    let alpha = 1.0 - e.fin();
+
+    let colorRand = Mathf.randomSeed(e.id + Math.floor(e.fin() * 10));
+    Draw.color(Color.valueOf("#00ffcc"), Color.valueOf("#ffffff"), colorRand);
+    Lines.stroke(1.2 * alpha);
+
+    let segments = 8;
+    let lastX = x1, lastY = y1;
+
+    for (let i = 1; i <= segments; i++) {
+        let progress = i / segments;
+        let nx = Mathf.lerp(x1, x2, progress);
+        let ny = Mathf.lerp(y1, y2, progress);
+
+        if (i < segments) {
+            let offset = (1.0 - Math.abs(progress - 0.5) * 2) * 6.0;
+            let randX = Mathf.randomSeed(e.id * 100 + i + Math.floor(e.fin() * 5), -offset, offset);
+            let randY = Mathf.randomSeed(e.id * 200 + i + Math.floor(e.fin() * 5), -offset, offset);
+            nx += randX;
+            ny += randY;
+        }
+
+        Lines.line(lastX, lastY, nx, ny);
+        
+        let chanceRand = Mathf.randomSeed(e.id * 300 + i);
+        if (chanceRand < 0.3) {
+            Fill.circle(nx, ny, 1.0 * alpha);
+        }
+
+        lastX = nx;
+        lastY = ny;
+    }
+
+    Draw.reset();
+}));
+
 // --- HÀM TẠO EFFECT NỔ TÙY CHỈNH THEO BÁN KÍNH ---
 function createExplosionEffect(radius, colorHex) {
     let col = colorHex ? Color.valueOf(colorHex) : Color.valueOf("#ff3300");
@@ -67,7 +157,7 @@ const fxCornerTurret = createExplosionEffect(50, "#ffaa00");
 
 // --- ĐẠN SHOTGUN CHO PHÚC LỢI 5 ---
 const perk5ShotgunBullet = extend(BasicBulletType, {
-    speed: 11, // Giá trị mặc định
+    speed: 11,
     damage: 18,
     lifetime: 30,
     width: 10,
@@ -81,8 +171,8 @@ const perk5ShotgunBullet = extend(BasicBulletType, {
     despawnEffect: Fx.hitBulletSmall
 });
 
-// --- HÀM KÍCH NỔ BEMOD & XỬ LÝ GÁN ẤN PHỤ / PHÚC LỢI ---
-function triggerBemodExplosion(building, targetUnit, perkTier, isMK2, isSubExplosion, isCornerTurret, calculatedCornerDmg) {
+// --- HÀM KÍCH NỔ BEMOD ---
+function triggerBemodExplosion(building, targetUnit, perkTier, isMK2, isSubExplosion, isCornerTurret) {
     if (targetUnit == null || !targetUnit.isValid()) return;
 
     let explosionX = targetUnit.x;
@@ -120,18 +210,16 @@ function triggerBemodExplosion(building, targetUnit, perkTier, isMK2, isSubExplo
         delete global.bemodStacks[targetUnit.id];
     }
 
-    // XỬ LÝ SÁT THƯƠNG CHO PHÁO 4 GÓC: 280% Damage + 600% Tốc độ bắn (RPS)
     if (isCornerTurret) {
-        let dmg = calculatedCornerDmg || 20; 
         Groups.unit.intersect(explosionX - 50, explosionY - 50, 100, 100, cons(nearUnit => {
             if (nearUnit != null && nearUnit.isValid() && nearUnit.within(explosionX, explosionY, 50) && nearUnit.team != building.team) {
-                nearUnit.damage(dmg);
+                let totalDmg = 500 + (nearUnit.maxHealth * 0.02);
+                nearUnit.damage(totalDmg);
             }
         }));
         return;
     }
 
-    // XỬ LÝ SÁT THƯƠNG THÔNG THƯỜNG
     if (perkTier == 4) {
         Groups.unit.intersect(explosionX - explosionRadius, explosionY - explosionRadius, explosionRadius * 2, explosionRadius * 2, cons(nearUnit => {
             if (nearUnit != null && nearUnit.isValid() && nearUnit.within(explosionX, explosionY, explosionRadius) && nearUnit.team != building.team) {
@@ -184,7 +272,6 @@ function triggerBemodExplosion(building, targetUnit, perkTier, isMK2, isSubExplo
         }));
     }
 
-    // PHÚC LỢI 5: NỔ THÊM 2 LẦN (+10% MAX HP)
     if (perkTier == 5) {
         for (let extra = 1; extra <= 2; extra++) {
             Time.run(extra * 12, packRun(() => {
@@ -202,7 +289,6 @@ function triggerBemodExplosion(building, targetUnit, perkTier, isMK2, isSubExplo
         }
     }
 
-    // PHÚC LỢI 4
     if (perkTier == 4 && !isSubExplosion) {
         let furthestTarget = null;
         let maxDist = -1;
@@ -246,22 +332,25 @@ const indeniterBullet = createCustomBulletType({
     speed: 8, damage: 9, lifetime: 35, width: 16, height: 16, 
     frontColor: Color.white, backColor: Color.valueOf("#ff6b35"),
     pierce: false, hitEffect: Fx.disperseTrail, despawnEffect: Fx.disperseTrail,
-    trailEffect: Fx.disperseTrail, trailChance: 0.20
+    trailEffect: bulletCircleTrailFx,
+    trailInterval: 3
 });
 
 const indeniterMK2Bullet = createCustomBulletType({
     speed: 9.5, damage: 12.15, lifetime: 40, width: 20, height: 20, 
     frontColor: Color.valueOf("#ffcc00"), backColor: Color.valueOf("#ff3300"),  
     pierce: false, hitEffect: Fx.disperseTrail, despawnEffect: Fx.disperseTrail,
-    trailEffect: Fx.disperseTrail, trailChance: 0.40, trailColor: Color.valueOf("#b32d00")
+    trailEffect: bulletCircleTrailFx,
+    trailInterval: 2.5
 });
 
 const indeniterMK2BBullet = createCustomBulletType({
     speed: 8.5, damage: 9, lifetime: 90, width: 20, height: 20, 
     frontColor: Color.white, backColor: Color.valueOf("#d63031"),
-    trailEffect: Fx.disperseTrail, trailChance: 0.40, trailColor: Color.valueOf("#ff2525"),
     pierce: false, homingPower: 0.25, homingRange: 350,
-    hitEffect: Fx.disperseTrail, despawnEffect: Fx.disperseTrail
+    hitEffect: Fx.disperseTrail, despawnEffect: Fx.disperseTrail,
+    trailEffect: bulletCircleTrailFx,
+    trailInterval: 2
 });
 
 // --- THÁP PHÁO INDENITER ---
@@ -288,6 +377,9 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
         this.tierState = 0;
         this.perkTierState = 0;
         this.customRecoil = 0.0;
+        this.nonRecoil = 0.0;
+        this.shootingVisual = 0.0;
+        this.energyCharge = 0.0; // Lưu tiến trình nạp/tạo quả cầu năng lượng
         this.isBursting = false;
         this.subBulletTimer = 0.0; 
         return this;
@@ -364,13 +456,12 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
                 bulletType.create(this, this.team, this.x, this.y, this.rotation + Mathf.range(5));
             }
 
-            // --- BẮN 40 VIÊN SHOTGUN VỚI TỐC ĐỘ BAY (SPEED) NGẪU NHIÊN từ 15 -> 45 ---
             if (Mathf.chance(0.10)) {
                 for (let i = 0; i < 40; i++) {
                     let spreadAngle = this.rotation + Mathf.range(8);
                     let bullet = perk5ShotgunBullet.create(this, this.team, this.x, this.y, spreadAngle);
                     if (bullet != null) {
-                        bullet.vel.setLength(Mathf.random(15, 45)); // Tốc độ bay ngẫu nhiên trong khoảng 15 đến 45
+                        bullet.vel.setLength(Mathf.random(15, 45));
                     }
                 }
             }
@@ -412,6 +503,7 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
                     if (this.isValid() && this.hasAmmo()) {
                         this.super$shoot(type);
                         this.customRecoil = 1.0;
+                        this.nonRecoil = 1.0;
                     }
                 }));
             }
@@ -421,12 +513,28 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
         } else {
             this.super$shoot(type); 
             this.customRecoil = 1.0;
+            this.nonRecoil = 1.0;
         }
     },
 
     updateTile(){
         this.super$updateTile();
+
         this.customRecoil = Mathf.approach(this.customRecoil, 0.0, 0.12 * Time.delta);
+        this.nonRecoil = Mathf.approach(this.nonRecoil, 0.0, 0.12 * Time.delta);
+
+        let isTargeting = (this.target != null || this.isShooting);
+        let visualSpeed = 0.05 * Time.delta;
+        if (isTargeting) {
+            this.shootingVisual = Mathf.approach(this.shootingVisual, 1.0, visualSpeed);
+        } else {
+            this.shootingVisual = Mathf.approach(this.shootingVisual, 0.0, visualSpeed);
+        }
+
+        // Cập nhật trạng thái năng lượng cho quả cầu (tự động nở ra khi bắn, thu nhỏ khi ngừng bắn)
+        let activeShooting = (this.isShooting || this.isBursting) && this.hasAmmo();
+        let chargeSpeed = activeShooting ? 0.1 * Time.delta : 0.08 * Time.delta;
+        this.energyCharge = Mathf.approach(this.energyCharge, activeShooting ? 1.0 : 0.0, chargeSpeed);
 
         let perk = this.getPerkTier();
 
@@ -447,234 +555,305 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
             this.subBulletTimer = 0;
         }
 
-        // TÌM PHÁO Ở 4 GÓC ĐỂ BUFF
-        if (perk == 5 && this.timer.get(0, 30)) { 
-            let size = this.block.size;
-            let cornerOffsets = [
-                [-1, -1], [size, -1], [-1, size], [size, size]
-            ];
+        if (perk == 5 && this.timer.get(0, 300)) { 
+            let candidates = [];
+            let processedIds = {}; 
 
-            for (let i = 0; i < cornerOffsets.length; i++) {
-                let checkX = this.tileX() + cornerOffsets[i][0];
-                let checkY = this.tileY() + cornerOffsets[i][1];
-                let otherBuild = Vars.world.build(checkX, checkY);
+            let tileX = this.tileX();
+            let tileY = this.tileY();
+            let radiusTiles = 4; 
 
-                if (otherBuild != null && otherBuild.team == this.team && otherBuild instanceof ItemTurret.ItemTurretBuild) {
-                    if (typeof global !== "undefined" && global.cornerBuffedTurrets) {
-                        global.cornerBuffedTurrets[otherBuild.id] = this;
+            for (let dx = -radiusTiles; dx <= radiusTiles; dx++) {
+                for (let dy = -radiusTiles; dy <= radiusTiles; dy++) {
+                    let otherBuild = Vars.world.build(tileX + dx, tileY + dy);
+
+                    if (otherBuild != null && !processedIds[otherBuild.id]) {
+                        processedIds[otherBuild.id] = true; 
+
+                        if (otherBuild != this && otherBuild.team == this.team && otherBuild instanceof ItemTurret.ItemTurretBuild) {
+                            let d = this.dst(otherBuild);
+                            if (d <= 32.0) {
+                                candidates.push({ build: otherBuild, dist: d });
+                            }
+                        }
                     }
+                }
+            }
+
+            candidates.sort((a, b) => a.dist - b.dist);
+
+            let limit = Math.min(4, candidates.length);
+            for (let i = 0; i < limit; i++) {
+                let targetBuild = candidates[i].build;
+                if (typeof global !== "undefined" && global.cornerBuffedTurrets) {
+                    global.cornerBuffedTurrets[targetBuild.id] = this;
+
+                    let turretPixelSize = targetBuild.block.size * Vars.tilesize;
+                    buffTurretPulseFx.at(targetBuild.x, targetBuild.y, 0, turretPixelSize);
+
+                    hel.at(this.x, this.y, 0, { tx: targetBuild.x, ty: targetBuild.y });
                 }
             }
         }
     },
 
-    buildConfiguration(table){
-        table.clear(); table.row();
+buildConfiguration(table) {
+    table.clear(); 
+    table.row();
 
-        table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-            let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Indeniter", {});
+    // ==================== NÚT 1: MỞ TRUNG TÂM NÂNG CẤP & QUAY PHÚC LỢI ====================
+    table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
+        let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Indeniter", {});
+        
+        // --- CẬP NHẬT TÀI NGUYÊN KHO LÕI TỰ ĐỘNG ---
+        let reqCell = dialog.cont.label(packProv(() => {
+            let core = this.team.core();
+            if (core == null) return "[red]Không tìm thấy Lõi Đội![]";
+            let cCop = core.items.get(Items.copper);
+            let cLea = core.items.get(Items.lead);
+            let cTit = core.items.get(Items.titanium);
+            let cSil = core.items.get(Items.silicon);
+            let cPla = core.items.get(Items.plastanium);
+
+            let copCol = cCop >= reqSpecial.copper ? "[green]" : "[red]";
+            let leaCol = cLea >= reqSpecial.lead ? "[green]" : "[red]";
+            let silColSp = cSil >= reqSpecial.silicon ? "[green]" : "[red]";
+
+            let titColor1 = cTit >= reqMK2.titanium ? "[green]" : "[red]";
+            let silColor1 = cSil >= reqMK2.silicon ? "[green]" : "[red]";
             
-            let reqCell = dialog.cont.label(packProv(() => {
+            let titColor2 = cTit >= reqMK2B.titanium ? "[green]" : "[red]";
+            let silColor2 = cSil >= reqMK2B.silicon ? "[green]" : "[red]";
+            let plaColor2 = cPla >= reqMK2B.plastanium ? "[green]" : "[red]";
+
+            return "[gold]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
+                   "[orange]★ PHÚC LỢI ĐẶC BIỆT:[] Đồng: " + copCol + cCop + "[]/4000 | Chì: " + leaCol + cLea + "[]/4000 | Silicon: " + silColSp + cSil + "[]/4000\n" +
+                   "[cyan]Nhánh MK2:[] Titan: " + titColor1 + cTit + "[]/" + reqMK2.titanium + " | Silicon: " + silColor1 + cSil + "[]/" + reqMK2.silicon + "\n" +
+                   "[purple]Nhánh MK2B:[] Titan: " + titColor2 + cTit + "[]/" + reqMK2B.titanium + " | Silicon: " + silColor2 + cSil + "[]/" + reqMK2B.silicon + " | Nhựa: " + plaColor2 + cPla + "[]/" + reqMK2B.plastanium;
+        }));
+        
+        reqCell.width(380).get().setWrap(true);
+        reqCell.get().setAlignment(Align.left);
+        dialog.cont.row(); 
+        dialog.cont.add().height(10).row();
+
+        let branchesTable = new Table();
+
+        // --- KHU VỰC PHÚC LỢI ĐẶC BIỆT (GACHA) ---
+        let spBox = new Table(); 
+        spBox.background(Styles.black6); 
+        spBox.margin(12);
+        spBox.add("[gold]★ PHÚC LỢI NÂNG CẤP ĐẶC BIỆT (NGẪU NHIÊN) ★[]").row();
+
+        let currentPerk = this.getPerkTier();
+        let tier = this.getTier();
+
+        if (currentPerk == 0) {
+            let spD = spBox.add("Kích hoạt giao thức nâng cấp ngẫu nhiên nhận 1 trong 6 phúc lợi vĩnh viễn:\n" +
+                                 " • [yellow]Phúc lợi 1 (~19.6%):[] +215% Sát thương, Nổ gán 10 tầng Bemod phụ, Giảm mốc nổ còn 7.\n" +
+                                 " • [orange]Phúc lợi 2 (~29.4%):[] Nổ gán 5 tầng Bemod phụ diện rộng, +150% Sát thương vụ nổ.\n" +
+                                 " • [cyan]Phúc lợi 3 (~19.6%):[] +50% Tất cả chỉ số (Dmg, Tỉ lệ, Tầm bắn, Phạm vi nổ).\n" +
+                                 " • [purple]Phúc lợi 4 (~29.4%):[] Nổ 500 Dmg thuần, Nổ lây mục tiêu xa nhất 150px, Bắn đạn kép.\n" +
+                                 " • [green]Phúc lợi 5 (1% SIÊU HIẾM):[] 80% Bắn thêm đạn, 10% Shotgun 40 viên, Nổ x3 lần, Buff cho 4 pháo đồng minh gần nhất (tia điện hel + vòng Zoom 2/3 size).\n" +
+                                 " • [red]Phúc lợi 6 (1% SIÊU HIẾM):[] +500% Sát thương gốc, Vụ nổ Bemod gán ngay 10 tầng tạo chuỗi nổ dây chuyền vĩnh viễn!");
+            spD.width(360).get().setWrap(true); 
+            spD.get().setAlignment(Align.left); 
+            spBox.row();
+
+            spBox.button("[gold]QUAY PHÚC LỢI (4K Đồng/Chì/Silicon)[]", packRun(() => {
                 let core = this.team.core();
-                if(core == null) return "[red]Không tìm thấy Lõi Đội![]";
-                let cCop = core.items.get(Items.copper);
-                let cLea = core.items.get(Items.lead);
-                let cTit = core.items.get(Items.titanium);
-                let cSil = core.items.get(Items.silicon);
-                let cPla = core.items.get(Items.plastanium);
+                if (core != null && core.items.get(Items.copper) >= 4000 && core.items.get(Items.lead) >= 4000 && core.items.get(Items.silicon) >= 4000) {
+                    core.items.remove(Items.copper, 4000); 
+                    core.items.remove(Items.lead, 4000); 
+                    core.items.remove(Items.silicon, 4000);
 
-                let copCol = cCop >= reqSpecial.copper ? "[green]" : "[red]";
-                let leaCol = cLea >= reqSpecial.lead ? "[green]" : "[red]";
-                let silColSp = cSil >= reqSpecial.silicon ? "[green]" : "[red]";
+                    // Tỷ lệ Quay Gacha
+                    let rand = Mathf.random(100);
+                    let resultPerk = 3; 
 
-                let titColor1 = cTit >= reqMK2.titanium ? "[green]" : "[red]";
-                let silColor1 = cSil >= reqMK2.silicon ? "[green]" : "[red]";
-                
-                let titColor2 = cTit >= reqMK2B.titanium ? "[green]" : "[red]";
-                let silColor2 = cSil >= reqMK2B.silicon ? "[green]" : "[red]";
-                let plaColor2 = cPla >= reqMK2B.plastanium ? "[green]" : "[red]";
+                    if (rand < 1.0) {
+                        resultPerk = 5; 
+                    } else if (rand < 2.0) {
+                        resultPerk = 6; 
+                    } else if (rand < 2.0 + 19.6) {
+                        resultPerk = 1;
+                    } else if (rand < 2.0 + 19.6 + 29.4) {
+                        resultPerk = 2;
+                    } else if (rand < 2.0 + 19.6 + 29.4 + 19.6) {
+                        resultPerk = 3;
+                    } else {
+                        resultPerk = 4;
+                    }
 
-                return "[gold]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
-                       "[orange]★ PHÚC LỢI ĐẶC BIỆT:[] Đồng: " + copCol + cCop + "[]/4000 | Chì: " + leaCol + cLea + "[]/4000 | Silicon: " + silColSp + cSil + "[]/4000\n" +
-                       "[cyan]Nhánh MK2:[] Titan: " + titColor1 + cTit + "[]/" + reqMK2.titanium + " | Silicon: " + silColor1 + cSil + "[]/" + reqMK2.silicon + "\n" +
-                       "[purple]Nhánh MK2B:[] Titan: " + titColor2 + cTit + "[]/" + reqMK2B.titanium + " | Silicon: " + silColor2 + cSil + "[]/" + reqMK2B.silicon + " | Nhựa: " + plaColor2 + cPla + "[]/" + reqMK2B.plastanium;
-            }));
-            
-            reqCell.width(380).get().setWrap(true);
-            reqCell.get().setAlignment(Align.left);
-            dialog.cont.row(); dialog.cont.add().height(10).row();
+                    this.setPerkTier(resultPerk);
+                    this.configure(10 + resultPerk); 
 
-            let branchesTable = new Table();
+                    Fx.upgradeCore.at(this.x, this.y); 
+                    Effect.shake(6, 6, this.x, this.y);
 
-            let spBox = new Table(); spBox.background(Styles.black6); spBox.margin(12);
-            spBox.add("[gold]★ PHÚC LỢI NÂNG CẤP ĐẶC BIỆT (NGẪU NHIÊN) ★[]").row();
+                    let perkName = "";
+                    if (resultPerk == 1) perkName = "[yellow]PHÚC LỢI 1[]";
+                    else if (resultPerk == 2) perkName = "[orange]PHÚC LỢI 2[]";
+                    else if (resultPerk == 3) perkName = "[cyan]PHÚC LỢI 3[]";
+                    else if (resultPerk == 4) perkName = "[purple]PHÚC LỢI 4[]";
+                    else if (resultPerk == 5) perkName = "[green]★ PHÚC LỢI 5 (1% SIÊU HIẾM) ★[]";
+                    else perkName = "[red]★ PHÚC LỢI 6 (1% SIÊU HIẾM) ★[]";
 
-            let currentPerk = this.getPerkTier();
-            let tier = this.getTier();
+                    Vars.ui.showInfo("[gold]BẠN ĐÃ TRÚNG:[]\n" + perkName);
 
-            if (currentPerk == 0) {
-                let spD = spBox.add("Kích hoạt giao thức nâng cấp ngẫu nhiên nhận 1 trong 6 phúc lợi vĩnh viễn:\n" +
-                                     " • [yellow]Phúc lợi 1 (~19.6%):[] +215% Sát thương, Nổ gán 10 tầng Bemod phụ, Giảm mốc nổ còn 7.\n" +
-                                     " • [orange]Phúc lợi 2 (~29.4%):[] Nổ gán 5 tầng Bemod phụ diện rộng, +150% Sát thương vụ nổ.\n" +
-                                     " • [cyan]Phúc lợi 3 (~19.6%):[] +50% Tất cả chỉ số (Dmg, Tỉ lệ, Tầm bắn, Phạm vi nổ).\n" +
-                                     " • [purple]Phúc lợi 4 (~29.4%):[] Nổ 500 Dmg thuần, Nổ lây mục tiêu xa nhất 150px, Bắn đạn kép.\n" +
-                                     " • [green]Phúc lợi 5 (1% SIÊU HIẾM):[] 80% Bắn thêm đạn, 10% Shotgun 40 viên (tốc độ ngẫu nhiên 15-45), Nổ x3 lần (+10% Max HP), Pháo đạn vật lý ở 4 góc được buff gán Bemod (Nổ 50px, Sát thương = 280% Dmg + 600% Tốc độ bắn).\n" +
-                                     " • [red]Phúc lợi 6 (1% SIÊU HIẾM):[] +500% Sát thương gốc, Vụ nổ Bemod gán ngay 10 tầng tạo chuỗi nổ dây chuyền vĩnh viễn!");
-                spD.width(360).get().setWrap(true); spD.get().setAlignment(Align.left); spBox.row();
+                    dialog.hide(); 
+                    this.deselect();
+                } else { 
+                    Vars.ui.showInfo("[red]Không đủ tài nguyên cho Phúc Lợi Đặc Biệt![]"); 
+                }
+            })).size(300, 40);
+        } else {
+            let perkText = "";
+            if (currentPerk == 1) perkText = "[yellow]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1\n• Sát thương +215%\n• Nổ gán 10 tầng Bemod phụ\n• Mốc nổ giảm còn 7 tầng[]";
+            if (currentPerk == 2) perkText = "[orange]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2\n• Nổ gán 5 tầng Bemod phụ xung quanh\n• Sát thương nổ +150%[]";
+            if (currentPerk == 3) perkText = "[cyan]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3\n• Tăng 50% Mọi chỉ số pháo & hiệu ứng nổ[]";
+            if (currentPerk == 4) perkText = "[purple]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 4\n• Nổ 500 Dmg thuần (Bán kính 75px)\n• Nổ lây mục tiêu xa nhất 150px\n• Bắn đạn kép mỗi 0.7s[]";
+            if (currentPerk == 5) perkText = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 5 (1% SIÊU HIẾM)\n• 80% Bắn thêm 1 đạn phụ\n• 10% Shotgun 40 viên, tốc độ ngẫu nhiên\n• Bemod nổ x3 lần (+10% Max HP)\n• Buff 4 pháo đồng minh gần nhất (Tia điện hel, nổ 500 Dmg + 2% Max HP)[]";
+            if (currentPerk == 6) perkText = "[red]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 6 (1% SIÊU HIẾM)\n• Sát thương gốc +500%\n• Vụ nổ Bemod gán ngay 10 tầng Bemod tạo chuỗi nổ dây chuyền vĩnh viễn![]";
 
-                spBox.button("[gold]QUAY PHÚC LỢI (4K Đồng/Chì/Silicon)[]", packRun(() => {
-                    let core = this.team.core();
-                    if(core != null && core.items.get(Items.copper) >= 4000 && core.items.get(Items.lead) >= 4000 && core.items.get(Items.silicon) >= 4000){
-                        core.items.remove(Items.copper, 4000); 
-                        core.items.remove(Items.lead, 4000); 
-                        core.items.remove(Items.silicon, 4000);
+            let spD = spBox.add(perkText);
+            spD.width(360).get().setWrap(true); 
+            spD.get().setAlignment(Align.left);
+        }
 
-                        let rand = Mathf.random(100);
-                        let resultPerk = 3; 
+        branchesTable.add(spBox).width(360); 
+        branchesTable.row();
+        branchesTable.add().height(12).row();
 
-                        if (rand < 1.0) {
-                            resultPerk = 5; 
-                        } else if (rand < 2.0) {
-                            resultPerk = 6; 
-                        } else if (rand < 2.0 + 19.6) {
-                            resultPerk = 1;
-                        } else if (rand < 2.0 + 19.6 + 29.4) {
-                            resultPerk = 2;
-                        } else if (rand < 2.0 + 19.6 + 29.4 + 19.6) {
-                            resultPerk = 3;
-                        } else {
-                            resultPerk = 4;
-                        }
+        // --- KHU VỰC CHỌN NHÁNH NÂNG CẤP (MK2 / MK2B) ---
+        if (tier == 0) {
+            let b1 = new Table(); 
+            b1.background(Styles.black6); 
+            b1.margin(12);
+            b1.add("[cyan]===(MK2)===[]").row();
+            let b1D = b1.add("Nâng cấp vi mạch gia tốc hỏa lực:\n" +
+                             " • Tầm bắn tăng [green]350 pixel (+40%)[]\n" +
+                             " • Sát thương tăng [green]12.15 (+35%)[]\n" +
+                             " • Tốc độ bắn tăng [pink]+15%[]\n" +
+                             " • Tỉ lệ gán Bemod: [yellow]45% (+15%)[]\n" +
+                             " • Sát thương Bemod nổ: [red]500 + 3% Max HP[]");
+            b1D.width(340).get().setWrap(true); 
+            b1D.get().setAlignment(Align.left); 
+            b1.row();
+            b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
+                let core = this.team.core();
+                if (core != null && core.items.get(Items.titanium) >= reqMK2.titanium && core.items.get(Items.silicon) >= reqMK2.silicon) {
+                    core.items.remove(Items.titanium, reqMK2.titanium); 
+                    core.items.remove(Items.silicon, reqMK2.silicon);
+                    
+                    this.setTier(1);
+                    this.configure(1); 
 
-                        this.setPerkTier(resultPerk);
-                        this.configure(10 + resultPerk); 
+                    Fx.upgradeCore.at(this.x, this.y); 
+                    Fx.mineHuge.at(this.x, this.y); 
+                    Effect.shake(4, 4, this.x, this.y);
 
-                        Fx.upgradeCore.at(this.x, this.y); 
-                        Effect.shake(6, 6, this.x, this.y);
+                    dialog.hide(); 
+                    this.deselect();
+                } else { 
+                    Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); 
+                }
+            })).size(180, 38);
 
-                        let perkName = "";
-                        if (resultPerk == 1) perkName = "[yellow]PHÚC LỢI 1[]";
-                        else if (resultPerk == 2) perkName = "[orange]PHÚC LỢI 2[]";
-                        else if (resultPerk == 3) perkName = "[cyan]PHÚC LỢI 3[]";
-                        else if (resultPerk == 4) perkName = "[purple]PHÚC LỢI 4[]";
-                        else if (resultPerk == 5) perkName = "[green]★ PHÚC LỢI 5 (1% SIÊU HIẾM) ★[]";
-                        else perkName = "[red]★ PHÚC LỢI 6 (1% SIÊU HIẾM) ★[]";
+            let b2 = new Table(); 
+            b2.background(Styles.black6); 
+            b2.margin(12);
+            b2.add("[purple]===(MK2B)===[]").row();
+            let b2D = b2.add("Cấu hình Oanh tạc Tầm xa Định vị:\n" +
+                             " • Phạm vi bắn siêu xa [green]750 pixel (+200%)[]\n" +
+                             " • Bắn loạt [orange]10 viên liên tiếp[] nghỉ [pink]3 giây[]\n" +
+                             " • Đạn truy đuổi mục tiêu mạnh [red](homingPower = 0.25)[]\n" +
+                             " • Tỉ lệ gán Bemod: [yellow]100% tuyệt đối[]");
+            b2D.width(340).get().setWrap(true); 
+            b2D.get().setAlignment(Align.left); 
+            b2.row();
+            b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
+                let core = this.team.core();
+                if (core != null && core.items.get(Items.titanium) >= reqMK2B.titanium && core.items.get(Items.silicon) >= reqMK2B.silicon && core.items.get(Items.plastanium) >= reqMK2B.plastanium) {
+                    core.items.remove(Items.titanium, reqMK2B.titanium); 
+                    core.items.remove(Items.silicon, reqMK2B.silicon); 
+                    core.items.remove(Items.plastanium, reqMK2B.plastanium);
+                    
+                    this.setTier(2);
+                    this.configure(2); 
 
-                        Vars.ui.showInfo("[gold]BẠN ĐÃ TRÚNG:[]\n" + perkName);
+                    Fx.bigShockwave.at(this.x, this.y); 
+                    Fx.mineHuge.at(this.x, this.y); 
+                    Effect.shake(4, 4, this.x, this.y);
 
-                        dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho Phúc Lợi Đặc Biệt![]"); }
-                })).size(300, 40);
-            } else {
-                let perkText = "";
-                if (currentPerk == 1) perkText = "[yellow]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1\n• Sát thương +215%\n• Nổ gán 10 tầng Bemod phụ\n• Mốc nổ giảm còn 7 tầng[]";
-                if (currentPerk == 2) perkText = "[orange]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2\n• Nổ gán 5 tầng Bemod phụ xung quanh\n• Sát thương nổ +150%[]";
-                if (currentPerk == 3) perkText = "[cyan]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3\n• Tăng 50% Mọi chỉ số pháo & vụ nổ[]";
-                if (currentPerk == 4) perkText = "[purple]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 4\n• Nổ 500 Dmg thuần (Bán kính 75px)\n• Nổ lây mục tiêu xa nhất 150px\n• Bắn đạn kép mỗi 0.7s[]";
-                if (currentPerk == 5) perkText = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 5 (1% SIÊU HIẾM)\n• 80% Bắn thêm 1 đạn phụ\n• 10% Shotgun 40 viên, tốc độ ngẫu nhiên (15-45)\n• Bemod nổ thêm 2 lần (+10% Max HP mỗi lần)\n• Pháo đạn vật lý ở 4 góc được buff gán Bemod (Nổ 50px, Sát thương = 280% Dmg + 600% Tốc độ bắn)[]";
-                if (currentPerk == 6) perkText = "[red]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 6 (1% SIÊU HIẾM)\n• Sát thương gốc +500%\n• Vụ nổ Bemod gán ngay 10 tầng Bemod tạo chuỗi nổ dây chuyền vĩnh viễn![]";
+                    dialog.hide(); 
+                    this.deselect();
+                } else { 
+                    Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]"); 
+                }
+            })).size(180, 38);
 
-                let spD = spBox.add(perkText);
-                spD.width(360).get().setWrap(true); spD.get().setAlignment(Align.left);
-            }
-
-            branchesTable.add(spBox).width(360); branchesTable.row();
+            branchesTable.add(b1).width(360); 
+            branchesTable.row();
             branchesTable.add().height(12).row();
+            branchesTable.add(b2).width(360);
+        } else {
+            let statusLabel = (tier == 1) ? "[cyan]ĐÃ NÂNG CẤP THÀNH PHÁO MK2[]" : "[purple]ĐÃ NÂNG CẤP THÀNH PHÁO MK2B[]";
+            branchesTable.add(statusLabel).row();
+        }
 
-            if (tier == 0) {
-                let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
-                b1.add("[cyan]===(MK2)===[]").row();
-                let b1D = b1.add("Nâng cấp vi mạch gia tốc hỏa lực:\n" +
-                                 " • Tầm bắn tăng [green]350 pixel (+40%)[]\n" +
-                                 " • Sát thương tăng [green]12.15 (+35%)[]\n" +
-                                 " • Tốc độ bắn tăng [pink]+15%[]\n" +
-                                 " • Tỉ lệ gán Bemod: [yellow]45% (+15%)[]\n" +
-                                 " • Sát thương Bemod nổ: [red]500 + 3% Max HP[]");
-                b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
-                b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
-                    let core = this.team.core();
-                    if(core != null && core.items.get(Items.titanium) >= reqMK2.titanium && core.items.get(Items.silicon) >= reqMK2.silicon){
-                        core.items.remove(Items.titanium, reqMK2.titanium); core.items.remove(Items.silicon, reqMK2.silicon);
-                        
-                        this.setTier(1);
-                        this.configure(1); 
+        let scroll = new ScrollPane(branchesTable);
+        scroll.setScrollingDisabled(true, false);
+        dialog.cont.add(scroll).maxHeight(420);
+        dialog.addCloseButton(); 
+        dialog.show();
+    })).size(50, 40).tooltip("Nâng cấp hệ thống Indeniter");
 
-                        Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(4, 4, this.x, this.y);
-                        dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); }
-                })).size(180, 38);
+    // ==================== NÚT 2: BẢNG BÁO CÁO THÔNG SỐ HIỆN TẠI ====================
+    table.button(Icon.info, Styles.cleari, 40, packRun(() => {
+        let title = " Thông số pháo Indeniter ";
+        let descStr = "";
+        let currentTier = this.getTier();
 
-                let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
-                b2.add("[purple]===(MK2B)===[]").row();
-                let b2D = b2.add("Cấu hình Oanh tạc Tầm xa Định vị:\n" +
-                                 " • Phạm vi bắn siêu xa [green]750 pixel (+200%)[]\n" +
-                                 " • Bắn loạt [orange]10 viên liên tiếp[] nghỉ [pink]3 giây[]\n" +
-                                 " • Đạn truy đuổi mục tiêu mạnh [red](homingPower = 0.25)[]\n" +
-                                 " • Tỉ lệ gán Bemod: [yellow]100% tuyệt đối[]");
-                b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
-                b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
-                    let core = this.team.core();
-                    if(core != null && core.items.get(Items.titanium) >= reqMK2B.titanium && core.items.get(Items.silicon) >= reqMK2B.silicon && core.items.get(Items.plastanium) >= reqMK2B.plastanium){
-                        core.items.remove(Items.titanium, reqMK2B.titanium); core.items.remove(Items.silicon, reqMK2B.silicon); core.items.remove(Items.plastanium, reqMK2B.plastanium);
-                        
-                        this.setTier(2);
-                        this.configure(2); 
+        if (currentTier == 0) descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n• Máu: 1,200 | Tầm bắn: 250px | Sát thương đạn: 9.0\n• Tỉ lệ gán Bemod: 30%";
+        else if (currentTier == 1) descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n• Máu: 1,800 | Tầm bắn: 350px | Sát thương đạn: 12.15\n• Tỉ lệ gán Bemod: 45% | Nổ Bemod: 500 + 3% Max HP";
+        else if (currentTier == 2) descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n• Máu: 1,600 | Tầm bắn: 750px | Sát thương đạn: 9.0\n• Chế độ: Bắn loạt 10 viên | Tỉ lệ gán Bemod: 100%";
 
-                        Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(4, 4, this.x, this.y);
-                        dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
-                })).size(180, 38);
+        let perk = this.getPerkTier();
+        if (perk > 0) {
+            descStr += "\n\n[gold]★ ĐÃ KÍCH HOẠT PHÚC LỢI ĐẶC BIỆT ★[]";
+            if (perk == 1) descStr += "\n[yellow]• Phúc lợi 1: Sát thương +215%, Nổ gán 10 tầng Bemod phụ, Giới hạn nổ: 7 tầng.[]";
+            if (perk == 2) descStr += "\n[orange]• Phúc lợi 2: Nổ gán 5 tầng Bemod phụ xung quanh, Sát thương nổ +150%.[]";
+            if (perk == 3) descStr += "\n[cyan]• Phúc lợi 3: +50% Mọi chỉ số pháo & hiệu ứng nổ.[]";
+            if (perk == 4) descStr += "\n[purple]• Phúc lợi 4: Nổ 500 Dmg thuần (75px), Nổ lây mục tiêu xa nhất 150px, Bắn đạn kép mỗi 0.7s.[]";
+            if (perk == 5) descStr += "\n[green]• Phúc lợi 5 (1%): 80% Bắn đạn phụ, 10% Shotgun 40 viên, Nổ x3 lần, Buff 4 pháo đồng minh gần nhất (Quét mỗi 5s + Tia điện hel & Vòng Zoom 2/3 size).[]";
+            if (perk == 6) descStr += "\n[red]• Phúc lợi 6 (1%): +500% Sát thương gốc, Vụ nổ Bemod gán 10 tầng tạo chuỗi nổ dây chuyền vĩnh viễn![]";
+        }
 
-                branchesTable.add(b1).width(360); branchesTable.row();
-                branchesTable.add().height(12).row();
-                branchesTable.add(b2).width(360);
-            } else {
-                let statusLabel = (tier == 1) ? "[cyan]ĐÃ NÂNG CẤP THÀNH PHÁO MK2[]" : "[purple]ĐÃ NÂNG CẤP THÀNH PHÁO MK2B[]";
-                branchesTable.add(statusLabel).row();
-            }
+        let dialog = extend(BaseDialog, title, {});
+        let infoTable = new Table();
+        let cell = infoTable.add(descStr).width(360);
+        cell.get().setWrap(true); 
+        cell.get().setAlignment(Align.left);
 
-            let scroll = new ScrollPane(branchesTable);
-            scroll.setScrollingDisabled(true, false);
-            dialog.cont.add(scroll).maxHeight(420);
-            dialog.addCloseButton(); dialog.show();
-        })).size(50, 40).tooltip("Nâng cấp hệ thống Indeniter");
+        let scroll = new ScrollPane(infoTable);
+        scroll.setScrollingDisabled(true, false);
+        dialog.cont.add(scroll).maxHeight(400);
+        dialog.addCloseButton(); 
+        dialog.show();
+    })).size(50, 40).tooltip("Xem thông số chi tiết hệ thống");
+},
+//21436289539578953171946439561426014274
 
-        table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-            let title = " Thông số pháo Indeniter ";
-            let descStr = "";
-            let currentTier = this.getTier();
 
-            if (currentTier == 0) descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n• Máu: 1,200 | Tầm bắn: 250px | Sát thương đạn: 9.0\n• Tỉ lệ gán Bemod: 30%";
-            else if (currentTier == 1) descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n• Máu: 1,800 | Tầm bắn: 350px | Sát thương đạn: 12.15\n• Tỉ lệ gán Bemod: 45% | Nổ Bemod: 500 + 3% Max HP";
-            else if (currentTier == 2) descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n• Máu: 1,600 | Tầm bắn: 750px | Sát thương đạn: 9.0\n• Chế độ: Bắn loạt 10 viên | Tỉ lệ gán Bemod: 100%";
-
-            let perk = this.getPerkTier();
-            if (perk > 0) {
-                descStr += "\n\n[gold]★ ĐÃ KÍCH HOẠT PHÚC LỢI ĐẶC BIỆT ★[]";
-                if (perk == 1) descStr += "\n[yellow]• Phúc lợi 1: Sát thương +215%, Nổ gán 10 tầng Bemod phụ, Giới hạn nổ: 7 tầng.[]";
-                if (perk == 2) descStr += "\n[orange]• Phúc lợi 2: Nổ gán 5 tầng Bemod phụ xung quanh, Sát thương nổ +150%.[]";
-                if (perk == 3) descStr += "\n[cyan]• Phúc lợi 3: +50% Mọi chỉ số pháo & hiệu ứng nổ.[]";
-                if (perk == 4) descStr += "\n[purple]• Phúc lợi 4: Nổ 500 Dmg thuần (75px), Nổ lây mục tiêu xa nhất 150px, Bắn đạn kép mỗi 0.7s.[]";
-                if (perk == 5) descStr += "\n[green]• Phúc lợi 5 (1%): 80% Bắn đạn phụ, 10% Shotgun 40 viên (tốc độ ngẫu nhiên 15-45), Nổ x3 lần (+10% Max HP), Pháo đạn vật lý ở 4 góc được buff gán Bemod (Nổ 50px, Sát thương = 280% Dmg + 600% Tốc độ bắn).[]";
-                if (perk == 6) descStr += "\n[red]• Phúc lợi 6 (1%): +500% Sát thương gốc, Vụ nổ Bemod gán 10 tầng tạo chuỗi nổ dây chuyền vĩnh viễn![]";
-            }
-
-            let dialog = extend(BaseDialog, title, {});
-            let infoTable = new Table();
-            let cell = infoTable.add(descStr).width(360);
-            cell.get().setWrap(true); cell.get().setAlignment(Align.left);
-            let scroll = new ScrollPane(infoTable);
-            scroll.setScrollingDisabled(true, false);
-            dialog.cont.add(scroll).maxHeight(400);
-            dialog.addCloseButton(); dialog.show();
-        })).size(50, 40).tooltip("Xem thông số chi tiết hệ thống");
-    },
 
     config() { return this.getTier(); },
 
     draw(){
         let modName = this.block.name.split("-")[0]; 
         let baseRegion = Core.atlas.find(this.block.basePrefix + "" + this.block.size);
+        
+        // Vẽ chân đế
         if(baseRegion.found()){
             Draw.rect(baseRegion, this.x, this.y);
         } else {
@@ -685,7 +864,45 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
         let cos = Math.cos(rad);
         let sin = Math.sin(rad);
 
-        let maxBarrelRecoilDistance = -5.0; 
+        // Lưu Layer gốc của Turret (mặc định là Layer.turret)
+        let baseZ = Layer.turret;
+
+        // ==================== 1. LỚP THẤP HƠN (Z - 0.01) ====================
+        Draw.z(baseZ - 0.01);
+
+        // --- CẢ 2 CÁNH DỊCH CHUYỂN 15PX SANG 2 BÊN ---
+        let wingSpread = this.shootingVisual * 15.0;
+
+        let wing1Region = Core.atlas.find(modName + "-indeniter-wing1");
+        if (wing1Region.found()) {
+            let w1x = this.x - wingSpread * sin;
+            let w1y = this.y + wingSpread * cos;
+            Draw.rect(wing1Region, w1x, w1y, this.rotation);
+        }
+
+        let wing2Region = Core.atlas.find(modName + "-indeniter-wing2");
+        if (wing2Region.found()) {
+            let w2x = this.x + wingSpread * sin;
+            let w2y = this.y - wingSpread * cos;
+            Draw.rect(wing2Region, w2x, w2y, this.rotation);
+        }
+
+        // --- PHẦN "NON" ---
+        let maxNonRecoilDistance = -8.0;
+        let nonRecoilOffset = this.nonRecoil * maxNonRecoilDistance; 
+        let nonBaseBack = -8.8; 
+        let nonBaseLeft = 8.8;  
+
+        let nonRegion = Core.atlas.find(modName + "-indeniter-non");
+        if (nonRegion.found()) {
+            let nonX = this.x + (nonBaseBack + nonRecoilOffset) * cos - nonBaseLeft * sin;
+            let nonY = this.y + (nonBaseBack + nonRecoilOffset) * sin + nonBaseLeft * cos;
+            
+            Draw.rect(nonRegion, nonX, nonY, this.rotation);
+        }
+
+        // ==================== 2. LỚP ĐẦU PHÁO & THÂN CHÍNH ====================
+        Draw.z(baseZ);
 
         let barrel1Region = Core.atlas.find(modName + "-indeniter-barrel1");
         if(barrel1Region.found()) Draw.rect(barrel1Region, this.x, this.y, this.rotation);
@@ -693,13 +910,49 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
         let barrel2Region = Core.atlas.find(modName + "-indeniter-barrel2");
         if(barrel2Region.found()) Draw.rect(barrel2Region, this.x, this.y, this.rotation);
 
-        let b1Offset = this.customRecoil * maxBarrelRecoilDistance;
+        let b1Offset = this.customRecoil * -5.0;
         let b1Region = Core.atlas.find(modName + "-indeniter-b1");
         if (b1Region.found()) {
             let b1ax = this.x + b1Offset * cos;
             let b1ay = this.y + b1Offset * sin;
             Draw.rect(b1Region, b1ax, b1ay, this.rotation);
         }
+
+        // ==================== 3. HIỆU ỨNG QUẢ CẦU NĂNG LƯỢNG NÒNG PHÁO ====================
+        if (this.energyCharge > 0.001) {
+            Draw.z(Layer.turret + 0.01);
+
+            // Lấy màu khói/đuôi đạn của đạn hiện tại
+            let bulletType = this.peekAmmo();
+            let energyColor = bulletType.backColor ? bulletType.backColor : Color.valueOf("#ffcc00");
+
+            // Tọa độ đỉnh nòng pháo (nhích lên phía trước nòng)
+            let barrelOffset = 14.0 + (this.customRecoil * -5.0); 
+            let ballX = this.x + barrelOffset * cos;
+            let ballY = this.y + barrelOffset * sin;
+
+            // Kích thước quả cầu biến thiên linh hoạt tạo hiệu ứng năng lượng đang hoạt động
+            let pulse = Mathf.absin(Time.time, 3.0, 1.5);
+            let baseRadius = (5.0 + pulse) * this.energyCharge;
+
+            // Vẽ quầng sáng năng lượng xung quanh
+            Draw.color(energyColor);
+            Draw.alpha(0.35 * this.energyCharge);
+            Fill.circle(ballX, ballY, baseRadius * 1.8);
+
+            // Vẽ vòng viền năng lượng bên ngoài
+            Draw.color(energyColor);
+            Draw.alpha(0.8 * this.energyCharge);
+            Lines.stroke(1.5 * this.energyCharge);
+            Lines.circle(ballX, ballY, baseRadius * 1.3);
+
+            // Vẽ lõi cầu năng lượng trắng rực
+            Draw.color(Color.white);
+            Draw.alpha(0.9 * this.energyCharge);
+            Fill.circle(ballX, ballY, baseRadius * 0.7);
+        }
+
+        Draw.reset();
     },
 
     write(write){ 
@@ -716,12 +969,15 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
             this.perkTierState = 0;
         }
         this.customRecoil = 0.0;
+        this.nonRecoil = 0.0;
+        this.shootingVisual = 0.0;
+        this.energyCharge = 0.0;
         this.isBursting = false;
         this.subBulletTimer = 0.0;
     }
 });
 
-// ==================== EVENT XỬ LÝ SÁT THƯƠNG PHÁO 4 GÓC (PHÚC LỢI 5) ====================
+// ==================== EVENT XỬ LÝ SÁT THƯƠNG PHÁO BUFF (PHÚC LỢI 5) ====================
 Events.on(UnitDamageEvent, cons(e => {
     let unit = e.unit;
     if (unit == null || !unit.isValid()) return;
@@ -729,31 +985,20 @@ Events.on(UnitDamageEvent, cons(e => {
     if (typeof global !== "undefined" && global.cornerBuffedTurrets) {
         Groups.build.each(cons(build => {
             let sourceIndeniter = global.cornerBuffedTurrets[build.id];
-            if (sourceIndeniter != null && sourceIndeniter.isValid()) {
-                if (build.dst(unit) <= build.range() + 20) {
+            
+            if (build != null && build.isValid() && sourceIndeniter != null && sourceIndeniter.isValid()) {
+                if (unit.team != build.team && build.team == sourceIndeniter.team && build.dst(unit) <= build.range() + 20) {
                     let status = getBemodStatus();
-                    if (status != null && Mathf.chance(0.35)) {
+                    
+                    if (status != null && Mathf.chance(0.35)) { 
                         unit.apply(status, 60 * 10);
                         let id = unit.id;
+                        
                         if (global.bemodStacks) {
                             global.bemodStacks[id] = (global.bemodStacks[id] || 0) + 1;
+                            
                             if (global.bemodStacks[id] >= 10) {
-                                // LẤY SÁT THƯƠNG ĐẠN CỦA PHÁO 4 GÓC
-                                let bulletDmg = 10;
-                                if (typeof build.peekAmmo === "function" && build.peekAmmo() != null) {
-                                    bulletDmg = build.peekAmmo().damage;
-                                } else if (build.bullet != null) {
-                                    bulletDmg = build.bullet.damage;
-                                }
-
-                                // TÍNH TỐC ĐỘ BẮN (RPS - Rounds Per Second)
-                                let reloadTicks = (build.reload > 0) ? build.reload : 60;
-                                let rps = 60 / reloadTicks;
-
-                                // CÔNG THỨC MỚI: 280% Damage + 600% Tốc độ bắn (RPS)
-                                let cornerDmg = (bulletDmg * 2.80) + (rps * 6.00);
-
-                                triggerBemodExplosion(build, unit, 0, false, true, true, cornerDmg);
+                                triggerBemodExplosion(build, unit, 0, false, true, true);
                             }
                         }
                     }

@@ -2,7 +2,7 @@
 name: Indeniter
 description: Pháo Vendicum: Tháp pháo cường hóa động năng với cơ chế tích tụ năng lượng độc đáo. Khi súng đầy năng lượng (bình thường hoặc ngừng bắn để hồi phục), pháo sẽ được buff mạnh mẽ lên tới +500% Sát thương và +250% Tốc độ bắn. 
 health: 2200
-size: 3
+size: 4
 reload: 20
 range: 410
 recoil: 0

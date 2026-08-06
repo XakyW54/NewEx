@@ -42,7 +42,7 @@ const circleOutEffect = new Effect(30, new Cons({
     }
 }));
 
-// 3. Hiệu ứng Tia lửa lớn (hitSparkLarge) - Viết thuần toán học, chống crash Java/Rhino 100%
+// 3. Hiệu ứng Tia lửa lớn (hitSparkLarge)
 const hitSparkLargeEffect = new Effect(40, new Cons({
     get: function(e) {
         Draw.color(e.color, Color.white, e.fout() * 0.3);
@@ -171,18 +171,35 @@ Events.on(ClientLoadEvent, new Cons({
                 hitPoints: 0, 
                 damageStack: 0, 
 
+                peekAmmo() {
+                    let tier = this.getTier();
+                    if (tier === 1) return tankaniMK2Bullet;
+                    if (tier === 2) return tankaniMK2BBullet;
+                    return tankaniNormalBullet;
+                },
+
+                useAmmo() {
+                    let tier = this.getTier();
+                    if (tier === 1) return tankaniMK2Bullet;
+                    if (tier === 2) return tankaniMK2BBullet;
+                    return tankaniNormalBullet;
+                },
+
                 getStackRatio() { 
                     if (this.damageStack === undefined) return 0.0; 
                     return this.damageStack / 8.0;  
                 },
                 
-                getTier() { return this.tierState == null ? 0 : this.tierState; }, 
+                getTier() { 
+                    return this.tierState == null ? 0 : Number(this.tierState); 
+                }, 
                 
                 setTier(val) {  
-                    this.tierState = val; 
-                    if (val == 0) this.health = 848; 
-                    if (val == 1) this.health = 1103;  
-                    if (val == 2) this.health = 1425; 
+                    let numTier = Number(val);
+                    this.tierState = numTier; 
+                    if (numTier === 0) this.health = 848; 
+                    if (numTier === 1) this.health = 1103;  
+                    if (numTier === 2) this.health = 1425; 
                     this.maxHealth = this.health; 
                 },
 
@@ -205,7 +222,7 @@ Events.on(ClientLoadEvent, new Cons({
 
                 range() { 
                     let tier = this.getTier(); 
-                    if (tier == 2) { 
+                    if (tier === 2) { 
                         return this.super$range() * 2; 
                     }
                     return this.super$range(); 
@@ -214,7 +231,7 @@ Events.on(ClientLoadEvent, new Cons({
                 findTarget() { 
                     this.super$findTarget(); 
                     let tier = this.getTier(); 
-                    if (tier == 2 && this.target != null) { 
+                    if (tier === 2 && this.target != null) { 
                         if (this.target.isFlying === undefined || !this.target.isFlying()) { 
                             this.target = null; 
                         }
@@ -225,7 +242,7 @@ Events.on(ClientLoadEvent, new Cons({
                     table.clear(); table.row(); 
                     let tier = this.getTier(); 
 
-                    if (tier == 0) { 
+                    if (tier === 0) { 
                         table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => { 
                             let dialog = extend(BaseDialog, "Trung tâm nâng cấp Tankani-4k", {}); 
                             
@@ -274,7 +291,10 @@ Events.on(ClientLoadEvent, new Cons({
                                 if (core != null && core.items.get(Items.copper) >= reqMK2.copper && core.items.get(Items.lead) >= reqMK2.lead) { 
                                     core.items.remove(Items.copper, reqMK2.copper); core.items.remove(Items.lead, reqMK2.lead); 
                                     Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y); 
-                                    this.configure(1); dialog.hide(); this.deselect(); 
+                                    
+                                    this.setTier(1); 
+                                    this.configure(java.lang.Integer.valueOf(1)); 
+                                    dialog.hide(); this.deselect(); 
                                 } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); } 
                             })).size(180, 38); 
 
@@ -294,7 +314,10 @@ Events.on(ClientLoadEvent, new Cons({
                                 if (core != null && core.items.get(Items.copper) >= reqMK2B.copper && core.items.get(Items.lead) >= reqMK2B.lead && core.items.get(Items.titanium) >= reqMK2B.titanium) { 
                                     core.items.remove(Items.copper, reqMK2B.copper); core.items.remove(Items.lead, reqMK2B.lead); core.items.remove(Items.titanium, reqMK2B.titanium); 
                                     Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y); 
-                                    this.configure(2); dialog.hide(); this.deselect(); 
+                                    
+                                    this.setTier(2); 
+                                    this.configure(java.lang.Integer.valueOf(2)); 
+                                    dialog.hide(); this.deselect(); 
                                 } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]"); } 
                             })).size(180, 38); 
 
@@ -324,14 +347,14 @@ Events.on(ClientLoadEvent, new Cons({
                                            "[lightgray]Sát thương cộng thêm:[] [green]+" + (this.damageStack * 10) + "%[] (Tối đa +80%)\n" + 
                                            (this.damageStack >= maxStack ? "[cyan]🔥 Đạt mốc 80% Sát thương: Kích hoạt đạn xuyên giáp 40% & Giảm hiệu quả giáp mục tiêu (armorMultiplier = 1.5)![]\n" : ""); 
 
-                        if (currentTier == 0) { 
+                        if (currentTier === 0) { 
                             title += "[yellow](MK1)[]"; 
                             descStr = "[gold]⚡ THÔNG SỐ GỐC CHƯA NÂNG CẤP (MK1) ⚡[]\n" + 
                                       "[lightgray]Máu tháp pháo:[] [green]848 HP[]\n" + 
                                       "[lightgray]Trạng thái mục tiêu:[] Đất & Không\n" + 
                                       "[lightgray]Sát thương mục tiêu đơn:[] [red]" + this.getModifiedDamage(1673) + " Sát thương[] (Gốc: 1673)\n" + 
                                       statStackStr; 
-                        } else if (currentTier == 1) { 
+                        } else if (currentTier === 1) { 
                             title += "[cyan](MK2)[]"; 
                             descStr = "[cyan]⚡ CẤU HÌNH ĐẠN DIỆN RỘNG (MK2) ⚡[]\n" + 
                                       "[lightgray]Máu tháp pháo:[] [green]1103 HP[]\n" + 
@@ -339,7 +362,7 @@ Events.on(ClientLoadEvent, new Cons({
                                       "[lightgray]Sát thương trực diện:[] [red]" + this.getModifiedDamage(1673) + " Sát thương[] (Gốc: 1673)\n" + 
                                       "[lightgray]Sát thương nổ lan:[] [yellow]" + this.getModifiedDamage(837) + " Sát thương[] (Gốc: 837)\n" + 
                                       statStackStr; 
-                        } else if (currentTier == 2) { 
+                        } else if (currentTier === 2) { 
                             title += "[purple](MK2B)[]"; 
                             descStr = "[purple]⚡ CẤU HÌNH PHÒNG KHÔNG HẠNG NẶNG (MK2B) ⚡[]\n" + 
                                       "[lightgray]Máu tháp pháo:[] [green]1425 HP[]\n" + 
@@ -361,13 +384,13 @@ Events.on(ClientLoadEvent, new Cons({
                     })).size(50, 40).tooltip("Xem chi tiết thông số hệ thống"); 
                 },
 
-                config() { return java.lang.Integer(this.getTier()); }, 
+                config() { return java.lang.Integer.valueOf(this.getTier()); }, 
 
                 shoot(type) { 
                     let tier = this.getTier(); 
                     let activeSpecial = (this.damageStack >= maxStack); 
 
-                    if (tier == 1) { 
+                    if (tier === 1) { 
                         tankaniMK2Bullet.damage = this.getModifiedDamage(1673); 
                         tankaniMK2Bullet.splashDamage = this.getModifiedDamage(837); 
                         
@@ -376,7 +399,7 @@ Events.on(ClientLoadEvent, new Cons({
                         tankaniMK2Bullet.status = StatusEffects.none; 
                         
                         this.super$shoot(tankaniMK2Bullet); 
-                    } else if (tier == 2) { 
+                    } else if (tier === 2) { 
                         tankaniMK2BBullet.damage = this.getModifiedDamage(1); 
                         tankaniMK2BBullet.splashDamage = this.getModifiedDamage(1338); 
                         

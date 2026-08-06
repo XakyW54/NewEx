@@ -230,7 +230,12 @@ Events.on(ClientLoadEvent, cons(e => {
                             if (core != null && core.items.get(Items.copper) >= reqMK2.copper && core.items.get(Items.lead) >= reqMK2.lead) {
                                 core.items.remove(Items.copper, reqMK2.copper); core.items.remove(Items.lead, reqMK2.lead);
                                 Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
-                                this.configure(1); dialog.hide(); this.deselect();
+                                
+                                // Đã sửa: Cập nhật trực tiếp và ép kiểu Java Integer chuẩn
+                                this.setTier(1);
+                                this.configure(java.lang.Integer.valueOf(1)); 
+                                
+                                dialog.hide(); this.deselect();
                             } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                         })).size(180, 38);
 
@@ -250,7 +255,12 @@ Events.on(ClientLoadEvent, cons(e => {
                             if (core != null && core.items.get(Items.copper) >= reqMK2B.copper && core.items.get(Items.lead) >= reqMK2B.lead && core.items.get(Items.titanium) >= reqMK2B.titanium) {
                                 core.items.remove(Items.copper, reqMK2B.copper); core.items.remove(Items.lead, reqMK2B.lead); core.items.remove(Items.titanium, reqMK2B.titanium);
                                 Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
-                                this.configure(2); dialog.hide(); this.deselect();
+                                
+                                // Đã sửa: Cập nhật trực tiếp và ép kiểu Java Integer chuẩn
+                                this.setTier(2);
+                                this.configure(java.lang.Integer.valueOf(2)); 
+                                
+                                dialog.hide(); this.deselect();
                             } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
                         })).size(180, 38);
 
@@ -316,7 +326,8 @@ Events.on(ClientLoadEvent, cons(e => {
                 })).size(50, 40).tooltip("Xem chi tiết thông số hệ thống");
             },
 
-            config() { return java.lang.Integer(this.getTier()); },
+            // Đã sửa: Sửa cú pháp gọi Java Integer
+            config() { return java.lang.Integer.valueOf(this.getTier()); },
 
             shoot(type) {
                 let tier = this.getTier();

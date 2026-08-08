@@ -11,14 +11,10 @@ const expandCircleFx = new Effect(25, cons(e => {
     Lines.circle(e.x, e.y, radius);
 }));
 
-// HIỆU ỨNG NỔ: VÒNG TRÒN VÀ SPRITE TOP ZOOM TO CỰC NHANH
 const superExplosionFx = new Effect(60, cons(e => {
     let maxRadius = 800; 
-    
-    // Bán kính hổng ở tâm lan ra ngoài
     let innerRadius = maxRadius * e.fin(); 
 
-    // 1. VẼ RUỘT MỜ (Xóa dần từ tâm)
     Draw.color(Color.scarlet);
     Draw.alpha(0.35 * e.fout());
     
@@ -28,31 +24,15 @@ const superExplosionFx = new Effect(60, cons(e => {
         Lines.circle(e.x, e.y, innerRadius + fillThickness / 2);
     }
 
-    // 2. VẼ VIỀN NGOÀI CỐ ĐỊNH
     Draw.color(Color.white);
     Draw.alpha(e.fout());
     Lines.stroke(6.0 * e.fout());
     Lines.circle(e.x, e.y, maxRadius);
 
-    // 3. VIỀN SÓNG XUNG KÍCH BÊN TRONG
     Draw.color(Color.scarlet);
     Draw.alpha(e.fout());
     Lines.stroke(4.0 * e.fout());
     Lines.circle(e.x, e.y, innerRadius);
-
-    // 4. DRAW SPRITE TOP ZOOM CỰC NHANH GẤP 3 LẦN TẠI THỜI ĐIỂM NỔ
-    let topRegion = Core.atlas.find("newex-syrufpat-factory-top");
-    if (topRegion.found()) {
-        let zoomProgress = Math.min(1.0, e.fin() * 4.0); // Phóng to cực nhanh trong 1/4 thời gian đầu
-        let zoomScale = zoomProgress * 3.0; 
-        
-        Draw.color(Color.white);
-        Draw.alpha(e.fout());
-        
-        let blowRot = e.time * 12.0; 
-        
-        Draw.rect(topRegion, e.x, e.y, topRegion.width * Draw.scl * zoomScale, topRegion.height * Draw.scl * zoomScale, blowRot);
-    }
 }));
 
 const COLOR_GRAPHITE  = Color.valueOf("92a4bd");
@@ -60,9 +40,7 @@ const COLOR_SILICON   = Color.valueOf("535661");
 const COLOR_OIL       = Color.valueOf("313131");
 const COLOR_PLAST     = Color.valueOf("cbd97f");
 
-const CRAFT_TIME = 2.0 * 60;
-const ACCEL_TIME = 3.0 * 60; // Thời gian tăng tốc cánh quạt: 3 giây
-const MAX_SPIN_SPEED = 12.0;  // Tốc độ quay tối đa
+const CRAFT_TIME = 1.0 * 60;
 
 Events.on(ContentInitEvent, () => {
     const syrufpatFactory = Vars.content.getByName(ContentType.block, "newex-syrufpat-factory");
@@ -77,7 +55,6 @@ Events.on(ContentInitEvent, () => {
         syrufpatFactory.liquidCapacity = 500;
     }
 
-    // THANH BAR CẢNH BÁO NỔ
     syrufpatFactory.addBar("overheat_status", new Func({
         get: function(e){
             return new Bar(
@@ -85,7 +62,7 @@ Events.on(ContentInitEvent, () => {
                     get: function(){ 
                         let timeLeft = e.getOverheatTimeLeft();
                         if (e.overheatTimer <= 0) return "TRẠNG THÁI: AN TOÀN";
-                        if (e.isInventoryFull()) return "[scarlet]KHO ĐẦY! NỔ TRONG: " + timeLeft + "s[]";
+                        if (e.isOverItemLimit()) return "[scarlet]KHO VƯỢT QUÁ 1100 ITEM! NỔ TRONG: " + timeLeft + "s[]";
                         return "CẢNH BÁO NỔ: " + timeLeft + "s"; 
                     } 
                 }),
@@ -107,7 +84,6 @@ Events.on(ContentInitEvent, () => {
         if (tile != null) tile.setOutputSelection(Number(value));
     }));
 
-    // LOGIC BUILD TYPE
     syrufpatFactory.buildType = () => extend(GenericCrafter.GenericCrafterBuild, syrufpatFactory, {
         created() {
             this.super$created();
@@ -115,8 +91,15 @@ Events.on(ContentInitEvent, () => {
             this.selectedOutput = 0; 
             this.overheatTimer = 0;
             this.hasStartedBefore = false;
-            this.topRotation = 0;
-            this.spinTimer = 0; // Bộ đếm thời gian tăng tốc
+            
+            // Biến lưu trạng thái giai đoạn sản xuất (0: Graphite, 1: Silicon, 2: Oil, 3: Plastanium)
+            this.productionStage = 0;
+
+            // Hàng chờ xả vật phẩm
+            this.dumpGraphiteLeft = 0;
+            this.dumpSiliconLeft = 0;
+            this.dumpPlastaniumLeft = 0;
+
             return this;
         },
 
@@ -136,19 +119,23 @@ Events.on(ContentInitEvent, () => {
             return (this.selectedOutput == null) ? 0 : this.selectedOutput;
         },
 
-        isInventoryFull() {
-            if (this.items == null || this.liquids == null) return false;
-            let cap = syrufpatFactory.itemCapacity;
-            let liqCap = syrufpatFactory.liquidCapacity;
-
-            return (this.items.get(Items.graphite) >= cap ||
-                    this.items.get(Items.silicon) >= cap ||
-                    this.liquids.get(Liquids.oil) >= liqCap ||
-                    this.items.get(Items.plastanium) >= cap);
+        isOverItemLimit() {
+            if (this.items == null) return false;
+            return this.items.total() > 1100;
         },
 
         acceptItem(source, item) {
-            return this.items != null && this.items.get(item) < syrufpatFactory.itemCapacity;
+            if (this.items == null) return false;
+
+            if (item == Items.thorium) {
+                return this.getOutputSelection() == 3 && this.items.get(Items.thorium) < syrufpatFactory.itemCapacity;
+            }
+
+            if (item == Items.coal || item == Items.sand || item == Items.lead || item == Items.titanium) {
+                return this.items.get(item) < syrufpatFactory.itemCapacity;
+            }
+
+            return false;
         },
 
         acceptLiquid(source, liquid) {
@@ -161,20 +148,12 @@ Events.on(ContentInitEvent, () => {
             if (this.items == null || this.liquids == null) return;
 
             let pColor = COLOR_GRAPHITE;
-            let isWorking = false;
+            if (this.productionStage == 0) pColor = COLOR_GRAPHITE;
+            else if (this.productionStage == 1) pColor = COLOR_SILICON;
+            else if (this.productionStage == 2) pColor = COLOR_OIL;
+            else if (this.productionStage == 3) pColor = COLOR_PLAST;
 
-            if (this.items.get(Items.graphite) < 100 && this.items.get(Items.coal) >= 20) {
-                pColor = COLOR_GRAPHITE; isWorking = true;
-            } else if (this.items.get(Items.graphite) >= 100 && this.items.get(Items.silicon) < 100 && this.items.get(Items.sand) >= 30 && this.items.get(Items.coal) >= 10 && this.items.get(Items.graphite) >= 5) {
-                pColor = COLOR_SILICON; isWorking = true;
-            } else if (this.items.get(Items.silicon) >= 100 && this.liquids.get(Liquids.oil) < 100 && this.items.get(Items.coal) >= 20) {
-                pColor = COLOR_OIL; isWorking = true;
-            } else if (this.liquids.get(Liquids.oil) >= 30 && this.items.get(Items.titanium) >= 20) {
-                pColor = COLOR_PLAST; isWorking = true;
-            }
-
-            // Draw vòng tròn tiến trình sản xuất
-            if (isWorking && this.efficiency > 0) {
+            if (this.efficiency > 0) {
                 let progress = Math.min(1.0, this.craftTimer / CRAFT_TIME);
                 let radius = 25 * (1.0 - progress);
 
@@ -182,38 +161,17 @@ Events.on(ContentInitEvent, () => {
                 Lines.stroke(2.0 * (1.0 - progress));
                 Lines.circle(this.x, this.y, radius);
             }
-
-            // -----------------------------------------------------------------
-            // DRAW SPRITE TOP (TĂNG TỐC QUAY TRONG 3S + THU NHỎ KHI SẮP NỔ)
-            // -----------------------------------------------------------------
-            let topRegion = Core.atlas.find("newex-syrufpat-factory-top");
-            if (topRegion.found()) {
-                let currentScale = Math.max(0.0, 1.0 - this.getOverheatRatio());
-
-                if (currentScale > 0) {
-                    Draw.color(Color.white);
-                    
-                    let width = topRegion.width * Draw.scl * currentScale;
-                    let height = topRegion.height * Draw.scl * currentScale;
-
-                    Draw.rect(topRegion, this.x, this.y, width, height, this.topRotation);
-                }
-            }
         },
 
-        // HÀM XỬ LÝ VỤ NỔ HỦY DIỆT
         triggerInstantDeathExplosion() {
             let explosionRadius = 800; 
 
-            // 1. KÍCH HOẠT CUSTOM EFFECT
             superExplosionFx.at(this.x, this.y);
 
-            // 2. Tiêu diệt TẤT CẢ UNIT trong bán kính
             Units.nearby(null, this.x, this.y, explosionRadius, cons(unit => {
                 unit.kill();
             }));
 
-            // 3. Tiêu diệt TẤT CẢ BLOCK/CÔNG TRÌNH trong bán kính
             let tileRadius = Math.ceil(explosionRadius / Vars.tilesize);
             let startX = Math.max(0, this.tileX() - tileRadius);
             let startY = Math.max(0, this.tileY() - tileRadius);
@@ -232,45 +190,26 @@ Events.on(ContentInitEvent, () => {
                 }
             }
 
-            // 4. Âm thanh / Rung màn hình
             Fx.impactReactorExplosion.at(this.x, this.y);
             Effect.shake(25, 80, this.x, this.y);
 
-            // Tự xóa sổ bản thân nhà máy
             this.kill();
         },
 
         updateTile() {
             if (this.liquids == null || this.items == null) return;
 
-            // ---------------------------------------------------------------------
-            // LOGIC TĂNG TỐC CÁNH QUẠT TRONG 3 GIÂY
-            // ---------------------------------------------------------------------
             if (this.efficiency > 0) {
                 this.hasStartedBefore = true;
-                // Tăng bộ đếm spinTimer tối đa tới 3 giây (ACCEL_TIME)
-                this.spinTimer = Math.min(ACCEL_TIME, this.spinTimer + Time.delta);
-            } else {
-                // Nếu dừng hoạt động, giảm tốc từ từ về 0
-                this.spinTimer = Math.max(0, this.spinTimer - Time.delta);
             }
-
-            // Tính tỷ lệ tăng tốc từ 0.0 -> 1.0 trong 3s
-            let speedRatio = this.spinTimer / ACCEL_TIME;
-            let currentSpinSpeed = MAX_SPIN_SPEED * speedRatio;
-
-            // Cập nhật góc quay dựa trên tốc độ hiện tại
-            this.topRotation = (this.topRotation + currentSpinSpeed * Time.delta) % 360;
 
             let requiredCryoPerTick = 500.0 / 60.0;
             let hasEnoughCryo = this.liquids.get(Liquids.cryofluid) >= requiredCryoPerTick;
-            let fullInventory = this.isInventoryFull();
+            let overLimit = this.isOverItemLimit();
 
-            // ---------------------------------------------------------------------
-            // CƠ CHẾ ĐẾM NGƯỢC NỔ
-            // ---------------------------------------------------------------------
+            // CƠ CHẾ NỔ CẢNH BÁO
             if (this.hasStartedBefore) {
-                if (fullInventory || (!hasEnoughCryo && this.efficiency > 0)) {
+                if (overLimit || (!hasEnoughCryo && this.efficiency > 0)) {
                     this.overheatTimer += Time.delta;
 
                     if (this.overheatTimer >= 60.0 * 60) {
@@ -278,15 +217,13 @@ Events.on(ContentInitEvent, () => {
                         return;
                     }
                 } 
-                else if (!fullInventory && hasEnoughCryo) {
+                else if (!overLimit && hasEnoughCryo) {
                     this.liquids.remove(Liquids.cryofluid, requiredCryoPerTick);
                     this.overheatTimer = Math.max(0, this.overheatTimer - Time.delta);
                 }
             }
 
-            // ---------------------------------------------------------------------
-            // CHỈ RÚT ĐÚNG TÀI NGUYÊN ĐƯỢC CHỌN TRONG UI
-            // ---------------------------------------------------------------------
+            // LOGIC XẢ HÀNG
             let currentSelection = this.getOutputSelection();
             
             if (currentSelection == 0) {
@@ -295,6 +232,27 @@ Events.on(ContentInitEvent, () => {
                 if (this.items.get(Items.silicon) > 0) this.dump(Items.silicon);
             } else if (currentSelection == 2) {
                 if (this.items.get(Items.plastanium) > 0) this.dump(Items.plastanium);
+            } else if (currentSelection == 3) {
+                if (this.items.get(Items.thorium) >= 1) {
+                    this.items.remove(Items.thorium, 1);
+                    this.dumpGraphiteLeft += 1;
+                    this.dumpSiliconLeft += 1;
+                    this.dumpPlastaniumLeft += 1;
+                } else if (this.items.get(Items.thorium) <= 0) {
+                    this.dumpGraphiteLeft = 0;
+                    this.dumpSiliconLeft = 0;
+                    this.dumpPlastaniumLeft = 0;
+                }
+
+                if (this.dumpGraphiteLeft > 0 && this.items.get(Items.graphite) > 0) {
+                    if (this.dump(Items.graphite)) this.dumpGraphiteLeft--;
+                }
+                if (this.dumpSiliconLeft > 0 && this.items.get(Items.silicon) > 0) {
+                    if (this.dump(Items.silicon)) this.dumpSiliconLeft--;
+                }
+                if (this.dumpPlastaniumLeft > 0 && this.items.get(Items.plastanium) > 0) {
+                    if (this.dump(Items.plastanium)) this.dumpPlastaniumLeft--;
+                }
             }
 
             if (this.liquids.get(Liquids.oil) > 0) {
@@ -304,61 +262,75 @@ Events.on(ContentInitEvent, () => {
             if (this.efficiency <= 0) return;
 
             // ---------------------------------------------------------------------
-            // LOGIC SẢN XUẤT (2 GIÂY / GIAI ĐOẠN)
+            // LOGIC SẢN XUẤT TỰ ĐỘNG XOAY VÒNG 4 GIAI ĐOẠN (TẠO 100 SẢN PHẨM/LẦN)
             // ---------------------------------------------------------------------
             this.craftTimer += Time.delta;
 
-            // GIAI ĐOẠN 1: Graphite
-            if (this.items.get(Items.graphite) < 100 && this.items.get(Items.coal) >= 20) {
-                if (this.craftTimer >= CRAFT_TIME) {
-                    this.items.remove(Items.coal, 20);
-                    this.items.add(Items.graphite, 20);
-                    this.craftTimer = 0;
-                    expandCircleFx.at(this.x, this.y, 0, COLOR_GRAPHITE);
-                    Effect.shake(2, 5, this.x, this.y);
+            // GIAI ĐOẠN 0: Graphite (Tạo 100 Graphite)
+            if (this.productionStage == 0) {
+                if (this.items.get(Items.coal) >= 10 && this.items.get(Items.sand) >= 10 && this.items.get(Items.titanium) >= 10) {
+                    if (this.craftTimer >= CRAFT_TIME) {
+                        this.items.remove(Items.coal, 10);
+                        this.items.remove(Items.sand, 10);
+                        this.items.remove(Items.titanium, 10);
+                        this.items.add(Items.graphite, 100);
+                        this.craftTimer = 0;
+                        expandCircleFx.at(this.x, this.y, 0, COLOR_GRAPHITE);
+                        Effect.shake(2, 5, this.x, this.y);
+                        this.productionStage = 1; // Chuyển sang giai đoạn 1
+                    }
                 }
                 return;
             }
 
-            // GIAI ĐOẠN 2: Silicon
-            if (this.items.get(Items.graphite) >= 100 && this.items.get(Items.silicon) < 100) {
-                if (this.items.get(Items.sand) >= 30 && this.items.get(Items.coal) >= 10 && this.items.get(Items.graphite) >= 5) {
+            // GIAI ĐOẠN 1: Silicon (Tạo 100 Silicon)
+            if (this.productionStage == 1) {
+                if (this.items.get(Items.coal) >= 10 && this.items.get(Items.sand) >= 10 && this.items.get(Items.titanium) >= 10) {
                     if (this.craftTimer >= CRAFT_TIME) {
-                        this.items.remove(Items.sand, 30);
                         this.items.remove(Items.coal, 10);
-                        this.items.remove(Items.graphite, 5);
+                        this.items.remove(Items.sand, 10);
+                        this.items.remove(Items.titanium, 10);
                         this.items.add(Items.silicon, 100);
                         this.craftTimer = 0;
                         expandCircleFx.at(this.x, this.y, 0, COLOR_SILICON);
                         Effect.shake(2, 5, this.x, this.y);
+                        this.productionStage = 2; // Chuyển sang giai đoạn 2
                     }
                 }
                 return;
             }
 
-            // GIAI ĐOẠN 3: Oil
-            if (this.items.get(Items.silicon) >= 100 && this.liquids.get(Liquids.oil) < 100) {
-                if (this.items.get(Items.coal) >= 20) {
+            // GIAI ĐOẠN 2: Oil (Tạo 100 Oil)
+            if (this.productionStage == 2) {
+                if (this.items.get(Items.coal) >= 10 && this.items.get(Items.sand) >= 10 && this.items.get(Items.titanium) >= 10) {
                     if (this.craftTimer >= CRAFT_TIME) {
-                        this.items.remove(Items.coal, 20);
+                        this.items.remove(Items.coal, 10);
+                        this.items.remove(Items.sand, 10);
+                        this.items.remove(Items.titanium, 10);
                         this.liquids.add(Liquids.oil, 100);
                         this.craftTimer = 0;
                         expandCircleFx.at(this.x, this.y, 0, COLOR_OIL);
                         Effect.shake(2, 5, this.x, this.y);
+                        this.productionStage = 3; // Chuyển sang giai đoạn 3
                     }
                 }
                 return;
             }
 
-            // GIAI ĐOẠN 4: Plastanium
-            if (this.liquids.get(Liquids.oil) >= 30 && this.items.get(Items.titanium) >= 20) {
-                if (this.craftTimer >= CRAFT_TIME) {
-                    this.liquids.remove(Liquids.oil, 30);
-                    this.items.remove(Items.titanium, 20);
-                    this.items.add(Items.plastanium, 20);
-                    this.craftTimer = 0;
-                    expandCircleFx.at(this.x, this.y, 0, COLOR_PLAST);
-                    Effect.shake(2, 5, this.x, this.y);
+            // GIAI ĐOẠN 3: Plastanium (Tạo 100 Plastanium)
+            if (this.productionStage == 3) {
+                if (this.liquids.get(Liquids.oil) >= 10 && this.items.get(Items.coal) >= 10 && this.items.get(Items.sand) >= 10 && this.items.get(Items.titanium) >= 10) {
+                    if (this.craftTimer >= CRAFT_TIME) {
+                        this.liquids.remove(Liquids.oil, 10);
+                        this.items.remove(Items.coal, 10);
+                        this.items.remove(Items.sand, 10);
+                        this.items.remove(Items.titanium, 10);
+                        this.items.add(Items.plastanium, 100);
+                        this.craftTimer = 0;
+                        expandCircleFx.at(this.x, this.y, 0, COLOR_PLAST);
+                        Effect.shake(2, 5, this.x, this.y);
+                        this.productionStage = 0; // Quay trở lại giai đoạn 0
+                    }
                 }
             }
         },
@@ -385,10 +357,11 @@ Events.on(ContentInitEvent, () => {
                     btn.row();
                 };
 
-                optTable.add("[yellow]CHỌN SẢN PHẨM DUY NHẤT ĐẨY RẤ BĂNG CHUYỀN:[]").padBottom(10).row();
+                optTable.add("[yellow]CHỌN SẢN PHẨM ĐẨY RA BĂNG CHUYỀN:[]").padBottom(10).row();
                 createOptBtn("Than chì (Graphite)", 0);
                 createOptBtn("Silicon", 1);
                 createOptBtn("Nhựa (Plastanium)", 2);
+                createOptBtn("Xả toàn bộ sản phẩm (Tiêu thụ Thorium)", 3);
 
                 let scroll = new ScrollPane(optTable);
                 scroll.setScrollingDisabled(true, false);
@@ -399,14 +372,18 @@ Events.on(ContentInitEvent, () => {
 
             table.button(Icon.info, Styles.cleari, 40, packRun(() => {
                 let title = " Thông số Nhà máy Syrufpat ";
-                let descStr = "[gold]⚡ QUY TRÌNH SẢN XUẤT TỰ ĐỘNG (2s/GIAI ĐOẠN) ⚡[]\n\n" +
-                              "[cyan]• Giai đoạn 1 (Than chì):[] 20 Coal ➔ [green]20 Graphite[] (2s)\n" +
-                              "[cyan]• Giai đoạn 2 (Silicon):[] 30 Sand + 10 Coal + 5 Graphite ➔ [green]100 Silicon[] (2s)\n" +
-                              "[cyan]• Giai đoạn 3 (Dầu mỏ):[] 20 Coal ➔ [green]100 Oil[] (2s)\n" +
-                              "[cyan]• Giai đoạn 4 (Nhựa Plast):[] 30 Oil + 20 Titanium ➔ [green]20 Plastanium[] (2s)\n\n" +
+                let descStr = "[gold]⚡ QUY TRÌNH SẢN XUẤT TUẦN TỰ (1s/GIAI ĐOẠN) ⚡[]\n\n" +
+                              "[cyan]• Lớp 1 (Than chì):[] 10 Coal + 10 Sand + 10 Titanium ➔ [green]100 Graphite[] (1s)\n" +
+                              "[cyan]• Lớp 2 (Silicon):[] 10 Coal + 10 Sand + 10 Titanium ➔ [green]100 Silicon[] (1s)\n" +
+                              "[cyan]• Lớp 3 (Dầu mỏ):[] 10 Coal + 10 Sand + 10 Titanium ➔ [green]100 Oil[] (1s)\n" +
+                              "[cyan]• Lớp 4 (Nhựa Plast):[] 10 Oil + 10 Coal + 10 Sand + 10 Titanium ➔ [green]100 Plastanium[] (1s)\n\n" +
+                              "[lightgray]* Quy trình xoay vòng liên tục Lớp 1 ➔ 2 ➔ 3 ➔ 4 ➔ 1 bất kể xả hàng hay không.[]\n\n" +
+                              "[gold]⚡ TÙY CHỌN BỎ QUA LỰA CHỌN ⚡[]\n" +
+                              "• Mỗi [accent]1 Thorium[] nạp vào cho phép xả đồng loạt [green]1 Graphite, 1 Silicon, 1 Plastanium[] ra ngoài.\n" +
+                              "• Hết Thorium nhà máy sẽ ngưng xả hàng ngay lập tức.\n\n" +
                               "[scarlet]⚠ CƠ CHẾ NỔ HỦY DIỆT TẬN THẾ ⚠[]\n" +
                               "• Yêu cầu [cyan]500 Cryofluid/s[] để hạ nhiệt.\n" +
-                              "• Đếm ngược 60s nổ khi kho đầy hoặc thiếu Cryofluid.\n" +
+                              "• Đếm ngược 60s nổ khi kho chứa [red]vượt quá 1100 item[] hoặc thiếu Cryofluid.\n" +
                               "• [red]SỨC NỔ: Tiêu diệt NGAY LẬP TỨC toàn bộ Unit và Block[] trong bán kính 100 ô!";
 
                 let dialog = extend(BaseDialog, title, {});
@@ -430,16 +407,20 @@ Events.on(ContentInitEvent, () => {
             write.b(this.getOutputSelection());
             write.f(this.overheatTimer);
             write.bool(this.hasStartedBefore);
-            write.f(this.topRotation);
-            write.f(this.spinTimer);
+            write.b(this.productionStage);
+            write.i(this.dumpGraphiteLeft);
+            write.i(this.dumpSiliconLeft);
+            write.i(this.dumpPlastaniumLeft);
         },
         read(read, revision) {
             this.super$read(read, revision);
             this.setOutputSelection(read.b());
             this.overheatTimer = read.f();
             this.hasStartedBefore = read.bool();
-            this.topRotation = read.f();
-            this.spinTimer = read.f();
+            this.productionStage = read.b();
+            this.dumpGraphiteLeft = read.i();
+            this.dumpSiliconLeft = read.i();
+            this.dumpPlastaniumLeft = read.i();
         }
     });
 });

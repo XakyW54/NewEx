@@ -14,6 +14,73 @@ const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
+// ==============================================================================
+// HIT EFFECT HÌNH LỤC GIÁC (THU NHỎ 4 LẦN, DÙNG POLY 6 CẠNH)
+// ==============================================================================
+const createDtgHitEffect = (life, tier, damage) => new Effect(life, e => {
+    // Thu nhỏ kích thước gốc xuống 4 lần (từ 8 + dmg*0.12 thành 2 + dmg*0.03)
+    let baseSize = 2 + damage * 0.03; 
+    
+    // progress chạy từ 0 -> 1
+    let progress = e.fin(); 
+    
+    // Lục giác ngoài thu nhỏ dần vào trong
+    let zoomRadius = baseSize * (2.2 - 1.9 * Interp.pow2Out.apply(progress));
+    
+    // Lục giác tâm nén nhẹ bùng ra một chút rồi thu lại
+    let innerRadius = baseSize * (0.3 + 0.5 * Interp.pow3Out.apply(progress));
+    
+    // Độ mờ nhạt dần về cuối hiệu ứng
+    let alpha = e.fout();
+
+    // Chọn màu theo Tier
+    let mainColor, secColor;
+    if (tier == 0) { 
+        // MK1 - Cam & Vàng
+        mainColor = Color.valueOf("ffa500"); 
+        secColor = Color.valueOf("ffff00");   
+    } else if (tier == 1) { 
+        // MK2 - Vàng & Xanh Mint
+        mainColor = Color.valueOf("ffff00"); 
+        secColor = Color.valueOf("00ffff");   
+    } else { 
+        // MK2B - Xanh Cyan & Vàng
+        mainColor = Color.valueOf("00ffff"); 
+        secColor = Color.valueOf("ffff00");   
+    }
+
+    // 1. Hình lục giác ngoài ZOOM thu nhỏ dần vào tâm
+    Draw.color(mainColor, alpha);
+    Lines.stroke((0.5 * alpha) + 0.1); // Giảm bớt nét vẽ tương ứng với kích thước nhỏ
+    Lines.poly(e.x, e.y, 6, zoomRadius);
+
+    // 2. Hình lục giác phụ màu phụ theo sau tạo hiệu ứng đuôi (ghost hex)
+    let secondaryZoom = baseSize * (2.6 - 2.1 * Interp.pow2Out.apply(progress));
+    if (secondaryZoom > 0) {
+        Draw.color(secColor, alpha * 0.5);
+        Lines.stroke(0.3 * alpha);
+        Lines.poly(e.x, e.y, 6, secondaryZoom);
+    }
+
+    // 3. Hình lục giác tâm giữ vị trí va chạm
+    Draw.color(secColor, alpha);
+    Lines.stroke(0.4 * alpha);
+    Lines.poly(e.x, e.y, 6, innerRadius);
+
+    // 4. Điểm sáng lục giác nén ở chính giữa tâm
+    Draw.color(Color.white, alpha);
+    Fill.poly(e.x, e.y, 6, baseSize * 0.25 * alpha);
+    Draw.reset();
+});
+
+// Tạo instance hiệu ứng cho các loại đạn
+const dtgHitEffectMk1 = createDtgHitEffect(20, 0, 63);
+const dtgHitEffectMk2 = createDtgHitEffect(22, 1, 56);
+const dtgHitEffectMk2b = createDtgHitEffect(26, 2, 122);
+const dtgSprayHitEffect = createDtgHitEffect(14, 0, 21);
+const dtgSprayHitEffectMk2 = createDtgHitEffect(14, 1, 30);
+const dtgSprayHitEffectMk2b = createDtgHitEffect(14, 2, 23);
+// ==============================================================================
 
 const reqMK2 = {
     titanium: 4000,
@@ -77,8 +144,8 @@ const dtgSoldernNormalBullet = extend(BasicBulletType, {
     trailColor: Color.valueOf("#80deea"),
     trailWidth: 1.8,
     trailLength: 6,
-    hitEffect: Fx.hitBulletColor,
-    despawnEffect: Fx.hitBulletColor
+    hitEffect: dtgHitEffectMk1,
+    despawnEffect: dtgHitEffectMk1
 });
 
 const dtgSoldernSmallSprayBullet = extend(BasicBulletType, {
@@ -93,8 +160,8 @@ const dtgSoldernSmallSprayBullet = extend(BasicBulletType, {
     trailColor: Color.valueOf("#80deea"),
     trailWidth: 0.75,
     trailLength: 3,
-    hitEffect: Fx.hitBulletColor,
-    despawnEffect: Fx.hitBulletColor
+    hitEffect: dtgSprayHitEffect,
+    despawnEffect: dtgSprayHitEffect
 });
 
 const dtgSoldernmk2NormalBullet = extend(BasicBulletType, {
@@ -108,8 +175,8 @@ const dtgSoldernmk2NormalBullet = extend(BasicBulletType, {
     trailColor: Color.valueOf("#80deea"),
     trailWidth: 2.0,
     trailLength: 7,    
-    hitEffect: Fx.hitBulletColor,
-    despawnEffect: Fx.hitBulletColor
+    hitEffect: dtgHitEffectMk2,
+    despawnEffect: dtgHitEffectMk2
 });
 
 const dtgSoldernmk2SmallSprayBullet = extend(BasicBulletType, {
@@ -124,8 +191,8 @@ const dtgSoldernmk2SmallSprayBullet = extend(BasicBulletType, {
     trailColor: Color.valueOf("#80deea"),
     trailWidth: 0.82,
     trailLength: 4,
-    hitEffect: Fx.hitBulletColor,
-    despawnEffect: Fx.hitBulletColor
+    hitEffect: dtgSprayHitEffectMk2,
+    despawnEffect: dtgSprayHitEffectMk2
 });
 
 const dtgSoldernmk2bSmallSprayBullet = extend(BasicBulletType, {
@@ -140,8 +207,8 @@ const dtgSoldernmk2bSmallSprayBullet = extend(BasicBulletType, {
     trailColor: Color.valueOf("#ff5252"),
     trailWidth: 0.8,
     trailLength: 3,
-    hitEffect: Fx.hitBulletColor,
-    despawnEffect: Fx.hitBulletColor
+    hitEffect: dtgSprayHitEffectMk2b,
+    despawnEffect: dtgSprayHitEffectMk2b
 });
 
 const spraySpreadB = extend(BasicBulletType, {
@@ -156,8 +223,8 @@ const spraySpreadB = extend(BasicBulletType, {
     trailColor: Color.valueOf("#ff1744"),
     trailWidth: 1.0,
     trailLength: 5,
-    hitEffect: Fx.hitBulletColor,
-    despawnEffect: Fx.hitBulletColor
+    hitEffect: dtgSprayHitEffectMk2b,
+    despawnEffect: dtgSprayHitEffectMk2b
 });
 
 const laserBulletB = extend(LaserBulletType, {
@@ -166,7 +233,7 @@ const laserBulletB = extend(LaserBulletType, {
     width: 24,
     lifetime: 25, 
     colors: [Color.valueOf("#ff1744"), Color.valueOf("#b71c1c"), Color.white],
-    hitEffect: Fx.hitLaserColor,
+    hitEffect: dtgHitEffectMk2b,
     smokeEffect: Fx.smoke
 });
 
@@ -238,7 +305,6 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
         table.clear(); table.row();
         let tier = this.getTier();
 
-        // --- NÚT TIẾN HÓA (PHONG CÁCH HÀNG DỌC GỌN GÀNG CỦA LAVUNDER) ---
         if(tier == 0) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
                 let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo DTG Soldern", {});
@@ -274,7 +340,6 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
 
                 let branchesTable = new Table();
 
-                // Khối Nhánh 1: Cấu hình Tiêu chuẩn MK2
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                 b1.add("[cyan]===(MK2)===[]").row();
                 let b1D = b1.add("Cải tiến năng lực hỏa lực và năng lượng xung kích:\n" +
@@ -294,7 +359,6 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                     } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                 })).size(180, 38);
 
-                // Khối Nhánh 2: Biến thể Trọng lực Laser MK2B
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                 b2.add("[purple]===(MK2B)===[]").row();
                 let b2D = b2.add("Chuyển đổi toàn diện sang dạng Trọng Pháo Laser bạo nén:\n" +
@@ -313,7 +377,6 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                     } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
                 })).size(180, 38);
 
-                // Sắp xếp các bảng theo hàng dọc chuẩn cấu trúc
                 branchesTable.add(b1).width(340); branchesTable.row();
                 branchesTable.add().height(12).row();
                 branchesTable.add(b2).width(340);
@@ -329,7 +392,6 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
             })).size(50, 40).tooltip("Hệ thống đã khóa nhánh tiến hóa");
         }
 
-        // --- NÚT THÔNG TIN THÔNG SỐ CHÍNH XÁC (PHONG CÁCH BỐ CỰC ĐẶC TRƯNG CỦA DOR) ---
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
             let title = " Thông số pháo DTG Soldern: ";
             let descStr = "";
@@ -543,7 +605,8 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                             if(this.shieldHealth <= 0){
                                 Fx.shieldBreak.at(this.x, this.y);
                             } else {
-                                Fx.hitBulletColor.at(b.x, b.y, this.rotation, Color.valueOf("ff9d00"));
+                                // Gọi hit effect hình lục giác đã thu nhỏ tại vị trí va chạm
+                                dtgHitEffectMk1.at(b.x, b.y, this.rotation);
                             }
                             b.remove();
                         }

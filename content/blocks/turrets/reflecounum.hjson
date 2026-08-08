@@ -1,6 +1,6 @@
 
 name: Reflecounum
-description: . 
+description: Pháo Reflecounum là một công trình phòng thủ công nghệ cao chuyên tạo khiên bảo vệ và phản đạn:  Tạo khiên năng lượng: Hấp thụ sát thương từ các đợt tấn công của kẻ thù và tự động tái tạo lại sau khi vỡ.  Phản đạn ngược lại: Có khả năng bật ngược đạn của đối phương để biến cuộc tấn công của chúng thành đòn hồi mã thương.  Khả năng nâng cấp & Bổ trợ: Cho phép tiêu tốn tài nguyên để tăng độ bền khiên, tốc độ hồi phục hoặc mở khóa các hiệu ứng hỗ trợ đồng minh và sửa chữa công trình xung quanh. 
 health: 2200
 size: 4
 reload: 20

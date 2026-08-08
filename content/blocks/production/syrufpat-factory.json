@@ -1,6 +1,6 @@
 {
 "name": "Syrufpat Factory",
-"description": "",
+"description": "Nhà máy Syrufpat là một công trình sản xuất siêu tốc nhưng cực kỳ mạo hiểm. Nó tự động tạo liên tục 4 loại tài nguyên cao cấp (Graphite, Silicon, Oil, Plastanium) theo vòng lặp chỉ với nguyên liệu cơ bản.  Đổi lại, bạn phải luôn cấp đủ Cryofluid và giải phóng kho chứa; nếu để quá tải 1100 item hoặc thiếu nước mát, nó sẽ đếm ngược 60s rồi nổ san phẳng mọi thứ trong bán kính 100 ô. ",
   "type": "GenericCrafter",
   "health": 2000,
   "size": 5,

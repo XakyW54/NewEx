@@ -1,8 +1,9 @@
 name: plasanod
-description: "Pháo Plasanod: Tháp pháo điện từ phân cực siêu cấp (phát triển dựa trên cơ chế Parallax). Sử dụng 100% năng lượng điện để tạo ra chùm laser từ trường công suất cao, khóa chặt, kéo chìm mục tiêu và liên tục giật điện/thiêu đốt đối phương."
+description: "Pháo Plasanod: Tháp Pháo Plasanod là công trình phòng thủ công nghệ cao chuyên quét chùm tia laser và xả đạn vật lý liên tục:  Tia Laser Đôi Liên Tục: Quét hai chùm tia laser song song gây sát thương theo thời gian, đồng thời tạo vòng hiệu ứng năng lượng xung quanh.  Bắn Đạn Vật Lý Kép: Khi hội tụ đủ thời gian nhắm, pháo tự động bắn thêm các viên đạn vật lý dài có khả năng xuyên phá nhiều mục tiêu.  Gán Trạng Thái CEI: Áp dụng hiệu ứng tiêu cực kéo dài lên kẻ thù bị trúng đạn, đồng thời kích hoạt các tia sét ngẫu nhiên bộc phá xung quanh mục tiêu."
 health: 4200
 size: 3
 range: 280
+inaccuracy: 1
 force: 18
 scaledForce: 24
 damage: 35

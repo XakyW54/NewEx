@@ -1,6 +1,6 @@
 
 name: Nucleytor
-description: Pháo Vendicum: Tháp pháo cường hóa động năng với cơ chế tích tụ năng lượng độc đáo. Khi súng đầy năng lượng (bình thường hoặc ngừng bắn để hồi phục), pháo sẽ được buff mạnh mẽ lên tới +500% Sát thương và +250% Tốc độ bắn. 
+description: Tháp Pháo Nucleytor: là pháo phòng thủ gia tốc năng lượng cao với cơ chế hoạt động chính:Tích Năng Tăng Công Suất: Bắn liên tục để tích tụ năng lượng giúp tăng tối đa sát thương và tốc độ bắn (tự hạ nhiệt khi ngừng bắn).  Gồng Trạng Thái Quá Tải: Đạt 100% năng lượng sẽ tự tăng giáp và phát vùng từ trường tăng tốc độ bắn cho các tháp pháo đồng minh lân cận.  Đạn Phản Lực Gia Tốc: Đạn khựng nhẹ tích năng lúc vừa bắn ra rồi mới bứt tốc lao đến mục tiêu.  Giới Hạn Tối Đa: Tối đa 10 pháo cho mỗi đội.
 health: 2200
 size: 3
 reload: 20

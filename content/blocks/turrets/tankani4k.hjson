@@ -59,7 +59,7 @@ drawer: {
       progress: reload
     }
 
-    # --- NÒNG PHỤ 1 (-barreltre) XẾP THÀNH 2 NÒNG HAI BÊN ---
+
     {
       suffix: -barreltre
       layer: 50.4
@@ -77,7 +77,7 @@ drawer: {
       progress: reload
     }
 
-    # --- NÒNG PHỤ 2 (-barrelduo) XẾP THÀNH 2 NÒNG HAI BÊN ---
+
     {
       suffix: -barrelduo
       layer: 50.3
@@ -111,17 +111,17 @@ cooldownTime: 200
 
 shootY: 25.5
 
-# Cơ chế bắn đa điểm: Đã thêm 'source' để sửa lỗi mất dữ liệu gốc
+
 shoot: {
   type: ShootMulti
   
-  # Kiểu bắn gốc làm nền (bắn 1 phát mặc định)
+
   source: {
     type: ShootPattern
     shots: 1
   }
   
-  # Nhân bản phát bắn gốc ra chính xác vị trí của 2 nòng riêng lẻ
+
   dest: [
     {
       type: ShootBarrel
@@ -142,12 +142,12 @@ shoot: {
 
 researchCostMultiplier: 0.1
 requirements: [
-  copper/3400
-  lead/1100
-  titanium/740
-  plastanium/250
-  silicon/450
-  thorium/450
+  copper/10400
+  lead/7100
+  titanium/2740
+  plastanium/2250
+  silicon/2450
+  thorium/2450
 ]
 category: turret
 research: tankani2k

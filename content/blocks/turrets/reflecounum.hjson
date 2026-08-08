@@ -1,70 +1,40 @@
 
 name: Reflecounum
 description: Pháo Reflecounum là một công trình phòng thủ công nghệ cao chuyên tạo khiên bảo vệ và phản đạn:  Tạo khiên năng lượng: Hấp thụ sát thương từ các đợt tấn công của kẻ thù và tự động tái tạo lại sau khi vỡ.  Phản đạn ngược lại: Có khả năng bật ngược đạn của đối phương để biến cuộc tấn công của chúng thành đòn hồi mã thương.  Khả năng nâng cấp & Bổ trợ: Cho phép tiêu tốn tài nguyên để tăng độ bền khiên, tốc độ hồi phục hoặc mở khóa các hiệu ứng hỗ trợ đồng minh và sửa chữa công trình xung quanh. 
-health: 2200
+health: 9200
 size: 4
-reload: 20
+reload: 0
 range: 10
 recoil: 0
-inaccuracy: 2
-rotateSpeed: 2
+inaccuracy: 0
+rotateSpeed: 0
 shootWarmupSpeed: 0.002
   "velocityRnd": 0.05,
 configurable: true
 shoot: {
   type: ShootBarrel
-  shots: 1
+  shots: 0
   shotDelay: 3.75
 
 }
 shootSound: minal
-shootCone: 45
+shootCone: 0
 shootEffect: none
-maxAmmo: 30
-ammoPerShot: 2
-cooldownTime: 150
+maxAmmo: 0
+ammoPerShot: 0
+cooldownTime: 0
 unitSort: closest
 drawer: {
   type: DrawTurret
   basePrefix: reinforced-
   
 }
-  "smokeEffect": [
-    {
-      "followParent": false,
-      "particles": 16,
-      "length": 25.0,
-      "cone": 15.0,
-      "lifetime": 15,
-      "interp": "pow3Out",
-      "sizeInterp": "pow2Out",
-      "colorFrom": "787878",
-      "colorTo": "787878",
-      "sizeFrom": 2.0,
-      "sizeTo": 0.0,
-      "layer": 104
-    },
-    {
-      "followParent": false,
-      "particles": 12,
-      "length": 40.0,
-      "cone": 25.0,
-      "lifetime": 30,
-      "interp": "pow3Out",
-      "sizeInterp": "pow2Out",
-      "colorFrom": "78787800",
-      "colorTo": "787878",
-      "sizeFrom": 4.0,
-      "sizeTo": 0.0,
-      "layer": 104
-    }
-  ],
   researchCostMultiplier: 0.1
 requirements: [
-  copper/2400
-  lead/1300
-plastanium/450
-  silicon/850
+  copper/8400
+  lead/6300
+plastanium/2450
+  silicon/2850
 ]
 category: turret
 research: Rangtaturs

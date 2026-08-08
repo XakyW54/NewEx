@@ -24,11 +24,11 @@ drawer: {
 
 researchCostMultiplier: 0.2
 requirements: [
-  copper/1200
-  lead/1000
-  silicon/800
-  plastanium/400
-  surge-alloy/150
+  copper/4200
+  lead/2000
+  silicon/2400
+  plastanium/1400
+  surge-alloy/550
 ]
 category: turret
 research: blaw

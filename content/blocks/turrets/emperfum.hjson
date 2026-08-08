@@ -35,9 +35,9 @@ researchCostMultiplier: 0.1
 requirements: [
   copper/12000
   lead/5600
-  thorium/3200
-  silicon/2000
-  surge-alloy/900
+  thorium/5200
+  silicon/5000
+  surge-alloy/2900
 ]
 category: turret
 research: blixalum

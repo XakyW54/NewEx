@@ -69,10 +69,10 @@ drawer: {
 researchCostMultiplier: 0.1
 
 requirements: [
-  copper/660
-    lead/700
-    titanium/300
-    silicon/680
+  copper/2660
+    lead/2700
+    titanium/1300
+    silicon/1680
 ]
 category: turret
 research: xylaon

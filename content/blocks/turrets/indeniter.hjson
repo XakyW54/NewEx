@@ -61,10 +61,10 @@ drawer: {
   ],
   researchCostMultiplier: 0.1
 requirements: [
-  copper/2400
-  lead/1300
-plastanium/450
-  silicon/850
+  copper/6400
+  lead/3300
+plastanium/2450
+  silicon/2850
 ]
 category: turret
 research: Rangtaturs

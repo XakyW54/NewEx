@@ -33,9 +33,9 @@ drawer: {
 
 researchCostMultiplier: 0.1
 requirements: [
-  copper/240
-  lead/560
-  thorium/1200
+  copper/2240
+  lead/2560
+  thorium/4200
 ]
 category: turret
 research: vendicum

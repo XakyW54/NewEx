@@ -164,16 +164,13 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
         }
     },
 
-    // Tính toán Tầm bắn động (Range) dựa trên Nhánh & Phúc lợi
     range(){
         let baseR = 600;
         let perk = this.getPerkTier();
         let tier = this.getTier();
 
-        // MK2 tăng 30% tầm bắn (600 * 1.3 = 780)
         if (tier == 1) baseR = 780;
 
-        // Phúc lợi 2 và 4 tăng thêm 50% phạm vi (+300)
         if (perk == 2 || perk == 4) {
             baseR += 300;
         }
@@ -181,275 +178,275 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
         return baseR;
     },
 
-buildConfiguration(table) {
-    table.clear(); 
-    table.row();
+    buildConfiguration(table) {
+        table.clear(); 
+        table.row();
 
-    // ==================== NÚT 1: MỞ TRUNG TÂM NÂNG CẤP & QUAY PHÚC LỢI ====================
-    table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-        let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Plasanod", {});
-        
-        // --- CẬP NHẬT TÀI NGUYÊN KHO LÕI TỰ ĐỘNG ---
-        let reqCell = dialog.cont.label(packProv(() => {
-            let core = this.team.core();
-            if (core == null) return "[red]Không tìm thấy Lõi Đội![]";
-            let cCop = core.items.get(Items.copper);
-            let cLea = core.items.get(Items.lead);
-            let cSil = core.items.get(Items.silicon);
-            let cPla = core.items.get(Items.plastanium);
-            let cSur = core.items.get(Items.surgeAlloy);
-            let cTho = core.items.get(Items.thorium);
-            let cPha = core.items.get(Items.phaseFabric);
-
-            let copCol = cCop >= reqSpecialPlasanod.copper ? "[green]" : "[red]";
-            let leaCol = cLea >= reqSpecialPlasanod.lead ? "[green]" : "[red]";
-            let silColSp = cSil >= reqSpecialPlasanod.silicon ? "[green]" : "[red]";
-
-            let silColor1 = cSil >= reqPlasanodMK2.silicon ? "[green]" : "[red]";
-            let plaColor1 = cPla >= reqPlasanodMK2.plastanium ? "[green]" : "[red]";
-            let surColor1 = cSur >= reqPlasanodMK2.surgeAlloy ? "[green]" : "[red]";
+        // ==================== NÚT 1: NÚT NÂNG CẤP ^ ====================
+        table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
+            let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Plasanod", {});
             
-            let silColor2 = cSil >= reqPlasanodMK2B.silicon ? "[green]" : "[red]";
-            let thoColor2 = cTho >= reqPlasanodMK2B.thorium ? "[green]" : "[red]";
-            let phaColor2 = cPha >= reqPlasanodMK2B.phaseFabric ? "[green]" : "[red]";
-
-            return "[gold]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
-                   "[orange]★ PHÚC LỢI ĐẶC BIỆT:[] Đồng: " + copCol + cCop + "[]/4000 | Chì: " + leaCol + cLea + "[]/4000 | Silicon: " + silColSp + cSil + "[]/4000\n" +
-                   "[cyan]Nhánh MK2:[] Silicon: " + silColor1 + cSil + "[]/" + reqPlasanodMK2.silicon + " | Plastanium: " + plaColor1 + cPla + "[]/" + reqPlasanodMK2.plastanium + " | Surge Alloy: " + surColor1 + cSur + "[]/" + reqPlasanodMK2.surgeAlloy + "\n" +
-                   "[purple]Nhánh MK2B:[] Silicon: " + silColor2 + cSil + "[]/" + reqPlasanodMK2B.silicon + " | Thorium: " + thoColor2 + cTho + "[]/" + reqPlasanodMK2B.thorium + " | Phase Fabric: " + phaColor2 + cPha + "[]/" + reqPlasanodMK2B.phaseFabric;
-        }));
-        
-        reqCell.width(380).get().setWrap(true);
-        reqCell.get().setAlignment(Align.left);
-        dialog.cont.row(); 
-        dialog.cont.add().height(10).row();
-
-        let branchesTable = new Table();
-
-        // --- KHU VỰC PHÚC LỢI ĐẶC BIỆT (GACHA) ---
-        let spBox = new Table(); 
-        spBox.background(Styles.black6); 
-        spBox.margin(12);
-        spBox.add("[gold]★ PHÚC LỢI NÂNG CẤP ĐẶC BIỆT (NGẪU NHIÊN) ★[]").row();
-
-        let currentPerk = this.getPerkTier();
-        let tier = this.getTier();
-
-        if (currentPerk == 0) {
-            let spD = spBox.add("Kích hoạt giao thức nâng cấp ngẫu nhiên nhận 1 trong 6 phúc lợi vĩnh viễn:\n" +
-                                 " • [yellow]Phúc lợi 1 (~19.6%):[] +215% Sát thương gốc, Tăng tốc độ nạp chùm tia Laser.\n" +
-                                 " • [orange]Phúc lợi 2 (~29.4%):[] +50% Tầm bắn hiệu dụng, Tăng 150% Sát thương Tia Năng Lượng.\n" +
-                                 " • [cyan]Phúc lợi 3 (~19.6%):[] +50% Tất cả chỉ số (DPS, Phạm vi bắn, Tỷ lệ phóng sét lan).\n" +
-                                 " • [purple]Phúc lợi 4 (~29.4%):[] +50% Tầm bắn hiệu dụng, Tự động phóng đạn Vật Lý Kép xuyên phá.\n" +
-                                 " • [green]Phúc lợi 5 (1% SIÊU HIẾM):[] Phóng chùm Laser đa hướng, Mở rộng phạm vi nổ nguyên tố & Buff pháo đồng minh gần nhất.\n" +
-                                 " • [red]Phúc lợi 6 (1% SIÊU HIẾM):[] +500% Sát thương gốc, Thiêu rụi đối phương với chuỗi bộc phá Sét Ma Quỷ liên tục!");
-            spD.width(360).get().setWrap(true); 
-            spD.get().setAlignment(Align.left); 
-            spBox.row();
-
-            spBox.button("[gold]QUAY PHÚC LỢI (4K Đồng/Chì/Silicon)[]", packRun(() => {
+            let reqCell = dialog.cont.label(packProv(() => {
                 let core = this.team.core();
-                if (core != null && core.items.get(Items.copper) >= 4000 && core.items.get(Items.lead) >= 4000 && core.items.get(Items.silicon) >= 4000) {
-                    core.items.remove(Items.copper, 4000); 
-                    core.items.remove(Items.lead, 4000); 
-                    core.items.remove(Items.silicon, 4000);
+                if (core == null) return "[red]Không tìm thấy Lõi Đội![]";
+                let cCop = core.items.get(Items.copper);
+                let cLea = core.items.get(Items.lead);
+                let cSil = core.items.get(Items.silicon);
+                let cPla = core.items.get(Items.plastanium);
+                let cSur = core.items.get(Items.surgeAlloy);
+                let cTho = core.items.get(Items.thorium);
+                let cPha = core.items.get(Items.phaseFabric);
 
-                    // Tỷ lệ Quay Gacha (Tương tự Indeniter)
-                    let rand = Mathf.random(100);
-                    let resultPerk = 3; 
+                let copCol = cCop >= reqSpecialPlasanod.copper ? "[green]" : "[red]";
+                let leaCol = cLea >= reqSpecialPlasanod.lead ? "[green]" : "[red]";
+                let silColSp = cSil >= reqSpecialPlasanod.silicon ? "[green]" : "[red]";
 
-                    if (rand < 1.0) {
-                        resultPerk = 5; 
-                    } else if (rand < 2.0) {
-                        resultPerk = 6; 
-                    } else if (rand < 2.0 + 19.6) {
-                        resultPerk = 1;
-                    } else if (rand < 2.0 + 19.6 + 29.4) {
-                        resultPerk = 2;
-                    } else if (rand < 2.0 + 19.6 + 29.4 + 19.6) {
-                        resultPerk = 3;
-                    } else {
-                        resultPerk = 4;
+                let silColor1 = cSil >= reqPlasanodMK2.silicon ? "[green]" : "[red]";
+                let plaColor1 = cPla >= reqPlasanodMK2.plastanium ? "[green]" : "[red]";
+                let surColor1 = cSur >= reqPlasanodMK2.surgeAlloy ? "[green]" : "[red]";
+                
+                let silColor2 = cSil >= reqPlasanodMK2B.silicon ? "[green]" : "[red]";
+                let thoColor2 = cTho >= reqPlasanodMK2B.thorium ? "[green]" : "[red]";
+                let phaColor2 = cPha >= reqPlasanodMK2B.phaseFabric ? "[green]" : "[red]";
+
+                return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
+                       "[gold]★ PHÚC LỢI ĐẶC BIỆT:[] Đồng: " + copCol + cCop + "[]/4000 | Chì: " + leaCol + cLea + "[]/4000 | Silicon: " + silColSp + cSil + "[]/4000\n" +
+                       "[cyan]Nhánh MK2:[] Silicon: " + silColor1 + cSil + "[]/" + reqPlasanodMK2.silicon + " | Plastanium: " + plaColor1 + cPla + "[]/" + reqPlasanodMK2.plastanium + " | Surge Alloy: " + surColor1 + cSur + "[]/" + reqPlasanodMK2.surgeAlloy + "\n" +
+                       "[purple]Nhánh MK2B:[] Silicon: " + silColor2 + cSil + "[]/" + reqPlasanodMK2B.silicon + " | Thorium: " + thoColor2 + cTho + "[]/" + reqPlasanodMK2B.thorium + " | Phase Fabric: " + phaColor2 + cPha + "[]/" + reqPlasanodMK2B.phaseFabric;
+            }));
+            
+            reqCell.width(380).get().setWrap(true);
+            reqCell.get().setAlignment(Align.left);
+            dialog.cont.row(); 
+            dialog.cont.add().height(10).row();
+
+            let branchesTable = new Table();
+
+            // --- KHU VỰC PHÚC LỢI ĐẶC BIỆT ---
+            let spBox = new Table(); 
+            spBox.background(Styles.black6); 
+            spBox.margin(12);
+            spBox.add("[gold]★ PHÚC LỢI NÂNG CẤP ĐẶC BIỆT (NGẪU NHIÊN) ★[]").row();
+
+            let currentPerk = this.getPerkTier();
+            let tier = this.getTier();
+
+            if (currentPerk == 0) {
+                let spD = spBox.add("Kích hoạt giao thức nâng cấp ngẫu nhiên nhận 1 trong 6 phúc lợi vĩnh viễn:\n" +
+                                     " • [yellow]Phúc lợi 1 (~19.6%):[] +215% Sát thương gốc, Tăng tốc độ nạp chùm tia Laser.\n" +
+                                     " • [orange]Phúc lợi 2 (~29.4%):[] +50% Tầm bắn hiệu dụng, Tăng 150% Sát thương Tia Năng Lượng.\n" +
+                                     " • [cyan]Phúc lợi 3 (~19.6%):[] +50% Tất cả chỉ số (DPS, Phạm vi bắn, Tỷ lệ phóng sét lan).\n" +
+                                     " • [purple]Phúc lợi 4 (~29.4%):[] +50% Tầm bắn hiệu dụng, Tự động phóng đạn Vật Lý Kép xuyên phá.\n" +
+                                     " • [green]Phúc lợi 5 (1% SIÊU HIẾM):[] Phóng chùm Laser đa hướng, Mở rộng phạm vi nổ nguyên tố & Buff pháo đồng minh gần nhất.\n" +
+                                     " • [red]Phúc lợi 6 (1% SIÊU HIẾM):[] +500% Sát thương gốc, Thiêu rụi đối phương với chuỗi bộc phá Sét Ma Quỷ liên tục!");
+                spD.width(360).get().setWrap(true); 
+                spD.get().setAlignment(Align.left); 
+                spBox.row();
+
+                spBox.button("[gold]QUAY PHÚC LỢI (4K Đồng/Chì/Silicon)[]", packRun(() => {
+                    let core = this.team.core();
+                    if (core != null && core.items.get(Items.copper) >= 4000 && core.items.get(Items.lead) >= 4000 && core.items.get(Items.silicon) >= 4000) {
+                        core.items.remove(Items.copper, 4000); 
+                        core.items.remove(Items.lead, 4000); 
+                        core.items.remove(Items.silicon, 4000);
+
+                        let rand = Mathf.random(100);
+                        let resultPerk = 3; 
+
+                        if (rand < 1.0) {
+                            resultPerk = 5; 
+                        } else if (rand < 2.0) {
+                            resultPerk = 6; 
+                        } else if (rand < 2.0 + 19.6) {
+                            resultPerk = 1;
+                        } else if (rand < 2.0 + 19.6 + 29.4) {
+                            resultPerk = 2;
+                        } else if (rand < 2.0 + 19.6 + 29.4 + 19.6) {
+                            resultPerk = 3;
+                        } else {
+                            resultPerk = 4;
+                        }
+
+                        this.setPerkTier(resultPerk);
+                        this.configure(10 + resultPerk); 
+
+                        Fx.upgradeCore.at(this.x, this.y); 
+                        Effect.shake(6, 6, this.x, this.y);
+
+                        let perkName = "";
+                        if (resultPerk == 1) perkName = "[yellow]PHÚC LỢI 1[]";
+                        else if (resultPerk == 2) perkName = "[orange]PHÚC LỢI 2 (+50% Tầm xa)[]";
+                        else if (resultPerk == 3) perkName = "[cyan]PHÚC LỢI 3[]";
+                        else if (resultPerk == 4) perkName = "[purple]PHÚC LỢI 4 (+50% Tầm xa)[]";
+                        else if (resultPerk == 5) perkName = "[green]★ PHÚC LỢI 5 (1% SIÊU HIẾM) ★[]";
+                        else perkName = "[red]★ PHÚC LỢI 6 (1% SIÊU HIẾM) ★[]";
+
+                        Vars.ui.showInfo("[gold]BẠN ĐÃ TRÚNG:[]\n" + perkName);
+
+                        dialog.hide(); 
+                        this.deselect();
+                    } else { 
+                        Vars.ui.showInfo("[red]Không đủ tài nguyên cho Phúc Lợi Đặc Biệt![]"); 
                     }
+                })).size(300, 40);
+            } else {
+                let perkText = "";
+                if (currentPerk == 1) perkText = "[yellow]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1\n• Sát thương gốc +215%\n• Tăng tốc độ quét & hội tụ chùm Laser[]";
+                if (currentPerk == 2) perkText = "[orange]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2\n• Tầm bắn hiệu dụng +50%\n• Sát thương Laser Siêu Dẫn +150%[]";
+                if (currentPerk == 3) perkText = "[cyan]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3\n• Tăng 50% Mọi chỉ số pháo & hiệu ứng bộc phá[]";
+                if (currentPerk == 4) perkText = "[purple]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 4\n• Tầm bắn hiệu dụng +50%\n• Kích hoạt bắn thêm đạn Vật Lý Kép xuyên phá[]";
+                if (currentPerk == 5) perkText = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 5 (1% SIÊU HIẾM)\n• Chùm Laser đa hướng tự động phân tách\n• Mở rộng bán kính Xoáy Trọng Lực\n• Buff năng lượng cho 4 pháo đồng minh lân cận[]";
+                if (currentPerk == 6) perkText = "[red]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 6 (1% SIÊU HIẾM)\n• Sát thương gốc +500%\n• Tự động xả chuỗi bộc phá Sét Ma Quỷ diện rộng liên tục![]";
 
-                    this.setPerkTier(resultPerk);
-                    this.configure(10 + resultPerk); 
+                let spD = spBox.add(perkText);
+                spD.width(360).get().setWrap(true); 
+                spD.get().setAlignment(Align.left);
+            }
 
-                    Fx.upgradeCore.at(this.x, this.y); 
-                    Effect.shake(6, 6, this.x, this.y);
-
-                    let perkName = "";
-                    if (resultPerk == 1) perkName = "[yellow]PHÚC LỢI 1[]";
-                    else if (resultPerk == 2) perkName = "[orange]PHÚC LỢI 2 (+50% Tầm xa)[]";
-                    else if (resultPerk == 3) perkName = "[cyan]PHÚC LỢI 3[]";
-                    else if (resultPerk == 4) perkName = "[purple]PHÚC LỢI 4 (+50% Tầm xa)[]";
-                    else if (resultPerk == 5) perkName = "[green]★ PHÚC LỢI 5 (1% SIÊU HIẾM) ★[]";
-                    else perkName = "[red]★ PHÚC LỢI 6 (1% SIÊU HIẾM) ★[]";
-
-                    Vars.ui.showInfo("[gold]BẠN ĐÃ TRÚNG:[]\n" + perkName);
-
-                    dialog.hide(); 
-                    this.deselect();
-                } else { 
-                    Vars.ui.showInfo("[red]Không đủ tài nguyên cho Phúc Lợi Đặc Biệt![]"); 
-                }
-            })).size(300, 40);
-        } else {
-            let perkText = "";
-            if (currentPerk == 1) perkText = "[yellow]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1\n• Sát thương gốc +215%\n• Tăng tốc độ quét & hội tụ chùm Laser[]";
-            if (currentPerk == 2) perkText = "[orange]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2\n• Tầm bắn hiệu dụng +50%\n• Sát thương Laser Siêu Dẫn +150%[]";
-            if (currentPerk == 3) perkText = "[cyan]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3\n• Tăng 50% Mọi chỉ số pháo & hiệu ứng bộc phá[]";
-            if (currentPerk == 4) perkText = "[purple]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 4\n• Tầm bắn hiệu dụng +50%\n• Kích hoạt bắn thêm đạn Vật Lý Kép xuyên phá[]";
-            if (currentPerk == 5) perkText = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 5 (1% SIÊU HIẾM)\n• Chùm Laser đa hướng tự động phân tách\n• Mở rộng bán kính Xoáy Trọng Lực\n• Buff năng lượng cho 4 pháo đồng minh lân cận[]";
-            if (currentPerk == 6) perkText = "[red]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 6 (1% SIÊU HIẾM)\n• Sát thương gốc +500%\n• Tự động xả chuỗi bộc phá Sét Ma Quỷ diện rộng liên tục![]";
-
-            let spD = spBox.add(perkText);
-            spD.width(360).get().setWrap(true); 
-            spD.get().setAlignment(Align.left);
-        }
-
-        branchesTable.add(spBox).width(360); 
-        branchesTable.row();
-        branchesTable.add().height(12).row();
-
-        // --- KHU VỰC CHỌN NHÁNH NÂNG CẤP (MK2 / MK2B) ---
-        if (tier == 0) {
-            let b1 = new Table(); 
-            b1.background(Styles.black6); 
-            b1.margin(12);
-            b1.add("[cyan]===(MK2)===[]").row();
-            let b1D = b1.add("Nhánh Cấu Hình Tia Siêu Dẫn Tầm Xa:\n" +
-                             " • Tầm bắn: [green]+30%[] (780 px)\n" +
-                             " • Sát thương gốc: [green]+300%[] (140 DPS)\n" +
-                             " • Kỹ năng: Bổ sung hiệu ứng Giật Điện (Shocked) kèm 15% tỷ lệ phóng sét lan rộng.");
-            b1D.width(340).get().setWrap(true); 
-            b1D.get().setAlignment(Align.left); 
-            b1.row();
-            b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
-                let core = this.team.core();
-                if (core != null && core.items.get(Items.silicon) >= reqPlasanodMK2.silicon && core.items.get(Items.plastanium) >= reqPlasanodMK2.plastanium && core.items.get(Items.surgeAlloy) >= reqPlasanodMK2.surgeAlloy) {
-                    core.items.remove(Items.silicon, reqPlasanodMK2.silicon); 
-                    core.items.remove(Items.plastanium, reqPlasanodMK2.plastanium); 
-                    core.items.remove(Items.surgeAlloy, reqPlasanodMK2.surgeAlloy);
-                    
-                    this.setTier(1);
-                    this.configure(1); 
-
-                    Fx.upgradeCore.at(this.x, this.y); 
-                    Fx.impactReactorExplosion.at(this.x, this.y); 
-                    Effect.shake(8, 8, this.x, this.y);
-
-                    dialog.hide(); 
-                    this.deselect();
-                } else { 
-                    Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); 
-                }
-            })).size(180, 38);
-
-            let b2 = new Table(); 
-            b2.background(Styles.black6); 
-            b2.margin(12);
-            b2.add("[purple]===(MK2B)===[]").row();
-            let b2D = b2.add("Nhánh Biến Thể Xoáy Trọng Lực Cận Chiến:\n" +
-                             " • Máu cấu trúc: [green]+55%[] (6,500 HP)\n" +
-                             " • Sát thương gốc: [green]+357%[] (160 DPS)\n" +
-                             " • Đột phá: Gắn liên tục [purple]+3 tầng hiệu ứng CEI/giây[] (Nóng Chảy, Điện Hóa, Sét Ma Quỷ).");
-            b2D.width(340).get().setWrap(true); 
-            b2D.get().setAlignment(Align.left); 
-            b2.row();
-            b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
-                let core = this.team.core();
-                if (core != null && core.items.get(Items.silicon) >= reqPlasanodMK2B.silicon && core.items.get(Items.thorium) >= reqPlasanodMK2B.thorium && core.items.get(Items.phaseFabric) >= reqPlasanodMK2B.phaseFabric) {
-                    core.items.remove(Items.silicon, reqPlasanodMK2B.silicon); 
-                    core.items.remove(Items.thorium, reqPlasanodMK2B.thorium); 
-                    core.items.remove(Items.phaseFabric, reqPlasanodMK2B.phaseFabric);
-                    
-                    this.setTier(2);
-                    this.configure(2); 
-
-                    Fx.bigShockwave.at(this.x, this.y); 
-                    Fx.reactorExplosion.at(this.x, this.y); 
-                    Effect.shake(10, 10, this.x, this.y);
-
-                    dialog.hide(); 
-                    this.deselect();
-                } else { 
-                    Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]"); 
-                }
-            })).size(180, 38);
-
-            branchesTable.add(b1).width(360); 
+            branchesTable.add(spBox).width(360); 
             branchesTable.row();
             branchesTable.add().height(12).row();
-            branchesTable.add(b2).width(360);
-        } else {
-            let statusLabel = (tier == 1) ? "[cyan]ĐÃ NÂNG CẤP THÀNH PHÁO MK2[]" : "[purple]ĐÃ NÂNG CẤP THÀNH PHÁO MK2B[]";
-            branchesTable.add(statusLabel).row();
-        }
 
-        let scroll = new ScrollPane(branchesTable);
-        scroll.setScrollingDisabled(true, false);
-        dialog.cont.add(scroll).maxHeight(420);
-        dialog.addCloseButton(); 
-        dialog.show();
-    })).size(50, 40).tooltip("Trung tâm nâng cấp pháo Plasanod");
+            // --- KHU VỰC CHỌN NHÁNH NÂNG CẤP (MK2 / MK2B) ---
+            if (tier == 0) {
+                let b1 = new Table(); 
+                b1.background(Styles.black6); 
+                b1.margin(12);
+                b1.add("[cyan]===(MK2)===[]").row();
+                let b1D = b1.add("[white]• Máu cấu trúc: [gray]+0%[] (4,200 HP)\n" +
+                                 "• Tầm bắn: [green]+30%[] (780 px)\n" +
+                                 "• Sát thương gốc: [green]+300%[] (140 DPS)\n\n" +
+                                 "[lightgray]Kỹ năng đặc biệt: Cấu Hình Tia Siêu Dẫn Tầm Xa — Tập trung chùm tia năng lượng siêu dẫn tầm xa, bổ sung hiệu ứng Giật Điện (Shocked) kèm 15% tỷ lệ phóng sét lan rộng sang các mục tiêu lân cận.[]");
+                b1D.width(340).get().setWrap(true); 
+                b1D.get().setAlignment(Align.left); 
+                b1.row();
+                b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
+                    let core = this.team.core();
+                    if (core != null && core.items.get(Items.silicon) >= reqPlasanodMK2.silicon && core.items.get(Items.plastanium) >= reqPlasanodMK2.plastanium && core.items.get(Items.surgeAlloy) >= reqPlasanodMK2.surgeAlloy) {
+                        core.items.remove(Items.silicon, reqPlasanodMK2.silicon); 
+                        core.items.remove(Items.plastanium, reqPlasanodMK2.plastanium); 
+                        core.items.remove(Items.surgeAlloy, reqPlasanodMK2.surgeAlloy);
+                        
+                        this.setTier(1);
+                        this.configure(1); 
 
-    // ==================== NÚT 2: BẢNG BÁO CÁO THÔNG SỐ HIỆN TẠI ====================
-    table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-        let title = " Thông số pháo Plasanod ";
-        let descStr = "";
-        let currentTier = this.getTier();
-        let currentPerk = this.getPerkTier();
+                        Fx.upgradeCore.at(this.x, this.y); 
+                        Fx.impactReactorExplosion.at(this.x, this.y); 
+                        Effect.shake(8, 8, this.x, this.y);
 
-        let bonusRangeText = (currentPerk == 2 || currentPerk == 4) ? " [gold](+50% từ Phúc Lợi)[]" : "";
+                        dialog.hide(); 
+                        this.deselect();
+                    } else { 
+                        Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); 
+                    }
+                })).size(180, 38);
 
-        if (currentTier == 0) {
-            descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                      "• Máu cấu trúc: 4,200 HP\n" +
-                      "• Tầm bắn hiệu dụng: " + this.range() + " px" + bonusRangeText + "\n" +
-                      "• Sát thương gốc: 35 DPS (Mỗi tia)\n" +
-                      "• Mức tiêu thụ điện: 15.0 EU/s\n\n" +
-                      "[cyan]⚡ CƠ CHẾ KỸ NĂNG:[]\n" +
-                      "• Quét 2 chùm Laser Năng Lượng Liên Tục & xả đạn Vật Lý Dài.";
-        } else if (currentTier == 1) {
-            descStr = "[cyan]⚡ THÔNG SỐ NÂNG CẤP (MK2) ⚡[]\n" +
-                      "• Máu cấu trúc: 4,200 HP\n" +
-                      "• Tầm bắn hiệu dụng: " + this.range() + " px (+30%)" + bonusRangeText + "\n" +
-                      "• Sát thương gốc: 140 DPS (+300%)\n\n" +
-                      "[cyan]⚡ CƠ CHẾ KỸ NĂNG:[]\n" +
-                      "• Laser Siêu Dẫn Tầm Xa: Gây hiệu ứng Giật Điện (Shocked) kèm 15% tỷ lệ phóng sét lan.";
-        } else if (currentTier == 2) {
-            descStr = "[purple]⚡ THÔNG SỐ NÂNG CẤP (MK2B) ⚡[]\n" +
-                      "• Máu cấu trúc: 6,500 HP (+55%)\n" +
-                      "• Tầm bắn hiệu dụng: " + this.range() + " px" + bonusRangeText + "\n" +
-                      "• Sát thương gốc: 160 DPS (+357%)\n\n" +
-                      "[purple]🔥 CƠ CHẾ KỸ NĂNG ĐẶC BIỆT:[]\n" +
-                      "• Xoáy Trọng Lực Cận Chiến: Áp dụng đồng thời trạng thái Nóng Chảy & Điện Hóa, liên tục cộng dồn 3 tầng CEI/giây.";
-        }
+                let b2 = new Table(); 
+                b2.background(Styles.black6); 
+                b2.margin(12);
+                b2.add("[purple]===(MK2B)===[]").row();
+                let b2D = b2.add("[white]• Máu cấu trúc: [green]+55%[] (6,500 HP)\n" +
+                                 "• Tầm bắn: [gray]+0%[] (600 px)\n" +
+                                 "• Sát thương gốc: [green]+357%[] (160 DPS)\n\n" +
+                                 "[lightgray]Kỹ năng đặc biệt: Biến Thể Xoáy Trọng Lực Cận Chiến — Tối ưu hóa pháo ở tầm gần, gắn liên tục +3 tầng hiệu ứng CEI/giây (bao gồm Nóng Chảy, Điện Hóa và Sét Ma Quỷ) lên mục tiêu.[]");
+                b2D.width(340).get().setWrap(true); 
+                b2D.get().setAlignment(Align.left); 
+                b2.row();
+                b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
+                    let core = this.team.core();
+                    if (core != null && core.items.get(Items.silicon) >= reqPlasanodMK2B.silicon && core.items.get(Items.thorium) >= reqPlasanodMK2B.thorium && core.items.get(Items.phaseFabric) >= reqPlasanodMK2B.phaseFabric) {
+                        core.items.remove(Items.silicon, reqPlasanodMK2B.silicon); 
+                        core.items.remove(Items.thorium, reqPlasanodMK2B.thorium); 
+                        core.items.remove(Items.phaseFabric, reqPlasanodMK2B.phaseFabric);
+                        
+                        this.setTier(2);
+                        this.configure(2); 
 
-        if (currentPerk > 0) {
-            descStr += "\n\n[gold]★ ĐÃ KÍCH HOẠT PHÚC LỢI ĐẶC BIỆT ★[]";
-            if (currentPerk == 1) descStr += "\n[yellow]• Phúc lợi 1: Sát thương gốc +215%, Tăng tốc độ hội tụ chùm Laser.[]";
-            if (currentPerk == 2) descStr += "\n[orange]• Phúc lợi 2: Tầm bắn +50%, Sát thương Laser Siêu Dẫn +150%.[]";
-            if (currentPerk == 3) descStr += "\n[cyan]• Phúc lợi 3: +50% Mọi chỉ số pháo & hiệu ứng bộc phá.[]";
-            if (currentPerk == 4) descStr += "\n[purple]• Phúc lợi 4: Tầm bắn +50%, Bắn thêm đạn Vật Lý Kép xuyên phá.[]";
-            if (currentPerk == 5) descStr += "\n[green]• Phúc lợi 5 (1%): Laser đa hướng, Mở rộng Xoáy Trọng Lực, Buff năng lượng cho 4 pháo đồng minh lân cận.[]";
-            if (currentPerk == 6) descStr += "\n[red]• Phúc lợi 6 (1%): Sát thương gốc +500%, Bộc phá Sét Ma Quỷ diện rộng liên tục![]";
-        }
+                        Fx.bigShockwave.at(this.x, this.y); 
+                        Fx.reactorExplosion.at(this.x, this.y); 
+                        Effect.shake(10, 10, this.x, this.y);
 
-        let dialog = extend(BaseDialog, title, {});
-        let infoTable = new Table();
-        let cell = infoTable.add(descStr).width(360);
-        cell.get().setWrap(true); 
-        cell.get().setAlignment(Align.left);
+                        dialog.hide(); 
+                        this.deselect();
+                    } else { 
+                        Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]"); 
+                    }
+                })).size(180, 38);
 
-        let scroll = new ScrollPane(infoTable);
-        scroll.setScrollingDisabled(true, false);
-        dialog.cont.add(scroll).maxHeight(400);
-        dialog.addCloseButton(); 
-        dialog.show();
-    })).size(50, 40).tooltip("Xem thông số chi tiết pháo Plasanod");
-},
+                branchesTable.add(b1).width(360); 
+                branchesTable.row();
+                branchesTable.add().height(12).row();
+                branchesTable.add(b2).width(360);
+            } else {
+                let statusLabel = (tier == 1) ? "[cyan]ĐÃ NÂNG CẤP THÀNH PHÁO MK2[]" : "[purple]ĐÃ NÂNG CẤP THÀNH PHÁO MK2B[]";
+                branchesTable.add(statusLabel).row();
+            }
+
+            let scroll = new ScrollPane(branchesTable);
+            scroll.setScrollingDisabled(true, false);
+            dialog.cont.add(scroll).maxHeight(420);
+            dialog.addCloseButton(); 
+            dialog.show();
+        })).size(50, 40).tooltip("Trung tâm nâng cấp pháo Plasanod");
+
+        // ==================== NÚT 2: NÚT THÔNG TIN i ====================
+        table.button(Icon.info, Styles.cleari, 40, packRun(() => {
+            let title = " Thông số pháo Plasanod ";
+            let descStr = "";
+            let currentTier = this.getTier();
+            let currentPerk = this.getPerkTier();
+
+            let bonusRangeText = (currentPerk == 2 || currentPerk == 4) ? " [gold](+50% từ Phúc Lợi)[]" : "";
+
+            if (currentTier == 0) {
+                title += "[yellow](MK1)[]";
+                descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]4,200 HP[]\n" +
+                          "[lightgray]Tầm bắn hiệu dụng:[] [orange]" + this.range() + " pixel[]" + bonusRangeText + "\n" +
+                          "[lightgray]Sát thương gốc:[] [yellow]35.00 DPS (Mỗi tia)[]\n\n" +
+                          "[sky]⚡ CƠ CHẾ KĨ NĂNG:[]\n" +
+                          "• Quét 2 chùm Laser Năng Lượng Liên Tục kết hợp xả đạn Vật Lý Dài xuyên phá.";
+            } else if (currentTier == 1) {
+                title += "[cyan](MK2)[]";
+                descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]4,200 HP[]\n" +
+                          "[lightgray]Tầm bắn hiệu dụng:[] [orange]" + this.range() + " pixel [lime](+30%)[]" + bonusRangeText + "\n" +
+                          "[lightgray]Sát thương gốc:[] [yellow]140.00 DPS [lime](+300%)[]\n\n" +
+                          "[lime]⚡ CƠ CHẾ KĨ NĂNG:[]\n" +
+                          "• [lightgray]Laser Siêu Dẫn Tầm Xa:[] Gây hiệu ứng Giật Điện (Shocked) kèm 15% tỷ lệ phóng sét lan rộng sang các mục tiêu.";
+            } else if (currentTier == 2) {
+                title += "[purple](MK2B)[]";
+                descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]6,500 HP [lime](+55%)[]\n" +
+                          "[lightgray]Tầm bắn hiệu dụng:[] [orange]" + this.range() + " pixel[]" + bonusRangeText + "\n" +
+                          "[lightgray]Sát thương gốc:[] [red]160.00 DPS [lime](+357%)[]\n\n" +
+                          "[purple]🔥 CƠ CHẾ KĨ NĂNG ĐẶC BIỆT:[]\n" +
+                          "• [lightgray]Xoáy Trọng Lực Cận Chiến:[] Áp dụng đồng thời trạng thái Nóng Chảy & Điện Hóa, liên tục cộng dồn +3 tầng CEI/giây.";
+            }
+
+            if (currentPerk > 0) {
+                descStr += "\n\n[gold]★ ĐÃ KÍCH HOẠT PHÚC LỢI ĐẶC BIỆT ★[]";
+                if (currentPerk == 1) descStr += "\n[yellow]• Phúc lợi 1: Sát thương gốc +215%, Tăng tốc độ hội tụ chùm Laser.[]";
+                if (currentPerk == 2) descStr += "\n[orange]• Phúc lợi 2: Tầm bắn +50%, Sát thương Laser Siêu Dẫn +150%.[]";
+                if (currentPerk == 3) descStr += "\n[cyan]• Phúc lợi 3: +50% Mọi chỉ số pháo & hiệu ứng bộc phá.[]";
+                if (currentPerk == 4) descStr += "\n[purple]• Phúc lợi 4: Tầm bắn +50%, Bắn thêm đạn Vật Lý Kép xuyên phá.[]";
+                if (currentPerk == 5) descStr += "\n[green]• Phúc lợi 5 (1%): Laser đa hướng, Mở rộng Xoáy Trọng Lực, Buff năng lượng cho 4 pháo đồng minh lân cận.[]";
+                if (currentPerk == 6) descStr += "\n[red]• Phúc lợi 6 (1%): Sát thương gốc +500%, Bộc phá Sét Ma Quỷ diện rộng liên tục![]";
+            }
+
+            let dialog = extend(BaseDialog, title, {});
+            let infoTable = new Table();
+            let cell = infoTable.add(descStr).width(360);
+            cell.get().setWrap(true); 
+            cell.get().setAlignment(Align.left);
+
+            let scroll = new ScrollPane(infoTable);
+            scroll.setScrollingDisabled(true, false);
+            dialog.cont.add(scroll).maxHeight(400);
+            dialog.addCloseButton(); 
+            dialog.show();
+        })).size(50, 40).tooltip("Xem thông số chi tiết pháo Plasanod");
+    },
 
     config() { return java.lang.Integer(this.getTier()); },
 
@@ -477,13 +474,11 @@ buildConfiguration(table) {
                 this.physShootTimer += Time.delta;
                 this.ceiStackTimer += Time.delta;
 
-                // 1. Bắn đạn vật lý mỗi 0.4s (24 ticks)
                 if(this.physShootTimer >= 24){
                     physicalBullet.create(this, this.team, startX, startY, rot);
                     this.physShootTimer = 0;
                 }
 
-                // 2. TÍNH SÁT THƯƠNG TIA LASER
                 let dpsDamage = (200 / 60) * Time.delta * this.efficiency;
 
                 let off1X = bx + Angles.trnsx(rot + 90, 6);
@@ -512,7 +507,6 @@ buildConfiguration(table) {
 
                             if (sta != null && sta.cei != null) {
                                 u.apply(sta.cei, 7200);
-                                // MK2B thêm 3 tầng CEI mỗi giây
                                 if (applyCeiBonus) {
                                     for (let i = 0; i < 3; i++) {
                                         u.apply(sta.cei, 7200);

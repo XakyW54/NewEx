@@ -31,10 +31,10 @@ drawer: {
 
 researchCostMultiplier: 0.1
 requirements: [
-  copper/240
-  lead/ 1000
-  titanium/2300
-  silicon/1400
+  copper/2240
+  lead/ 1100
+  titanium/4300
+  silicon/400
 ]
 category: turret
 research: blaw

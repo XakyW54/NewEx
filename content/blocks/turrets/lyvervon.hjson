@@ -26,10 +26,10 @@ drawer: {
 }
 researchCostMultiplier: 0.1
 requirements: [
-  copper/500
-  lead/400
-  coal/300
-  graphite/1000
+  copper/2500
+  lead/1400
+  coal/4300
+  graphite/1200
 ]
 category: turret
 research: newex

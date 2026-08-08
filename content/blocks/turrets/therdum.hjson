@@ -1,26 +1,23 @@
 
-name: Dor
-description: "Pháo Dor: Sản phẩm quân sự đầu tay của NewEx. Pháo bắn đạn thường liên tục, xen kẽ các loạt đạn chùm theo chu kỳ. Bắn đủ số loạt đạn chùm sẽ kích hoạt trạng thái Cuồng Bạo, tăng mạnh tốc độ bắn đạn thường."
-health: 380
-size: 2
-reload: 20
-range: 176
+name: Therdum
+description: ""
+health: 6800
+size: 3
+reload: 60
+range: 105
 inaccuracy: 2
 targetAir: true
 targetGround: true
 maxAmmo: 10
 ammoPerShot: 1
 ammoTypes: {
-  copper: {
+  titanium: {
     type: BasicBulletType
-    speed: 5
-    damage: 30
-    width: 7
-    height: 9
-    lifetime: 40
-    frontColor: e0ea87
-    backColor: e5ff00
-    trailColor: daea80
+    speed: 999
+    damage: 1
+    width: 1
+    height: 1
+    lifetime: 999
   }
 }
 
@@ -53,6 +50,16 @@ drawer: {
               progress: reload
             }
 
+                        {
+              suffix: -1a
+              layer: 50.1
+              outline: false
+              layerOffset: -0.001
+              y: 2.5
+              moveY: -6.25
+              progress: reload
+            }
+
               ]
     }
 
@@ -60,8 +67,10 @@ drawer: {
 }
 
 researchCostMultiplier: 0.1
+
 requirements: [
-  copper/300
+  copper/2660
+    lead/1700
 ]
 category: turret
-research: newex
+research: xylaon

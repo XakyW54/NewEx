@@ -62,7 +62,7 @@ Events.on(ContentInitEvent, () => {
                     get: function(){ 
                         let timeLeft = e.getOverheatTimeLeft();
                         if (e.overheatTimer <= 0) return "TRẠNG THÁI: AN TOÀN";
-                        if (e.isOverItemLimit()) return "[scarlet]KHO VƯỢT QUÁ 1100 ITEM! NỔ TRONG: " + timeLeft + "s[]";
+                        if (e.isOverItemLimit()) return "[scarlet]KHO ĐẦY, NỔ TRONG: " + timeLeft + "s[]";
                         return "CẢNH BÁO NỔ: " + timeLeft + "s"; 
                     } 
                 }),

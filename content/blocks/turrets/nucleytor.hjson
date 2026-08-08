@@ -61,10 +61,10 @@ drawer: {
   ],
   researchCostMultiplier: 0.1
 requirements: [
-  copper/2400
-  thorium/1300
-plastanium/450
-  silicon/850
+  copper/4400
+  thorium/2300
+plastanium/1450
+  silicon/1050
 ]
 category: turret
 research: vendicum

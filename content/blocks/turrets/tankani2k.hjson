@@ -61,8 +61,7 @@ drawer: {
       progress: reload
     }
 
-    # Nòng phụ: tankani2k-barreltre (Phía trước nòng chính 10px = +1.25 block)
-    # Tọa độ Y gốc của nòng chính là 2.5, tiến lên 1.25 -> Y = 3.75
+
     {
       suffix: -barreltre
       layer: 50.4
@@ -71,8 +70,7 @@ drawer: {
       progress: reload
     }
 
-    # Nòng phụ: tankani2k-barrelduo (Phía trước nòng chính 20px = +2.5 block)
-    # Tọa độ Y gốc của nòng chính là 2.5, tiến lên 2.5 -> Y = 5.0
+
     {
       suffix: -barrelduo
       layer: 50.3
@@ -106,11 +104,11 @@ shoot: {
 }
 researchCostMultiplier: 0.1
 requirements: [
-  copper/3400
-  lead/1100
-  titanium/740
-plastanium/250
-  silicon/450
+  copper/6400
+  lead/2100
+  titanium/1740
+plastanium/1250
+  silicon/1450
 ]
 category: turret
 research: Vendicum

@@ -58,7 +58,7 @@ require("lazash");
 
 
 Events.on(ClientLoadEvent, e => {
-  // 1. Tìm hành tinh Zorynex theo ID/Tên
+  // 1. Tìm hành tinh Zorynex
   let zorynex = Vars.content.getByName(ContentType.planet, "zorynex") || 
                 Vars.content.getByName(ContentType.planet, "newex-zorynex");
 
@@ -67,20 +67,27 @@ Events.on(ClientLoadEvent, e => {
   // 2. Gán Cây công nghệ Serpulo cho Zorynex
   zorynex.techTree = Planets.serpulo.techTree;
 
-  // 3. GIẢI PHÁP CHÍNH: Đăng ký Zorynex vào danh sách hiển thị (shownPlanets) 
-  // cho tất cả các Block/Content nằm trong SerpuloTechTree
+  // 3. Đăng ký Zorynex cho tất cả các khối trong cây Serpulo
   if (Planets.serpulo.techTree != null) {
     Planets.serpulo.techTree.addPlanet(zorynex);
   }
 
-  // 4. Đồng bộ hóa môi trường & tính năng phóng tàu/bản thiết kế
+  // 4. GIẢI PHÁP CHÍNH: Thêm Zorynex vào `shownPlanets` cho tất cả các khối của Mod "newex"
+  Vars.content.blocks().each(block => {
+    // Nếu là khối do mod tạo ra (chứa tiền tố "newex") hoặc có thuộc tính minDatabaseClass/mininum...
+    if (block.name.startsWith("newex-") || block.miniverse != null) {
+      block.shownPlanets.add(zorynex);
+    }
+  });
+
+  // 5. Cấu hình môi trường & khởi chạy
   zorynex.defaultEnv = Planets.serpulo.defaultEnv;
   zorynex.allowLaunchLoadout = true;
   zorynex.allowLaunchSchematics = true;
   zorynex.allowLaunchToNumbered = true;
   zorynex.allowSectorInvasion = true;
 
-  // 5. Cấu hình quy tắc chơi (Bỏ cấm công trình)
+  // 6. Quy tắc chơi
   zorynex.ruleSetter = r => {
     r.bannedBlocks.clear();
     r.schematicsAllowed = true;
@@ -90,12 +97,11 @@ Events.on(ClientLoadEvent, e => {
   };
 });
 
-// 6. Xử lý khi tải vào bản đồ thuộc Zorynex
+// 7. Xử lý khi tải vào bản đồ thuộc Zorynex
 Events.on(WorldLoadEvent, e => {
   if (Vars.state.isCampaign() && Vars.state.getSector() && Vars.state.getSector().planet) {
     let currentPlanet = Vars.state.getSector().planet;
     if (currentPlanet.name.includes("zorynex")) {
-      // Đảm bảo không block nào bị cấm trong trận đánh
       Vars.state.rules.bannedBlocks.clear();
       Vars.state.rules.schematicsAllowed = true;
     }

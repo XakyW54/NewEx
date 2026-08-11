@@ -1,0 +1,14 @@
+localizedName: Zory-1
+description: .
+sector: 0
+captureWave: 30
+difficulty: 0
+planet: zorynex
+
+parent: serpulo
+techTree: serpulo
+
+allowLaunchLoadout: true
+allowLaunchSchematics: true
+addStartingItems: true
+overrideLaunchDefaults: true

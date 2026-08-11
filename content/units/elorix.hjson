@@ -3,7 +3,7 @@ name: Elorix
 
 speed: 0.8
 hitSize: 12
-health: 890
+health: 1890
 armor: 4
 drag: 0.4
 faceTarget: true

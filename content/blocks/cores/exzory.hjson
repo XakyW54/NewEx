@@ -1,0 +1,17 @@
+name: "Core: ExZory"
+description: .
+details: "hmmm."
+size: 4
+unitType: explayder
+health: 2800
+itemCapacity: 8000
+unitCapModifier: 10
+squareSprite: false
+isFirstTier: true
+requirements: [
+  copper/750
+  lead/750
+]
+category: effect
+
+alwaysUnlocked: true

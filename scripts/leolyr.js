@@ -23,6 +23,37 @@ let leolyrIsMarkedMK2 = false;
 let leolyrStaticShields = []; 
 let leolyrStarSpeedsMap = new ObjectMap();
 
+// Hàm tìm vị trí lướt an toàn dừng lại TRƯỚC tường
+function getSafeDashTarget(startX, startY, targetX, targetY) {
+    let distance = Mathf.dst(startX, startY, targetX, targetY);
+    let angle = Angles.angle(startX, startY, targetX, targetY);
+    
+    let step = 4.0; // Quét từng bước 4px (0.5 tile)
+    let currentDist = 0;
+
+    while (currentDist < distance) {
+        currentDist += step;
+        if (currentDist > distance) currentDist = distance;
+
+        let checkX = startX + Angles.trnsx(angle, currentDist);
+        let checkY = startY + Angles.trnsy(angle, currentDist);
+
+        let tile = Vars.world.tileWorld(checkX, checkY);
+        
+        // Nếu chạm vào tường (tile.solid())
+        if (tile != null && tile.solid()) {
+            // Lùi lại một khoảng safeDist để không bị chèn sát mép tường
+            let safeDist = Math.max(0, currentDist - step - 6.0);
+            return {
+                x: startX + Angles.trnsx(angle, safeDist),
+                y: startY + Angles.trnsy(angle, safeDist)
+            };
+        }
+    }
+
+    return { x: targetX, y: targetY };
+}
+
 function getLeolyrStarSpeeds(unitId, currentLevel) {
     let speeds = leolyrStarSpeedsMap.get(unitId);
     if (speeds == null) {
@@ -93,33 +124,6 @@ Events.on(ClientLoadEvent, () => {
                 },
 
                 update(){
-                    // 1. CƠ CHẾ GIỚI HẠN UNIT AN TOÀN (Tối đa 2 con trên sân)
-                    if (Math.floor(Time.time) % 20 === 0) {
-                        let currentCount = 0;
-                        let myType = this.type;
-                        let myTeam = this.team;
-                        let myId = this.id;
-                        let shouldRemove = false;
-
-                        let units = Groups.unit;
-                        for (let i = 0; i < units.size(); i++) {
-                            let u = units.index(i);
-                            if (u != null && u.type == myType && u.team == myTeam) {
-                                currentCount++;
-                                if (currentCount > 2 && myId >= u.id) {
-                                    shouldRemove = true;
-                                    break;
-                                }
-                            }
-                        }
-
-                        if (shouldRemove) {
-                            Fx.pulverize.at(this.x, this.y);
-                            this.remove();
-                            return; 
-                        }
-                    }
-
                     this.super$update(); 
                     if(this.dashCooldown > 0) this.dashCooldown--;
 
@@ -213,8 +217,9 @@ Events.on(ClientLoadEvent, () => {
                                          Fx.shieldApply.at(leolyrMk2TargetX, leolyrMk2TargetY, 0, Color.sky);
                                     } else if(leolyrIsMarkedMK2 && this.dashCooldown <= 0){
                                          executeDash = true;
-                                         finalX = leolyrMk2TargetX;
-                                         finalY = leolyrMk2TargetY;
+                                         let safePos = getSafeDashTarget(this.x, this.y, leolyrMk2TargetX, leolyrMk2TargetY);
+                                         finalX = safePos.x;
+                                         finalY = safePos.y;
                                          leolyrIsMarkedMK2 = false; 
                                     }
                                 } else {
@@ -222,8 +227,13 @@ Events.on(ClientLoadEvent, () => {
                                         executeDash = true;
                                         let dashDistance = 80 + (this.level * 40);
                                         let angle = this.rotation; if(this.vel.len() > 0.1) angle = this.vel.angle();
-                                        finalX = this.x + Angles.trnsx(angle, dashDistance);
-                                        finalY = this.y + Angles.trnsy(angle, dashDistance);
+                                        
+                                        let rawTargetX = this.x + Angles.trnsx(angle, dashDistance);
+                                        let rawTargetY = this.y + Angles.trnsy(angle, dashDistance);
+                                        
+                                        let safePos = getSafeDashTarget(this.x, this.y, rawTargetX, rawTargetY);
+                                        finalX = safePos.x;
+                                        finalY = safePos.y;
                                     }
                                 }
                             }
@@ -235,8 +245,13 @@ Events.on(ClientLoadEvent, () => {
                             executeDash = true;
                             let dashDistance = 80 + (this.level * 40);
                             let angle = this.vel.angle();
-                            finalX = this.x + Angles.trnsx(angle, dashDistance);
-                            finalY = this.y + Angles.trnsy(angle, dashDistance);
+                            
+                            let rawTargetX = this.x + Angles.trnsx(angle, dashDistance);
+                            let rawTargetY = this.y + Angles.trnsy(angle, dashDistance);
+                            
+                            let safePos = getSafeDashTarget(this.x, this.y, rawTargetX, rawTargetY);
+                            finalX = safePos.x;
+                            finalY = safePos.y;
                         }
                     }
 

@@ -9,9 +9,8 @@ unitCapModifier: 10
 squareSprite: false
 isFirstTier: true
 requirements: [
-  copper/750
-  lead/750
+  copper/100
 ]
 category: effect
-
+research: newex
 alwaysUnlocked: true

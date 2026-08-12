@@ -168,7 +168,7 @@ Events.run(Trigger.update, () => {
                     u.apply(StatusEffects.freezing, 300); 
                     u.apply(StatusEffects.wet, 300);
 
-                    // Phúc lợi 5: Cộng 5 tầng CEI (không lặp lại tạo vùng mới liên tục từ vùng này)
+                    // Phúc lợi 5: Cộng 5 tầng CEI
                     if (perk == 5) {
                         let uid = u.id;
                         if (!global.ceiStacks[uid]) global.ceiStacks[uid] = 0;
@@ -213,7 +213,7 @@ var cei = extend(StatusEffect, "cei", {
         if (global.ceiTimers[id] >= 60.0) {
             global.ceiTimers[id] = 0;
             
-            // CHỈNH SỬA: Giảm tích lũy từ 5 điểm/s xuống 1 điểm/s
+            // Tích lũy 1 điểm/s
             global.ceiStacks[id] += 1;
 
             let currentStacks = global.ceiStacks[id];
@@ -237,6 +237,49 @@ var cei = extend(StatusEffect, "cei", {
         }
     },
 
+// Vẽ hiệu ứng vết kẻ cong siêu nhỏ, di chuyển độc lập quanh tâm unit
+    draw(unit) {
+        let stacks = global.ceiStacks[unit.id] || 0;
+        if (stacks <= 0) return;
+
+        Draw.z(Layer.effect + 0.05);
+        Draw.color(Color.valueOf("90e0ef"));
+        
+        // Độ dày nét vẽ thu nhỏ (1.2px)
+        Lines.stroke(1.2 / Scl.scl(1.0));
+
+        // Chiều dài vệt cong thu nhỏ (chỉ 12 độ)
+        let arcDegree = 12;                      
+        let arcFraction = arcDegree / 360.0;     
+
+        for (let i = 0; i < stacks; i++) {
+            // Seed cố định cho từng vệt kẻ dựa trên ID unit + chỉ số vệt kẻ
+            let seed = unit.id * 1000 + i;
+
+            // Góc ban đầu ngẫu nhiên [0, 360)
+            let baseAngle = Mathf.randomSeed(seed, 0, 360);
+            
+            // Tốc độ xoay ngẫu nhiên từ 1.0 đến 3.5, hướng xoay ngẫu nhiên (+1 hoặc -1)
+            let rotSpeed = Mathf.randomSeed(seed + 1, 1.0, 3.5);
+            let dir = (i % 2 === 0) ? 1 : -1;
+            let currentAngle = baseAngle + (Time.time * rotSpeed * dir);
+
+            // Bán kính ngẫu nhiên tính từ tâm (từ hitSize * 0.4 đến hitSize + 2px)
+            let minR = Math.max(3.0, unit.hitSize * 0.4);
+            let maxR = unit.hitSize + 2.0;
+            let baseRadius = Mathf.randomSeed(seed + 2, minR, maxR);
+            
+            // Dao động vị trí nhẹ theo thời gian (nhấp nháy di chuyển ra/vào tâm)
+            let radiusOffset = Math.sin((Time.time + seed) * 0.1) * 1.5;
+            let currentRadius = Math.max(2.0, baseRadius + radiusOffset);
+
+            // Vẽ vệt cong nhỏ
+            Lines.arc(unit.x, unit.y, currentRadius, arcFraction, currentAngle);
+        }
+
+        Draw.reset();
+    },
+
     onRemoved(unit) {
         delete global.ceiStacks[unit.id];
         delete global.ceiTimers[unit.id];
@@ -244,9 +287,13 @@ var cei = extend(StatusEffect, "cei", {
     }
 });
 
-// 2. STATUS DOTEI, DEOT, BEMOD, ATKSPEED giữ nguyên...
+// --- 2. STATUS DOTEI ---
 var dotei = extend(StatusEffect, "dotei", {
-    init() { this.super$init(); this.uiIcon = StatusEffects.corroded.uiIcon; this.fullIcon = StatusEffects.corroded.fullIcon; },
+    init() { 
+        this.super$init(); 
+        this.uiIcon = StatusEffects.corroded.uiIcon; 
+        this.fullIcon = StatusEffects.corroded.fullIcon; 
+    },
     color: Color.valueOf("a15bf7"),
     damage: 0, 
     update(unit, time) {
@@ -261,13 +308,26 @@ var dotei = extend(StatusEffect, "dotei", {
     onRemoved(unit) { delete global.doteiStacks[unit.id]; }
 });
 
+// --- 3. STATUS DEOT ---
 var deot = extend(StatusEffect, "deot", {
-    init() { this.super$init(); this.uiIcon = StatusEffects.shielded.uiIcon; this.fullIcon = StatusEffects.shielded.fullIcon; },
+    init() { 
+        this.super$init(); 
+        this.uiIcon = StatusEffects.shielded.uiIcon; 
+        this.fullIcon = StatusEffects.shielded.fullIcon; 
+    },
     color: Color.valueOf("4be391"),
-    update(unit, time) { this.super$update(unit, time); let id = unit.id; if (global.deotDamagedTime[id] === undefined) global.deotDamagedTime[id] = 0; },
-    onRemoved(unit) { delete global.deotLastHealth[unit.id]; delete global.deotDamagedTime[unit.id]; }
+    update(unit, time) { 
+        this.super$update(unit, time); 
+        let id = unit.id; 
+        if (global.deotDamagedTime[id] === undefined) global.deotDamagedTime[id] = 0; 
+    },
+    onRemoved(unit) { 
+        delete global.deotLastHealth[unit.id]; 
+        delete global.deotDamagedTime[unit.id]; 
+    }
 });
 
+// --- 4. STATUS BEMOD ---
 const bemodLoopFx = new Effect(35, cons(e => {
     Draw.z(Layer.effect + 0.05);
     let seed = e.id;
@@ -281,7 +341,11 @@ const bemodLoopFx = new Effect(35, cons(e => {
 }));
 
 var bemod = extend(StatusEffect, "bemod", {
-    init() { this.super$init(); this.uiIcon = StatusEffects.blasted.uiIcon; this.fullIcon = StatusEffects.blasted.fullIcon; },
+    init() { 
+        this.super$init(); 
+        this.uiIcon = StatusEffects.blasted.uiIcon; 
+        this.fullIcon = StatusEffects.blasted.fullIcon; 
+    },
     color: Color.valueOf("ff4500"),
     update(unit, time) {
         this.super$update(unit, time);
@@ -289,7 +353,9 @@ var bemod = extend(StatusEffect, "bemod", {
             let id = unit.id;
             let stacks = global.bemodStacks[id] || 1;
             for (let i = 0; i < stacks; i++) {
-                Time.run(Mathf.random(0, 30), packRun(() => { if (unit != null && unit.isValid()) bemodLoopFx.at(unit.x, unit.y); }));
+                Time.run(Mathf.random(0, 30), packRun(() => { 
+                    if (unit != null && unit.isValid()) bemodLoopFx.at(unit.x, unit.y); 
+                }));
             }
         }
     },
@@ -298,6 +364,7 @@ var bemod = extend(StatusEffect, "bemod", {
 
 function packRun(func) { return new java.lang.Runnable({ run: func }); }
 
+// --- 5. STATUS ATKSPEED ---
 const customAtkSpeedFx = new Effect(45, cons(e => {
     Draw.z(Layer.effect + 0.01);
     Draw.color(Color.valueOf("ff6e6e"));
@@ -312,8 +379,14 @@ const customAtkSpeedFx = new Effect(45, cons(e => {
     Draw.reset();
 }));
 
-var atkspeed = extend(StatusEffect, "atkspeed", { reloadMultiplier: 2.5, effect: customAtkSpeedFx, effectChance: 0.18, color: Color.sky });
+var atkspeed = extend(StatusEffect, "atkspeed", { 
+    reloadMultiplier: 2.5, 
+    effect: customAtkSpeedFx, 
+    effectChance: 0.18, 
+    color: Color.sky 
+});
 
+// --- LẮNG NGHE SỰ KIỆN HỦY UNIT ---
 Events.on(UnitDestroyEvent, cons(e => {
     let id = e.unit.id;
     delete global.deotLastHealth[id];
@@ -325,6 +398,7 @@ Events.on(UnitDestroyEvent, cons(e => {
     if (global.ceiLastAppliedTurret) delete global.ceiLastAppliedTurret[id];
 }));
 
+// --- NẠP HIỂN THỊ TÊN VÀ MÔ TẢ ---
 Events.on(ClientLoadEvent, () => {
     cei.localizedName = "Cei Frost Field";
     cei.description = "Tích lũy 1 điểm mỗi giây. Đủ mốc sẽ tạo Vùng Băng Giá tồn tại 30s.";

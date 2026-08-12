@@ -5,46 +5,28 @@ const packProv = (func) => new Prov({ get: func });
 const reqPerkA = { copper: 2000, lead: 2000, silicon: 2000 };
 const reqPerkB = { titanium: 1000, thorium: 1000, graphite: 1000 };
 
-// 1. Hàm vẽ thanh kiếm
-function drawSword(x, y, rot, scale) {
-    let swordLength = 18.0 * scale; 
-    let swordWidth = 4.5 * scale;   
-    let hiltWidth = 8.0 * scale;    
+// 1. Hàm hỗ trợ vẽ sprite swordoder-sword
+function drawSwordRegion(x, y, rot, scale) {
+    let swordRegion = Core.atlas.find("newex-swordoder-sword");
+    if (!swordRegion.found()) swordRegion = Core.atlas.find("swordoder-sword");
 
-    let offset = 4.0 * scale;
-    let originX = x - Angles.trnsx(rot, offset);
-    let originY = y - Angles.trnsy(rot, offset);
-
-    Draw.color(Color.valueOf("#ffe066")); 
-    Draw.alpha(1.0);
-    
-    let tipX = originX + Angles.trnsx(rot, swordLength);
-    let tipY = originY + Angles.trnsy(rot, swordLength);
-    let backX = originX;
-    let backY = originY;
-
-    let leftX = originX + Angles.trnsx(rot + 90, swordWidth / 2);
-    let leftY = originY + Angles.trnsy(rot + 90, swordWidth / 2);
-    let rightX = originX + Angles.trnsx(rot - 90, swordWidth / 2);
-    let rightY = originY + Angles.trnsy(rot - 90, swordWidth / 2);
-
-    Fill.quad(tipX, tipY, leftX, leftY, backX, backY, rightX, rightY);
-
-    Draw.color(Color.white);
-    Lines.stroke(1.5 * scale);
-    Lines.line(backX, backY, tipX, tipY);
-
-    Draw.color(Color.valueOf("#ffaa00"));
-    let hiltLeftX = originX + Angles.trnsx(rot + 90, hiltWidth / 2);
-    let hiltLeftY = originY + Angles.trnsy(rot + 90, hiltWidth / 2);
-    let hiltRightX = originX + Angles.trnsx(rot - 90, hiltWidth / 2);
-    let hiltRightY = originY + Angles.trnsy(rot - 90, hiltWidth / 2);
-    
-    Lines.stroke(2.5 * scale);
-    Lines.line(hiltLeftX, hiltLeftY, hiltRightX, hiltRightY);
+    if (swordRegion.found()) {
+        let width = swordRegion.width * Draw.scl * scale;
+        let height = swordRegion.height * Draw.scl * scale;
+        Draw.rect(swordRegion, x, y, width, height, rot - 90);
+    }
 }
 
-// 2. Hàm gây sát thương vòng cung
+// 2. Hàm kiểm tra và xử lý kết liễu nếu mục tiêu còn <= 1% máu
+function checkExecute(unit, team) {
+    if (unit != null && unit.team != team && !unit.dead) {
+        if (unit.health / unit.maxHealth <= 0.01) {
+            unit.damage(999999);
+        }
+    }
+}
+
+// 3. Hàm gây sát thương vòng cung khi vệt chém kích hoạt (FIXED CRASH)
 function damageArc(team, x, y, rotation, radius, arcAngle, damageAmount) {
     let originX = x - Angles.trnsx(rotation, radius);
     let originY = y - Angles.trnsy(rotation, radius);
@@ -59,17 +41,25 @@ function damageArc(team, x, y, rotation, radius, arcAngle, damageAmount) {
         let px = originX + Angles.trnsx(currentAngle, radius);
         let py = originY + Angles.trnsy(currentAngle, radius);
 
+        // Sát thương Unit + Nội tại Tận diệt 1% HP
+        Units.nearbyEnemies(team, px - hitRadius, py - hitRadius, hitRadius * 2, hitRadius * 2, cons(unit => {
+            if (unit.within(px, py, hitRadius)) {
+                unit.damage(damageAmount);
+                checkExecute(unit, team);
+            }
+        }));
+
+        // Sát thương công trình (Dùng Damage.damage chuẩn thay vì Building.damage)
         Damage.damage(team, px, py, hitRadius, damageAmount, true, true);
     }
 }
 
-// 3. Hiệu ứng nhát chém + Khói + Điện
+// 4. Hiệu ứng vệt chém + Khói + Điện
 const vSlashHitFx = new Effect(24, cons(e => {
     Draw.z(Layer.effect + 0.01);
     
     let fin = e.fin(); 
     let rot = e.rotation;
-    
     let turretX = e.x;
     let turretY = e.y;
 
@@ -96,7 +86,6 @@ const vSlashHitFx = new Effect(24, cons(e => {
     let headProgress = Math.min(1.0, fin * 1.2);
     let currentSweep = (startAngle + (endAngle - startAngle) * headProgress) - startAngle;
 
-    // A. Vẽ vệt chém
     if (currentSweep > 0) {
         Draw.color(Color.valueOf("#ffe066"), Color.valueOf("#ff5500"), fin);
         Draw.alpha(alpha);
@@ -109,7 +98,6 @@ const vSlashHitFx = new Effect(24, cons(e => {
         Lines.arc(originX, originY, radius - 24.0, currentSweep / 360, startAngle);
     }
 
-    // B. Khói
     let smokeCount = 20; 
     for (let i = 0; i <= smokeCount; i++) {
         let spawnProgress = i / smokeCount; 
@@ -153,7 +141,6 @@ const vSlashHitFx = new Effect(24, cons(e => {
         }
     }
 
-    // C. Tia điện
     Draw.color(Color.valueOf("#aee5ff"), Color.white, Mathf.randomSeed(e.id + 99, 0, 1));
     Lines.stroke(2.5 * alpha);
     
@@ -171,8 +158,7 @@ const vSlashHitFx = new Effect(24, cons(e => {
         Lines.line(midX, midY, targetX, targetY);
     }
 
-    // D. Thanh kiếm
-    drawSword(swordX, swordY, swordRot, scale);
+    drawSwordRegion(swordX, swordY, swordRot, scale);
 
     Draw.reset();
 }));
@@ -196,11 +182,12 @@ function triggerSlashArea(b) {
     }
 }
 
+// 5. Định nghĩa Đạn cơ bản
 const swordoderBulletBase = extend(BasicBulletType, {
     speed: 6,
     damage: 30,
-    width: 10,
-    height: 14,
+    width: 24,
+    height: 24,
     hitEffect: vSlashHitFx,
     despawnEffect: vSlashHitFx,
     buildingDamageMultiplier: 1.0,
@@ -212,6 +199,11 @@ const swordoderBulletBase = extend(BasicBulletType, {
 
     collided(b, other) {
         let result = this.super$collided(b, other);
+        
+        if (other != null && other.team != b.team && other.health !== undefined) {
+            checkExecute(other, b.team);
+        }
+
         triggerSlashArea(b);
 
         if (other != null && b.owner != null && typeof b.owner.handleSwordoderHit === "function") {
@@ -222,11 +214,20 @@ const swordoderBulletBase = extend(BasicBulletType, {
 
     draw(b) {
         Draw.z(Layer.bullet);
-        drawSword(b.x, b.y, b.rotation(), 1.0);
+
+        let reg = Core.atlas.find("newex-swordoder-sword");
+        if (!reg.found()) reg = Core.atlas.find("swordoder-sword");
+
+        if (reg.found()) {
+            Draw.rect(reg, b.x, b.y, reg.width * Draw.scl, reg.height * Draw.scl, b.rotation() - 90);
+        } else {
+            this.super$draw(b);
+        }
         Draw.reset();
     }
 });
 
+// 6. Định nghĩa Pháo
 const swordoder = extend(ItemTurret, "swordoder", {
     configurable: true
 });
@@ -234,6 +235,7 @@ const swordoder = extend(ItemTurret, "swordoder", {
 swordoder.health = 3600;
 swordoder.range = 105;
 swordoder.reload = 120;
+swordoder.recoil = 8;
 
 swordoder.config(java.lang.Integer, packCons2((tile, value) => {
     if (tile != null) {
@@ -246,6 +248,7 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
     }
 }));
 
+// 7. Thực thể Pháo (BuildType)
 swordoder.buildType = () => extend(ItemTurret.ItemTurretBuild, swordoder, {
     created() {
         this.super$created();
@@ -254,7 +257,68 @@ swordoder.buildType = () => extend(ItemTurret.ItemTurretBuild, swordoder, {
         this.buff3BTimer = 0.0;
         this.subBulletTaskTimer = 0.0;
         this.pendingSubBullets = 0;
+        this.customRecoil = 0.0;
         return this;
+    },
+
+    updateTile() {
+        this.super$updateTile();
+
+        if (this.customRecoil > 0) {
+            this.customRecoil = Math.max(0, this.customRecoil - Time.delta * 0.15);
+        }
+
+        if (this.buff3BTimer > 0) {
+            this.buff3BTimer -= Time.delta;
+        }
+
+        if (this.pendingSubBullets > 0) {
+            this.subBulletTaskTimer -= Time.delta;
+            if (this.subBulletTaskTimer <= 0) {
+                this.fire1BSidePattern(30.0);
+                this.pendingSubBullets = 0;
+            }
+        }
+
+        let perkA = this.getPerkA();
+        let baseReload = (perkA == 3) ? 60 : 120;
+        let currentReload = (this.buff3BTimer > 0) ? (baseReload / 2.2) : baseReload;
+
+        if (this.hasAmmo()) {
+            if (this.timer.get(0, currentReload)) {
+                this.findTarget();
+
+                let isControlled = this.isControlled() || this.logicControlled();
+                
+                if (this.target != null) {
+                    this.wasShooting = true;
+                    this.turnToTarget(this.angleTo(this.target));
+                    this.shoot(swordoderBulletBase);
+                } else if (isControlled && this.isShooting) {
+                    this.wasShooting = true;
+                    this.shoot(swordoderBulletBase);
+                } else {
+                    this.wasShooting = false;
+                }
+            }
+        }
+    },
+
+    draw() {
+        this.super$draw();
+
+        let swordRegion = Core.atlas.find("newex-swordoder-sword");
+        if (!swordRegion.found()) swordRegion = Core.atlas.find("swordoder-sword");
+
+        if (swordRegion.found()) {
+            Draw.z(Layer.turret + 0.01);
+            
+            let offset = -this.customRecoil * swordoder.recoil;
+            let rx = this.x + Angles.trnsx(this.rotation, offset);
+            let ry = this.y + Angles.trnsy(this.rotation, offset);
+
+            Draw.rect(swordRegion, rx, ry, this.rotation - 90);
+        }
     },
 
     getPerkA() { return this.perkAState || 0; },
@@ -276,6 +340,9 @@ swordoder.buildType = () => extend(ItemTurret.ItemTurretBuild, swordoder, {
 
         if (perkA == 2 && target != null) {
             Damage.damage(this.team, target.x, target.y, 10, 10, true, true);
+            if (target.health !== undefined) {
+                checkExecute(target, this.team);
+            }
         }
 
         if (this.getPerkB() == 1 && Mathf.chance(0.15)) {
@@ -313,47 +380,6 @@ swordoder.buildType = () => extend(ItemTurret.ItemTurretBuild, swordoder, {
         }
     },
 
-    updateTile() {
-        this.super$updateTile();
-
-        if (this.buff3BTimer > 0) {
-            this.buff3BTimer -= Time.delta;
-        }
-
-        // Xử lý đợt bắn thứ hai (bên góc +30 deg) sau 0.2s cho Phúc lợi 1B
-        if (this.pendingSubBullets > 0) {
-            this.subBulletTaskTimer -= Time.delta;
-            if (this.subBulletTaskTimer <= 0) {
-                this.fire1BSidePattern(30.0); // Bắn góc +30 độ
-                this.pendingSubBullets = 0;
-            }
-        }
-
-        let perkA = this.getPerkA();
-        let baseReload = (perkA == 3) ? 60 : 120;
-        let currentReload = (this.buff3BTimer > 0) ? (baseReload / 2.2) : baseReload;
-
-        if (this.hasAmmo()) {
-            if (this.timer.get(0, currentReload)) {
-                this.findTarget();
-
-                let isControlled = this.isControlled() || this.logicControlled();
-                
-                if (this.target != null) {
-                    this.wasShooting = true;
-                    this.turnToTarget(this.angleTo(this.target));
-                    this.shoot(swordoderBulletBase);
-                } else if (isControlled && this.isShooting) {
-                    this.wasShooting = true;
-                    this.shoot(swordoderBulletBase);
-                } else {
-                    this.wasShooting = false;
-                }
-            }
-        }
-    },
-
-    // Hàm thực thi xả toàn bộ đạn Phúc lợi A theo góc nghiêng ấn định (Ví dụ +30° hoặc -30°)
     fire1BSidePattern(angleOffset) {
         let perkA = this.getPerkA();
         let baseDmg = 30;
@@ -404,22 +430,18 @@ swordoder.buildType = () => extend(ItemTurret.ItemTurretBuild, swordoder, {
     },
 
     shoot(type) {
+        this.customRecoil = 1.0;
+
         let perkA = this.getPerkA();
         let perkB = this.getPerkB();
 
-        // NẾU CÓ PHÚC LỢI 1B: ĐỔI HOÀN TOÀN CÁCH BẮN SANG 2 GÓC -30° VÀ +30°
         if (perkB == 1) {
-            // Bắn đợt 1 ngay lập tức ở góc -30°
             this.fire1BSidePattern(-30.0);
-
-            // Đặt lịch bắn đợt 2 ở góc +30° sau 0.2 giây (12 tick)
             this.pendingSubBullets = 1;
             this.subBulletTaskTimer = 12.0;
-
-            return; // Thoát hàm shoot chính để hủy cách bắn thẳng
+            return;
         }
 
-        // CÁC TRƯỜNG HỢP BẮN BÌNH THƯỜNG (KHI KHÔNG CÓ PHÚC LỢI 1B)
         let baseDmg = 30;
         let bulletCount = 1;
         let spreadDeg = 0.0;
@@ -445,7 +467,6 @@ swordoder.buildType = () => extend(ItemTurret.ItemTurretBuild, swordoder, {
             spreadDeg = 0.0;
         }
 
-        // Kỹ năng phụ Phúc lợi 2B
         if (perkB == 2 && Mathf.chance(0.50)) {
             let healAmount = this.maxHealth;
             let excess = (this.health + healAmount) - this.maxHealth;
@@ -505,7 +526,7 @@ swordoder.buildType = () => extend(ItemTurret.ItemTurretBuild, swordoder, {
                 return "[gold]YÊU CẦU TÀI NGUYÊN LÕI (CẤP MK1):[]\n" +
                        "[yellow]★ ROLL PHÚC LỢI A:[] Đồng: " + colCop + cCop + "[]/2000 | Chì: " + colLea + cLea + "[]/2000 | Silicon: " + colSil + cSil + "[]/2000\n" +
                        "[cyan]★ ROLL PHÚC LỢI B:[] Titan: " + colTit + cTit + "[]/1000 | Thorium: " + colTho + cTho + "[]/1000 | Than chì: " + colGra + cGra + "[]/1000\n" +
-                       "[gray](Pháo Swordoder Mk1 nâng cấp trực tiếp qua hệ thống Phúc lợi)[]";
+                       "[gray](Tất cả cấp độ đều sở hữu Nội tại Tận diệt: Địch <= 1% máu sẽ nhận 999,999 sát thương)[]";
             }));
 
             reqCell.width(380).get().setWrap(true);
@@ -624,6 +645,7 @@ swordoder.buildType = () => extend(ItemTurret.ItemTurretBuild, swordoder, {
             
             let descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN PHÁO SWORDODER (MK1) ⚡[]\n" +
                           "• Máu: 3,600 | Tầm bắn: 105px (13.1 ô) | Sát thương gốc: 30.0 + 19 (Chém)\n" +
+                          "• [red]Nội tại Tận diệt: Mục tiêu bị giảm còn <= 1% máu lập tức chịu 999,999 sát thương kết liễu![]\n" +
                           "• Cơ chế gốc: Bắn 1 viên đạn đơn. Khi đạn chạm/despawn tạo vệt chém gây 19 sát thương diện rộng.\n" +
                           "• Nâng cấp: Nâng cấp trực tiếp chỉ số và kỹ năng qua hệ thống Phúc lợi A & B.";
 

@@ -32,7 +32,7 @@ var mirrorSparks = extend(RadialEffect, {
 });
 
 const blawBlueMK1 = extend(BasicBulletType, {
-    speed: 2.5, damage: 20, width: 9, height: 22, lifetime: 60,
+    speed: 2.5, damage: 10, width: 9, height: 22, lifetime: 60,
     sprite: "newex-diamond-shard", 
     hitEffect: nhCircleHitEffect, despawnEffect: nhCircleHitEffect,
     hitColor: Color.valueOf("0031FFFF"),
@@ -41,11 +41,11 @@ const blawBlueMK1 = extend(BasicBulletType, {
 });
 
 const blawRedMK1 = extend(BasicBulletType, {
-    speed: 2.5, damage: 20, width: 9, height: 22, lifetime: 60,
+    speed: 2.5, damage: 10, width: 9, height: 22, lifetime: 60,
     frontColor: Color.valueOf("FF0000FF"), backColor: Color.white, 
     hitEffect: nhCircleHitEffect, despawnEffect: nhCircleHitEffect,
     hitColor: Color.valueOf("FF0000FF"),
-    splashDamage: 80, splashDamageRadius: 24, status: StatusEffects.blasted, statusDuration: 80
+    splashDamage: 40, splashDamageRadius: 24, status: StatusEffects.blasted, statusDuration: 80
 });
 
 const blawBlueMK2 = extend(BasicBulletType, {

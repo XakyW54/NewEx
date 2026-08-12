@@ -1,10 +1,7 @@
 
 
 const smoothHpMap = new ObjectMap();
-const lastDamageTimeMap = new ObjectMap(); 
-Events.on(ClientLoadEvent, () => {
-    Vars.ui.settings.game.checkPref("show-unit-hp", true);
-});
+const lastDamageTimeMap = new ObjectMap();
 
 Events.run(Trigger.draw, () => {
     if(!Core.settings.getBool("show-unit-hp", true)) return;

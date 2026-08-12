@@ -57,3 +57,9 @@
 -------------------------------------------
 > Điều chỉnh cân bằng bản 0.5.6:
 - Xóa bỏ cơ chế giới hạn đặt tháp pháo.
+
+
+
+-------------------------------------------
+> Điều chỉnh cân bằng bản 0.6.4:
+- Pháo blaw: mk1 giảm 50% dmg gốc và dmg phạm vi.

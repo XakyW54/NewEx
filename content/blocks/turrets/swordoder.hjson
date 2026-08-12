@@ -4,17 +4,21 @@ description: ""
 health: 6800
 size: 3
 reload: 120
+recoil: 3
 range: 105
 inaccuracy: 2
 targetAir: true
 targetGround: true
 maxAmmo: 10
 ammoPerShot: 1
+shootY: 5
+shootX: 0
 ammoTypes: {
   titanium: {
     type: BasicBulletType
     speed: 999
     damage: 1
+    sprite: swordoder-sword
     width: 1
     height: 1
     lifetime: 999
@@ -27,42 +31,13 @@ drawer: {
   basePrefix: reinforced-
   parts: [
     {
-      suffix: -2
-                layer: 51
-      y: 0
-      moveY: -0
-      recoilIndex: 0
-      progress: recoil
-                    children: [
-            {
-              suffix: -2
-              outline: false
-              layer: 50.01
-            }
-
-            {
-              suffix: -1
-              layer: 50.1
-              outline: false
-              layerOffset: -0.001
-              y: 2.5
-              moveY: -1.25
-              progress: reload
-            }
-
-                        {
-              suffix: -1a
-              layer: 50.1
-              outline: false
-              layerOffset: -0.001
-              y: 2.5
-              moveY: -6.25
-              progress: reload
-            }
-
-              ]
+      type: RegionPart
+      suffix: -barr
+      under: false
+      moveY: -3
+      progress: reload
+      heatProgress: reload
     }
-
   ]
 }
 

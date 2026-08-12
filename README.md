@@ -63,3 +63,4 @@
 -------------------------------------------
 > Điều chỉnh cân bằng bản 0.6.4:
 - Pháo blaw: mk1 giảm 50% dmg gốc và dmg phạm vi.
+- eatsuki đã tham gia :>

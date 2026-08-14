@@ -178,7 +178,7 @@ Events.on(ContentInitEvent, () => {
                 }
             },
 
-            updateTile() {
+updateTile() {
                 if (this.items.total() > 0) {
                     this.dump();
                 }
@@ -202,11 +202,18 @@ Events.on(ContentInitEvent, () => {
 
                     if (item != null && this.items.get(item) < this.block.itemCapacity) {
                         let hardness = item.hardness > 0 ? item.hardness : 1;
-                        this.mineTimer += hardness * this.efficiency * 10;
+                        
+                        // Hệ số giảm nhẹ tốc độ theo độ cứng (mỗi cấp độ cứng chỉ làm giảm khoảng 15% tốc độ)
+                        let hardnessPenalty = 1 / (1 + (hardness - 1) * 0.15);
+                        
+                        // Tốc độ chuẩn: ~8 item/giây với quặng cơ bản (hardness = 1)
+                        this.mineTimer += (8 / 60) * hardnessPenalty * this.efficiency;
 
-                        if (this.mineTimer >= this.mineSpeed) {
-                            this.items.add(item, 1);
-                            this.mineTimer = 0;
+                        if (this.mineTimer >= 1.0) {
+                            let amountToAdd = Math.floor(this.mineTimer);
+                            this.items.add(item, amountToAdd);
+                            this.mineTimer -= amountToAdd;
+
                             try {
                                 Fx.mined.at(tx, ty);
                             } catch(e) {}

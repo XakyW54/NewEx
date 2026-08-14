@@ -4,14 +4,14 @@ name: Leolyr
 outlineColor: 36363c
 hitSize: 12
 health: 2400
-armor: 400
+armor: 80
 drag: 0.4
 faceTarget: true
 range: 230
 flying: false
 legCount: 6
 hovering: true
-speed: 0.8
+speed: 0.9
 targetAir: true
 rotateSpeed: 3
 

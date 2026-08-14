@@ -57,3 +57,14 @@
 -------------------------------------------
 > Điều chỉnh cân bằng bản 0.5.6:
 - Xóa bỏ cơ chế giới hạn đặt tháp pháo.
+
+
+
+-------------------------------------------
+> Điều chỉnh cân bằng bản 0.6.7:
++ Units Leolys: 
+   - Giảm máu 50% (2400 > 1200).
+   - Giảm giáp 80% (400 > 80).
+   - Tăng tốc độ di chuyển: 0.8 > 0.9  
++ Pháo Rangtaturs: 
+   - Mk1 bắn 9 viên tăng lên 29 viên.

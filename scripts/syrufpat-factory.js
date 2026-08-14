@@ -203,7 +203,7 @@ Events.on(ContentInitEvent, () => {
                 this.hasStartedBefore = true;
             }
 
-            let requiredCryoPerTick = 500.0 / 60.0;
+            let requiredCryoPerTick = 100.0 / 60.0;
             let hasEnoughCryo = this.liquids.get(Liquids.cryofluid) >= requiredCryoPerTick;
             let overLimit = this.isOverItemLimit();
 

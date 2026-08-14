@@ -304,7 +304,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                 b1.add("[cyan]===(MK2)===[]").row();
                 let b1D = b1.add("Cấu hình tăng cường mật độ mảnh hỏa lực:\n" +
-                                 " [white]• Mưa đạn trạng thái: Đẩy mạnh lên [green]39 viên đạn mảnh[] [lime](+333.3%)[].[]\n" +
+                                 " [white]• Mưa đạn trạng thái: Đẩy mạnh lên [green]39 viên đạn mảnh[].[]\n" +
                                  " [white]• Siêu Laser tích tụ: Thời gian sạc rút ngắn còn [yellow]2.33 giây (140 tick)[] [lime](Giảm -22.2%)[].[]\n" +
                                  " [white]• Laze kích nổ: Sát thương đột biến nhân tiến đạt mức [red]310% hỏa lực[] cơ bản.[]\n" +
                                  " [white]• Chu kỳ Cuồng nộ: Kéo dài thời gian bộc phá lên [orange]6.0 giây[] [lime](+20%)[], đẩy tốc bắn thường lên [red]250%[].[]");
@@ -326,7 +326,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                 b2.add("[purple]===(MK2B)===[]").row();
                 let b2D = b2.add("Cấu hình tối thượng hủy diệt bão đạn diện rộng:\n" +
-                                 " [white]• Siêu bão hỗn hợp: Loạt bắn shotgun tăng số lượng mảnh lên [green]50 viên đạn[] [lime](+455.5%)[].[]\n" +
+                                 " [white]• Siêu bão hỗn hợp: Loạt bắn shotgun tăng số lượng mảnh lên [green]50 viên đạn[].[]\n" +
                                  " [white]• Chu kỳ nén ép xung: Khóa cố định thời gian năng lượng hồi loạt bắn thường còn [yellow]1.16 giây (70 tick)[].[]\n" +
                                  " [white]• Tuyệt chiêu Xả Bão (Burst): Bắn đủ 6 phát giải phóng bão đơn cực cực đại [orange]100 viên đạn nén[].[]\n" +
                                  " [white]• Quá tải nhiệt: Hệ thống rơi vào trạng thái làm mát cưỡng bức, ngắt nòng trong [purple]3.0 giây (180 tick)[].[]");
@@ -374,7 +374,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                           "Tầm bắn hiệu dụng:[] [orange]" + this.block.range + " pixel[]\n" +
                           "Mục tiêu phát xạ:[] [yellow]Mặt đất (Không bắn phòng không)[]\n\n" +
                           "[sky]⚡ ĐẶC TÍNH HỎA LỰC VÀ CHU KỲ CƠ CHẾ:[]\n" +
-                          "• [lightgray]Bắn Shotgun thường:[] Phóng loạt gồm [green]9 viên đạn mảnh[] mang ngẫu nhiên hiệu ứng bộ 7 trạng thái bất lợi.\n" +
+                          "• [lightgray]Bắn Shotgun thường:[] Phóng loạt gồm [green]29 viên đạn mảnh[] mang ngẫu nhiên hiệu ứng bộ 7 trạng thái bất lợi.\n" +
                           "• [lightgray]Chu kỳ Tích tụ (Sạc điểm):[] Bắn thường liên tục trong [yellow]3.0 giây (180 tick)[] kích hoạt Đại Pháo Laser gây sát thương nhân tiến lên [gold]280%[].[]\n" +
                           "• [lightgray]Mạch Cuồng nộ (Berserk):[] Tích đủ 3 phát Laze đưa lõi pháo vào trạng thái quá tải trong [orange]5.0 giây (300 tick)[], tăng tốc độ hồi đạn bắn thường lên [green]+150%[].";
             } else if (currentTier == 1) {
@@ -384,7 +384,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                           "📐 Kích thước khối:[] [white]" + this.block.size + "x" + this.block.size + "[]\n" +
                           "Tầm bắn hiệu dụng:[] [orange]" + this.block.range + " pixel[]\n\n" +
                           "[lime]⚡ ĐẶC TÍNH HỎA LỰC VÀ CHU KỲ CƠ CHẾ:[]\n" +
-                          "• [lightgray]Mưa đạn trạng thái:[] Số lượng đạn Shotgun tăng mạnh lên [green]39 viên mảnh[] [lime](+333.3%)[].\n" +
+                          "• [lightgray]Mưa đạn trạng thái:[] Số lượng đạn Shotgun tăng lên [green]39 viên mảnh[].\n" +
                           "• [lightgray]Sạc xung ngắn mạch:[] Thời gian tích tụ năng lượng Laser rút xuống còn [yellow]2.33 giây (140 tick) [lime](Giảm -22.2%)[], sát thương Laser lõi tăng vọt đạt [red]310%[].[]\n" +
                           "• [lightgray]Chu kỳ Siêu cuồng nộ:[] Thời gian bộc phá tăng lên [orange]6.0 giây (360 tick) [lime](+20%)[], ép tốc độ xả đạn bắn thường lên mức cực đại [red]250%[].";
             } else if (currentTier == 2) {
@@ -395,7 +395,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                           "Tầm bắn hiệu dụng:[] [orange]" + this.block.range + " pixel[]\n\n" +
                           "[purple]🔥 🔥 CƠ CHẾ SIÊU BÃO LOẠN TRẠNG THÁI TRỌNG LỰC:[]\n" +
                           "• Hệ thống loại bỏ hoàn toàn cơ chế sạc tích tụ điểm và thanh cuồng nộ cũ.\n" +
-                          "• [lightgray]Bão Shotgun hỗn hợp:[] Phóng ra tia Laze nén kèm chùm đạn shotgun tập trung mật độ cao lên tới [green]50 viên đạn[] [lime](+455.5%)[].\n" +
+                          "• [lightgray]Bão Shotgun hỗn hợp:[] Phóng ra tia Laze nén kèm chùm đạn shotgun tập trung mật độ cao lên tới [green]50 viên đạn[].\n" +
                           "• [lightgray]Cơ chế nén ép xung:[] Khóa cố định chu kỳ thời gian hồi giữa các loạt bắn thông thường thành [yellow]1.16 giây (70 tick)[].[]\n" +
                           "• [lightgray]Tuyệt chiêu Xả Bão (Burst Mode):[] Tích lũy đủ 6 phát bắn, pháo tự động giải phóng một siêu bão tổng lực cực đại gồm [red]100 viên đạn hỗn hợp[], sau đó rơi vào trạng thái đóng băng hệ thống làm mát ngắt nòng trong [white]3.0 giây (180 tick)[].";
             }
@@ -526,7 +526,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
             }
         } else {
             let pType = this.evolutionTier;
-            let pellets = 9;       
+            let pellets = 29; // Cập nhật MK1 từ 9 viên -> 29 viên đạn
             let spread = 8;        
             let dmgMul = 1.0;      
             let spdMul = 1.0;      

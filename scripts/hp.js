@@ -43,7 +43,7 @@ Events.run(Trigger.draw, () => {
         let barWidth = 4;
         let barHeight = 22;
 
-        Draw.color(Color.valueOf("1f1f1f"));
+        Draw.color(Color.valueOf("#1f1f1f"));
         Fill.rect(x - 12, y - 8, barWidth, barHeight);
 
         if(hpPercent <= 20){

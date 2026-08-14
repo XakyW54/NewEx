@@ -7,7 +7,7 @@
 "planet": "serpulo",
 "allowLaunchLoadout": true,
 "allowLaunchSchematics": true,
-"addStartingItems": true,
+"addStartingItems": false,
 "overrideLaunchDefaults": true,
 "research": {
 "parent": "extractionOutpost",

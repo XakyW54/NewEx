@@ -66,6 +66,17 @@ require("persefer");
 require("xeuw-conveyor");
 
 
+
+
+
+require("obs-ore");
+
+
+
+
+
+
+
 Events.on(ClientLoadEvent, e => {
   // 1. Tìm hành tinh Zorynex
   let zorynex = Vars.content.getByName(ContentType.planet, "zorynex") || 

@@ -174,3 +174,16 @@ Events.on(ContentInitEvent, () => {
         });
     }
 });
+
+// HIỂN THỊ PHẠM VI KHI CẦM KHỐI TRÊN TAY
+Events.run(Trigger.draw, () => {
+    let build = Vars.control.input.block;
+    if (build != null && build.name === "newex-xeuw-conveyor-mk1") {
+        let tile = Vars.world.tileWorld(Core.input.mouseWorldX(), Core.input.mouseWorldY());
+        if (tile != null) {
+            let centerX = tile.drawx() + build.offset;
+            let centerY = tile.drawy() + build.offset;
+            Drawf.dashCircle(centerX, centerY, 380, Color.sky);
+        }
+    }
+});

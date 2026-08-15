@@ -68,3 +68,10 @@
    - Tăng tốc độ di chuyển: 0.8 > 0.9  
 + Pháo Rangtaturs: 
    - Mk1 bắn 9 viên tăng lên 29 viên.
+
+
+
+-------------------------------------------
+> Điều chỉnh cân bằng bản 0.6.7.1:
++ Bopes Block:
+   - tăng 20% phạm vi buff (80 > 96).

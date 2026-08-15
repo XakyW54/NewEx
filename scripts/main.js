@@ -75,7 +75,7 @@ require("obs-ore");
 
 require("drexkou-drills");
 
-
+require("suv-27");
 
 Events.on(ClientLoadEvent, e => {
   // 1. Tìm hành tinh Zorynex

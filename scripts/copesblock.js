@@ -1,4 +1,3 @@
- 
 const copesBuffCircleEffect = new Effect(35, e => {
     let rand = new Rand(e.id);
     let zoomSpeed = rand.random(6.0, 14.0); 
@@ -11,45 +10,21 @@ const copesBuffCircleEffect = new Effect(35, e => {
     Draw.reset();
 });
 
- 
 Events.on(ContentInitEvent, () => {
- 
     const wallBuff = Vars.content.block("newex-copesblock") || Vars.content.block("copesblock");
 
     if (wallBuff) {
         wallBuff.update = true;
-        const rangeSize = 80;  
+        const rangeSize = 96;
 
- 
         wallBuff.buildType = () => extend(Wall.WallBuild, wallBuff, {
             range: rangeSize,         
             boostTimer: 0,     
-            limitCheck: 0,     
 
             updateTile() {
                 this.super$updateTile();
- 
-                this.limitCheck += Time.delta;
-                if (this.limitCheck >= 15) { 
-                    this.limitCheck = 0; 
-                    let count = 0; 
-                    let firstBuild = null;
 
-                    Groups.build.each(b => {
-                        if (b.block == wallBuff && b.team == this.team) { 
-                            count++; 
-                            if (firstBuild == null) firstBuild = b; 
-                        }
-                    });
-
-                    if (count > 1 && this !== firstBuild) {
-                        Call.sendMessage("[red]Giới hạn: Chỉ được đặt tối đa 1 khối copesblock! Cấu trúc thừa đã tự hủy![]"); 
-                        this.kill(); 
-                        return;
-                    }
-                }
-
- 
+                // Logic tăng tốc cho các Drill xung quanh
                 this.boostTimer += Time.delta;
                 if (this.boostTimer >= 30) {
                     this.boostTimer = 0;
@@ -57,9 +32,8 @@ Events.on(ContentInitEvent, () => {
                 }
             },
 
- 
             applyPerformanceBoost() {
-                Groups.build.each(cons(building => {
+                Groups.build.each(building => {
                     if (building === this) return;
 
                     let inSquare = Math.abs(building.x - this.x) <= this.range && 
@@ -73,10 +47,9 @@ Events.on(ContentInitEvent, () => {
                             }
                         }
                     }
-                }));
+                });
             },
 
- 
             drawSelect() {
                 this.super$drawSelect();
                 Drawf.dashSquare(Pal.accent, this.x, this.y, this.range * 2);
@@ -85,21 +58,38 @@ Events.on(ContentInitEvent, () => {
     }
 });
 
- 
+// CHỈNH SỬA: Ẩn/Hiện khối khỏi Build Menu theo thời gian thực (Real-time Menu Visibility)
+Events.run(Trigger.update, () => {
+    if (Vars.state.isMenu()) return;
+
+    const wallBuff = Vars.content.block("newex-copesblock") || Vars.content.block("copesblock");
+    if (!wallBuff || !Vars.player) return;
+
+    let playerTeam = Vars.player.team();
+    
+    // Đếm số lượng khối thuộc đội của người chơi đang có trên bản đồ
+    let exists = Groups.build.contains(b => b.block === wallBuff && b.team === playerTeam);
+
+    // Nếu đã có -> Ẩn khối khỏi Build Menu (hidden)
+    // Nếu chưa có / đã bị phá hủy -> Mở lại khối trong Build Menu (shown)
+    if (exists) {
+        wallBuff.buildVisibility = BuildVisibility.hidden;
+    } else {
+        wallBuff.buildVisibility = BuildVisibility.shown;
+    }
+});
+
+// Hiển thị tầm hiệu ứng (Range Square) khi đang chọn khối để đặt
 Events.run(Trigger.draw, () => {
     let build = Vars.control.input.block;
     if (build != null && (build.name == "newex-copesblock" || build.name == "copesblock")) {
- 
         let tile = Vars.world.tileWorld(Core.input.mouseWorldX(), Core.input.mouseWorldY());
         
         if (tile != null) {
- 
             let centerX = tile.drawx() + build.offset;
             let centerY = tile.drawy() + build.offset;
-
             let rangeSize = 80;
 
- 
             Drawf.dashSquare(Pal.accent, centerX, centerY, rangeSize * 2);
         }
     }

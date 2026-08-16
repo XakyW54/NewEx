@@ -35,7 +35,7 @@ drawer: {
 outlineColor: 313131FF
 targetAir: true
 targetGround: true
-range: 620
+range: 420
 shootSound: minal
 shake: 1.5
 recoil: 0.7

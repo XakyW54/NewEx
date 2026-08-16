@@ -1,4 +1,4 @@
-// ==================== SUMMONER BLOCK (LEOLYR & ELORIX) ====================
+// ==================== SUMMONER BLOCK (LEOLYR, ELORIX & VUS-27) ====================
 
 const packCons = (func) => new Cons({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
@@ -31,12 +31,15 @@ function draw3DRotatedEllipseWave(centerX, centerY, radiusX, radiusY, rotationDe
     }
 }
 
-// VFX 1: RADAR ĐỒNG TÂM TRÒN ĐỀU VÀ KHÓA MỤC TIÊU VUÔNG + TIA LAZER
+// VFX 1: RADAR KHÓA MỤC TIÊU DÙNG CHO CẢ 5s SPAWN (ĐỔI MÀU THÀNH TÍM HỒNG ĐA SẮC)
 const orbitalLockOnEffect = new Effect(40, packCons((e) => {
     let progress = e.data; 
     
     Draw.z(Layer.effect + 2); 
-    let targetColor = Color.orange.cpy().lerp(Color.sky, 1.0 - progress);
+    // Đổi dải màu chuyển đổi thành Tím Hồng (Pink - Purple Violet)
+    let purpleColor = Color.valueOf("c084fc");
+    let pinkColor = Color.valueOf("e879f9");
+    let targetColor = purpleColor.cpy().lerp(pinkColor, 1.0 - progress);
     
     Lines.stroke(1.2, targetColor);
     Lines.circle(e.x, e.y, 24 * progress); 
@@ -65,7 +68,7 @@ const orbitalLockOnEffect = new Effect(40, packCons((e) => {
     Draw.reset();
 }));
 
-// VFX 2: HIỆU ỨNG VA CHẠM VÀ HỆ THỐNG ĐỒNG BỘ ĐA VÒNG SÓNG BAY THEO LASER
+// VFX 2: HIỆU ỨNG VA CHẠM TÍM HỒNG KHI KẾT THÚC TRIỆU HỒI
 const satelliteImpactEffect = new Effect(60, packCons((e) => {
     Draw.z(Layer.effect + 3);
     
@@ -73,15 +76,18 @@ const satelliteImpactEffect = new Effect(60, packCons((e) => {
     let beamIntensity = Interp.pow3Out.apply(f);
     let alpha = 1.0 - beamIntensity;
     
-    Lines.stroke(18 * alpha, Color.sky);
+    let purpleColor = Color.valueOf("c084fc");
+    let pinkColor = Color.valueOf("e879f9");
+
+    Lines.stroke(18 * alpha, purpleColor);
     Lines.line(e.x - 140, e.y + 250, e.x, e.y);
     Lines.stroke(8 * alpha, Color.white);
     Lines.line(e.x - 140, e.y + 250, e.x, e.y);
 
-    Lines.stroke(3.5 * (1.0 - f), Color.sky);
+    Lines.stroke(3.5 * (1.0 - f), pinkColor);
     Lines.circle(e.x, e.y, 8 + (55 * f));
     
-    Draw.color(Color.white, Color.sky, f);
+    Draw.color(Color.white, purpleColor, f);
     let rand = new Rand(e.id);
     for(let i = 0; i < 18; i++){
         let angle = rand.random(360);
@@ -98,14 +104,14 @@ const satelliteImpactEffect = new Effect(60, packCons((e) => {
     let wave1Y = e.y + moveY; 
     let radius1 = 4 + (48 * Interp.pow3Out.apply(f));   
     
-    Lines.stroke(2.5 * (1.0 - f), Color.sky.cpy().mul(1.0 - f));
+    Lines.stroke(2.5 * (1.0 - f), purpleColor.cpy().mul(1.0 - f));
     draw3DRotatedEllipseWave(wave1X, wave1Y, radius1, radius1 * 0.45, laserAngle);
 
     let wave2X = e.x + (moveX * 0.7); 
     let wave2Y = e.y + (moveY * 0.7); 
     let radius2 = (4 + (48 * Interp.pow3Out.apply(f))) * (2 / 3); 
     
-    Lines.stroke(1.8 * (1.0 - f), Color.cyan.cpy().mul(1.0 - f)); 
+    Lines.stroke(1.8 * (1.0 - f), pinkColor.cpy().mul(1.0 - f)); 
     draw3DRotatedEllipseWave(wave2X, wave2Y, radius2, radius2 * 0.45, laserAngle); 
     
     Draw.reset();
@@ -140,11 +146,18 @@ Events.on(ClientLoadEvent, () => {
                         return;
                     }
 
-                    // ĐỊNH NGHĨA TÀI NGUYÊN YÊU CẦU DỰA TRÊN UNIT ĐƯỢC CHỌN
-                    let reqCopper = (this.selectedUnit.includes("elorix")) ? 4000 : 2000;
-                    let reqSilicon = (this.selectedUnit.includes("elorix")) ? 500 : 300;
+                    // TÍNH TOÁN CẦN TÀI NGUYÊN TƯƠNG ỨNG
+                    let reqCopper = 2000;
+                    let reqSilicon = 300;
+                    if (this.selectedUnit.includes("elorix")) {
+                        reqCopper = 4000;
+                        reqSilicon = 500;
+                    } else if (this.selectedUnit.includes("vus") || this.selectedUnit.includes("suv")) {
+                        reqCopper = 3500;
+                        reqSilicon = 600;
+                    }
 
-                    // KIỂM TRA TÀI NGUYÊN TRONG CORE
+                    // KIỂM TRA TÀI NGUYÊN
                     if(!core.items.has(Items.copper, reqCopper) || !core.items.has(Items.silicon, reqSilicon)){
                         Vars.ui.showInfo(
                             "[scarlet]Không đủ tài nguyên triệu hồi![]\n" +
@@ -153,13 +166,15 @@ Events.on(ClientLoadEvent, () => {
                         return;
                     }
 
-                    // TRỪ TÀI NGUYÊN TRONG CORE
+                    // TRỪ TÀI NGUYÊN
                     core.items.remove(Items.copper, reqCopper);
                     core.items.remove(Items.silicon, reqSilicon);
 
                     this.summoning = true;
-                    this.summonTimer = 300; 
-                    Fx.shieldApply.at(this.x, this.y, 0, Color.orange);
+                    this.summonTimer = 300; // Đếm ngược 5 giây (300 ticks)
+                    
+                    // Hiệu ứng bắt đầu triệu hồi màu Tím Hồng
+                    Fx.shieldApply.at(this.x, this.y, 0, Color.valueOf("c084fc"));
                     this.deselect(); 
                 })).size(50, 40).tooltip("Xác nhận triệu hồi (Tốn tài nguyên & Chờ 5s)");
 
@@ -185,7 +200,7 @@ Events.on(ClientLoadEvent, () => {
                         "• [accent]Chi phí triệu hồi:[] [white]4000 Copper[] + [white]500 Silicon[]\n" +
                         "• [accent]Tăng tiến cấp độ:[] Tự động hút Copper & Titanium từ kho cá nhân để nâng cấp (Max Lv10).\n" +
                         "• [pink]Hỏa lực Shotgun:[] Bắn chùm đạn đa nguyên tố xả diện rộng cực mạnh.\n" +
-                        "• [sky]Lướt & Tạo Giáp:[] Nhấp đúp để lướt dẹp chướng ngại vật, nhận hiệu ứng giáp [Thin Armor] phòng thủ và kháng sát thương trong 5 giây.";
+                        "• [sky]Lướt & Tạo Giáp:[] Nhấp đúp để lướt dẹp chướng ngại vật, nhận hiệu ứng giáp [Thin Armor] phòng thủ 5s.";
                     
                     let elorixDesc = infoCard.add(elorixDescStr).width(320);
                     elorixDesc.get().setWrap(true); 
@@ -205,11 +220,31 @@ Events.on(ClientLoadEvent, () => {
                         "• [accent]Chi phí triệu hồi:[] [white]2000 Copper[] + [white]300 Silicon[]\n" +
                         "• [accent]Hệ thống Tiến hóa:[] Hấp thụ Đồng và Silicon trực tiếp từ kho đồ (Tối đa Cấp 10).\n" +
                         "• [pink]Vũ khí kép:[] Bắn luân phiên, tăng tiến tốc độ xả đạn theo level.\n" +
-                        "• [sky]Lướt & Tạo Lõi Khiên:[] Lướt tạo lõi khiên tĩnh tồn tại 10 giây và khiên năng lượng Hex.";
+                        "• [sky]Lướt & Tạo Lõi Khiên:[] Lướt tạo lõi khiên tĩnh tồn tại 10 giây.";
                                           
                     let leolyrDesc = infoCard.add(leolyrDescStr).width(320);
                     leolyrDesc.get().setWrap(true); 
                     leolyrDesc.get().setAlignment(Align.left);
+
+                    infoCard.add().height(16).row();
+
+                    // --- NÚT CHỌN VUS-27 ---
+                    infoCard.button("[purple]👾 CHỌN TRIỆU HỒI: VUS-27 UNIT[]", packRun(() => {
+                        this.selectedUnit = "newex-vus-27";
+                        Vars.ui.showInfo("[purple]Đã cài đặt mục tiêu: VUS-27[]");
+                        dialog.hide();
+                    })).size(300, 42).row();
+                    infoCard.add().height(6).row();
+
+                    let vusDescStr = "[gold]📊 DỮ LIỆU PHÂN TÍCH THỰC THỂ VUS-27:[]\n" +
+                        "• [accent]Chi phí triệu hồi:[] [white]3500 Copper[] + [white]600 Silicon[]\n" +
+                        "• [accent]Khả năng Biến hình:[] Nhấp đúp (Double Tap) để chuyển đổi qua lại giữa VUS-27 và SUV-27.\n" +
+                        "• [pink]Hỏa lực VUS-27:[] Pháo Laser (160 Dmg, 240 dài) & Overdrive buff 1500% tốc bắn.\n" +
+                        "• [sky]Cơ chế SUV-27:[] Càng bay càng nhanh (+200% Tốc độ), dừng đột ngột xả Shotgun 20 độ.";
+                    
+                    let vusDesc = infoCard.add(vusDescStr).width(320);
+                    vusDesc.get().setWrap(true); 
+                    vusDesc.get().setAlignment(Align.left);
 
                     let scroll = new ScrollPane(infoCard);
                     scroll.setScrollingDisabled(true, false); 
@@ -228,16 +263,17 @@ Events.on(ClientLoadEvent, () => {
                     this.summonTimer -= Time.delta;
                     let progressRatio = Math.max(0.0, this.summonTimer / 300.0);
 
+                    // Chạy hiệu ứng vòng ngắm màu Tím Hồng liên tục trong 5 giây (300 ticks)
                     if(Mathf.chance(0.65)){
                         orbitalLockOnEffect.at(this.x, this.y, 0, java.lang.Float(progressRatio));
                     }
 
+                    // Hết 5 giây -> Sinh unit được chọn (VUS-27 / Elorix / Leolyr)
                     if(this.summonTimer <= 0){
                         this.summoning = false;
 
                         let unitType = Vars.content.getByName(ContentType.unit, this.selectedUnit);
                         if(unitType == null && this.selectedUnit.startsWith("newex-")){
-                            // Thử tìm name rút gọn nếu không có prefix
                             unitType = Vars.content.getByName(ContentType.unit, this.selectedUnit.replace("newex-", ""));
                         }
 
@@ -250,6 +286,7 @@ Events.on(ClientLoadEvent, () => {
                             }
                         }
 
+                        // Hiệu ứng nổ tác động màu Tím Hồng
                         satelliteImpactEffect.at(this.x, this.y);
                         Fx.smokeCloud.at(this.x, this.y);       
                         Fx.spawnShockwave.at(this.x, this.y);   

@@ -75,7 +75,7 @@ require("obs-ore");
 
 require("drexkou-drills");
 
-require("suv-27");
+
 
 
 
@@ -174,3 +174,17 @@ require("syrufpat-factory");
 require("damage-display");
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+require("suv-27");

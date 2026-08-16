@@ -75,3 +75,13 @@
 > Điều chỉnh cân bằng bản 0.6.7.1:
 + Bopes Block:
    - tăng 20% phạm vi buff (80 > 96).
+
+
+
+-------------------------------------------
+> Điều chỉnh cân bằng bản 0.6.7.3:
++ Unit Leolyr: 
+   - giảm 80 giáp còn 10 giáp.
+   - tăng tốc độ từ 0.9 lên 1.1
++ Unit Elorix:
+   - tăng máu từ 1890 lên 5870

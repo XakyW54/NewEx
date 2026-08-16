@@ -10,6 +10,29 @@ const copesBuffCircleEffect = new Effect(35, e => {
     Draw.reset();
 });
 
+// Hàm cập nhật ẩn/hiện Menu xây dựng cho người chơi
+function updateMenuVisibility() {
+    const wallBuff = Vars.content.block("newex-copesblock") || Vars.content.block("copesblock");
+    if (!Vars.player || !wallBuff) return;
+
+    let playerTeam = Vars.player.team();
+    let maxAllowed = playerTeam.cores().size; // Lấy số lượng Lõi hiện tại
+    
+    let currentCount = 0;
+    Groups.build.each(b => {
+        if (b.block === wallBuff && b.team === playerTeam) {
+            currentCount++;
+        }
+    });
+
+    // Nếu số khối hiện tại < số Lõi -> HIỆN khối trong Menu
+    if (currentCount < maxAllowed) {
+        wallBuff.buildVisibility = BuildVisibility.shown;
+    } else {
+        wallBuff.buildVisibility = BuildVisibility.hidden;
+    }
+}
+
 Events.on(ContentInitEvent, () => {
     const wallBuff = Vars.content.block("newex-copesblock") || Vars.content.block("copesblock");
 
@@ -24,7 +47,6 @@ Events.on(ContentInitEvent, () => {
             updateTile() {
                 this.super$updateTile();
 
-                // Logic tăng tốc cho các Drill xung quanh
                 this.boostTimer += Time.delta;
                 if (this.boostTimer >= 30) {
                     this.boostTimer = 0;
@@ -58,28 +80,56 @@ Events.on(ContentInitEvent, () => {
     }
 });
 
-// CHỈNH SỬA: Ẩn/Hiện khối khỏi Build Menu theo thời gian thực (Real-time Menu Visibility)
-Events.run(Trigger.update, () => {
-    if (Vars.state.isMenu()) return;
-
-    const wallBuff = Vars.content.block("newex-copesblock") || Vars.content.block("copesblock");
-    if (!wallBuff || !Vars.player) return;
-
-    let playerTeam = Vars.player.team();
-    
-    // Đếm số lượng khối thuộc đội của người chơi đang có trên bản đồ
-    let exists = Groups.build.contains(b => b.block === wallBuff && b.team === playerTeam);
-
-    // Nếu đã có -> Ẩn khối khỏi Build Menu (hidden)
-    // Nếu chưa có / đã bị phá hủy -> Mở lại khối trong Build Menu (shown)
-    if (exists) {
-        wallBuff.buildVisibility = BuildVisibility.hidden;
-    } else {
-        wallBuff.buildVisibility = BuildVisibility.shown;
-    }
+// 1. Cập nhật ngay khi LOAD VÀO MAP MỚI
+Events.on(WorldLoadEvent, event => {
+    Time.run(10, () => {
+        updateMenuVisibility();
+    });
 });
 
-// Hiển thị tầm hiệu ứng (Range Square) khi đang chọn khối để đặt
+// 2. Cập nhật khi XÂY XONG bất kỳ khối nào
+Events.on(BlockBuildEndEvent, event => {
+    updateMenuVisibility();
+});
+
+// 3. Cập nhật khi CÓ KHỐI BỊ PHÁ HỦY (Xử lý mất Lõi)
+Events.on(BlockDestroyEvent, event => {
+    const wallBuff = Vars.content.block("newex-copesblock") || Vars.content.block("copesblock");
+    if (!wallBuff) return;
+
+    let destroyedTile = event.tile;
+    if (!destroyedTile || !destroyedTile.build) return;
+
+    let destroyedBuild = destroyedTile.build;
+    let victimTeam = destroyedBuild.team;
+
+    // Nếu khối bị phá là LÕI
+    if (destroyedBuild.block instanceof CoreBlock) {
+        let teamData = victimTeam.data();
+        let maxAllowed = teamData.cores.size - 1;
+        if (maxAllowed < 0) maxAllowed = 0;
+
+        let teamBlocks = [];
+        Groups.build.each(b => {
+            if (b.block === wallBuff && b.team === victimTeam) {
+                teamBlocks.push(b);
+            }
+        });
+
+        if (teamBlocks.length > maxAllowed) {
+            let toDestroy = teamBlocks.length - maxAllowed;
+            for (let i = 0; i < toDestroy; i++) {
+                let lastBlock = teamBlocks.pop();
+                Call.sendMessage("[red]Đội " + victimTeam.name + " bị mất Lõi! Khối copesblock thừa đã tự hủy![]");
+                lastBlock.kill();
+            }
+        }
+    }
+
+    updateMenuVisibility();
+});
+
+// Hiển thị tầm hiệu ứng khi đang chọn khối để đặt
 Events.run(Trigger.draw, () => {
     let build = Vars.control.input.block;
     if (build != null && (build.name == "newex-copesblock" || build.name == "copesblock")) {
@@ -88,7 +138,7 @@ Events.run(Trigger.draw, () => {
         if (tile != null) {
             let centerX = tile.drawx() + build.offset;
             let centerY = tile.drawy() + build.offset;
-            let rangeSize = 80;
+            let rangeSize = 96;
 
             Drawf.dashSquare(Pal.accent, centerX, centerY, rangeSize * 2);
         }

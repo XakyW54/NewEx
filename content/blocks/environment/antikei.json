@@ -1,0 +1,15 @@
+{
+  "type": "Floor",
+  "name": "Antikei Floor",
+  "variants": 6,
+  "emitLight": true,
+  "lightRadius": 2,
+  "lightColor": "A9D8FFFF",
+  "attributes": {
+    "heat": -2.5
+  },
+  "solid": false,
+  "placeableOn": false,
+  "oreDefault": false,
+  "canOverlay": false
+}

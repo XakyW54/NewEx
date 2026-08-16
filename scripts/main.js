@@ -77,6 +77,15 @@ require("drexkou-drills");
 
 require("suv-27");
 
+
+
+
+require("antikei-logic");
+
+
+
+
+
 Events.on(ClientLoadEvent, e => {
   // 1. Tìm hành tinh Zorynex
   let zorynex = Vars.content.getByName(ContentType.planet, "zorynex") || 

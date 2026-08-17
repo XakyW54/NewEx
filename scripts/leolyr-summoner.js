@@ -36,7 +36,6 @@ const orbitalLockOnEffect = new Effect(40, packCons((e) => {
     let progress = e.data; 
     
     Draw.z(Layer.effect + 2); 
-    // Đổi dải màu chuyển đổi thành Tím Hồng (Pink - Purple Violet)
     let purpleColor = Color.valueOf("c084fc");
     let pinkColor = Color.valueOf("e879f9");
     let targetColor = purpleColor.cpy().lerp(pinkColor, 1.0 - progress);
@@ -127,18 +126,38 @@ Events.on(ClientLoadEvent, () => {
     if(leolyrSummoner != null){
         leolyrSummoner.configurable = true;
         leolyrSummoner.update = true;
+        
+        // CẤU HÌNH KHO CHỨA ĐỂ NHẬN ITEM TỰ ĐỘNG
+        leolyrSummoner.hasItems = true;
+        leolyrSummoner.itemCapacity = 10000;
+        leolyrSummoner.acceptsItems = true;
 
         leolyrSummoner.buildType = () => extend(Building, {
             summoning: false,       
             summonTimer: 0,         
             selectedUnit: "newex-elorix", // Mặc định chọn Elorix
 
+            acceptItem(source, item){
+                return this.items.get(item) < this.block.itemCapacity;
+            },
+
+            // Lấy chi phí tài nguyên yêu cầu tùy theo unit
+            getRequirements(){
+                if (this.selectedUnit.includes("elorix")) {
+                    return { copper: 4000, silicon: 500 };
+                } else if (this.selectedUnit.includes("vus") || this.selectedUnit.includes("suv")) {
+                    return { copper: 3500, silicon: 600 };
+                } else {
+                    return { copper: 2000, silicon: 300 };
+                }
+            },
+
             buildConfiguration(table){
                 table.clear();
                 if(this.summoning) return;
                 table.row();
 
-                // NÚT KHÓA TỌA ĐỘ & TRIỆU HỒI
+                // 1. NÚT KÍCH HOẠT TRIỆU HỒI BẰNG TAY (RÚT TÀI NGUYÊN TỪ CORE)
                 table.button(Icon.ok, Styles.cleari, 40, packRun(() => {
                     let core = this.team.core();
                     if(core == null) {
@@ -146,39 +165,29 @@ Events.on(ClientLoadEvent, () => {
                         return;
                     }
 
-                    // TÍNH TOÁN CẦN TÀI NGUYÊN TƯƠNG ỨNG
-                    let reqCopper = 2000;
-                    let reqSilicon = 300;
-                    if (this.selectedUnit.includes("elorix")) {
-                        reqCopper = 4000;
-                        reqSilicon = 500;
-                    } else if (this.selectedUnit.includes("vus") || this.selectedUnit.includes("suv")) {
-                        reqCopper = 3500;
-                        reqSilicon = 600;
-                    }
+                    let req = this.getRequirements();
 
-                    // KIỂM TRA TÀI NGUYÊN
-                    if(!core.items.has(Items.copper, reqCopper) || !core.items.has(Items.silicon, reqSilicon)){
+                    // KIỂM TRA TÀI NGUYÊN TRONG NHA CHÍNH (CORE)
+                    if(!core.items.has(Items.copper, req.copper) || !core.items.has(Items.silicon, req.silicon)){
                         Vars.ui.showInfo(
-                            "[scarlet]Không đủ tài nguyên triệu hồi![]\n" +
-                            "Cần có: [accent]" + reqCopper + " Copper[] và [accent]" + reqSilicon + " Silicon[] trong Core."
+                            "[scarlet]Không đủ tài nguyên trong Lõi![]\n" +
+                            "Cần có: [accent]" + req.copper + " Copper[] và [accent]" + req.silicon + " Silicon[] trong Core."
                         );
                         return;
                     }
 
-                    // TRỪ TÀI NGUYÊN
-                    core.items.remove(Items.copper, reqCopper);
-                    core.items.remove(Items.silicon, reqSilicon);
+                    // TRỪ TÀI NGUYÊN TRONG LÕI
+                    core.items.remove(Items.copper, req.copper);
+                    core.items.remove(Items.silicon, req.silicon);
 
                     this.summoning = true;
                     this.summonTimer = 300; // Đếm ngược 5 giây (300 ticks)
                     
-                    // Hiệu ứng bắt đầu triệu hồi màu Tím Hồng
                     Fx.shieldApply.at(this.x, this.y, 0, Color.valueOf("c084fc"));
                     this.deselect(); 
-                })).size(50, 40).tooltip("Xác nhận triệu hồi (Tốn tài nguyên & Chờ 5s)");
+                })).size(50, 40).tooltip("Triệu hồi thủ công (Rút tài nguyên từ Lõi Core & Chờ 5s)");
 
-                // NÚT CHỌN ĐƠN VỊ & XEM CHI TIẾT
+                // 2. NÚT CHỌN ĐƠN VỊ & XEM CHI TIẾT
                 table.button(Icon.add, Styles.cleari, 40, packRun(() => {
                     let dialog = extend(BaseDialog, "Hệ Thống Kén Triệu Hồi", {});
                     dialog.cont.add("[yellow]DANH SÁCH ĐƠN VỊ CÓ THỂ TRIỆU HỒI:[]").row();
@@ -259,16 +268,29 @@ Events.on(ClientLoadEvent, () => {
             updateTile(){
                 this.super$updateTile();
 
+                // TỰ ĐỘNG TÍCH LŨY ITEM TỪ BĂNG CHUYỀN
+                if(!this.summoning){
+                    let req = this.getRequirements();
+                    if(this.items.has(Items.copper, req.copper) && this.items.has(Items.silicon, req.silicon)){
+                        // Khấu trừ tài nguyên tích lũy trong kho của khối
+                        this.items.remove(Items.copper, req.copper);
+                        this.items.remove(Items.silicon, req.silicon);
+
+                        this.summoning = true;
+                        this.summonTimer = 300; // Đếm ngược 5s
+                        Fx.shieldApply.at(this.x, this.y, 0, Color.valueOf("c084fc"));
+                    }
+                }
+
+                // TIẾN TRÌNH ĐẾM NGƯỢC VÀ SPAWN
                 if(this.summoning){
                     this.summonTimer -= Time.delta;
                     let progressRatio = Math.max(0.0, this.summonTimer / 300.0);
 
-                    // Chạy hiệu ứng vòng ngắm màu Tím Hồng liên tục trong 5 giây (300 ticks)
                     if(Mathf.chance(0.65)){
                         orbitalLockOnEffect.at(this.x, this.y, 0, java.lang.Float(progressRatio));
                     }
 
-                    // Hết 5 giây -> Sinh unit được chọn (VUS-27 / Elorix / Leolyr)
                     if(this.summonTimer <= 0){
                         this.summoning = false;
 
@@ -286,7 +308,6 @@ Events.on(ClientLoadEvent, () => {
                             }
                         }
 
-                        // Hiệu ứng nổ tác động màu Tím Hồng
                         satelliteImpactEffect.at(this.x, this.y);
                         Fx.smokeCloud.at(this.x, this.y);       
                         Fx.spawnShockwave.at(this.x, this.y);   

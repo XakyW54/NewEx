@@ -1,5 +1,5 @@
 // ==========================================
-// SUV-27 & VUS-27 (FIXED FLYING DOUBLE-TAP & KEYBINDINGS 1, 2, 3)
+// SUV-27 & VUS-27 (PC KEYBINDINGS 1, 2, 3 + ACCEL & DAMAGE BUFF)
 // ==========================================
 
 function getSuv27UpgradeRequirements(currentLevel) {
@@ -94,7 +94,6 @@ function applyTransformLogic(unitEntity, uType, targetUnitName, isSUV) {
         flightAccelTimer: 0,
         wasMoving: false,
         
-        // Biến riêng theo dõi Double-Tap trực tiếp trong Unit
         lastTapTimeInternal: 0,
 
         triggerDoubleTap() {
@@ -227,7 +226,6 @@ function applyTransformLogic(unitEntity, uType, targetUnitName, isSUV) {
                     this.triggerHybridSkill();
                 }
 
-                // KIỂM TRA BẮT NHẤN ĐÚP TRỰC TIẾP TẠI ĐÂY (CHO CẢ DẠNG BAY VÀ NHỆN)
                 if (Core.input.justTouched()) {
                     let now = Time.millis();
                     if (now - this.lastTapTimeInternal < 300) {
@@ -397,7 +395,8 @@ function applyTransformLogic(unitEntity, uType, targetUnitName, isSUV) {
         speed() {
             let baseSpeed = uType.speed * (1.0 + (this.level * 0.08));
             if (isSUV) {
-                let accelBonus = (this.flightAccelTimer / 180.0) * 2.0;
+                // TĂNG TỐC ĐỘ BAY TỐI ĐA LÊN +200% (Tổng tốc độ đạt 300% khi bay liên tục)
+                let accelBonus = (this.flightAccelTimer / 180.0) * 3.0;
                 return baseSpeed * (1.0 + accelBonus);
             }
             return baseSpeed;
@@ -437,7 +436,8 @@ Events.on(ClientLoadEvent, function() {
     pulseBulletType.lightningDamage = 8;
     pulseBulletType.load();
 
-    rapid8mmBulletType = new BasicBulletType(12.0, 18);
+    // TĂNG SÁT THƯƠNG ĐẠN 8MM LIÊN THANH THÊM 150% (Từ 18 -> 45)
+    rapid8mmBulletType = new BasicBulletType(12.0, 45);
     rapid8mmBulletType.lifetime = 50; 
     rapid8mmBulletType.width = 4;
     rapid8mmBulletType.height = 14;

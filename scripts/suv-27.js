@@ -1,5 +1,5 @@
 // ==========================================
-// SUV-27 & VUS-27 (FULL OVERDRIVE + JOYSTICK + SKILLS)
+// SUV-27 & VUS-27 (FIXED FLYING DOUBLE-TAP & KEYBINDINGS 1, 2, 3)
 // ==========================================
 
 function getSuv27UpgradeRequirements(currentLevel) {
@@ -27,7 +27,6 @@ let moveX = 0;
 let moveY = 0;
 
 let globalGunMode = 0; 
-let lastTapTime = 0;
 
 function transformToUnit(oldUnit, targetUnitName, remainingCooldown) {
     let targetType = Vars.content.getByName(ContentType.unit, "newex-" + targetUnitName);
@@ -94,14 +93,17 @@ function applyTransformLogic(unitEntity, uType, targetUnitName, isSUV) {
 
         flightAccelTimer: 0,
         wasMoving: false,
+        
+        // Biến riêng theo dõi Double-Tap trực tiếp trong Unit
+        lastTapTimeInternal: 0,
 
         triggerDoubleTap() {
             if (this.doubleTapCooldown > 0) return;
             this.doubleTapCooldown = DOUBLE_TAP_COOLDOWN;
 
             if (isSUV) {
-                let rocketType = Vars.content.getByName(ContentType.unit, "newex-suv-27-rocket");
-                if (rocketType == null) rocketType = Vars.content.getByName(ContentType.unit, "suv-27-rocket");
+                let rocketType = Vars.content.getByName(ContentType.unit, "newex-vus-27-rocket");
+                if (rocketType == null) rocketType = Vars.content.getByName(ContentType.unit, "vus-27-rocket");
 
                 if (rocketType != null) {
                     try {
@@ -214,9 +216,31 @@ function applyTransformLogic(unitEntity, uType, targetUnitName, isSUV) {
             }
 
             if (Vars.player != null && Vars.player.unit() == this) {
-                Core.camera.position.set(this.x, this.y);
+                // BẮT PHÍM BẤM PC (1, 2, 3)
+                if (Core.input.keyTap(KeyCode.num1)) {
+                    this.triggerTransform();
+                }
+                if (Core.input.keyTap(KeyCode.num2)) {
+                    this.triggerPulseCone();
+                }
+                if (Core.input.keyTap(KeyCode.num3)) {
+                    this.triggerHybridSkill();
+                }
 
-                if (moveX !== 0 || moveY !== 0) {
+                // KIỂM TRA BẮT NHẤN ĐÚP TRỰC TIẾP TẠI ĐÂY (CHO CẢ DẠNG BAY VÀ NHỆN)
+                if (Core.input.justTouched()) {
+                    let now = Time.millis();
+                    if (now - this.lastTapTimeInternal < 300) {
+                        this.triggerDoubleTap();
+                    }
+                    this.lastTapTimeInternal = now;
+                }
+
+                if (Vars.mobile) {
+                    Core.camera.position.set(this.x, this.y);
+                }
+
+                if (Vars.mobile && (moveX !== 0 || moveY !== 0)) {
                     let moveSpeed = this.speed();
                     this.moveAt(Tmp.v1.set(moveX, moveY).setLength(moveSpeed));
                 }
@@ -261,7 +285,7 @@ function applyTransformLogic(unitEntity, uType, targetUnitName, isSUV) {
                         }
                     }
                 } else {
-                    if (moveX !== 0 || moveY !== 0) {
+                    if (Vars.mobile && (moveX !== 0 || moveY !== 0)) {
                         let moveAngle = Tmp.v1.set(moveX, moveY).angle();
                         this.rotation = Angles.moveToward(this.rotation, moveAngle, this.type.rotateSpeed * Time.delta);
                     }
@@ -275,13 +299,12 @@ function applyTransformLogic(unitEntity, uType, targetUnitName, isSUV) {
                 }
             }
 
-            // KHÔI PHỤC CƠ CHẾ OVERDRIVE Ở DẠNG NHỆN (VUS-27)
             if (!isSUV) {
                 if (this.isShooting) {
                     if (this.overdriveTimer <= 0) {
                         this.firingDuration += Time.delta;
-                        if (this.firingDuration >= 120) { // Bắn đủ 2 giây (120 ticks)
-                            this.overdriveTimer = 60;    // Tăng tốc trong 1 giây (60 ticks)
+                        if (this.firingDuration >= 120) { 
+                            this.overdriveTimer = 60;    
                             this.firingDuration = 0;
                         }
                     }
@@ -295,7 +318,6 @@ function applyTransformLogic(unitEntity, uType, targetUnitName, isSUV) {
                         for (let i = 0; i < this.mounts.length; i++) {
                             let mount = this.mounts[i];
                             if (mount.reload > 0) {
-                                // Xử lý giảm hồi chiêu nhanh hơn 4x (tương đương tăng tốc độ bắn)
                                 mount.reload = Math.max(0, mount.reload - (Time.delta * 4.0));
                             }
                         }
@@ -382,21 +404,6 @@ function applyTransformLogic(unitEntity, uType, targetUnitName, isSUV) {
         }
     };
 }
-
-Events.run(Trigger.update, function() {
-    if (Core.input.justTouched()) {
-        let now = Time.millis();
-        if (now - lastTapTime < 280) {
-            if (Vars.player != null && Vars.player.unit() != null) {
-                let u = Vars.player.unit();
-                if (u.triggerDoubleTap) {
-                    u.triggerDoubleTap();
-                }
-            }
-        }
-        lastTapTime = now;
-    }
-});
 
 Events.on(ClientLoadEvent, function() {
     pulseBurstEffect = new Effect(30, cons(e => {
@@ -577,52 +584,52 @@ Events.on(ClientLoadEvent, function() {
     skillContainer.bottom().left();
     skillContainer.margin(0, 150, 15, 0); 
 
-    var btn1 = skillContainer.button("TRANSFORM", Icon.refresh, Styles.defaultt, run(function() {
+    var btn1 = skillContainer.button("[1] TRANSFORM", Icon.refresh, Styles.defaultt, run(function() {
         if (Vars.player != null && Vars.player.unit() != null) {
             var unit = Vars.player.unit();
             if (unit.triggerTransform) unit.triggerTransform();
         }
-    })).size(110, 42).pad(2).color(Color.valueOf("c084fc")).get();
+    })).size(120, 42).pad(2).color(Color.valueOf("c084fc")).get();
 
     btn1.update(run(function() {
         if (Vars.player != null && Vars.player.unit() != null) {
             var unit = Vars.player.unit();
             if (unit.transformCooldown > 0) {
-                btn1.setText("TRANS (" + (unit.transformCooldown / 60.0).toFixed(1) + "s)");
+                btn1.setText("[1] (" + (unit.transformCooldown / 60.0).toFixed(1) + "s)");
                 btn1.setDisabled(true);
             } else {
-                btn1.setText("TRANSFORM");
+                btn1.setText("[1] TRANSFORM");
                 btn1.setDisabled(false);
             }
         }
     }));
 
-    var btn2 = skillContainer.button("PULSE CONE", Icon.commandRally, Styles.defaultt, run(function() {
+    var btn2 = skillContainer.button("[2] PULSE CONE", Icon.commandRally, Styles.defaultt, run(function() {
         if (Vars.player != null && Vars.player.unit() != null) {
             var unit = Vars.player.unit();
             if (unit.triggerPulseCone) unit.triggerPulseCone();
         }
-    })).size(110, 42).pad(2).color(Color.valueOf("8aa3f4")).get();
+    })).size(120, 42).pad(2).color(Color.valueOf("8aa3f4")).get();
 
     btn2.update(run(function() {
         if (Vars.player != null && Vars.player.unit() != null) {
             var unit = Vars.player.unit();
             if (unit.coneShotCooldown > 0) {
-                btn2.setText("CONE (" + (unit.coneShotCooldown / 60.0).toFixed(1) + "s)");
+                btn2.setText("[2] (" + (unit.coneShotCooldown / 60.0).toFixed(1) + "s)");
                 btn2.setDisabled(true);
             } else {
-                btn2.setText("PULSE CONE");
+                btn2.setText("[2] PULSE CONE");
                 btn2.setDisabled(false);
             }
         }
     }));
 
-    var btn3 = skillContainer.button("SKILL 3", Icon.up, Styles.defaultt, run(function() {
+    var btn3 = skillContainer.button("[3] SKILL 3", Icon.up, Styles.defaultt, run(function() {
         if (Vars.player != null && Vars.player.unit() != null) {
             var unit = Vars.player.unit();
             if (unit.triggerHybridSkill) unit.triggerHybridSkill();
         }
-    })).size(115, 42).pad(2).color(Color.valueOf("f59e0b")).get();
+    })).size(125, 42).pad(2).color(Color.valueOf("f59e0b")).get();
 
     btn3.update(run(function() {
         if (Vars.player != null && Vars.player.unit() != null) {
@@ -633,13 +640,13 @@ Events.on(ClientLoadEvent, function() {
             if (unit.hybridSkillCooldown > 0) {
                 var secondsLeft = (unit.hybridSkillCooldown / 60.0).toFixed(1);
                 var modeText = isSUVUnit ? (globalGunMode === 1 ? "8MM" : "PULSE") : "REPAIR";
-                btn3.setText(modeText + " (" + secondsLeft + "s)");
+                btn3.setText("[3] " + modeText + " (" + secondsLeft + "s)");
                 btn3.setDisabled(true);
             } else {
                 if (isSUVUnit) {
-                    btn3.setText(globalGunMode === 1 ? "GUN: 8MM" : "GUN: PULSE");
+                    btn3.setText(globalGunMode === 1 ? "[3] GUN: 8MM" : "[3] GUN: PULSE");
                 } else {
-                    btn3.setText("REPAIR 1%");
+                    btn3.setText("[3] REPAIR 1%");
                 }
                 btn3.setDisabled(false);
             }

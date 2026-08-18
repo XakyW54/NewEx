@@ -1,6 +1,53 @@
 // ==========================================
-// SUV-27 & VUS-27 (PC KEYBINDINGS 1, 2, 3 + ACCEL & DAMAGE BUFF)
+// SUV-27 & VUS-27 (FIXED CONS2 & CRASH ISSUES)
 // ==========================================
+
+const PACKET_TRANSFORM = "suv27_cmd_transform";
+const PACKET_SKILL = "suv27_cmd_skill";
+
+// Đăng ký packet handler an toàn với Cons2 chính thức của Arc Engine
+function initPacketHandlers() {
+    if (Vars.netServer != null) {
+        Vars.netServer.addPacketHandler(PACKET_TRANSFORM, new Cons2((player, content) => {
+            if (player == null) return;
+            let unit = player.unit();
+            if (unit != null && unit.isValid() && unit.triggerTransform) {
+                unit.triggerTransform();
+            }
+        }));
+
+        Vars.netServer.addPacketHandler(PACKET_SKILL, new Cons2((player, content) => {
+            if (player == null) return;
+            let unit = player.unit();
+            if (unit != null && unit.isValid()) {
+                let skillType = parseInt(content);
+                if (skillType === 2 && unit.triggerPulseCone) {
+                    unit.triggerPulseCone();
+                } else if (skillType === 3 && unit.triggerHybridSkill) {
+                    unit.triggerHybridSkill();
+                } else if (skillType === 4 && unit.triggerDoubleTap) {
+                    unit.triggerDoubleTap();
+                }
+            }
+        }));
+    }
+}
+
+function sendServerCommand(packetName, data) {
+    if (Vars.net.client()) {
+        Call.serverPacketReliable(packetName, data.toString());
+    } else {
+        let unit = Vars.player != null ? Vars.player.unit() : null;
+        if (unit != null) {
+            if (packetName === PACKET_TRANSFORM && unit.triggerTransform) unit.triggerTransform();
+            if (packetName === PACKET_SKILL) {
+                if (data === "2" && unit.triggerPulseCone) unit.triggerPulseCone();
+                if (data === "3" && unit.triggerHybridSkill) unit.triggerHybridSkill();
+                if (data === "4" && unit.triggerDoubleTap) unit.triggerDoubleTap();
+            }
+        }
+    }
+}
 
 function getSuv27UpgradeRequirements(currentLevel) {
     return {
@@ -26,13 +73,19 @@ let healEffect = null;
 let moveX = 0;
 let moveY = 0;
 
-let globalGunMode = 0; 
-
 function transformToUnit(oldUnit, targetUnitName, remainingCooldown) {
+    if (Vars.net.client()) return;
+
     let targetType = Vars.content.getByName(ContentType.unit, "newex-" + targetUnitName);
     if (targetType == null) targetType = Vars.content.getByName(ContentType.unit, targetUnitName);
 
     if (targetType == null || !oldUnit.isValid()) return;
+
+    let savedLevel = (oldUnit.level !== undefined && oldUnit.level !== null) ? oldUnit.level : 0;
+    let savedLead = (oldUnit.leadAbsorbed !== undefined && oldUnit.leadAbsorbed !== null) ? oldUnit.leadAbsorbed : 0;
+    let savedSilicon = (oldUnit.siliconAbsorbed !== undefined && oldUnit.siliconAbsorbed !== null) ? oldUnit.siliconAbsorbed : 0;
+
+    let controllingPlayer = Groups.player.find(p => p.unit() == oldUnit);
 
     let newUnit = targetType.create(oldUnit.team);
     newUnit.set(oldUnit.x, oldUnit.y);
@@ -42,24 +95,21 @@ function transformToUnit(oldUnit, targetUnitName, remainingCooldown) {
     let healthPercent = maxH > 0 ? (oldUnit.health / maxH) : 1.0;
     newUnit.health = newUnit.maxHealth * healthPercent;
 
-    let player = Vars.player;
-    let isPlayerControlling = (player != null && player.unit() == oldUnit);
-
     newUnit.add();
 
-    if (newUnit.setCooldown) {
-        newUnit.setCooldown(remainingCooldown);
+    if (newUnit.initUnitData) {
+        newUnit.initUnitData(savedLevel, savedLead, savedSilicon, remainingCooldown);
     }
 
     oldUnit.remove();
 
-    if (isPlayerControlling) {
-        player.unit(newUnit);
+    if (controllingPlayer != null) {
+        controllingPlayer.unit(newUnit);
     }
 }
 
 function fireSUVShotgun(unit) {
-    if (suvShotgunBulletType == null) return;
+    if (suvShotgunBulletType == null || Vars.net.client()) return;
 
     let bulletCount = Mathf.random(12, 16); 
     for (let i = 0; i < bulletCount; i++) {
@@ -93,48 +143,57 @@ function applyTransformLogic(unitEntity, uType, targetUnitName, isSUV) {
 
         flightAccelTimer: 0,
         wasMoving: false,
-        
+        gunMode: 0, 
+
         lastTapTimeInternal: 0,
+
+        initUnitData(lvl, lead, silicon, cd) {
+            this.level = lvl;
+            this.leadAbsorbed = lead;
+            this.siliconAbsorbed = silicon;
+            this.transformCooldown = cd;
+        },
 
         triggerDoubleTap() {
             if (this.doubleTapCooldown > 0) return;
             this.doubleTapCooldown = DOUBLE_TAP_COOLDOWN;
 
             if (isSUV) {
-                let rocketType = Vars.content.getByName(ContentType.unit, "newex-vus-27-rocket");
-                if (rocketType == null) rocketType = Vars.content.getByName(ContentType.unit, "vus-27-rocket");
+                if (!Vars.net.client()) {
+                    let rocketType = Vars.content.getByName(ContentType.unit, "newex-vus-27-rocket");
+                    if (rocketType == null) rocketType = Vars.content.getByName(ContentType.unit, "vus-27-rocket");
 
-                if (rocketType != null) {
-                    try {
-                        let sideOffset = 12;
-                        let rx1 = this.x + Angles.trnsx(this.rotation + 90, sideOffset);
-                        let ry1 = this.y + Angles.trnsy(this.rotation + 90, sideOffset);
-                        let r1 = rocketType.create(this.team);
-                        r1.set(rx1, ry1);
-                        r1.rotation = this.rotation;
-                        r1.add();
+                    if (rocketType != null) {
+                        try {
+                            let sideOffset = 12;
+                            let rx1 = this.x + Angles.trnsx(this.rotation + 90, sideOffset);
+                            let ry1 = this.y + Angles.trnsy(this.rotation + 90, sideOffset);
+                            let r1 = rocketType.create(this.team);
+                            r1.set(rx1, ry1);
+                            r1.rotation = this.rotation;
+                            r1.add();
 
-                        let rx2 = this.x + Angles.trnsx(this.rotation - 90, sideOffset);
-                        let ry2 = this.y + Angles.trnsy(this.rotation - 90, sideOffset);
-                        let r2 = rocketType.create(this.team);
-                        r2.set(rx2, ry2);
-                        r2.rotation = this.rotation;
-                        r2.add();
-
-                        Fx.shootBig.at(this.x, this.y, this.rotation);
-                    } catch(e) {
-                        Log.err("Lỗi tạo rocket: " + e);
+                            let rx2 = this.x + Angles.trnsx(this.rotation - 90, sideOffset);
+                            let ry2 = this.y + Angles.trnsy(this.rotation - 90, sideOffset);
+                            let r2 = rocketType.create(this.team);
+                            r2.set(rx2, ry2);
+                            r2.rotation = this.rotation;
+                            r2.add();
+                        } catch(e) {
+                            Log.err("Lỗi tạo rocket: " + e);
+                        }
                     }
                 }
+                Call.effect(Fx.shootBig, this.x, this.y, this.rotation, Color.white);
             } else {
                 this.vel.add(Angles.trnsx(this.rotation, 8), Angles.trnsy(this.rotation, 8));
 
                 let healAmount = this.maxHealth * 0.01;
                 this.health = Math.min(this.maxHealth, this.health + healAmount);
 
-                Fx.sparkExplosion.at(this.x, this.y, this.rotation);
+                Call.effect(Fx.sparkExplosion, this.x, this.y, this.rotation, Color.white);
                 if (healEffect != null) {
-                    healEffect.at(this.x, this.y);
+                    Call.effect(healEffect, this.x, this.y, 0, Color.white);
                 }
             }
         },
@@ -154,14 +213,14 @@ function applyTransformLogic(unitEntity, uType, targetUnitName, isSUV) {
                 this.coneShotCooldown = CONE_SHOT_COOLDOWN;
 
                 if (pulseBurstEffect != null) {
-                    pulseBurstEffect.at(this.x, this.y);
+                    Call.effect(pulseBurstEffect, this.x, this.y, 0, Color.white);
                 }
 
-                let bulletCount = 20;
-                let spread = 12.0; 
-                let baseAngle = this.rotation;
+                if (!Vars.net.client() && pulseBulletType != null) {
+                    let bulletCount = 20;
+                    let spread = 12.0; 
+                    let baseAngle = this.rotation;
 
-                if (pulseBulletType != null) {
                     for (let i = 0; i < bulletCount; i++) {
                         let fireAngle = baseAngle + Mathf.range(spread / 2.0);
                         pulseBulletType.create(this, this.team, this.x, this.y, fireAngle);
@@ -173,7 +232,7 @@ function applyTransformLogic(unitEntity, uType, targetUnitName, isSUV) {
         triggerHybridSkill() {
             if (this.hybridSkillCooldown <= 0) {
                 if (isSUV) {
-                    globalGunMode = globalGunMode === 0 ? 1 : 0;
+                    this.gunMode = this.gunMode === 0 ? 1 : 0;
                     this.hybridSkillCooldown = HYBRID_SKILL_COOLDOWN;
                 } else {
                     this.hybridSkillCooldown = HYBRID_SKILL_COOLDOWN;
@@ -181,7 +240,7 @@ function applyTransformLogic(unitEntity, uType, targetUnitName, isSUV) {
                     this.health = Math.min(this.maxHealth, this.health + healAmount);
 
                     if (healEffect != null) {
-                        healEffect.at(this.x, this.y);
+                        Call.effect(healEffect, this.x, this.y, 0, Color.white);
                     }
                 }
             }
@@ -215,35 +274,29 @@ function applyTransformLogic(unitEntity, uType, targetUnitName, isSUV) {
             }
 
             if (Vars.player != null && Vars.player.unit() == this) {
-                // BẮT PHÍM BẤM PC (1, 2, 3)
-                if (Core.input.keyTap(KeyCode.num1)) {
-                    this.triggerTransform();
-                }
-                if (Core.input.keyTap(KeyCode.num2)) {
-                    this.triggerPulseCone();
-                }
-                if (Core.input.keyTap(KeyCode.num3)) {
-                    this.triggerHybridSkill();
-                }
+                if (Core.input.keyTap(KeyCode.num1)) sendServerCommand(PACKET_TRANSFORM, "1");
+                if (Core.input.keyTap(KeyCode.num2)) sendServerCommand(PACKET_SKILL, "2");
+                if (Core.input.keyTap(KeyCode.num3)) sendServerCommand(PACKET_SKILL, "3");
 
                 if (Core.input.justTouched()) {
                     let now = Time.millis();
                     if (now - this.lastTapTimeInternal < 300) {
-                        this.triggerDoubleTap();
+                        sendServerCommand(PACKET_SKILL, "4");
                     }
                     this.lastTapTimeInternal = now;
                 }
 
                 if (Vars.mobile) {
                     Core.camera.position.set(this.x, this.y);
+                    if (moveX !== 0 || moveY !== 0) {
+                        let moveSpeed = this.speed();
+                        this.moveAt(Tmp.v1.set(moveX, moveY).setLength(moveSpeed));
+                    }
                 }
+            }
 
-                if (Vars.mobile && (moveX !== 0 || moveY !== 0)) {
-                    let moveSpeed = this.speed();
-                    this.moveAt(Tmp.v1.set(moveX, moveY).setLength(moveSpeed));
-                }
-
-                let currentRange = isSUV ? (globalGunMode === 1 ? 600 : 400) : 200;
+            if (!Vars.net.client()) {
+                let currentRange = isSUV ? (this.gunMode === 1 ? 600 : 400) : 200;
                 let target = Units.closestTarget(this.team, this.x, this.y, currentRange, u => u.checkTarget(this.type.targetAir, this.type.targetGround));
 
                 if (target != null) {
@@ -255,7 +308,7 @@ function applyTransformLogic(unitEntity, uType, targetUnitName, isSUV) {
 
                     if (isSUV) {
                         this.autoPulseTimer += Time.delta;
-                        if (globalGunMode === 0) {
+                        if (this.gunMode === 0) {
                             if (this.autoPulseTimer >= 30) { 
                                 this.autoPulseTimer = 0;
                                 if (pulseBulletType != null) {
@@ -337,22 +390,24 @@ function applyTransformLogic(unitEntity, uType, targetUnitName, isSUV) {
                 }
             }
 
-            let req = getSuv27UpgradeRequirements(this.level);
-            if (this.level < this.maxLevel && this.stack != null) {
-                if (this.leadAbsorbed < req.leadNeeded && this.stack.item == req.leadItem && this.stack.amount > 0) {
-                    let consumeAmt = Math.min(2, this.stack.amount);
-                    this.stack.amount -= consumeAmt;
-                    this.leadAbsorbed += consumeAmt;
-                } else if (this.siliconAbsorbed < req.siliconNeeded && this.stack.item == req.siliconItem && this.stack.amount > 0) {
-                    let consumeAmt = Math.min(2, this.stack.amount);
-                    this.stack.amount -= consumeAmt;
-                    this.siliconAbsorbed += consumeAmt;
-                }
+            if (!Vars.net.client()) {
+                let req = getSuv27UpgradeRequirements(this.level);
+                if (this.level < this.maxLevel && this.stack != null) {
+                    if (this.leadAbsorbed < req.leadNeeded && this.stack.item == req.leadItem && this.stack.amount > 0) {
+                        let consumeAmt = Math.min(2, this.stack.amount);
+                        this.stack.amount -= consumeAmt;
+                        this.leadAbsorbed += consumeAmt;
+                    } else if (this.siliconAbsorbed < req.siliconNeeded && this.stack.item == req.siliconItem && this.stack.amount > 0) {
+                        let consumeAmt = Math.min(2, this.stack.amount);
+                        this.stack.amount -= consumeAmt;
+                        this.siliconAbsorbed += consumeAmt;
+                    }
 
-                if (this.leadAbsorbed >= req.leadNeeded && this.siliconAbsorbed >= req.siliconNeeded) {
-                    this.leadAbsorbed = 0;
-                    this.siliconAbsorbed = 0;
-                    this.level++;
+                    if (this.leadAbsorbed >= req.leadNeeded && this.siliconAbsorbed >= req.siliconNeeded) {
+                        this.leadAbsorbed = 0;
+                        this.siliconAbsorbed = 0;
+                        this.level++;
+                    }
                 }
             }
         },
@@ -361,9 +416,9 @@ function applyTransformLogic(unitEntity, uType, targetUnitName, isSUV) {
             this.super$draw();
 
             if (Vars.player != null && Vars.player.unit() == this) {
-                let currentRange = isSUV ? (globalGunMode === 1 ? 600 : 400) : 200;
+                let currentRange = isSUV ? (this.gunMode === 1 ? 600 : 400) : 200;
                 Draw.z(Layer.power + 10);
-                Draw.color(globalGunMode === 1 ? Color.valueOf("f59e0b") : Color.valueOf("c084fc"), 0.45);
+                Draw.color(this.gunMode === 1 ? Color.valueOf("f59e0b") : Color.valueOf("c084fc"), 0.45);
                 Lines.stroke(2.0);
                 Lines.dashCircle(this.x, this.y, currentRange);
                 Draw.reset();
@@ -389,22 +444,39 @@ function applyTransformLogic(unitEntity, uType, targetUnitName, isSUV) {
         },
 
         maxHealth() {
-            return uType.health * (1.0 + (this.level * 0.20));
+            let currentLevel = (this.level !== undefined && this.level !== null) ? this.level : 0;
+            return uType.health * (1.0 + (currentLevel * 0.20));
         },
 
         speed() {
-            let baseSpeed = uType.speed * (1.0 + (this.level * 0.08));
+            let currentLevel = (this.level !== undefined && this.level !== null) ? this.level : 0;
+            let baseSpeed = uType.speed * (1.0 + (currentLevel * 0.08));
             if (isSUV) {
-                // TĂNG TỐC ĐỘ BAY TỐI ĐA LÊN +200% (Tổng tốc độ đạt 300% khi bay liên tục)
                 let accelBonus = (this.flightAccelTimer / 180.0) * 3.0;
                 return baseSpeed * (1.0 + accelBonus);
             }
             return baseSpeed;
+        },
+
+        write(write) {
+            this.super$write(write);
+            write.b((this.level !== undefined && this.level !== null) ? this.level : 0);
+            write.b((this.gunMode !== undefined && this.gunMode !== null) ? this.gunMode : 0);
+            write.f((this.transformCooldown !== undefined && this.transformCooldown !== null) ? this.transformCooldown : 0);
+        },
+
+        read(read, revision) {
+            this.super$read(read, revision);
+            this.level = read.b();
+            this.gunMode = read.b();
+            this.transformCooldown = read.f();
         }
     };
 }
 
 Events.on(ClientLoadEvent, function() {
+    initPacketHandlers();
+
     pulseBurstEffect = new Effect(30, cons(e => {
         Draw.color(Color.valueOf("8aa3f4"), Color.valueOf("c084fc"), e.fin());
         Lines.stroke(4.0 * e.fout());
@@ -436,7 +508,6 @@ Events.on(ClientLoadEvent, function() {
     pulseBulletType.lightningDamage = 8;
     pulseBulletType.load();
 
-    // TĂNG SÁT THƯƠNG ĐẠN 8MM LIÊN THANH THÊM 150% (Từ 18 -> 45)
     rapid8mmBulletType = new BasicBulletType(12.0, 45);
     rapid8mmBulletType.lifetime = 50; 
     rapid8mmBulletType.width = 4;
@@ -585,10 +656,7 @@ Events.on(ClientLoadEvent, function() {
     skillContainer.margin(0, 150, 15, 0); 
 
     var btn1 = skillContainer.button("[1] TRANSFORM", Icon.refresh, Styles.defaultt, run(function() {
-        if (Vars.player != null && Vars.player.unit() != null) {
-            var unit = Vars.player.unit();
-            if (unit.triggerTransform) unit.triggerTransform();
-        }
+        sendServerCommand(PACKET_TRANSFORM, "1");
     })).size(120, 42).pad(2).color(Color.valueOf("c084fc")).get();
 
     btn1.update(run(function() {
@@ -605,10 +673,7 @@ Events.on(ClientLoadEvent, function() {
     }));
 
     var btn2 = skillContainer.button("[2] PULSE CONE", Icon.commandRally, Styles.defaultt, run(function() {
-        if (Vars.player != null && Vars.player.unit() != null) {
-            var unit = Vars.player.unit();
-            if (unit.triggerPulseCone) unit.triggerPulseCone();
-        }
+        sendServerCommand(PACKET_SKILL, "2");
     })).size(120, 42).pad(2).color(Color.valueOf("8aa3f4")).get();
 
     btn2.update(run(function() {
@@ -625,10 +690,7 @@ Events.on(ClientLoadEvent, function() {
     }));
 
     var btn3 = skillContainer.button("[3] SKILL 3", Icon.up, Styles.defaultt, run(function() {
-        if (Vars.player != null && Vars.player.unit() != null) {
-            var unit = Vars.player.unit();
-            if (unit.triggerHybridSkill) unit.triggerHybridSkill();
-        }
+        sendServerCommand(PACKET_SKILL, "3");
     })).size(125, 42).pad(2).color(Color.valueOf("f59e0b")).get();
 
     btn3.update(run(function() {
@@ -639,12 +701,12 @@ Events.on(ClientLoadEvent, function() {
 
             if (unit.hybridSkillCooldown > 0) {
                 var secondsLeft = (unit.hybridSkillCooldown / 60.0).toFixed(1);
-                var modeText = isSUVUnit ? (globalGunMode === 1 ? "8MM" : "PULSE") : "REPAIR";
+                var modeText = isSUVUnit ? (unit.gunMode === 1 ? "8MM" : "PULSE") : "REPAIR";
                 btn3.setText("[3] " + modeText + " (" + secondsLeft + "s)");
                 btn3.setDisabled(true);
             } else {
                 if (isSUVUnit) {
-                    btn3.setText(globalGunMode === 1 ? "[3] GUN: 8MM" : "[3] GUN: PULSE");
+                    btn3.setText(unit.gunMode === 1 ? "[3] GUN: 8MM" : "[3] GUN: PULSE");
                 } else {
                     btn3.setText("[3] REPAIR 1%");
                 }

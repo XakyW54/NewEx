@@ -44,8 +44,8 @@ drawer: {
 researchCostMultiplier: 0.1
 
 requirements: [
-  copper/2660
-    lead/1700
+  copper/266
+    lead/170
 ]
 category: turret
 research: xylaon

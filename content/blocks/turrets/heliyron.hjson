@@ -11,7 +11,7 @@ targetGround: true
 maxAmmo: 10
 ammoPerShot: 1
 ammoTypes: {
-  titanium: {
+  thorium: {
     type: BasicBulletType
     speed: 5
     damage: 300
@@ -35,7 +35,7 @@ researchCostMultiplier: 0.1
 requirements: [
   copper/2240
   lead/2560
-  thorium/4200
+  thorium/420
 ]
 category: turret
 research: vendicum

@@ -15,46 +15,36 @@ const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
 // ==============================================================================
+// KHAI BÁO ÂM THANH (ĐÃ SỬA LỖI ĐỌC SOUND)
+// ==============================================================================
+const shootSoundAetherod = Vars.tree.loadSound("aetherod1"); 
+
+// ==============================================================================
 // HIT EFFECT HÌNH LỤC GIÁC (THU NHỎ 4 LẦN, DÙNG POLY 6 CẠNH)
 // ==============================================================================
 const createDtgHitEffect = (life, tier, damage) => new Effect(life, e => {
-    // Thu nhỏ kích thước gốc xuống 4 lần (từ 8 + dmg*0.12 thành 2 + dmg*0.03)
     let baseSize = 2 + damage * 0.03; 
-    
-    // progress chạy từ 0 -> 1
     let progress = e.fin(); 
-    
-    // Lục giác ngoài thu nhỏ dần vào trong
     let zoomRadius = baseSize * (2.2 - 1.9 * Interp.pow2Out.apply(progress));
-    
-    // Lục giác tâm nén nhẹ bùng ra một chút rồi thu lại
     let innerRadius = baseSize * (0.3 + 0.5 * Interp.pow3Out.apply(progress));
-    
-    // Độ mờ nhạt dần về cuối hiệu ứng
     let alpha = e.fout();
 
-    // Chọn màu theo Tier
     let mainColor, secColor;
     if (tier == 0) { 
-        // MK1 - Cam & Vàng
         mainColor = Color.valueOf("ffa500"); 
         secColor = Color.valueOf("ffff00");   
     } else if (tier == 1) { 
-        // MK2 - Vàng & Xanh Mint
         mainColor = Color.valueOf("ffff00"); 
         secColor = Color.valueOf("00ffff");   
     } else { 
-        // MK2B - Xanh Cyan & Vàng
         mainColor = Color.valueOf("00ffff"); 
         secColor = Color.valueOf("ffff00");   
     }
 
-    // 1. Hình lục giác ngoài ZOOM thu nhỏ dần vào tâm
     Draw.color(mainColor, alpha);
-    Lines.stroke((0.5 * alpha) + 0.1); // Giảm bớt nét vẽ tương ứng với kích thước nhỏ
+    Lines.stroke((0.5 * alpha) + 0.1);
     Lines.poly(e.x, e.y, 6, zoomRadius);
 
-    // 2. Hình lục giác phụ màu phụ theo sau tạo hiệu ứng đuôi (ghost hex)
     let secondaryZoom = baseSize * (2.6 - 2.1 * Interp.pow2Out.apply(progress));
     if (secondaryZoom > 0) {
         Draw.color(secColor, alpha * 0.5);
@@ -62,18 +52,15 @@ const createDtgHitEffect = (life, tier, damage) => new Effect(life, e => {
         Lines.poly(e.x, e.y, 6, secondaryZoom);
     }
 
-    // 3. Hình lục giác tâm giữ vị trí va chạm
     Draw.color(secColor, alpha);
     Lines.stroke(0.4 * alpha);
     Lines.poly(e.x, e.y, 6, innerRadius);
 
-    // 4. Điểm sáng lục giác nén ở chính giữa tâm
     Draw.color(Color.white, alpha);
     Fill.poly(e.x, e.y, 6, baseSize * 0.25 * alpha);
     Draw.reset();
 });
 
-// Tạo instance hiệu ứng cho các loại đạn
 const dtgHitEffectMk1 = createDtgHitEffect(20, 0, 63);
 const dtgHitEffectMk2 = createDtgHitEffect(22, 1, 56);
 const dtgHitEffectMk2b = createDtgHitEffect(26, 2, 122);
@@ -131,7 +118,6 @@ function getAngleDiff(angle1, angle2) {
     if (diff < -180) diff += 360;
     return Math.abs(diff);
 }
-
 
 const dtgSoldernNormalBullet = extend(BasicBulletType, {
     speed: 7,
@@ -237,7 +223,6 @@ const laserBulletB = extend(LaserBulletType, {
     smokeEffect: Fx.smoke
 });
 
-
 const dtgSoldernTurret = extend(ItemTurret, "dtg-soldern", {
     squareSprite: false,
 
@@ -256,6 +241,7 @@ dtgSoldernTurret.size = 3;
 dtgSoldernTurret.reload = 40; 
 dtgSoldernTurret.configurable = true;
 dtgSoldernTurret.category = Category.turret;
+dtgSoldernTurret.shootSound = shootSoundAetherod; // Gán âm thanh bắn mặc định
 dtgSoldernTurret.ammo(Items.silicon, dtgSoldernNormalBullet); 
 
 dtgSoldernTurret.config(java.lang.Integer, packCons2((tile, value) => {
@@ -263,7 +249,6 @@ dtgSoldernTurret.config(java.lang.Integer, packCons2((tile, value) => {
         tile.setTier(value);
     }
 }));
-
 
 dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldernTurret, {
     dtgSoldernInternalTier: 0, 
@@ -531,6 +516,9 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                     this.shotgunMagTimer = 0;
                     this.shotgunBarrelRecoil = 1.0;
 
+                    // Phát âm thanh khi khai hỏa shotgun cận chiến
+                    if(shootSoundAetherod) shootSoundAetherod.at(this.x, this.y, Mathf.random(0.9, 1.1));
+
                     if(tier == 2) {
                         for(let i = 0; i < 14; i++){
                             let angleOffset = Mathf.range(15);
@@ -605,7 +593,6 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                             if(this.shieldHealth <= 0){
                                 Fx.shieldBreak.at(this.x, this.y);
                             } else {
-                                // Gọi hit effect hình lục giác đã thu nhỏ tại vị trí va chạm
                                 dtgHitEffectMk1.at(b.x, b.y, this.rotation);
                             }
                             b.remove();
@@ -644,6 +631,9 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
             activeNormalBullet.create(this, this.team, muzzleX, muzzleY, this.rotation);
         }
         
+        // Phát âm thanh khi khai hỏa phát bắn tầm xa
+        if(shootSoundAetherod) shootSoundAetherod.at(this.x, this.y, Mathf.random(0.9, 1.1));
+
         Fx.shootBig.at(muzzleX, muzzleY, this.rotation);
     },
 

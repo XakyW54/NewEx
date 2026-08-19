@@ -2,6 +2,11 @@ const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
+// ==============================================================================
+// KHAI BÁO ÂM THANH
+// ==============================================================================
+const shootSoundBlaster = Vars.tree.loadSound("loudly-blaster-shot-1");
+
 // Hàm tìm Sprite an toàn (tìm tên gốc -> newex- -> reinforced-)
 function getModRegion(spriteName) {
     if (Core.atlas.has(spriteName)) return Core.atlas.find(spriteName);
@@ -115,6 +120,7 @@ heliyron.reload = 35;
 heliyron.recoil = 0; // Quản lý recoil mượt bằng JS
 heliyron.configurable = true;
 heliyron.category = Category.turret;
+heliyron.shootSound = shootSoundBlaster; // Gán âm thanh bắn mặc định
 
 heliyron.ammo(Items.copper, heliyronMK1Bullet, Items.lead, heliyronMK1Bullet);
 
@@ -194,6 +200,9 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
 
         let dmgMultiplier = this.getDamageMultiplier();
         
+        // PHÁT ÂM THANH BẮN (với độ biến thiên pitch nhẹ)
+        if (shootSoundBlaster) shootSoundBlaster.at(this.x, this.y, Mathf.random(0.9, 1.1));
+
         // 1. BẮN VIÊN ĐẠN CHÍNH
         let b = bullet.create(this, this.team, this.x, this.y, this.rotation);
         if(b != null){
@@ -210,7 +219,6 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
             let subDamage = (bullet.damage * 0.8) * dmgMultiplier;
 
             // --- NHÓM 1: BẮN THẲNG (CỰ LÝ TRUY ĐUỔI NGẮN) ---
-            // 2 viên bên trái / bên phải 2px (Ngang)
             let sideOffsets1 = [-2.0, 2.0];
             for(let i = 0; i < sideOffsets1.length; i++){
                 let side = sideOffsets1[i];
@@ -220,7 +228,6 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
                 if(sb != null) sb.damage = subDamage;
             }
 
-            // 2 viên bên trái / bên phải dưới 3px (Ngang 3px + Lùi 3px)
             let botSideOffsets3 = [-3.0, 3.0];
             let backDist3 = -3.0;
             for(let i = 0; i < botSideOffsets3.length; i++){
@@ -232,9 +239,8 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
             }
 
             // --- NHÓM 2: BẮN CHÉO (CỰ LÝ TRUY ĐUỔI TẦM XA) ---
-            // 2 viên bên trái / bên phải 10px -> Bắn chéo ra góc 25 độ
             let sideOffsets10 = [-10.0, 10.0];
-            let angleOffsets10 = [-25.0, 25.0]; // Chéo sang 2 bên
+            let angleOffsets10 = [-25.0, 25.0];
             for(let i = 0; i < sideOffsets10.length; i++){
                 let side = sideOffsets10[i];
                 let sx = this.x + (-sin * side);
@@ -243,9 +249,8 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
                 if(sb != null) sb.damage = subDamage;
             }
 
-            // 2 viên bên trái / bên phải dưới 5px sang 2 bên 1px -> Bắn chéo rộng góc 45 độ
             let botSideOffsets1 = [-1.0, 1.0];
-            let angleOffsets45 = [-45.0, 45.0]; // Chéo xòe rộng
+            let angleOffsets45 = [-45.0, 45.0];
             let backDist5 = -5.0;
             for(let i = 0; i < botSideOffsets1.length; i++){
                 let side = botSideOffsets1[i];
@@ -304,7 +309,7 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
         }
     },
 
-buildConfiguration(table){
+    buildConfiguration(table){
         table.clear(); table.row();
         let tier = this.getTier();
 

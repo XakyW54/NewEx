@@ -2,8 +2,10 @@ const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
+// ==================== KHAI BÁO ÂM THANH ====================
+const shootSound = Vars.tree.loadSound("shotbatt");
+
 // ==================== TÙY CHỈNH MÀU SẮC VỤ NỔ NITOUÍ ====================
-// Bạn có thể đổi Color.orange, Color.red, Color.purple, Color.lime,... tùy thích
 const EXPLODE_COLOR = Color.orange; 
 const EXPLODE_COLOR_LIGHT = Color.valueOf("#ffdfa9"); // Màu ánh sáng tâm/nhân vụ nổ
 
@@ -15,7 +17,7 @@ const reqPerkC = { surgeAlloy: 500, phaseFabric: 500, silicon: 2000 };
 // Map lưu trữ trạng thái cộng dồn Nitoui: Map<Unit, { count: number }>
 const nitouiMap = new java.util.WeakHashMap();
 
-// ==================== 1. HIỆU ỨNG VỤ NỔ NITOUÍ (ĐỔI MÀU TÙY CHỌN) ====================
+// ==================== 1. HIỆU ỨNG VỤ NỔ NITOUÍ ====================
 const nitouiExplodeFx = new Effect(35, cons(e => {
     Draw.z(Layer.effect + 0.1);
     
@@ -29,7 +31,7 @@ const nitouiExplodeFx = new Effect(35, cons(e => {
     let coreScale = 0.2 + 0.8 * zoomProgress;
     let coreRadius = (radius * 0.3) * coreScale;
 
-    // AURA VỤ NỔ (Sử dụng màu tùy chỉnh)
+    // AURA VỤ NỔ
     Draw.color(EXPLODE_COLOR);
     Draw.alpha(0.5 * fout);
     Fill.circle(e.x, e.y, coreRadius * 3.5);
@@ -97,7 +99,7 @@ const nitouiExplodeFx = new Effect(35, cons(e => {
     Draw.reset();
 }));
 
-// ==================== 2. HẠT STATUS NITOUÍ CỰC NHỎ & ĐÚNG SỐ TẦNG ====================
+// ==================== 2. HẠT STATUS NITOUÍ ====================
 const nitouiIngatherFx = new Effect(20, cons(e => {
     Draw.z(Layer.effect + 0.05);
     
@@ -109,7 +111,6 @@ const nitouiIngatherFx = new Effect(20, cons(e => {
     let px = e.x + Angles.trnsx(angle, dist);
     let py = e.y + Angles.trnsy(angle, dist);
     
-    // KÍCH THƯỚC HẠT ĐƯỢC THU NHỎ RẤT NHIỀU (0.4px - 1.0px)
     let size = (0.4 + Mathf.randomSeed(seed + 2, 0, 0.6)) * e.fout();
     let rot = Mathf.randomSeed(seed + 3, 0, 360) + Time.time * 4;
 
@@ -139,7 +140,6 @@ var nitouiStatus = extend(StatusEffect, "nitoui-status", {
         
         let data = nitouiMap.get(unit);
         if (data != null && data.count > 0) {
-            // TẠO ĐÚNG SỐ HẠT BẰNG SỐ TẦNG TÍCH LŨY (5 TẦNG = 5 HẠT, 9 TẦNG = 9 HẠT)
             for (let i = 0; i < data.count; i++) {
                 nitouiIngatherFx.at(unit.x, unit.y);
             }
@@ -347,7 +347,6 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
             if (perkB == 3) currentBaseDmg *= 25.0;
             if (perkC == 3) currentBaseDmg *= 6.0;
 
-            // SÁT THƯƠNG NỔ = 4200% SÁT THƯƠNG GỐC CỦA PHÁO
             let explosionDmg = currentBaseDmg * 42.0;
 
             if (perkA == 1) explosionDmg *= 2.5;
@@ -435,6 +434,11 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
         if (!this.hasAmmo()) return;
 
         maxitonerShootFx.at(this.x, this.y);
+
+        // --- PHÁT ÂM THANH BẮN SHOTBATT ---
+        if (shootSound != null) {
+            shootSound.at(this.x, this.y, Mathf.random(0.9, 1.1));
+        }
 
         let perkB = this.getPerkB();
         let perkC = this.getPerkC();

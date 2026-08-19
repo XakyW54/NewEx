@@ -3,6 +3,12 @@ const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
+// ==============================================================================
+// KHAI BÁO ÂM THANH
+// ==============================================================================
+const chargeSound = Vars.tree.loadSound("plasma-charge");
+const shootSound = Vars.tree.loadSound("plasma-shot-3");
+
 const reqBlixalumMK2 = { copper: 4000, lead: 4000, titanium: 0 };
 const reqBlixalumMK2B = { copper: 4000, lead: 4000, titanium: 2000 };
 
@@ -140,6 +146,7 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
     wingAnimation: 0.0, 
     customRecoil: 0.0,
     scanTimer: 0,
+    chargeSoundTimer: 0,
 
     getTier() { return this.tierState == null ? 0 : this.tierState; },
     setTier(val) { this.tierState = val; this.chargeTimer = 0; this.isCharged = false; this.laserTimer = 0; },
@@ -218,7 +225,7 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                 b2.row();
                 b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                     let core = this.team.core();
-                    if (core != null && core.items.get(Items.copper) >= reqBlixalumMK2B.copper && core.items.get(Items.lead) >= reqBlixalumMK2B.lead && core.items.get(Items.titanium) >= reqBlawMK2B.titanium) {
+                    if (core != null && core.items.get(Items.copper) >= reqBlixalumMK2B.copper && core.items.get(Items.lead) >= reqBlixalumMK2B.lead && core.items.get(Items.titanium) >= reqBlixalumMK2B.titanium) {
                         core.items.remove(Items.copper, reqBlixalumMK2B.copper); 
                         core.items.remove(Items.lead, reqBlixalumMK2B.lead); 
                         core.items.remove(Items.titanium, reqBlixalumMK2B.titanium);
@@ -328,6 +335,14 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
             if (!this.isCharged) {
                 if (this.reloadCounter > 0) this.reloadCounter = 0; 
                 this.chargeTimer += Time.delta * this.efficiency;
+
+                // Âm thanh nạp sạc
+                this.chargeSoundTimer += Time.delta;
+                if (this.chargeSoundTimer >= 30 && chargeSound != null) {
+                    this.chargeSoundTimer = 0;
+                    chargeSound.at(this.x, this.y, 0.8 + (this.chargeTimer / 120) * 0.4);
+                }
+
                 if (this.chargeTimer >= 120) this.isCharged = true; 
             }
             if (tier == 2) {
@@ -341,6 +356,7 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
             this.chargeTimer = Math.max(0, this.chargeTimer - Time.delta * 1.5);
             this.isCharged = false; 
             this.laserTimer = 0;
+            this.chargeSoundTimer = 0;
         }
     },
 
@@ -366,6 +382,11 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
         Call.createBullet(selectedBullet, this.team, spawnX, spawnY, this.rotation, selectedBullet.damage, selectedBullet.speed, 1.0);
         let tierColor = (tier == 1) ? Color.valueOf("#00ffff") : ((tier == 2) ? Color.valueOf("#33ddff") : Color.valueOf("#e5ff00"));
         blixalumMuzzleDistort.at(spawnX, spawnY, this.rotation, tierColor);
+
+        // --- PHÁT ÂM THANH BẮN CỐ ĐỊNH (PLASMA-SHOT-3) ---
+        if (shootSound != null) {
+            shootSound.at(this.x, this.y, Mathf.random(0.9, 1.1));
+        }
 
         this.customRecoil = 1.0;
     },

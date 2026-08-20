@@ -8,11 +8,11 @@ function getLeolyrUpgradeRequirements(currentLevel) {
     };
 }
 
-// 2. Loại đạn riêng cho Leolyr (đã tách biệt khỏi Elorix)
+// 2. Loại đạn riêng cho Leolyr
 const leolyrLeftBullet = extend(BasicBulletType, { speed: 9.0, damage: 15, width: 6, height: 11, lifetime: 35 });
 const leolyrRightBullet = extend(BasicBulletType, { speed: 9.0, damage: 65, width: 6, height: 11, lifetime: 35 });
 
-// 3. Biến quản lý trạng thái riêng của Leolyr
+// 3. Biến quản lý trạng thái
 let leolyrLastTapTime = 0;
 const leolyrDoubleTapInterval = 250; 
 
@@ -20,16 +20,26 @@ let leolyrMk2TargetX = 0;
 let leolyrMk2TargetY = 0;
 let leolyrIsMarkedMK2 = false;
 
-let leolyrStaticShields = []; 
 let leolyrStarSpeedsMap = new ObjectMap();
 
-// Hàm tìm vị trí lướt an toàn dừng lại TRƯỚC tường
+// Hàm tính vị trí lướt: Né địa hình núi, xuyên được tường nếu điểm đích an toàn
 function getSafeDashTarget(startX, startY, targetX, targetY) {
     let distance = Mathf.dst(startX, startY, targetX, targetY);
     let angle = Angles.angle(startX, startY, targetX, targetY);
     
-    let step = 4.0; // Quét từng bước 4px (0.5 tile)
+    // Kiểm tra điểm đích trước: Nếu điểm đích KHÔNG nằm trong địa hình cứng, lướt thẳng tới đích (xuyên tường)
+    let endTile = Vars.world.tileWorld(targetX, targetY);
+    let isEndTileTerrain = endTile != null && endTile.solid() && endTile.build == null;
+
+    if (!isEndTileTerrain) {
+        return { x: targetX, y: targetY };
+    }
+
+    // Nếu điểm đích rơi đúng vào LÒNG TƯỜNG ĐỊA HÌNH, rà soát ngược từ điểm xuất phát để tìm điểm dừng an toàn
+    let step = 4.0; 
     let currentDist = 0;
+    let safeX = startX;
+    let safeY = startY;
 
     while (currentDist < distance) {
         currentDist += step;
@@ -40,9 +50,11 @@ function getSafeDashTarget(startX, startY, targetX, targetY) {
 
         let tile = Vars.world.tileWorld(checkX, checkY);
         
-        // Nếu chạm vào tường (tile.solid())
-        if (tile != null && tile.solid()) {
-            // Lùi lại một khoảng safeDist để không bị chèn sát mép tường
+        // Chỉ coi là chướng ngại vật khi: Tile cứng (solid) VÀ KHÔNG PHẢI là công trình xây dựng (build == null)
+        let isTerrainWall = tile != null && tile.solid() && tile.build == null;
+
+        if (isTerrainWall) {
+            // Lùi lại một khoảng ngắn trước khi va vào địa hình
             let safeDist = Math.max(0, currentDist - step - 6.0);
             return {
                 x: startX + Angles.trnsx(angle, safeDist),
@@ -81,13 +93,18 @@ let leolyrWing1Region = null;
 let leolyrWing2Region = null;
 
 Events.on(ClientLoadEvent, () => {
+    if (Vars.ui && Vars.ui.settings) {
+        Vars.ui.settings.game.checkPref("Hiệu ứng giáp Leolyr (Hexagon)", true, val => {
+            Core.settings.put("leolyr-hex-shield", val);
+        });
+    }
+
     leolyrWing1Region = Core.atlas.find("newex-leolyr-wing1");
     leolyrWing2Region = Core.atlas.find("newex-leolyr-wing2");
     
     if(leolyrWing1Region == null || !leolyrWing1Region.found()){ leolyrWing1Region = Core.atlas.find("leolyr-wing1"); }
     if(leolyrWing2Region == null || !leolyrWing2Region.found()){ leolyrWing2Region = Core.atlas.find("leolyr-wing2"); }
 
-    // Trạng thái tăng tốc độ đánh
     let atkSpeedStatus = Vars.content.getByName(ContentType.status, "newex-atkspeed");
     if(atkSpeedStatus == null) {
         atkSpeedStatus = Vars.content.getByName(ContentType.status, "atkspeed");
@@ -114,6 +131,9 @@ Events.on(ClientLoadEvent, () => {
                 shieldHealth: 0,
                 hexSize: 5.5,              
                 ignoreNextDamage: false,   
+                
+                // TẠO MẢNG GIÁP TĨNH RIÊNG CHO MỖI UNIT
+                myStaticShields: [],
 
                 damage(amount){
                     if(this.ignoreNextDamage){
@@ -130,6 +150,7 @@ Events.on(ClientLoadEvent, () => {
                     let currentMaxShield = 100 + (this.level * 250); 
                     let currentShieldRadius = (7 * 8) * (1.0 + (this.level * 0.10)); 
 
+                    // GIÁP CÁ NHÂN
                     if(this.shieldHealth > 0){
                         let currentShield = this;
                         Groups.bullet.intersect(this.x - currentShieldRadius - 16, this.y - currentShieldRadius - 16, (currentShieldRadius + 16) * 2, (currentShieldRadius + 16) * 2, cons(b => {
@@ -157,28 +178,37 @@ Events.on(ClientLoadEvent, () => {
                     }
                     this.ignoreNextDamage = false; 
 
-                    leolyrStaticShields = leolyrStaticShields.filter(s => s.lifetime > 0); 
-                    let currentUnit = this;
-                    leolyrStaticShields.forEach(s => {
-                        s.lifetime -= Time.delta;
-                        if(s.hp > 0){
-                            Groups.bullet.intersect(s.x - s.rad - 16, s.y - s.rad - 16, (s.rad + 16) * 2, (s.rad + 16) * 2, cons(b => {
-                                if(b.team != currentUnit.team && b.type != null && b.type.damage > 0){
-                                    let dst = Mathf.dst(s.x, s.y, b.x, b.y);
-                                    if(dst <= s.rad + 4.0){
-                                        s.hp -= b.damage;
-                                        Fx.shieldBreak.at(b.x, b.y, 5, Color.sky);
-                                        if(Math.random() < (currentUnit.level * 0.01)){
-                                            b.team = currentUnit.team;
-                                            b.vel.rotate(180);
-                                        } else {
-                                            b.remove();
+                    // CẬP NHẬT TẤT CẢ GIÁP TĨNH CỦA UNIT NÀY
+                    if(this.myStaticShields != null && this.myStaticShields.length > 0){
+                        let self = this;
+                        for(let i = this.myStaticShields.length - 1; i >= 0; i--){
+                            let s = this.myStaticShields[i];
+                            s.lifetime -= Time.delta;
+
+                            if(s.hp > 0 && s.lifetime > 0){
+                                Groups.bullet.intersect(s.x - s.rad - 16, s.y - s.rad - 16, (s.rad + 16) * 2, (s.rad + 16) * 2, cons(b => {
+                                    if(b.team != self.team && b.type != null && b.type.damage > 0){
+                                        let dst = Mathf.dst(s.x, s.y, b.x, b.y);
+                                        if(dst <= s.rad + 4.0){
+                                            s.hp -= b.damage;
+                                            Fx.shieldBreak.at(b.x, b.y, 5, Color.sky);
+                                            if(Math.random() < (self.level * 0.01)){
+                                                b.team = self.team;
+                                                b.vel.rotate(180);
+                                            } else {
+                                                b.remove();
+                                            }
                                         }
                                     }
-                                }
-                            }));
+                                }));
+                            }
+
+                            // Chỉ xóa khi HẾT CẢ THỜI GIAN và HẾT MÁU
+                            if(s.lifetime <= 0 || s.hp <= 0){
+                                this.myStaticShields.splice(i, 1);
+                            }
                         }
-                    });
+                    }
 
                     let req = getLeolyrUpgradeRequirements(this.level);
                     if(this.level < this.maxLevel && this.stack != null){
@@ -206,7 +236,6 @@ Events.on(ClientLoadEvent, () => {
                         if(isTouchedNow && !this.wasTouchedPrev){
                             let currentTime = Time.millis();
                             if((currentTime - leolyrLastTapTime) < leolyrDoubleTapInterval){
-                                
                                 if(this.level >= 10){
                                      if(!leolyrIsMarkedMK2 && this.dashCooldown <= 0){
                                          leolyrMk2TargetX = Vars.player.mouseX;
@@ -269,11 +298,13 @@ Events.on(ClientLoadEvent, () => {
                             this.apply(atkSpeedStatus, 300);
                         }
 
-                        leolyrStaticShields.push({
+                        // THÊM GIÁP TĨNH VÀO MẢNG CỦA CHÍNH UNIT NÀY
+                        if(this.myStaticShields == null) this.myStaticShields = [];
+                        this.myStaticShields.push({
                             x: oldX, y: oldY, 
                             rad: currentShieldRadius, 
-                            hp: currentMaxShield * 0.8, 
-                            lifetime: 600
+                            hp: currentMaxShield * 1.5, // Tăng lượng máu giáp tĩnh lên 1.5 lần
+                            lifetime: 600 // Cố định 10 giây (600 ticks)
                         });
                     }
                 },
@@ -301,6 +332,8 @@ Events.on(ClientLoadEvent, () => {
                 },
 
                 draw(){
+                    let showHex = Core.settings.getBool("leolyr-hex-shield", true);
+
                     Draw.z(Layer.flyingUnit - 2.0); Lines.stroke(1.2);
                     let totalStars = this.level + 1; let baseRadius = this.hitSize * 0.65;
                     let speeds = getLeolyrStarSpeeds(this.id, this.level);
@@ -357,53 +390,63 @@ Events.on(ClientLoadEvent, () => {
                     let DynamicRadius = (7 * 8) * (1.0 + (this.level * 0.10));
                     if(this.shieldHealth > 0){
                         Draw.z(Layer.effect);
-                        let hSpacing = this.hexSize * 1.5; let vSpacing = this.hexSize * Math.sqrt(3);
-                        let minX = Math.floor((this.x - DynamicRadius) / hSpacing) - 1;
-                        let maxX = Math.ceil((this.x + DynamicRadius) / hSpacing) + 1;
-                        let minY = Math.floor((this.y - DynamicRadius) / vSpacing) - 1;
-                        let maxY = Math.ceil((this.y + DynamicRadius) / vSpacing) + 1;
                         
-                        for (let i = minX; i <= maxX; i++) {
-                            for (let j = minY; j <= maxY; j++) {
-                                let checkX = i * hSpacing;
-                                let checkY = j * vSpacing + ((i % 2 === 0) ? 0 : vSpacing / 2);
-                                let currentDst = Mathf.dst(this.x, this.y, checkX, checkY);
-                                if (Math.floor(currentDst) < DynamicRadius - 1) {
-                                    let edgeFade = (1.0 - (currentDst / DynamicRadius));
-                                    let hexAlpha = (0.28 + Mathf.absin(Time.time, 4.0, 0.08)) * edgeFade;
-                                    Draw.color(Color.sky, hexAlpha); Lines.stroke(0.75);
-                                    Lines.poly(checkX, checkY, 6, this.hexSize); 
-                                }
-                            }
-                        }
-                        Draw.color(Color.sky, 0.75); Lines.stroke(1.3);
-                        Lines.circle(this.x, this.y, DynamicRadius); Draw.reset();
-                    }
-
-                    leolyrStaticShields.forEach(s => {
-                        if(s.hp > 0){
-                            Draw.z(Layer.effect);
+                        if (showHex) {
                             let hSpacing = this.hexSize * 1.5; let vSpacing = this.hexSize * Math.sqrt(3);
-                            let minX = Math.floor((s.x - s.rad) / hSpacing) - 1; let maxX = Math.ceil((s.x + s.rad) / hSpacing) + 1;
-                            let minY = Math.floor((s.y - s.rad) / vSpacing) - 1; let maxY = Math.ceil((s.y + s.rad) / vSpacing) + 1;
+                            let minX = Math.floor((this.x - DynamicRadius) / hSpacing) - 1;
+                            let maxX = Math.ceil((this.x + DynamicRadius) / hSpacing) + 1;
+                            let minY = Math.floor((this.y - DynamicRadius) / vSpacing) - 1;
+                            let maxY = Math.ceil((this.y + DynamicRadius) / vSpacing) + 1;
                             
                             for (let i = minX; i <= maxX; i++) {
                                 for (let j = minY; j <= maxY; j++) {
                                     let checkX = i * hSpacing;
                                     let checkY = j * vSpacing + ((i % 2 === 0) ? 0 : vSpacing / 2);
-                                    let currentDst = Mathf.dst(s.x, s.y, checkX, checkY);
-                                    if (Math.floor(currentDst) < s.rad - 1) {
-                                        let edgeFade = (1.0 - (currentDst / s.rad));
-                                        let lifeFade = s.lifetime > 60 ? 1.0 : (s.lifetime / 60); 
-                                        Draw.color(Color.sky, 0.22 * edgeFade * lifeFade); Lines.stroke(0.6);
-                                        Lines.poly(checkX, checkY, 6, this.hexSize);
+                                    let currentDst = Mathf.dst(this.x, this.y, checkX, checkY);
+                                    if (Math.floor(currentDst) < DynamicRadius - 1) {
+                                        let edgeFade = (1.0 - (currentDst / DynamicRadius));
+                                        let hexAlpha = (0.28 + Mathf.absin(Time.time, 4.0, 0.08)) * edgeFade;
+                                        Draw.color(Color.sky, hexAlpha); Lines.stroke(0.75);
+                                        Lines.poly(checkX, checkY, 6, this.hexSize); 
                                     }
                                 }
                             }
-                            Draw.color(Color.sky, 0.60 * (s.lifetime > 60 ? 1.0 : (s.lifetime / 60))); Lines.stroke(1.1);
-                            Lines.circle(s.x, s.y, s.rad); Draw.reset();
                         }
-                    });
+
+                        Draw.color(Color.sky, 0.75); Lines.stroke(1.3);
+                        Lines.circle(this.x, this.y, DynamicRadius); Draw.reset();
+                    }
+
+                    // VẼ GIÁP TĨNH CỦA BẢN THÂN
+                    if(this.myStaticShields != null){
+                        this.myStaticShields.forEach(s => {
+                            if(s.hp > 0 && s.lifetime > 0){
+                                Draw.z(Layer.effect);
+                                
+                                if (showHex) {
+                                    let hSpacing = this.hexSize * 1.5; let vSpacing = this.hexSize * Math.sqrt(3);
+                                    let minX = Math.floor((s.x - s.rad) / hSpacing) - 1; let maxX = Math.ceil((s.x + s.rad) / hSpacing) + 1;
+                                    let minY = Math.floor((s.y - s.rad) / vSpacing) - 1; let maxY = Math.ceil((s.y + s.rad) / vSpacing) + 1;
+                                    
+                                    for (let i = minX; i <= maxX; i++) {
+                                        for (let j = minY; j <= maxY; j++) {
+                                            let checkX = i * hSpacing;
+                                            let checkY = j * vSpacing + ((i % 2 === 0) ? 0 : vSpacing / 2);
+                                            let currentDst = Mathf.dst(s.x, s.y, checkX, checkY);
+                                            if (Math.floor(currentDst) < s.rad - 1) {
+                                                let edgeFade = (1.0 - (currentDst / s.rad));
+                                                Draw.color(Color.sky, 0.22 * edgeFade); Lines.stroke(0.6);
+                                                Lines.poly(checkX, checkY, 6, this.hexSize);
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Draw.color(Color.sky, 0.60); Lines.stroke(1.1);
+                                Lines.circle(s.x, s.y, s.rad); Draw.reset();
+                            }
+                        });
+                    }
                 },
 
                 maxHealth(){ return leolyrUnit.health * (1.0 + (this.level * 0.20)); },

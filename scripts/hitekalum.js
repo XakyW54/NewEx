@@ -88,9 +88,10 @@ const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
-const reqPerkHitekA = { copper: 2000, lead: 2000, silicon: 1500 };
-const reqPerkHitekB = { titanium: 2000, thorium: 1000, silicon: 2000 };
-const reqPerkHitekC = { surgeAlloy: 800, phaseFabric: 800, silicon: 2500 };
+// --- ĐÃ ĐỔI SILICON THÀNH OBSIDIS VÀ GIẢM GIÁ 50% CHO OBSIDIS ---
+const reqPerkHitekA = { copper: 1000, lead: 1000, obsidis: 375 };
+const reqPerkHitekB = { titanium: 1000, thorium: 500, obsidis: 500 };
+const reqPerkHitekC = { surgeAlloy: 400, phaseFabric: 400, obsidis: 625 };
 
 const hitekalumBulletSystem = extend(BulletType, {
     init(b){ if(b) b.remove(); },
@@ -100,7 +101,6 @@ hitekalumBulletSystem.speed = 0;
 hitekalumBulletSystem.lifetime = 1;
 hitekalumBulletSystem.collides = false;
 
-// Khai báo biến hitekalum ở phạm vi Toàn cục (Global scope) để phục vụ cho exports
 let hitekalumBlock = null;
 
 Events.on(ContentInitEvent, () => {
@@ -164,7 +164,6 @@ Events.on(ContentInitEvent, () => {
                 let rangeMult = 1.0;
 
                 if(this.getPerkA() == 1) rangeMult += 0.40; 
-                if(this.getPerkB() == 2) rangeMult += 0.50; 
                 if(this.getPerkC() == 3) rangeMult += 0.10; 
                 if(this.getPerkC() == 4) rangeMult += 1.0; 
 
@@ -176,36 +175,33 @@ Events.on(ContentInitEvent, () => {
                 let dmgMult = 1.0;
 
                 if(this.getPerkA() == 3) dmgMult += 0.30; 
-                if(this.getPerkB() == 2) dmgMult -= 0.50; 
                 if(this.getPerkC() == 3) dmgMult += 0.10; 
                 if(this.getPerkC() == 4) dmgMult += 1.0; 
 
                 let finalDmg = baseDmg * Math.max(0.1, dmgMult);
 
-                let critChance = 0.0;
-                let critDmgMult = 1.5;
+                let critChance = 0.05;
+                let critDmgMult = 1.50;
 
                 if(this.getPerkC() == 1) { critChance += 0.10; critDmgMult += 1.50; } 
                 if(this.getPerkC() == 3) { critChance += 0.20; critDmgMult += 0.50; } 
 
-                if(critChance > 0 && Mathf.chance(critChance)) {
+                if(Mathf.chance(critChance)) {
                     finalDmg *= critDmgMult;
                 }
 
                 return finalDmg;
             },
 
-collision(other) {
-    this.super$collision(other);
-    if (this.getPerkB() == 1 && other != null && other.team != this.team) {
-        // Lấy tọa độ trực tiếp từ vị trí va chạm của viên đạn/mục tiêu
-        let hitX = other.x;
-        let hitY = other.y;
-        
-        other.damage(this.maxHealth * 0.15);
-        Fx.spark.at(hitX, hitY);
-    }
-},
+            collision(other) {
+                this.super$collision(other);
+                if (this.getPerkB() == 1 && other != null && other.team != this.team) {
+                    if (typeof other.damage === "function") {
+                        other.damage(this.maxHealth * 0.15);
+                        Fx.spark.at(other.x, other.y);
+                    }
+                }
+            },
 
             applyHitekalumDamage(targetUnit, baseDamage){
                 if(targetUnit == null || targetUnit.dead) return;
@@ -214,19 +210,19 @@ collision(other) {
                 let statusElectrified = Vars.content.getByName(ContentType.status, "electrified") || StatusEffects.shocked;
 
                 if(targetUnit.hasEffect(statusElectrified)){
-                    finalDmg *= 2.0;
+                    let mult = (this.getPerkA() == 2) ? 4.0 : 2.0;
+                    finalDmg *= mult;
                 }
 
-                // Nếu có Phúc lợi 3A (xuyên 100% giáp), gây sát thương trực tiếp không tính giáp
-                if(this.getPerkA() == 3) {
-                    targetUnit.damage(finalDmg);
-                } else {
-                    targetUnit.damage(finalDmg);
+                if(targetUnit.armor !== undefined && targetUnit.armor > 0){
+                    targetUnit.armor = Math.max(0, targetUnit.armor * 0.95);
                 }
 
-                targetUnit.apply(statusElectrified, 60 * 5);
+                targetUnit.damage(finalDmg);
 
                 if(this.getPerkC() == 2) {
+                    targetUnit.apply(statusElectrified, 60 * 5);
+
                     let slowRange = 50;
                     Units.nearbyEnemies(this.team, targetUnit.x - slowRange, targetUnit.y - slowRange, slowRange * 2, slowRange * 2, u => {
                         if(!u.dead && targetUnit.dst(u) <= slowRange) {
@@ -258,14 +254,27 @@ collision(other) {
                 }
 
                 if(this.getPerkB() == 2){
-                    let subCount = 0;
-                    Units.nearbyEnemies(this.team, target.x - 100, target.y - 100, 200, 200, u => {
-                        if(subCount < 3 && !u.dead && u != target && target.dst(u) <= 100){
-                            subCount++;
-                            createLightningStandard(target.x, target.y, u.x, u.y, 2.0, true);
-                            this.applyHitekalumDamage(u, currentDmg);
+                    let rangeVal = this.range();
+                    let list = new Seq();
+                    
+                    Units.nearbyEnemies(this.team, this.x - rangeVal, this.y - rangeVal, rangeVal * 2, rangeVal * 2, u => {
+                        if(!u.dead && this.dst(u) <= rangeVal){
+                            list.add(u);
                         }
                     });
+
+                    list.sort(new Floatf({ get: u => -u.maxHealth }));
+
+                    let count = 0;
+                    for(let i = 0; i < list.size; i++){
+                        if(count >= 3) break;
+                        let tankyUnit = list.get(i);
+                        
+                        createLightningStandard(this.x, this.y, tankyUnit.x, tankyUnit.y, 2.5, true);
+                        let subDmg = (currentDmg * 0.20) + (tankyUnit.maxHealth * 0.01);
+                        this.applyHitekalumDamage(tankyUnit, subDmg);
+                        count++;
+                    }
                 }
             },
 
@@ -326,9 +335,11 @@ collision(other) {
                         let core = this.team.core();
                         if (core == null) return "[red]Không tìm thấy Lõi Đội![]";
 
+                        let itemObsidis = Vars.content.getByName(ContentType.item, "newex-obsidis");
+
                         let cCop = core.items.get(Items.copper);
                         let cLea = core.items.get(Items.lead);
-                        let cSil = core.items.get(Items.silicon);
+                        let cObs = itemObsidis ? core.items.get(itemObsidis) : 0;
                         let cTit = core.items.get(Items.titanium);
                         let cTho = core.items.get(Items.thorium);
                         let cSur = core.items.get(Items.surgeAlloy);
@@ -336,20 +347,20 @@ collision(other) {
 
                         let colCopA = cCop >= reqPerkHitekA.copper ? "[green]" : "[red]";
                         let colLeaA = cLea >= reqPerkHitekA.lead ? "[green]" : "[red]";
-                        let colSilA = cSil >= reqPerkHitekA.silicon ? "[green]" : "[red]";
+                        let colObsA = cObs >= reqPerkHitekA.obsidis ? "[green]" : "[red]";
 
                         let colTitB = cTit >= reqPerkHitekB.titanium ? "[green]" : "[red]";
                         let colThoB = cTho >= reqPerkHitekB.thorium ? "[green]" : "[red]";
-                        let colSilB = cSil >= reqPerkHitekB.silicon ? "[green]" : "[red]";
+                        let colObsB = cObs >= reqPerkHitekB.obsidis ? "[green]" : "[red]";
 
                         let colSurC = cSur >= reqPerkHitekC.surgeAlloy ? "[green]" : "[red]";
                         let colPhaC = cPha >= reqPerkHitekC.phaseFabric ? "[green]" : "[red]";
-                        let colSilC = cSil >= reqPerkHitekC.silicon ? "[green]" : "[red]";
+                        let colObsC = cObs >= reqPerkHitekC.obsidis ? "[green]" : "[red]";
 
                         return "[gold]YÊU CẦU TÀI NGUYÊN LÕI (HITEKALUM):[]\n" +
-                               "[yellow]★ ROLL PHÚC LỢI A:[] Đồng: " + colCopA + cCop + "[]/2000 | Chì: " + colLeaA + cLea + "[]/2000 | Silicon: " + colSilA + cSil + "[]/1500\n" +
-                               "[cyan]★ ROLL PHÚC LỢI B:[] Titan: " + colTitB + cTit + "[]/2000 | Thorium: " + colThoB + cTho + "[]/1000 | Silicon: " + colSilB + cSil + "[]/2000\n" +
-                               "[purple]★ ROLL PHÚC LỢI C:[] Surge: " + colSurC + cSur + "[]/800 | Phase: " + colPhaC + cPha + "[]/800 | Silicon: " + colSilC + cSil + "[]/2500";
+                               "[yellow]★ ROLL PHÚC LỢI A:[] Đồng: " + colCopA + cCop + "[]/1000 | Chì: " + colLeaA + cLea + "[]/1000 | Obsidis: " + colObsA + cObs + "[]/375\n" +
+                               "[cyan]★ ROLL PHÚC LỢI B:[] Titan: " + colTitB + cTit + "[]/1000 | Thorium: " + colThoB + cTho + "[]/500 | Obsidis: " + colObsB + cObs + "[]/500\n" +
+                               "[purple]★ ROLL PHÚC LỢI C:[] Surge: " + colSurC + cSur + "[]/400 | Phase: " + colPhaC + cPha + "[]/400 | Obsidis: " + colObsC + cObs + "[]/625";
                     }));
 
                     reqCell.width(380).get().setWrap(true);
@@ -366,7 +377,7 @@ collision(other) {
                     if (perkA == 0) {
                         let txtADesc = boxA.add("Kích hoạt nâng cấp ngẫu nhiên nhận 1 trong 3 phúc lợi A:\n" +
                                                 " • [yellow]Phúc lợi 1A:[] Tầm bắn +40%, đạn giật điện lây sang 1 mục tiêu.\n" +
-                                                " • [yellow]Phúc lợi 2A:[] Tiết kiệm 50% điện năng tiêu thụ.\n" +
+                                                " • [yellow]Phúc lợi 2A:[] Tiết kiệm 50% điện năng, x4 Sát thương lên mục tiêu Nhiễm Điện.\n" +
                                                 " • [yellow]Phúc lợi 3A:[] +30% Sát thương, gây dmg xuyên giáp 100%.");
                         txtADesc.width(340).get().setWrap(true);
                         txtADesc.get().setAlignment(Align.left);
@@ -374,10 +385,11 @@ collision(other) {
 
                         boxA.button("[yellow]QUAY PHÚC LỢI A[]", packRun(() => {
                             let core = this.team.core();
-                            if (core != null && core.items.get(Items.copper) >= reqPerkHitekA.copper && core.items.get(Items.lead) >= reqPerkHitekA.lead && core.items.get(Items.silicon) >= reqPerkHitekA.silicon) {
+                            let itemObsidis = Vars.content.getByName(ContentType.item, "newex-obsidis");
+                            if (core != null && itemObsidis != null && core.items.get(Items.copper) >= reqPerkHitekA.copper && core.items.get(Items.lead) >= reqPerkHitekA.lead && core.items.get(itemObsidis) >= reqPerkHitekA.obsidis) {
                                 core.items.remove(Items.copper, reqPerkHitekA.copper);
                                 core.items.remove(Items.lead, reqPerkHitekA.lead);
-                                core.items.remove(Items.silicon, reqPerkHitekA.silicon);
+                                core.items.remove(itemObsidis, reqPerkHitekA.obsidis);
 
                                 let res = Mathf.rand.nextInt(3) + 1; 
                                 this.setPerkA(res);
@@ -387,7 +399,7 @@ collision(other) {
 
                                 let descMapA = {
                                     1: "• Tầm bắn +40%\n• Đạn giật điện lây sang 1 mục tiêu gần đó.",
-                                    2: "• Tiết kiệm 50% điện năng tiêu thụ.",
+                                    2: "• Tiết kiệm 50% điện năng tiêu thụ.\n• Tăng sát thương gây ra lên mục tiêu bị Nhiễm Điện từ x2 -> x4.",
                                     3: "• +30% Sát thương gốc\n• Sát thương bỏ qua 100% giáp kẻ địch."
                                 };
 
@@ -401,7 +413,7 @@ collision(other) {
                     } else {
                         let txtA = "";
                         if (perkA == 1) txtA = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1A\n• Tầm bắn +40%\n• Đạn giật điện lây sang 1 mục tiêu gần đó[]";
-                        if (perkA == 2) txtA = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2A\n• Tiết kiệm 50% điện năng tiêu thụ[]";
+                        if (perkA == 2) txtA = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2A\n• Tiết kiệm 50% điện tiêu thụ\n• x4 Sát thương lên kẻ địch Nhiễm Điện[]";
                         if (perkA == 3) txtA = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3A\n• +30% Sát thương\n• Sát thương xuyên giáp 100%[]";
 
                         let txtACell = boxA.add(txtA);
@@ -418,18 +430,19 @@ collision(other) {
                     if (perkB == 0) {
                         let txtBDesc = boxB.add("Kích hoạt nâng cấp ngẫu nhiên nhận 1 trong 3 phúc lợi B:\n" +
                                                 " • [cyan]Phúc lợi 1B:[] +200% Máu pháo, phản 15% sát thương cận chiến.\n" +
-                                                " • [cyan]Phúc lợi 2B:[] Đạn chùm (tách làm 3), -50% dmg, +50% phạm vi.\n" +
-                                                " • [cyan]Phúc lợi 3B:[] Tăng x2 tốc độ bắn tia điện (1s -> 0.5s/bắn), đòn laser 150% dmg mỗi 1.5s.");
+                                                " • [cyan]Phúc lợi 2B:[] Bắn thêm 3 tia điện đến 3 mục tiêu trâu nhất (20% Dmg gốc + 1% Max HP).\n" +
+                                                " • [cyan]Phúc lợi 3B:[] Tăng x2 tốc độ bắn tia điện, đòn laser 150% dmg mỗi 1.5s.");
                         txtBDesc.width(340).get().setWrap(true);
                         txtBDesc.get().setAlignment(Align.left);
                         boxB.row();
 
                         boxB.button("[cyan]QUAY PHÚC LỢI B[]", packRun(() => {
                             let core = this.team.core();
-                            if (core != null && core.items.get(Items.titanium) >= reqPerkHitekB.titanium && core.items.get(Items.thorium) >= reqPerkHitekB.thorium && core.items.get(Items.silicon) >= reqPerkHitekB.silicon) {
+                            let itemObsidis = Vars.content.getByName(ContentType.item, "newex-obsidis");
+                            if (core != null && itemObsidis != null && core.items.get(Items.titanium) >= reqPerkHitekB.titanium && core.items.get(Items.thorium) >= reqPerkHitekB.thorium && core.items.get(itemObsidis) >= reqPerkHitekB.obsidis) {
                                 core.items.remove(Items.titanium, reqPerkHitekB.titanium);
                                 core.items.remove(Items.thorium, reqPerkHitekB.thorium);
-                                core.items.remove(Items.silicon, reqPerkHitekB.silicon);
+                                core.items.remove(itemObsidis, reqPerkHitekB.obsidis);
 
                                 let res = Mathf.rand.nextInt(3) + 1; 
                                 this.setPerkB(res);
@@ -439,7 +452,7 @@ collision(other) {
 
                                 let descMapB = {
                                     1: "• Máu pháo +200%\n• Tạo khiên phản 15% sát thương cận chiến.",
-                                    2: "• Đạn chùm tách 3 từ mục tiêu chính\n• -50% Dmg, +50% Phạm vi.",
+                                    2: "• Bắn thêm 3 tia điện tới 3 kẻ địch có Máu lớn nhất\n• Sát thương: 20% Dmg gốc + 1% Max HP mục tiêu.",
                                     3: "• Tốc độ bắn tia điện chính: x2 (1s -> 0.5s/bắn)\n• Đòn đánh Laser phụ gây 150% Dmg mỗi 1.5 giây."
                                 };
 
@@ -453,7 +466,7 @@ collision(other) {
                     } else {
                         let txtB = "";
                         if (perkB == 1) txtB = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1B\n• Máu +200%\n• Phản 15% sát thương cận chiến[]";
-                        if (perkB == 2) txtB = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2B\n• Đạn chùm tách 3 từ mục tiêu 1\n• -50% Dmg, +50% Phạm vi[]";
+                        if (perkB == 2) txtB = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2B\n• Bắn 3 tia điện tới 3 mục tiêu trâu nhất\n• Gây 20% Dmg gốc + 1% Max HP[]";
                         if (perkB == 3) txtB = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3B\n• Tốc độ bắn tia điện: x2 (0.5s/bắn)\n• Đòn Laser phụ 150% Dmg mỗi 1.5s[]";
 
                         let txtBCell = boxB.add(txtB);
@@ -470,7 +483,7 @@ collision(other) {
                     if (perkC == 0) {
                         let txtCDesc = boxC.add("Kích hoạt nâng cấp ngẫu nhiên nhận 1 trong 4 phúc lợi C:\n" +
                                                 " • [purple]Phúc lợi 1C (40%):[] Sát thương bạo kích +150%, Tỉ lệ bạo kích +10%.\n" +
-                                                " • [purple]Phúc lợi 2C (30%):[] Sóng xung kích làm chậm 80% kẻ địch xung quanh 50px.\n" +
+                                                " • [purple]Phúc lợi 2C (30%):[] Gắn ấn Nhiễm Điện lên kẻ địch, xung kích làm chậm 80% xung quanh 50px.\n" +
                                                 " • [purple]Phúc lợi 3C (20%):[] +10% Dmg, Range, HP | +20% Crit Rate, +50% Crit Dmg.\n" +
                                                 " • [purple]Phúc lợi 4C (10%):[] +100% Dmg, Range, HP. Siêu đòn kết liễu Sét + Laser khi địch <5% HP.");
                         txtCDesc.width(340).get().setWrap(true);
@@ -479,10 +492,11 @@ collision(other) {
 
                         boxC.button("[purple]QUAY PHÚC LỢI C[]", packRun(() => {
                             let core = this.team.core();
-                            if (core != null && core.items.get(Items.surgeAlloy) >= reqPerkHitekC.surgeAlloy && core.items.get(Items.phaseFabric) >= reqPerkHitekC.phaseFabric && core.items.get(Items.silicon) >= reqPerkHitekC.silicon) {
+                            let itemObsidis = Vars.content.getByName(ContentType.item, "newex-obsidis");
+                            if (core != null && itemObsidis != null && core.items.get(Items.surgeAlloy) >= reqPerkHitekC.surgeAlloy && core.items.get(Items.phaseFabric) >= reqPerkHitekC.phaseFabric && core.items.get(itemObsidis) >= reqPerkHitekC.obsidis) {
                                 core.items.remove(Items.surgeAlloy, reqPerkHitekC.surgeAlloy);
                                 core.items.remove(Items.phaseFabric, reqPerkHitekC.phaseFabric);
-                                core.items.remove(Items.silicon, reqPerkHitekC.silicon);
+                                core.items.remove(itemObsidis, reqPerkHitekC.obsidis);
 
                                 let chance = Mathf.rand.nextInt(100);
                                 let res = chance < 40 ? 1 : (chance < 70 ? 2 : (chance < 90 ? 3 : 4));
@@ -493,7 +507,7 @@ collision(other) {
 
                                 let descMapC = {
                                     1: "• Sát thương bạo kích +150%\n• Tỉ lệ bạo kích +10%.",
-                                    2: "• Sóng xung kích từ mục tiêu làm chậm 80% kẻ địch trong phạm vi 50px.",
+                                    2: "• Đòn đánh gắn ấn Nhiễm Điện (Electrified) cho mục tiêu\n• Sóng xung kích làm chậm 80% kẻ địch trong phạm vi 50px.",
                                     3: "• +10% Dmg, Phạm vi, Máu\n• +20% Tỉ lệ bạo kích, +50% Sát thương bạo kích.",
                                     4: "• +100% Dmg, Phạm vi, Máu\n• Kết liễu địch <5% HP bằng Sét + Laser (5000% Dmg + 5% max HP)."
                                 };
@@ -508,7 +522,7 @@ collision(other) {
                     } else {
                         let txtC = "";
                         if (perkC == 1) txtC = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1C\n• Sát thương bạo kích +150%\n• Tỉ lệ bạo kích +10%[]";
-                        if (perkC == 2) txtC = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2C\n• Sóng xung kích làm chậm 80% kẻ địch xung quanh 50px[]";
+                        if (perkC == 2) txtC = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2C\n• Gắn ấn Nhiễm Điện cho mục tiêu\n• Xung kích làm chậm 80% xung quanh 50px[]";
                         if (perkC == 3) txtC = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3C\n• +10% Dmg, Phạm vi, Máu\n• +20% Tỉ lệ bạo kích, +50% Sát thương bạo kích[]";
                         if (perkC == 4) txtC = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 4C\n• +100% Dmg, Phạm vi, Máu\n• Siêu đòn kết liễu Sét + Laser (5000% Dmg + 5% max HP)[]";
 
@@ -537,7 +551,8 @@ collision(other) {
                                   "• [white]Máu cơ bản:[] [green]" + curHp + "/" + maxHp + " HP[]\n" +
                                   "• [white]Tầm bắn:[] [cyan]" + curRng + " Ô (Tiles)[]\n" +
                                   "• [white]Sát thương cơ bản:[] [orange]" + curDmg + " Dmg[]\n" +
-                                  "• [white]Nội tại:[] [lightgray]X2 Sát thương khi đánh mục tiêu bị Nhiễm điện (Electrified)[]\n\n" +
+                                  "• [white]Nội tại cố định:[] [lightgray]5% Tỉ lệ Bạo kích, 50% Dmg Bạo kích, Trúng đạn giảm 5% giáp địch[]\n" +
+                                  "• [white]Nội tại Nhiễm điện:[] [lightgray]Gây x2 Dmg (x4 nếu có Phúc lợi 2A) khi đánh kẻ địch bị Nhiễm Điện[]\n\n" +
                                   "[gold]TRẠNG THÁI NÂNG CẤP PHÚC LỢI:[]";
 
                     let perkA = this.getPerkA();
@@ -547,7 +562,7 @@ collision(other) {
                     if (perkA > 0) {
                         descStr += "\n\n[yellow]★ PHÚC LỢI A:[] ";
                         if (perkA == 1) descStr += "[green]Phúc lợi 1A[]\n  └ Tầm bắn +40%, Đạn giật điện lây sang 1 mục tiêu.";
-                        if (perkA == 2) descStr += "[green]Phúc lợi 2A[]\n  └ Tiết kiệm 50% điện năng tiêu thụ.";
+                        if (perkA == 2) descStr += "[green]Phúc lợi 2A[]\n  └ Tiết kiệm 50% điện, x4 Dmg lên kẻ địch Nhiễm Điện.";
                         if (perkA == 3) descStr += "[green]Phúc lợi 3A[]\n  └ Sát thương +30%, Bỏ qua 100% giáp.";
                     } else {
                         descStr += "\n\n[yellow]★ PHÚC LỢI A:[] [lightgray]Chưa kích hoạt[]";
@@ -556,7 +571,7 @@ collision(other) {
                     if (perkB > 0) {
                         descStr += "\n\n[cyan]★ PHÚC LỢI B:[] ";
                         if (perkB == 1) descStr += "[green]Phúc lợi 1B[]\n  └ Máu +200%, Phản 15% sát thương cận chiến.";
-                        if (perkB == 2) descStr += "[green]Phúc lợi 2B[]\n  └ Đạn chùm tách 3, -50% Dmg, +50% Phạm vi.";
+                        if (perkB == 2) descStr += "[green]Phúc lợi 2B[]\n  └ Bắn 3 tia điện đến 3 kẻ địch trâu nhất (20% Dmg + 1% Max HP).";
                         if (perkB == 3) descStr += "[green]Phúc lợi 3B[]\n  └ Tốc độ bắn tia điện: x2 (0.5s/bắn), Laser 150% Dmg mỗi 1.5s.";
                     } else {
                         descStr += "\n\n[cyan]★ PHÚC LỢI B:[] [lightgray]Chưa kích hoạt[]";
@@ -565,7 +580,7 @@ collision(other) {
                     if (perkC > 0) {
                         descStr += "\n\n[purple]★ PHÚC LỢI C:[] ";
                         if (perkC == 1) descStr += "[green]Phúc lợi 1C[]\n  └ Crit Dmg +150%, Crit Rate +10%.";
-                        if (perkC == 2) descStr += "[green]Phúc lợi 2C[]\n  └ Xung kích làm chậm 80% xung quanh 50px.";
+                        if (perkC == 2) descStr += "[green]Phúc lợi 2C[]\n  └ Gắn ấn Nhiễm Điện, Xung kích làm chậm 80% xung quanh 50px.";
                         if (perkC == 3) descStr += "[green]Phúc lợi 3C[]\n  └ +10% All Stats, +20% Crit Rate, +50% Crit Dmg.";
                         if (perkC == 4) descStr += "[green]Phúc lợi 4C[]\n  └ +100% All Stats, Siêu đòn kết liễu Sét + Laser.";
                     } else {
@@ -603,5 +618,4 @@ collision(other) {
     }
 });
 
-// Xuất đối tượng hitekalumBlock ra bên ngoài an toàn
 exports.hitekalum = hitekalumBlock;

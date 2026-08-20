@@ -1,0 +1,43 @@
+type: PowerTurret
+name: Hitekalum
+description: Pháo điện từ cao cấp với khả năng nâng cấp phúc lợi ngẫu nhiên.
+size: 4
+health: 3400
+range: 320
+reload: 60
+targetAir: true
+targetGround: true
+powerCapacity: 4000
+
+shootType: {
+  type: BasicBulletType
+  damage: 0
+  speed: 0
+  lifetime: 1
+}
+
+consumes: {
+  power: 5
+}
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+  parts: [
+    {
+      type: RegionPart
+      suffix: -barrel
+      progress: recoil
+      moveY: -3
+    }
+  ]
+}
+requirements: [
+  copper/1500
+  lead/1200
+  silicon/1000
+  titanium/800
+  thorium/500
+]
+
+category: turret
+research: duo

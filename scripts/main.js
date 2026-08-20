@@ -83,7 +83,7 @@ require("drexkou-drills");
 require("antikei-logic");
 
 
-
+require("hitekalum");
 
 
 Events.on(ClientLoadEvent, e => {
@@ -189,6 +189,7 @@ require("damage-display");
 
 require("suv-27");
 require("reykor");
+require("terickal");
 
 
 

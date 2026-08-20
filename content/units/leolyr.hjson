@@ -3,8 +3,8 @@ name: Leolyr
 
 outlineColor: 36363c
 hitSize: 12
-health: 2400
-armor: 10
+health: 240000
+armor: 100
 drag: 0.4
 faceTarget: true
 range: 230

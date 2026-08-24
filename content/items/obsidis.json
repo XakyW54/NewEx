@@ -1,7 +1,7 @@
 {
   "hardness": 4,
   "cost": 7,
-  "radioactivity": 2,
+  "radioactivity": 0,
   "color": "330542",
   "research": {
     "parent": "newex",

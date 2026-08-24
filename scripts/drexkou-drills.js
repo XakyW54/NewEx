@@ -14,10 +14,46 @@ Events.on(ContentInitEvent, () => {
             
             mineSpeed: 40,
             range: 200,
+            cachedTiles: [], // Bộ nhớ tạm chứa danh sách ô quặng trong phạm vi
+
+            // TỐI ƯU: Quét bản đồ 1 LẦN DUY NHẤT ngay khi đặt máy
+            placed() {
+                this.super$placed();
+                this.scanAndCacheTiles();
+                this.findTarget();
+            },
+
+            // TỐI ƯU: Đọc lại khi load save game
+            read(read, revision) {
+                this.super$read(read, revision);
+                Time.run(10, () => {
+                    this.scanAndCacheTiles();
+                    this.findTarget();
+                });
+            },
 
             onDestroy() {
                 this.releaseTarget();
                 this.super$onDestroy();
+            },
+
+            // Hàm quét map 1 lần duy nhất để lưu danh sách Tile
+            scanAndCacheTiles() {
+                this.cachedTiles = [];
+                let rangeTiles = Math.ceil(this.range / 8);
+                let tileX = Math.floor(this.x / 8);
+                let tileY = Math.floor(this.y / 8);
+
+                for (let x = -rangeTiles; x <= rangeTiles; x++) {
+                    for (let y = -rangeTiles; y <= rangeTiles; y++) {
+                        let t = Vars.world.tile(tileX + x, tileY + y);
+                        if (t != null && this.within(t.worldx(), t.worldy(), this.range)) {
+                            if (t.drop() != null) {
+                                this.cachedTiles.push(t);
+                            }
+                        }
+                    }
+                }
             },
 
             releaseTarget() {
@@ -39,13 +75,11 @@ Events.on(ContentInitEvent, () => {
 
             isValidTarget(tile) {
                 if (tile == null) return false;
-                if (!this.within(tile.worldx(), tile.worldy(), this.range)) return false;
                 if (tile.build != null) return false;
 
                 let drop = tile.drop();
                 if (drop == null) return false;
 
-                // Tối ưu: Nếu quặng này đã đầy kho máy -> Bỏ qua
                 if (this.items.get(drop) >= this.block.itemCapacity) {
                     return false;
                 }
@@ -62,10 +96,12 @@ Events.on(ContentInitEvent, () => {
                 return true;
             },
 
+            // Tìm target dựa trên danh sách CẠCHED chứ KHÔNG quét lại map
             findTarget() {
-                let rangeTiles = Math.ceil(this.range / 8);
-                let tileX = Math.floor(this.x / 8);
-                let tileY = Math.floor(this.y / 8);
+                if (this.cachedTiles.length === 0) {
+                    this.setTarget(null);
+                    return;
+                }
 
                 let bestObsTile = null;
                 let candidateTiles = [];
@@ -82,29 +118,27 @@ Events.on(ContentInitEvent, () => {
                     }
                 }
 
-                for (let x = -rangeTiles; x <= rangeTiles; x++) {
-                    for (let y = -rangeTiles; y <= rangeTiles; y++) {
-                        let t = Vars.world.tile(tileX + x, tileY + y);
-                        
-                        if (this.isValidTarget(t)) {
-                            if (this.selectedItem != null) {
-                                this.setTarget(t);
-                                return;
-                            }
+                // Duyệt qua danh sách đã lưu sẵn
+                for (let i = 0; i < this.cachedTiles.length; i++) {
+                    let t = this.cachedTiles[i];
+                    
+                    if (this.isValidTarget(t)) {
+                        if (this.selectedItem != null) {
+                            this.setTarget(t);
+                            return;
+                        }
 
-                            if (t.overlay() === obsOre || t.floor() === obsOre) {
-                                if (!isObsFullInCore) {
-                                    bestObsTile = t;
-                                    break;
-                                } else {
-                                    candidateTiles.push(t);
-                                }
+                        if (t.overlay() === obsOre || t.floor() === obsOre) {
+                            if (!isObsFullInCore) {
+                                bestObsTile = t;
+                                break;
                             } else {
                                 candidateTiles.push(t);
                             }
+                        } else {
+                            candidateTiles.push(t);
                         }
                     }
-                    if (bestObsTile != null) break;
                 }
 
                 if (bestObsTile != null) {
@@ -138,25 +172,15 @@ Events.on(ContentInitEvent, () => {
                 }
             },
 
-            // TỐI ƯU UI: Chỉ quét bản đồ 1 lần duy nhất khi mở Menu
+            // UI chỉ lấy quặng từ danh sách cached sẵn
             buildConfiguration(table) {
                 table.clearChildren();
 
                 let itemsInArea = new Seq();
-                let rangeTiles = Math.ceil(this.range / 8);
-                let tileX = Math.floor(this.x / 8);
-                let tileY = Math.floor(this.y / 8);
-
-                // Quét nhanh lấy các loại quặng xung quanh
-                for (let x = -rangeTiles; x <= rangeTiles; x++) {
-                    for (let y = -rangeTiles; y <= rangeTiles; y++) {
-                        let t = Vars.world.tile(tileX + x, tileY + y);
-                        if (t != null && this.within(t.worldx(), t.worldy(), this.range)) {
-                            let drop = t.drop();
-                            if (drop != null && !itemsInArea.contains(drop)) {
-                                itemsInArea.add(drop);
-                            }
-                        }
+                for (let i = 0; i < this.cachedTiles.length; i++) {
+                    let drop = this.cachedTiles[i].drop();
+                    if (drop != null && !itemsInArea.contains(drop)) {
+                        itemsInArea.add(drop);
                     }
                 }
 
@@ -167,7 +191,7 @@ Events.on(ContentInitEvent, () => {
                     let btn = table.button(new TextureRegionDrawable(item.uiIcon), Styles.clearTogglei, 40, () => {
                         this.selectedItem = (this.selectedItem === item) ? null : item;
                         this.setTarget(null);
-                        this.findTarget();
+                        this.findTarget(); // Chọn ngay target từ cache khi chọn icon
                         this.deselect();
                     }).size(44).get();
 
@@ -178,14 +202,14 @@ Events.on(ContentInitEvent, () => {
                 }
             },
 
-updateTile() {
+            updateTile() {
                 if (this.items.total() > 0) {
                     this.dump();
                 }
 
                 if (this.efficiency <= 0) return;
 
-                // Chỉ tìm target mới nếu target hiện tại bị vô hiệu / đã đầy kho
+                // Chỉ chọn lại target nếu target cũ hết quặng/đầy kho
                 if (!this.isValidTarget(this.targetTile)) {
                     this.releaseTarget();
                     this.findTarget();
@@ -202,11 +226,8 @@ updateTile() {
 
                     if (item != null && this.items.get(item) < this.block.itemCapacity) {
                         let hardness = item.hardness > 0 ? item.hardness : 1;
-                        
-                        // Hệ số giảm nhẹ tốc độ theo độ cứng (mỗi cấp độ cứng chỉ làm giảm khoảng 15% tốc độ)
                         let hardnessPenalty = 1 / (1 + (hardness - 1) * 0.15);
                         
-                        // Tốc độ chuẩn: ~8 item/giây với quặng cơ bản (hardness = 1)
                         this.mineTimer += (8 / 60) * hardnessPenalty * this.efficiency;
 
                         if (this.mineTimer >= 1.0) {

@@ -4,7 +4,6 @@ const hitekalumColor = Color.valueOf("#ff1a1a");
 const lightningColor = Color.valueOf("#ff3333");
 const subLightningColor = Color.valueOf("#ff9999");
 
-// --- EFFECT VẼ HIỆU ỨNG ---
 const arcmotLightningEffect = new Effect(14, e => {
     if(!(e.data instanceof Seq)) return;
     const points = e.data;
@@ -78,7 +77,7 @@ function createLightningStandard(x1, y1, x2, y2, thickness, isMicro){
     points.add(new Vec2(x2, y2));
     
     if(isMicro){
-        microLightningEffect.at((x1 + x2) / 2, (y1 + y2) / 2, thickness, points);
+        microLightningEffect.at((x1 + x2) / 2, (x2 + x2) / 2, thickness, points);
     } else {
         arcmotLightningEffect.at((x1 + x2) / 2, (y1 + y2) / 2, thickness, points);
     }
@@ -88,7 +87,6 @@ const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
-// --- ĐÃ ĐỔI SILICON THÀNH OBSIDIS VÀ GIẢM GIÁ 50% CHO OBSIDIS ---
 const reqPerkHitekA = { copper: 1000, lead: 1000, obsidis: 375 };
 const reqPerkHitekB = { titanium: 1000, thorium: 500, obsidis: 500 };
 const reqPerkHitekC = { surgeAlloy: 400, phaseFabric: 400, obsidis: 625 };
@@ -105,6 +103,7 @@ let hitekalumBlock = null;
 
 Events.on(ContentInitEvent, () => {
     hitekalumBlock = Vars.content.getByName(ContentType.block, "newex-hitekalum");
+    const redstoneWall = Vars.content.getByName(ContentType.block, "newex-redstone-wall");
 
     if(hitekalumBlock != null){
         hitekalumBlock.shootType = hitekalumBulletSystem;
@@ -123,8 +122,29 @@ Events.on(ContentInitEvent, () => {
                 this.perkTier2 = 0;
                 this.perkCState = 0;
                 this.laserTimer = 0.0;
+                this.redstoneBuffStacks = 0;
                 this.executedTargets = new ObjectSet();
                 return this;
+            },
+
+            // Cập nhật hàm kiểm tra Redstone Wall xung quanh bằng Units.nearbyBuildings
+            checkRedstoneWallCorners() {
+                if (redstoneWall == null) return 0;
+                let count = 0;
+                let foundWalls = {};
+
+                // Phạm vi quét linh hoạt dựa trên kích thước pháo + lề tiếp xúc
+                let scanRadius = (this.block.size * Vars.tilesize / 2) + 16;
+
+                Units.nearbyBuildings(this.x, this.y, scanRadius, cons(b => {
+                    if (b != null && b.block === redstoneWall && b.team === this.team && !foundWalls[b.id]) {
+                        foundWalls[b.id] = true;
+                        count++;
+                    }
+                }));
+
+                // Tối đa 4 stack buff
+                return Math.min(4, count);
             },
 
             getPerkA() { return Math.round(this.perkTier1 || 0); },
@@ -167,6 +187,8 @@ Events.on(ContentInitEvent, () => {
                 if(this.getPerkC() == 3) rangeMult += 0.10; 
                 if(this.getPerkC() == 4) rangeMult += 1.0; 
 
+                if(this.redstoneBuffStacks > 0) rangeMult += (0.10 * this.redstoneBuffStacks);
+
                 return baseR * rangeMult;
             },
 
@@ -178,6 +200,8 @@ Events.on(ContentInitEvent, () => {
                 if(this.getPerkC() == 3) dmgMult += 0.10; 
                 if(this.getPerkC() == 4) dmgMult += 1.0; 
 
+                if(this.redstoneBuffStacks > 0) dmgMult += (0.50 * this.redstoneBuffStacks);
+
                 let finalDmg = baseDmg * Math.max(0.1, dmgMult);
 
                 let critChance = 0.05;
@@ -185,6 +209,11 @@ Events.on(ContentInitEvent, () => {
 
                 if(this.getPerkC() == 1) { critChance += 0.10; critDmgMult += 1.50; } 
                 if(this.getPerkC() == 3) { critChance += 0.20; critDmgMult += 0.50; } 
+
+                if(this.redstoneBuffStacks > 0) {
+                    critChance += (0.15 * this.redstoneBuffStacks);
+                    critDmgMult += (0.30 * this.redstoneBuffStacks);
+                }
 
                 if(Mathf.chance(critChance)) {
                     finalDmg *= critDmgMult;
@@ -281,10 +310,17 @@ Events.on(ContentInitEvent, () => {
             updateTile(){
                 this.super$updateTile();
 
+                // Cập nhật số khối Redstone Wall đứng xung quanh pháo
+                this.redstoneBuffStacks = this.checkRedstoneWallCorners();
+
                 if(this.power == null || this.power.status <= 0) return;
 
+                let reloadBonus = 0.05 * this.redstoneBuffStacks;
+
                 if(this.getPerkB() == 3 && this.reloadCounter > 0){
-                    this.reloadCounter += Time.delta * 1.0; 
+                    this.reloadCounter += Time.delta * (1.0 + reloadBonus); 
+                } else if(reloadBonus > 0 && this.reloadCounter > 0) {
+                    this.reloadCounter += Time.delta * reloadBonus;
                 }
 
                 let target = this.target;
@@ -547,10 +583,15 @@ Events.on(ContentInitEvent, () => {
                     let curRng = Math.round(this.range() / 8); 
                     let curDmg = Math.round(this.getRawDamage());
 
+                    let redstoneStatus = (this.redstoneBuffStacks > 0) 
+                        ? "[green]✔ ĐÃ KÍCH HOẠT KHỐI REDSTONE WALL (Cộng dồn: " + this.redstoneBuffStacks + "/4 góc)[]\n  └ (Mỗi stack: +10% Range, +5% Tốc bắn, +15% Crit Rate, +30% Crit Dmg, +50% Dmg)" 
+                        : "[red]✘ Chưa đặt khối Redstone Wall ở góc nào[]";
+
                     let descStr = "[gold]⚡ BẢNG THÔNG SỐ HIỆN TẠI ⚡[]\n" +
                                   "• [white]Máu cơ bản:[] [green]" + curHp + "/" + maxHp + " HP[]\n" +
                                   "• [white]Tầm bắn:[] [cyan]" + curRng + " Ô (Tiles)[]\n" +
                                   "• [white]Sát thương cơ bản:[] [orange]" + curDmg + " Dmg[]\n" +
+                                  "• [white]Tường Redstone 4 góc:[] " + redstoneStatus + "\n" +
                                   "• [white]Nội tại cố định:[] [lightgray]5% Tỉ lệ Bạo kích, 50% Dmg Bạo kích, Trúng đạn giảm 5% giáp địch[]\n" +
                                   "• [white]Nội tại Nhiễm điện:[] [lightgray]Gây x2 Dmg (x4 nếu có Phúc lợi 2A) khi đánh kẻ địch bị Nhiễm Điện[]\n\n" +
                                   "[gold]TRẠNG THÁI NÂNG CẤP PHÚC LỢI:[]";

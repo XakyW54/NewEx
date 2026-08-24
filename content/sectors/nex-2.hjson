@@ -1,0 +1,14 @@
+localizedName: Nex-2
+description: .
+sector: 466
+captureWave: 35
+difficulty: 0
+planet: zorynex
+
+parent: serpulo
+techTree: serpulo
+
+allowLaunchLoadout: true
+allowLaunchSchematics: true
+addStartingItems: true
+overrideLaunchDefaults: true

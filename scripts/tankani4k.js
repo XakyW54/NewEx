@@ -8,11 +8,11 @@ const reqMK2B = { copper: 6000, lead: 6000, titanium: 3000 };
 
 // Cấu hình cơ chế thăng tiến sát thương (Stack) 
 const hitsPerStack = 10; 
-const maxStack = 8; 
+const maxStackNormal = 8; 
+const maxStackMK2B = 18; 
 
 // ==================== ĐỊNH NGHĨA HIỆU ỨNG ====================
 
-// 1. Hiệu ứng Crumble Explosion gốc 
 const crumbleExplosionEffect = new Effect(40, new Cons({
     get: function(e) {
         let previousZ = Draw.z(); 
@@ -25,7 +25,7 @@ const crumbleExplosionEffect = new Effect(40, new Cons({
         let flashColor = Color.white.cpy().lerp(Pal.redDust, e.fin()); 
         flashColor.a = e.fout(); 
         Draw.color(flashColor); 
-        Lines.stroke(e.fout() * 8.0); 
+        Lines.stroke(flashColor); 
         Lines.circle(e.x, e.y, Interp.pow2Out.apply(e.fin()) * 35.0); 
 
         Draw.z(previousZ); 
@@ -33,7 +33,6 @@ const crumbleExplosionEffect = new Effect(40, new Cons({
     }
 }));
 
-// 2. Hiệu ứng Vòng tròn mở rộng (circleOut)
 const circleOutEffect = new Effect(30, new Cons({
     get: function(e) {
         Draw.color(Pal.accent, Color.white, e.fin());
@@ -42,7 +41,6 @@ const circleOutEffect = new Effect(30, new Cons({
     }
 }));
 
-// 3. Hiệu ứng Tia lửa lớn (hitSparkLarge)
 const hitSparkLargeEffect = new Effect(40, new Cons({
     get: function(e) {
         Draw.color(e.color, Color.white, e.fout() * 0.3);
@@ -61,7 +59,6 @@ const hitSparkLargeEffect = new Effect(40, new Cons({
     }
 }));
 
-// Tổ hợp các hiệu ứng nổ / despawn cho Tankani
 const tankaniDespawnEffect = new MultiEffect(
     crumbleExplosionEffect,
     circleOutEffect,
@@ -105,12 +102,12 @@ const tankaniMK2Bullet = extend(BasicBulletType, {
 });
 
 const tankaniMK2BBullet = extend(BasicBulletType, { 
-    speed: 20, damage: 1, width: 10, height: 33, lifetime: 60, 
+    speed: 20, damage: 0.8, width: 10, height: 33, lifetime: 60, 
     frontColor: Color.valueOf("#ff8a80"), backColor: Color.valueOf("#ff1744"), 
     trailColor: Color.valueOf("#ff5252"), 
     splashDamageRadius: 150, 
-    splashDamage: 1338, 
-    collidesGround: false,  
+    splashDamage: 1070, 
+    collidesGround: true,  
     collidesAir: true, 
     hitEffect: tankaniDespawnEffect,    
     despawnEffect: tankaniDespawnEffect,
@@ -145,8 +142,9 @@ Events.on(ClientLoadEvent, new Cons({
                     return new Bar( 
                         new Prov({  
                             get: function(){  
-                                let baseText = "DMG: +" + Math.floor(e.getStackRatio() * 80) + "%"; 
-                                if(e.damageStack >= maxStack) { 
+                                let max = e.getMaxStack();
+                                let baseText = "DMG: +" + Math.floor(e.getStackRatio() * (max * 10)) + "%"; 
+                                if(e.damageStack >= max) { 
                                     return baseText + " [cyan](XUYÊN GIÁP & PHÁ GIÁP)[]"; 
                                 }
                                 return baseText; 
@@ -154,7 +152,7 @@ Events.on(ClientLoadEvent, new Cons({
                         }),
                         new Prov({  
                             get: function(){  
-                                return e.damageStack >= maxStack ? Color.cyan : Color.orange;  
+                                return e.damageStack >= e.getMaxStack() ? Color.cyan : Color.orange;  
                             } 
                         }),
                         new Floatp({  
@@ -185,9 +183,13 @@ Events.on(ClientLoadEvent, new Cons({
                     return tankaniNormalBullet;
                 },
 
+                getMaxStack() {
+                    return this.getTier() === 2 ? maxStackMK2B : maxStackNormal;
+                },
+
                 getStackRatio() { 
                     if (this.damageStack === undefined) return 0.0; 
-                    return this.damageStack / 8.0;  
+                    return this.damageStack / this.getMaxStack();  
                 },
                 
                 getTier() { 
@@ -204,13 +206,14 @@ Events.on(ClientLoadEvent, new Cons({
                 },
 
                 addHitPoint() { 
-                    if (this.damageStack >= maxStack) return; 
+                    let currentMax = this.getMaxStack();
+                    if (this.damageStack >= currentMax) return; 
 
                     this.hitPoints++; 
                     let newStack = Math.floor(this.hitPoints / hitsPerStack); 
                     
                     if (newStack > this.damageStack) { 
-                        this.damageStack = Math.min(newStack, maxStack); 
+                        this.damageStack = Math.min(newStack, currentMax); 
                         Fx.upgradeCore.at(this.x, this.y); 
                     }
                 },
@@ -226,16 +229,6 @@ Events.on(ClientLoadEvent, new Cons({
                         return this.super$range() * 2; 
                     }
                     return this.super$range(); 
-                },
-
-                findTarget() { 
-                    this.super$findTarget(); 
-                    let tier = this.getTier(); 
-                    if (tier === 2 && this.target != null) { 
-                        if (this.target.isFlying === undefined || !this.target.isFlying()) { 
-                            this.target = null; 
-                        }
-                    }
                 },
 
                 buildConfiguration(table) { 
@@ -264,7 +257,7 @@ Events.on(ClientLoadEvent, new Cons({
                                        "[cyan]Nhánh Cấu Hình MK2:[]\n" + 
                                        " • Đồng: " + copColor1 + currentcopper + "[] / " + reqMK2.copper + "\n" + 
                                        " • Chì: " + leaColor1 + currentlead + "[] / " + reqMK2.lead + "\n" + 
-                                       "[purple]Nhánh Biến Thể Chuyên Không MK2B:[]\n" + 
+                                       "[purple]Nhánh Biến Thể Cường Hóa MK2B:[]\n" + 
                                        " • Đồng: " + copColor2 + currentcopper + "[] / " + reqMK2B.copper + "\n" + 
                                        " • Chì: " + leaColor2 + currentlead + "[] / " + reqMK2B.lead + "\n" + 
                                        " • Titan: " + titColor2 + currenttitanium + "[] / " + reqMK2B.titanium; 
@@ -283,8 +276,7 @@ Events.on(ClientLoadEvent, new Cons({
                                              " [white]• Tăng lượng máu chống chịu lên [green]1103 HP[].[]\n" + 
                                              " [white]• Giữ nguyên cơ chế bắn đa mục tiêu (Đất & Không) và tầm bắn gốc.[]\n" + 
                                              " [white]• Đạn chạm mục tiêu kích nổ lan phạm vi [orange]50 pixel[].[]\n" + 
-                                             " [white]• Mục tiêu chính nhận [red]1673 sát thương gốc[] trực diện.[]\n" + 
-                                             " [white]• Kẻ địch lân cận chịu [yellow]837 sát thương nổ lan[].[]"); 
+                                             " [white]• Tích tầng sát thương tối đa: [yellow]8 tầng (+80% DMG)[].[]"); 
                             b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row(); 
                             b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => { 
                                 let core = this.team.core(); 
@@ -301,13 +293,12 @@ Events.on(ClientLoadEvent, new Cons({
                             // NHÁNH MK2B 
                             let b2 = new Table(); b2.background(Styles.black6); b2.margin(12); 
                             b2.add("[purple]===(MK2B)===[]").row(); 
-                            let b2D = b2.add("Chuyển đổi sang tổ hợp pháo phòng không hạng nặng:\n" + 
+                            let b2D = b2.add("Chuyển đổi sang pháo cối tầm xa siêu tăng trưởng:\n" + 
                                              " [white]• Gia tăng lượng máu tối đa lên cực đại [green]1425 HP[].[]\n" + 
                                              " [white]• Mở rộng [ultra-light]gấp đôi tầm bắn hiệu dụng [green](x2 Range)[][].[]\n" + 
-                                             " [white]• [red]Loại bỏ hoàn toàn khả năng bắn mục tiêu mặt đất[].[]\n" + 
-                                             " [white]• Tăng tốc độ đạn bay lên [sky]20.0[] chuyên dụng diệt Không Quân.[]\n" + 
-                                             " [white]• Đạn nổ áp suất tạo vùng sát thương lan rộng tới [pink]150 pixel[].[]\n" + 
-                                             " [white]• Gây [orange]1338 sát thương diện rộng[].[]"); 
+                                             " [white]• Tốc độ bắn [red]giảm 40%[][white], tấn công cả [orange]Đất & Không[].[]\n" + 
+                                             " [white]• Giới hạn tích tầng đột phá lên tới [gold]18 tầng (Tối đa +180% DMG)[].[]\n" + 
+                                             " [white]• Đạn nổ áp suất tạo vùng sát thương lan rộng tới [pink]150 pixel[].[]"); 
                             b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row(); 
                             b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => { 
                                 let core = this.team.core(); 
@@ -340,12 +331,13 @@ Events.on(ClientLoadEvent, new Cons({
                         let title = " Thông số Tankani-4k: "; 
                         let descStr = ""; 
                         let currentTier = this.getTier(); 
+                        let max = this.getMaxStack();
 
                         let statStackStr = "\n[scarlet]⚡ CƠ CHẾ TIẾN HÓA (HITS) ⚡[]\n" + 
                                            "[lightgray]Số phát bắn trúng:[] [yellow]" + this.hitPoints + " Hits[]\n" + 
-                                           "[lightgray]Cấp độ tầng lực:[] [orange]Tầng " + this.damageStack + " / 8[]\n" + 
-                                           "[lightgray]Sát thương cộng thêm:[] [green]+" + (this.damageStack * 10) + "%[] (Tối đa +80%)\n" + 
-                                           (this.damageStack >= maxStack ? "[cyan]🔥 Đạt mốc 80% Sát thương: Kích hoạt đạn xuyên giáp 40% & Giảm hiệu quả giáp mục tiêu (armorMultiplier = 1.5)![]\n" : ""); 
+                                           "[lightgray]Cấp độ tầng lực:[] [orange]Tầng " + this.damageStack + " / " + max + "[]\n" + 
+                                           "[lightgray]Sát thương cộng thêm:[] [green]+" + (this.damageStack * 10) + "%[] (Tối đa +" + (max * 10) + "%)\n" + 
+                                           (this.damageStack >= max ? "[cyan]🔥 Đạt mốc tối đa Sát thương: Kích hoạt đạn xuyên giáp 40% & Giảm hiệu quả giáp mục tiêu (armorMultiplier = 1.5)![]\n" : ""); 
 
                         if (currentTier === 0) { 
                             title += "[yellow](MK1)[]"; 
@@ -364,12 +356,13 @@ Events.on(ClientLoadEvent, new Cons({
                                       statStackStr; 
                         } else if (currentTier === 2) { 
                             title += "[purple](MK2B)[]"; 
-                            descStr = "[purple]⚡ CẤU HÌNH PHÒNG KHÔNG HẠNG NẶNG (MK2B) ⚡[]\n" + 
+                            descStr = "[purple]⚡ CẤU HÌNH PHÁO TẦM XA CƯỜNG HÓA (MK2B) ⚡[]\n" + 
                                       "[lightgray]Máu tháp pháo:[] [green]1425 HP[]\n" + 
                                       "[lightgray]Tầm bắn:[] [green]Gấp đôi tầm bắn gốc (x2 Range)[]\n" + 
-                                      "[lightgray]Trạng thái mục tiêu:[] [red]Chỉ bắn KHÔNG QUÂN[]\n" + 
+                                      "[lightgray]Tốc độ bắn:[] [red]Chậm hơn 40%[]\n" + 
+                                      "[lightgray]Trạng thái mục tiêu:[] Đất & Không\n" + 
                                       "[lightgray]Vùng nổ lan áp suất:[] [pink]150 Pixel[]\n" + 
-                                      "[lightgray]Sát thương nổ phòng không:[] [orange]" + this.getModifiedDamage(1338) + " Sát thương[] (Gốc: 1338)\n" + 
+                                      "[lightgray]Sát thương nổ lan (Đã giảm 20% gốc):[] [orange]" + this.getModifiedDamage(1070) + " Sát thương[] (Gốc: 1070)\n" + 
                                       statStackStr; 
                         }
 
@@ -388,7 +381,8 @@ Events.on(ClientLoadEvent, new Cons({
 
                 shoot(type) { 
                     let tier = this.getTier(); 
-                    let activeSpecial = (this.damageStack >= maxStack); 
+                    let currentMax = this.getMaxStack();
+                    let activeSpecial = (this.damageStack >= currentMax); 
 
                     if (tier === 1) { 
                         tankaniMK2Bullet.damage = this.getModifiedDamage(1673); 
@@ -400,14 +394,19 @@ Events.on(ClientLoadEvent, new Cons({
                         
                         this.super$shoot(tankaniMK2Bullet); 
                     } else if (tier === 2) { 
-                        tankaniMK2BBullet.damage = this.getModifiedDamage(1); 
-                        tankaniMK2BBullet.splashDamage = this.getModifiedDamage(1338); 
+                        tankaniMK2BBullet.damage = this.getModifiedDamage(0.8); 
+                        tankaniMK2BBullet.splashDamage = this.getModifiedDamage(1070); 
                         
                         tankaniMK2BBullet.pierceArmor = activeSpecial; 
                         tankaniMK2BBullet.armorMultiplier = activeSpecial ? 1.5 : 1.0; 
                         tankaniMK2BBullet.status = StatusEffects.none; 
                         
                         this.super$shoot(tankaniMK2BBullet); 
+                        
+                        // ĐẶT LẠI TIẾN TRÌNH HỒI ĐẠN: 
+                        // Khi bắn xong, hồi đạn bị đẩy về âm (-67% thời gian reload gốc) 
+                        // Điều này khiến pháo phải mất thêm thời gian chờ, làm giảm chính xác 40% Tốc độ bắn (Tần suất bắn)
+                        this.reloadCounter = -turretBlock.reload * 0.667; 
                     } else { 
                         tankaniNormalBullet.damage = this.getModifiedDamage(1673); 
                         

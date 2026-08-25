@@ -9,7 +9,7 @@ Events.on(ContentInitEvent, () => {
                 updateTile() {
                     this.super$updateTile();
 
-                    // Nếu Pinfyr đang có điện, xả ra 4 khối xung quanh (Trái, Phải, Trên, Dưới)
+ 
                     if (this.power && this.power.status > 0) {
                         let capacity = this.block.consPower.capacity;
                         let currentStored = this.power.status * capacity;
@@ -19,7 +19,7 @@ Events.on(ContentInitEvent, () => {
 
                             let target = this.nearby(i);
                             if (target != null && target.team === this.team && target.power != null && target.block.consPower != null) {
-                                // Bỏ qua nếu khối kề cạnh lại là một khối Pinfyr khác hoặc Comduik (tránh vòng lặp)
+                               
                                 if (target.block === pinfyr) continue;
 
                                 let targetCap = target.block.consPower.capacity;

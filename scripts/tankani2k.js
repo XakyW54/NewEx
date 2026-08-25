@@ -2,26 +2,21 @@ const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
-// Yêu cầu tài nguyên nâng cấp cấu hình tháp pháo
-const reqMK2 = { copper: 4000, lead: 4000, titanium: 0 };
+ const reqMK2 = { copper: 4000, lead: 4000, titanium: 0 };
 const reqMK2B = { copper: 4000, lead: 4000, titanium: 2000 };
 
-// Cấu hình cơ chế thăng tiến sát thương (Stack)
-const hitsPerStack = 10; // 10 phát trúng = 1 tầng
-const maxStack = 8;      // Tối đa 8 tầng (+80% sát thương)
+ const hitsPerStack = 10; 
+const maxStack = 8;      
 
-// ==================== ĐỊNH NGHĨA HIỆU ỨNG VỤ NỔ CRUMBLE ====================
-const crumbleExplosionEffect = new Effect(40, cons(e => {
+ const crumbleExplosionEffect = new Effect(40, cons(e => {
     let previousZ = Draw.z();
     Draw.z(Layer.effect);
 
-    // Lớp 1: Sóng xung kích bung mạnh từ trong ra ngoài
-    Draw.color(Pal.redDust, Pal.redderDust, e.fin());
+     Draw.color(Pal.redDust, Pal.redderDust, e.fin());
     Lines.stroke(e.fout() * 6.0);
     Lines.circle(e.x, e.y, Interp.pow3Out.apply(e.fin()) * 45.0);
 
-    // Lớp 2: Hiệu ứng biến mất từ trong ra (Hollow Out / Expand Fade)
-    let flashColor = Color.white.cpy().lerp(Pal.redDust, e.fin());
+     let flashColor = Color.white.cpy().lerp(Pal.redDust, e.fin());
     flashColor.a = e.fout();
     Draw.color(flashColor);
     Lines.stroke(e.fout() * 8.0);
@@ -31,8 +26,7 @@ const crumbleExplosionEffect = new Effect(40, cons(e => {
     Draw.reset();
 }));
 
-// ==================== ĐỊNH NGHĨA ĐẠN HỆ THỐNG ====================
-
+ 
 const tankaniNormalBullet = extend(BasicBulletType, {
     speed: 15, damage: 1115, width: 10, height: 33, lifetime: 60,
     frontColor: Color.valueOf("#e0ea87"), backColor: Color.valueOf("#e5ff00"),
@@ -85,8 +79,7 @@ const tankaniMK2BBullet = extend(BasicBulletType, {
     }
 });
 
-// ==================== KHỞI TẠO BLOCK THÁP PHÁO ====================
-
+ 
 Events.on(ClientLoadEvent, cons(e => {
     const turretBlock = Vars.content.getByName(ContentType.block, "newex-tankani2k");
 
@@ -215,8 +208,7 @@ Events.on(ClientLoadEvent, cons(e => {
 
                         let branchesTable = new Table();
 
-                        // NHÁNH MK2
-                        let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
+                         let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                         b1.add("[cyan]===(MK2)===[]").row();
                         let b1D = b1.add("Tích hợp công nghệ nổ mảnh diện rộng:\n" +
                                          " [white]• Tăng lượng máu chống chịu lên [green]735 HP[].[]\n" +
@@ -231,16 +223,14 @@ Events.on(ClientLoadEvent, cons(e => {
                                 core.items.remove(Items.copper, reqMK2.copper); core.items.remove(Items.lead, reqMK2.lead);
                                 Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
                                 
-                                // Đã sửa: Cập nhật trực tiếp và ép kiểu Java Integer chuẩn
-                                this.setTier(1);
+                                 this.setTier(1);
                                 this.configure(java.lang.Integer.valueOf(1)); 
                                 
                                 dialog.hide(); this.deselect();
                             } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                         })).size(180, 38);
 
-                        // NHÁNH MK2B
-                        let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
+                         let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                         b2.add("[purple]===(MK2B)===[]").row();
                         let b2D = b2.add("Chuyển đổi sang tổ hợp pháo phòng không hạng nặng:\n" +
                                          " [white]• Gia tăng lượng máu tối đa lên cực đại [green]950 HP[].[]\n" +
@@ -256,8 +246,7 @@ Events.on(ClientLoadEvent, cons(e => {
                                 core.items.remove(Items.copper, reqMK2B.copper); core.items.remove(Items.lead, reqMK2B.lead); core.items.remove(Items.titanium, reqMK2B.titanium);
                                 Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
                                 
-                                // Đã sửa: Cập nhật trực tiếp và ép kiểu Java Integer chuẩn
-                                this.setTier(2);
+                                 this.setTier(2);
                                 this.configure(java.lang.Integer.valueOf(2)); 
                                 
                                 dialog.hide(); this.deselect();
@@ -326,8 +315,7 @@ Events.on(ClientLoadEvent, cons(e => {
                 })).size(50, 40).tooltip("Xem chi tiết thông số hệ thống");
             },
 
-            // Đã sửa: Sửa cú pháp gọi Java Integer
-            config() { return java.lang.Integer.valueOf(this.getTier()); },
+             config() { return java.lang.Integer.valueOf(this.getTier()); },
 
             shoot(type) {
                 let tier = this.getTier();

@@ -1,9 +1,7 @@
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 
-// -----------------------------------------------------------------------------
-// CUSTOM EFFECTS & MÀU SẮC
-// -----------------------------------------------------------------------------
+ 
 const expandCircleFx = new Effect(25, cons(e => {
     let radius = 25 * e.fin(); 
     Draw.color(e.color);
@@ -92,11 +90,9 @@ Events.on(ContentInitEvent, () => {
             this.overheatTimer = 0;
             this.hasStartedBefore = false;
             
-            // Biến lưu trạng thái giai đoạn sản xuất (0: Graphite, 1: Silicon, 2: Oil, 3: Plastanium)
-            this.productionStage = 0;
+             this.productionStage = 0;
 
-            // Hàng chờ xả vật phẩm
-            this.dumpGraphiteLeft = 0;
+             this.dumpGraphiteLeft = 0;
             this.dumpSiliconLeft = 0;
             this.dumpPlastaniumLeft = 0;
 
@@ -207,8 +203,7 @@ Events.on(ContentInitEvent, () => {
             let hasEnoughCryo = this.liquids.get(Liquids.cryofluid) >= requiredCryoPerTick;
             let overLimit = this.isOverItemLimit();
 
-            // CƠ CHẾ NỔ CẢNH BÁO
-            if (this.hasStartedBefore) {
+             if (this.hasStartedBefore) {
                 if (overLimit || (!hasEnoughCryo && this.efficiency > 0)) {
                     this.overheatTimer += Time.delta;
 
@@ -223,8 +218,7 @@ Events.on(ContentInitEvent, () => {
                 }
             }
 
-            // LOGIC XẢ HÀNG
-            let currentSelection = this.getOutputSelection();
+             let currentSelection = this.getOutputSelection();
             
             if (currentSelection == 0) {
                 if (this.items.get(Items.graphite) > 0) this.dump(Items.graphite);
@@ -261,13 +255,10 @@ Events.on(ContentInitEvent, () => {
 
             if (this.efficiency <= 0) return;
 
-            // ---------------------------------------------------------------------
-            // LOGIC SẢN XUẤT TỰ ĐỘNG XOAY VÒNG 4 GIAI ĐOẠN (TẠO 100 SẢN PHẨM/LẦN)
-            // ---------------------------------------------------------------------
+ 
             this.craftTimer += Time.delta;
 
-            // GIAI ĐOẠN 0: Graphite (Tạo 100 Graphite)
-            if (this.productionStage == 0) {
+             if (this.productionStage == 0) {
                 if (this.items.get(Items.coal) >= 10 && this.items.get(Items.sand) >= 10 && this.items.get(Items.titanium) >= 10) {
                     if (this.craftTimer >= CRAFT_TIME) {
                         this.items.remove(Items.coal, 10);
@@ -277,14 +268,13 @@ Events.on(ContentInitEvent, () => {
                         this.craftTimer = 0;
                         expandCircleFx.at(this.x, this.y, 0, COLOR_GRAPHITE);
                         Effect.shake(2, 5, this.x, this.y);
-                        this.productionStage = 1; // Chuyển sang giai đoạn 1
+                        this.productionStage = 1; 
                     }
                 }
                 return;
             }
 
-            // GIAI ĐOẠN 1: Silicon (Tạo 100 Silicon)
-            if (this.productionStage == 1) {
+             if (this.productionStage == 1) {
                 if (this.items.get(Items.coal) >= 10 && this.items.get(Items.sand) >= 10 && this.items.get(Items.titanium) >= 10) {
                     if (this.craftTimer >= CRAFT_TIME) {
                         this.items.remove(Items.coal, 10);
@@ -294,13 +284,13 @@ Events.on(ContentInitEvent, () => {
                         this.craftTimer = 0;
                         expandCircleFx.at(this.x, this.y, 0, COLOR_SILICON);
                         Effect.shake(2, 5, this.x, this.y);
-                        this.productionStage = 2; // Chuyển sang giai đoạn 2
+                        this.productionStage = 2; 
                     }
                 }
                 return;
             }
 
-            // GIAI ĐOẠN 2: Oil (Tạo 100 Oil)
+ 
             if (this.productionStage == 2) {
                 if (this.items.get(Items.coal) >= 10 && this.items.get(Items.sand) >= 10 && this.items.get(Items.titanium) >= 10) {
                     if (this.craftTimer >= CRAFT_TIME) {
@@ -311,13 +301,13 @@ Events.on(ContentInitEvent, () => {
                         this.craftTimer = 0;
                         expandCircleFx.at(this.x, this.y, 0, COLOR_OIL);
                         Effect.shake(2, 5, this.x, this.y);
-                        this.productionStage = 3; // Chuyển sang giai đoạn 3
+                        this.productionStage = 3;  
                     }
                 }
                 return;
             }
 
-            // GIAI ĐOẠN 3: Plastanium (Tạo 100 Plastanium)
+ 
             if (this.productionStage == 3) {
                 if (this.liquids.get(Liquids.oil) >= 10 && this.items.get(Items.coal) >= 10 && this.items.get(Items.sand) >= 10 && this.items.get(Items.titanium) >= 10) {
                     if (this.craftTimer >= CRAFT_TIME) {
@@ -329,7 +319,7 @@ Events.on(ContentInitEvent, () => {
                         this.craftTimer = 0;
                         expandCircleFx.at(this.x, this.y, 0, COLOR_PLAST);
                         Effect.shake(2, 5, this.x, this.y);
-                        this.productionStage = 0; // Quay trở lại giai đoạn 0
+                        this.productionStage = 0; 
                     }
                 }
             }

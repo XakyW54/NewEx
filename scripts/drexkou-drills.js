@@ -14,16 +14,34 @@ Events.on(ContentInitEvent, () => {
             
             mineSpeed: 40,
             range: 200,
-            cachedTiles: [], // Bộ nhớ tạm chứa danh sách ô quặng trong phạm vi
+            cachedTiles: [],  
 
-            // TỐI ƯU: Quét bản đồ 1 LẦN DUY NHẤT ngay khi đặt máy
+ 
+            getTileDrop(t) {
+                if (t == null) return null;
+                
+ 
+                let drop = t.drop();
+                if (drop != null) return drop;
+
+ 
+                if (t.block() != null) {
+                    let name = t.block().name;
+                    if (name === "graphitic-wall" || name === "ore-wall-graphite" || name === "graphite-wall") {
+                        return Items.graphite;
+                    }
+                }
+
+                return null;
+            },
+
+ 
             placed() {
                 this.super$placed();
                 this.scanAndCacheTiles();
                 this.findTarget();
             },
-
-            // TỐI ƯU: Đọc lại khi load save game
+ 
             read(read, revision) {
                 this.super$read(read, revision);
                 Time.run(10, () => {
@@ -37,7 +55,7 @@ Events.on(ContentInitEvent, () => {
                 this.super$onDestroy();
             },
 
-            // Hàm quét map 1 lần duy nhất để lưu danh sách Tile
+ 
             scanAndCacheTiles() {
                 this.cachedTiles = [];
                 let rangeTiles = Math.ceil(this.range / 8);
@@ -48,7 +66,7 @@ Events.on(ContentInitEvent, () => {
                     for (let y = -rangeTiles; y <= rangeTiles; y++) {
                         let t = Vars.world.tile(tileX + x, tileY + y);
                         if (t != null && this.within(t.worldx(), t.worldy(), this.range)) {
-                            if (t.drop() != null) {
+                            if (this.getTileDrop(t) != null) {
                                 this.cachedTiles.push(t);
                             }
                         }
@@ -75,10 +93,16 @@ Events.on(ContentInitEvent, () => {
 
             isValidTarget(tile) {
                 if (tile == null) return false;
-                if (tile.build != null) return false;
-
-                let drop = tile.drop();
+                
+                let drop = this.getTileDrop(tile);
                 if (drop == null) return false;
+
+ 
+                if (tile.build != null) {
+                    let name = tile.block().name;
+                    let isGraphiteWall = (name === "graphitic-wall" || name === "ore-wall-graphite" || name === "graphite-wall");
+                    if (!isGraphiteWall) return false;
+                }
 
                 if (this.items.get(drop) >= this.block.itemCapacity) {
                     return false;
@@ -96,7 +120,7 @@ Events.on(ContentInitEvent, () => {
                 return true;
             },
 
-            // Tìm target dựa trên danh sách CẠCHED chứ KHÔNG quét lại map
+ 
             findTarget() {
                 if (this.cachedTiles.length === 0) {
                     this.setTarget(null);
@@ -117,8 +141,7 @@ Events.on(ContentInitEvent, () => {
                         isObsFullInCore = true;
                     }
                 }
-
-                // Duyệt qua danh sách đã lưu sẵn
+ 
                 for (let i = 0; i < this.cachedTiles.length; i++) {
                     let t = this.cachedTiles[i];
                     
@@ -154,7 +177,7 @@ Events.on(ContentInitEvent, () => {
 
                         for (let i = 0; i < candidateTiles.length; i++) {
                             let t = candidateTiles[i];
-                            let item = t.drop();
+                            let item = this.getTileDrop(t);
                             
                             if (item != null) {
                                 let amountInCore = core.items.get(item);
@@ -171,14 +194,13 @@ Events.on(ContentInitEvent, () => {
                     this.setTarget(null);
                 }
             },
-
-            // UI chỉ lấy quặng từ danh sách cached sẵn
+ 
             buildConfiguration(table) {
                 table.clearChildren();
 
                 let itemsInArea = new Seq();
                 for (let i = 0; i < this.cachedTiles.length; i++) {
-                    let drop = this.cachedTiles[i].drop();
+                    let drop = this.getTileDrop(this.cachedTiles[i]);
                     if (drop != null && !itemsInArea.contains(drop)) {
                         itemsInArea.add(drop);
                     }
@@ -191,7 +213,7 @@ Events.on(ContentInitEvent, () => {
                     let btn = table.button(new TextureRegionDrawable(item.uiIcon), Styles.clearTogglei, 40, () => {
                         this.selectedItem = (this.selectedItem === item) ? null : item;
                         this.setTarget(null);
-                        this.findTarget(); // Chọn ngay target từ cache khi chọn icon
+                        this.findTarget(); 
                         this.deselect();
                     }).size(44).get();
 
@@ -209,7 +231,7 @@ Events.on(ContentInitEvent, () => {
 
                 if (this.efficiency <= 0) return;
 
-                // Chỉ chọn lại target nếu target cũ hết quặng/đầy kho
+ 
                 if (!this.isValidTarget(this.targetTile)) {
                     this.releaseTarget();
                     this.findTarget();
@@ -222,7 +244,7 @@ Events.on(ContentInitEvent, () => {
                     let targetAngle = Angles.angle(this.x, this.y, tx, ty);
                     this.rotation = Angles.moveToward(this.rotation, targetAngle, 5);
 
-                    let item = this.targetTile.drop();
+                    let item = this.getTileDrop(this.targetTile);
 
                     if (item != null && this.items.get(item) < this.block.itemCapacity) {
                         let hardness = item.hardness > 0 ? item.hardness : 1;
@@ -259,7 +281,7 @@ Events.on(ContentInitEvent, () => {
                     Draw.rect(region, this.x, this.y, this.rotation - 90);
                 }
 
-                let currentItem = this.targetTile != null ? this.targetTile.drop() : null;
+                let currentItem = this.targetTile != null ? this.getTileDrop(this.targetTile) : null;
                 let canMineCurrent = currentItem != null && this.items.get(currentItem) < this.block.itemCapacity;
 
                 if (this.efficiency > 0 && this.targetTile != null && canMineCurrent) {
@@ -323,7 +345,7 @@ Events.on(ContentInitEvent, () => {
     }
 });
 
-// HIỂN THỊ PHẠM VI KHI CẦM KHỐI TRÊN TAY
+ 
 Events.run(Trigger.draw, () => {
     let build = Vars.control.input.block;
     if (build != null && build.name === "newex-drexkou-drills") {

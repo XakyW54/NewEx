@@ -38,7 +38,7 @@ const mk3ExplosionFX = new Effect(30, e => {
 
 function dashCircle(x, y, radius, color){
     Draw.color(color);
-    let segments = 24; // Giảm bớt segments vẽ hình từ 48 -> 24 để đỡ tốn card đồ họa
+    let segments = 24; 
     for(let i = 0; i < segments; i += 2){
         let a1 = i / segments * 360;
         let a2 = (i + 1) / segments * 360;
@@ -66,7 +66,7 @@ const packProv = (func) => new Prov({ get: func });
 const reqMK2 = { titanium: 1200, thorium: 5000 };
 const reqMK3 = { copper: 8000, plastanium: 2900 };
 
-// LOẠI BỎ CHỨC NĂNG TÍNH GIỚI HẠN BLOCK CỦA LYVERVON
+ 
 function createLightningStandard(x1, y1, x2, y2, thickness){
     let dst = Mathf.dst(x1, y1, x2, y2);
     let segs = Math.max(4, Math.floor(dst / 7));
@@ -186,7 +186,7 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
     
     placed(){
         this.super$placed();
-        // Đã gỡ bỏ hàm giới hạn pháo checkLyvervonLimitation
+ 
         this.setTier(this.getTier());
     },
 

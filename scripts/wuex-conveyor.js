@@ -2,7 +2,7 @@ Events.on(ContentInitEvent, () => {
     const wuexConveyor = Vars.content.block("newex-wuex-conveyor-mk1");
 
     if (wuexConveyor != null) {
-        // Effect 1: Hạt tam giác bay từ khối nguồn về khối hiện tại (Xanh lá -> Trắng)
+ 
         const teleportEffect = new Effect(20, e => {
             Draw.color(Pal.heal, Color.white, e.fin());
             let rad = e.rotation * Mathf.degRad;
@@ -12,7 +12,7 @@ Events.on(ContentInitEvent, () => {
             Fill.poly(px, py, 3, 5 * e.fout(), e.rotation);
         });
 
-        // Effect 2: Hạt tam giác bị hút vào tâm khối hiện tại
+ 
         const receiveEffect = new Effect(25, e => {
             Draw.color(Pal.heal, Color.green, e.fin());
             let radius = 14 * e.fout();
@@ -88,7 +88,7 @@ Events.on(ContentInitEvent, () => {
 
                 this.isTeleporting = false;
 
-                // 1. Logic HÚT item từ điểm nguồn
+        
                 let dst = Mathf.dst(this.x, this.y, this.targetX, this.targetY);
                 if (dst > 1 && dst <= this.maxRange) {
                     let sourceTile = Vars.world.tileWorld(this.targetX, this.targetY);
@@ -122,7 +122,7 @@ Events.on(ContentInitEvent, () => {
                     }
                 }
 
-                // 2. Logic XẢ / XUẤT ITEM ra các khối liền kề
+            
                 if (this.items != null && this.items.total() > 0) {
                     this.dump();
                 }
@@ -156,7 +156,7 @@ Events.on(ContentInitEvent, () => {
     }
 });
 
-// HIỂN THỊ VÒNG TRÒN PHẠM VI NẾT ĐỨT XOAY KHI CẦM KHỐI TRÊN TAY
+ 
 Events.run(Trigger.draw, () => {
     let build = Vars.control.input.block;
     if (build != null && build.name === "newex-wuex-conveyor-mk1") {

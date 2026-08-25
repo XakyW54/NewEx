@@ -64,7 +64,7 @@ Events.on(EventType.ContentInitEvent, () => {
             lastRocketTime: 0.0,     
             lastExplosionTime: 0.0,  
             evolution: 0, 
-            lastAppliedEvo: -1, // Biến phụ tránh lặp hàm set thông số ở peekAmmo
+            lastAppliedEvo: -1,  
 
             range(){
                 if(this.evolution == 1) return this.super$range() * 1.5;

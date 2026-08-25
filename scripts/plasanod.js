@@ -20,29 +20,23 @@ if (typeof global !== "undefined" && !global.ceiLastAppliedTurret) {
     global.ceiLastAppliedTurret = {};
 }
 
-// --- HIỆU ỨNG VÒNG TRÒN ZOOM TỪ TRONG RA & MỜ DẦN ---
-const ringExpandFx = new Effect(35, cons(e => {
+ const ringExpandFx = new Effect(35, cons(e => {
     Draw.z(Layer.effect + 0.05);
-    let fin = e.fin();     // 0 -> 1 (Thời gian tăng dần)
-    let fout = e.fout();   // 1 -> 0 (Độ mờ giảm dần)
+    let fin = e.fin();    
+    let fout = e.fout();   
 
-    // Lấy màu truyền vào hoặc mặc định
-    let baseColor = e.color != null ? e.color : Color.valueOf("00ffcc");
+     let baseColor = e.color != null ? e.color : Color.valueOf("00ffcc");
     
-    // Kích thước vòng tròn phóng to dần theo thời gian
-    let maxRadius = (e.data != null ? e.data : 12.0);
+     let maxRadius = (e.data != null ? e.data : 12.0);
     let currentRadius = fin * maxRadius;
     
-    // Nét vẽ mỏng dần khi vòng tròn nở ra
-    let strokeWidth = (1.5 + 1.5 * fout) * fout;
+     let strokeWidth = (1.5 + 1.5 * fout) * fout;
 
-    // Vẽ vòng tròn chính
-    Draw.color(baseColor, Color.white, fin * 0.3);
+     Draw.color(baseColor, Color.white, fin * 0.3);
     Lines.stroke(strokeWidth);
     Lines.circle(e.x, e.y, currentRadius);
 
-    // Điểm sáng nhỏ tỏa ra ở tâm
-    Draw.color(Color.white, baseColor, fin);
+     Draw.color(Color.white, baseColor, fin);
     Fill.circle(e.x, e.y, 2.5 * fout);
 
     Draw.reset();
@@ -58,8 +52,7 @@ function distToSegment(x, y, x1, y1, x2, y2) {
     return Mathf.dst(x, y, projX, projY);
 }
 
-// --- ĐẠN VẬT LÝ DÀI (GÁN STATUS CEI) ---
-const physicalBullet = extend(BasicBulletType, {
+ const physicalBullet = extend(BasicBulletType, {
     speed: 9,
     damage: 150,
     pierce: true,
@@ -78,8 +71,7 @@ const physicalBullet = extend(BasicBulletType, {
     despawnEffect: Fx.select
 });
 
-// --- ĐẠN LASER CHÍNH ---
-function createPlasanodLaser(baseDmg, hitHex, beamLen) {
+ function createPlasanodLaser(baseDmg, hitHex, beamLen) {
     return extend(PointLaserBulletType, {
         damage: baseDmg,
         beamLength: beamLen,
@@ -150,7 +142,7 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
         this.aimTimer = 0;
         this.physShootTimer = 0;
         this.ceiStackTimer = 0;
-        this.ringFxTimer = 0; // Bộ đếm thời gian riêng cho vòng tròn (0.7s)
+        this.ringFxTimer = 0; 
         this.lastRotation = 0;
         return this;
     },
@@ -211,8 +203,7 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
         table.clear(); 
         table.row();
 
-        // ==================== NÚT 1: NÚT NÂNG CẤP ^ ====================
-        table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
+         table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
             let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Plasanod", {});
             
             let reqCell = dialog.cont.label(packProv(() => {
@@ -251,8 +242,7 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
 
             let branchesTable = new Table();
 
-            // --- KHU VỰC PHÚC LỢI ĐẶC BIỆT ---
-            let spBox = new Table(); 
+             let spBox = new Table(); 
             spBox.background(Styles.black6); 
             spBox.margin(12);
             spBox.add("[gold]★ PHÚC LỢI NÂNG CẤP ĐẶC BIỆT (NGẪU NHIÊN) ★[]").row();
@@ -336,8 +326,7 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
             branchesTable.row();
             branchesTable.add().height(12).row();
 
-            // --- KHU VỰC CHỌN NHÁNH NÂNG CẤP (MK2 / MK2B) ---
-            if (tier == 0) {
+             if (tier == 0) {
                 let b1 = new Table(); 
                 b1.background(Styles.black6); 
                 b1.margin(12);
@@ -418,8 +407,7 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
             dialog.show();
         })).size(50, 40).tooltip("Trung tâm nâng cấp pháo Plasanod");
 
-        // ==================== NÚT 2: NÚT THÔNG TIN i ====================
-        table.button(Icon.info, Styles.cleari, 40, packRun(() => {
+         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
             let title = " Thông số pháo Plasanod ";
             let descStr = "";
             let currentTier = this.getTier();
@@ -505,21 +493,18 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
                 this.ceiStackTimer += Time.delta;
                 this.ringFxTimer += Time.delta;
 
-                // ============================================================
-                // CƠ CHẾ VÒNG TRÒN VFX: Đúng mỗi 0.7s (42 ticks) tạo 1 lần
-                // ============================================================
+ 
                 if (this.ringFxTimer >= 42) {
                     let off1X = bx + Angles.trnsx(rot + 90, 6);
                     let off1Y = by + Angles.trnsy(rot + 90, 6);
                     let off2X = bx + Angles.trnsx(rot - 90, 6);
                     let off2Y = by + Angles.trnsy(rot - 90, 6);
 
-                    // Kích thước bán kính tối đa ngẫu nhiên từ 8 đến 20 pixel
+ 
                     let randRadius1 = Mathf.random(8, 20);
                     let randRadius2 = Mathf.random(8, 20);
 
-                    // Phát VFX tại 2 họng súng với kích thước ngẫu nhiên truyền vào
-                    ringExpandFx.at(off1X, off1Y, rot, Color.valueOf("00ffcc"), randRadius1);
+                     ringExpandFx.at(off1X, off1Y, rot, Color.valueOf("00ffcc"), randRadius1);
                     ringExpandFx.at(off2X, off2Y, rot, Color.valueOf("ffcc66"), randRadius2);
 
                     this.ringFxTimer = 0;
@@ -642,14 +627,12 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
                     let e2X = off2X + Angles.trnsx(rot, len);
                     let e2Y = off2Y + Angles.trnsy(rot, len);
 
-                    // Vẽ Tia Laser 1
-                    Draw.color(Color.valueOf("00ffcc"), Color.white, 0.8 + Mathf.absin(Time.time, 1, 0.2));
+                     Draw.color(Color.valueOf("00ffcc"), Color.white, 0.8 + Mathf.absin(Time.time, 1, 0.2));
                     Lines.stroke(2.5 + Mathf.absin(Time.time, 2, 1.0));
                     Lines.line(off1X, off1Y, e1X, e1Y);
                     Fill.circle(e1X, e1Y, 3 + Mathf.absin(Time.time, 2, 1.5));
 
-                    // Vẽ Tia Laser 2
-                    Draw.color(Color.valueOf("ffcc66"), Color.white, 0.8 + Mathf.absin(Time.time, 1, 0.2));
+                     Draw.color(Color.valueOf("ffcc66"), Color.white, 0.8 + Mathf.absin(Time.time, 1, 0.2));
                     Lines.stroke(2.5 + Mathf.absin(Time.time, 2, 1.0));
                     Lines.line(off2X, off2Y, e2X, e2Y);
                     Fill.circle(e2X, e2Y, 3 + Mathf.absin(Time.time, 2, 1.5));

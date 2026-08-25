@@ -3,9 +3,7 @@ const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
-// ==============================================================================
-// KHAI BÁO ÂM THANH
-// ==============================================================================
+ 
 const chargeSound = Vars.tree.loadSound("plasma-charge");
 const shootSound = Vars.tree.loadSound("plasma-shot-3");
 
@@ -336,7 +334,7 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                 if (this.reloadCounter > 0) this.reloadCounter = 0; 
                 this.chargeTimer += Time.delta * this.efficiency;
 
-                // Âm thanh nạp sạc
+ 
                 this.chargeSoundTimer += Time.delta;
                 if (this.chargeSoundTimer >= 30 && chargeSound != null) {
                     this.chargeSoundTimer = 0;
@@ -383,7 +381,7 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
         let tierColor = (tier == 1) ? Color.valueOf("#00ffff") : ((tier == 2) ? Color.valueOf("#33ddff") : Color.valueOf("#e5ff00"));
         blixalumMuzzleDistort.at(spawnX, spawnY, this.rotation, tierColor);
 
-        // --- PHÁT ÂM THANH BẮN CỐ ĐỊNH (PLASMA-SHOT-3) ---
+ 
         if (shootSound != null) {
             shootSound.at(this.x, this.y, Mathf.random(0.9, 1.1));
         }

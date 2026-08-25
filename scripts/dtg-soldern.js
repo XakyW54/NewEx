@@ -14,14 +14,10 @@ const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
-// ==============================================================================
-// KHAI BÁO ÂM THANH (ĐÃ SỬA LỖI ĐỌC SOUND)
-// ==============================================================================
+ 
 const shootSoundAetherod = Vars.tree.loadSound("aetherod1"); 
 
-// ==============================================================================
-// HIT EFFECT HÌNH LỤC GIÁC (THU NHỎ 4 LẦN, DÙNG POLY 6 CẠNH)
-// ==============================================================================
+ 
 const createDtgHitEffect = (life, tier, damage) => new Effect(life, e => {
     let baseSize = 2 + damage * 0.03; 
     let progress = e.fin(); 
@@ -67,7 +63,7 @@ const dtgHitEffectMk2b = createDtgHitEffect(26, 2, 122);
 const dtgSprayHitEffect = createDtgHitEffect(14, 0, 21);
 const dtgSprayHitEffectMk2 = createDtgHitEffect(14, 1, 30);
 const dtgSprayHitEffectMk2b = createDtgHitEffect(14, 2, 23);
-// ==============================================================================
+ 
 
 const reqMK2 = {
     titanium: 4000,
@@ -241,7 +237,7 @@ dtgSoldernTurret.size = 3;
 dtgSoldernTurret.reload = 40; 
 dtgSoldernTurret.configurable = true;
 dtgSoldernTurret.category = Category.turret;
-dtgSoldernTurret.shootSound = shootSoundAetherod; // Gán âm thanh bắn mặc định
+dtgSoldernTurret.shootSound = shootSoundAetherod; 
 dtgSoldernTurret.ammo(Items.silicon, dtgSoldernNormalBullet); 
 
 dtgSoldernTurret.config(java.lang.Integer, packCons2((tile, value) => {
@@ -516,7 +512,7 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                     this.shotgunMagTimer = 0;
                     this.shotgunBarrelRecoil = 1.0;
 
-                    // Phát âm thanh khi khai hỏa shotgun cận chiến
+ 
                     if(shootSoundAetherod) shootSoundAetherod.at(this.x, this.y, Mathf.random(0.9, 1.1));
 
                     if(tier == 2) {
@@ -631,7 +627,7 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
             activeNormalBullet.create(this, this.team, muzzleX, muzzleY, this.rotation);
         }
         
-        // Phát âm thanh khi khai hỏa phát bắn tầm xa
+ 
         if(shootSoundAetherod) shootSoundAetherod.at(this.x, this.y, Mathf.random(0.9, 1.1));
 
         Fx.shootBig.at(muzzleX, muzzleY, this.rotation);

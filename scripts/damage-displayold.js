@@ -1,14 +1,11 @@
-// ==========================================
-// Damage Display Mod for Mindustry
-// Direct Popup Display (Floating Damage)
-// ==========================================
+ 
 
 const damagePopups = new Seq();
 const tempColor = new Color();
 const entityHpCache = new ObjectMap();
 
 Events.on(ClientLoadEvent, () => {
-    // Chỉ đăng ký nút Damage Nảy Bật
+ 
     Vars.ui.settings.game.checkPref("show-damage-popup", true);
 });
 
@@ -31,7 +28,7 @@ function isDisplayEnabled() {
     let isDamagePopupOn = Core.settings.getBool("show-damage-popup", true);
     let isEatsukiOn = Core.settings.getBool("show-hp-popup-eatsuki-tt", true);
 
-    // Tự tắt nếu nút Eatsuki TT đang BẬT
+ 
     return isDamagePopupOn && !isEatsukiOn && !isZoomedTooFar();
 }
 

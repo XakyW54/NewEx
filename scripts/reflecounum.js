@@ -1,22 +1,18 @@
-// ==================== BỌC HÀM AN TOÀN RHINO JAVA ====================
-const packRun = (fn) => new java.lang.Runnable({ run: fn });
+ const packRun = (fn) => new java.lang.Runnable({ run: fn });
 const packProv = (fn) => new Packages.arc.func.Prov({ get: fn });
 const packCons2 = (fn) => new Cons2({ get: fn });
 const packBoolf = (fn) => new Packages.arc.func.Boolf({ get: fn });
 const packFloatp = (fn) => new Packages.arc.func.Floatp({ get: fn });
 const packFunc = (fn) => new Packages.arc.func.Func({ get: fn });
 
-// Yêu cầu tài nguyên nâng cấp
-const reqMK2 = { titanium: 400, silicon: 300, thorium: 200 };
+ const reqMK2 = { titanium: 400, silicon: 300, thorium: 200 };
 const reqMK2B = { titanium: 600, silicon: 500, plastanium: 350, surgeAlloy: 150 };
 const reqSpecial = { copper: 4000, lead: 4000, silicon: 4000 };
 
-// Màu sắc chủ đạo Reflector
-const reflectorColor = Color.valueOf("#d000ff");
+ const reflectorColor = Color.valueOf("#d000ff");
 const reflectorGlow = Color.valueOf("#00f0ff");
 
-// ==================== KHAI BÁO BULLET TYPE CỐ ĐỊNH ====================
-const perk4Bullet = extend(BasicBulletType, {
+ const perk4Bullet = extend(BasicBulletType, {
     speed: 8,
     damage: 30,
     lifetime: 180,
@@ -42,8 +38,7 @@ const perk6Bullet = extend(BasicBulletType, {
     backColor: Color.white
 });
 
-// Custom Effects
-const reflectEffect = new Effect(15, e => {
+ const reflectEffect = new Effect(15, e => {
     Draw.color(reflectorGlow, reflectorColor, e.fout());
     Lines.stroke(e.fout() * 2.5);
     Lines.poly(e.x, e.y, 6, e.fin() * 12);
@@ -56,8 +51,7 @@ const shockwaveFx = new Effect(30, e => {
     Draw.reset();
 });
 
-// Khai báo pháo Reflecounum
-const reflecounum = extend(Turret, "reflecounum", {
+ const reflecounum = extend(Turret, "reflecounum", {
     size: 3,
     health: 2400,
     hasPower: true,
@@ -70,8 +64,7 @@ const reflecounum = extend(Turret, "reflecounum", {
     }
 });
 
-// ==================== KHAI BÁO CẤU HÌNH & XỬ LÝ BUILD ====================
-reflecounum.config(java.lang.Integer, packCons2((tile, value) => {
+ reflecounum.config(java.lang.Integer, packCons2((tile, value) => {
     if (tile != null) {
         let val = Number(value);
         if (val >= 10) {
@@ -106,8 +99,7 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
         this._shieldHp = this._maxShieldHp;
     },
 
-    // --- CÁC PHƯƠNG THỨC TRUY XUẤT AN TOÀN CHO UI BAR ---
-    getMaxShieldHp() {
+     getMaxShieldHp() {
         if (this._maxShieldHp === undefined || isNaN(this._maxShieldHp) || this._maxShieldHp <= 0) {
             this.updateMaxShield();
         }
@@ -235,8 +227,7 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
         let perk = this.getPerkTier();
         let currentRadius = this.getShieldRadius();
 
-        // Phúc lợi 1
-        if (perk === 1) {
+         if (perk === 1) {
             this._perk1Timer += Time.delta;
             if (this._perk1Timer >= 30) {
                 this._perk1Timer = 0;
@@ -249,8 +240,7 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
             }
         }
 
-        // Phúc lợi 2
-        if (perk === 2) {
+         if (perk === 2) {
             this._perk2Timer += Time.delta;
             if (this._perk2Timer >= 60) {
                 this._perk2Timer = 0;
@@ -305,8 +295,7 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
             }
         }
 
-        // Phúc lợi 5
-        if (perk === 5) {
+         if (perk === 5) {
             this._perk5Timer += Time.delta;
             if (this._perk5Timer >= 300) {
                 this._perk5Timer = 0;
@@ -326,8 +315,7 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
             }
         }
 
-        // Quét đạn
-        if (!this.isShieldBroken() && Groups.bullet != null && Groups.bullet.size() > 0) {
+         if (!this.isShieldBroken() && Groups.bullet != null && Groups.bullet.size() > 0) {
             try {
                 Groups.bullet.intersect(this.x - currentRadius, this.y - currentRadius, currentRadius * 2, currentRadius * 2, cons(b => {
                     if (this.isShieldBroken()) return;
@@ -343,8 +331,7 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
 
                         if (this.isShieldBroken()) return;
 
-                        // Phúc lợi 3
-                        if (perk === 3 && (this._absorbedDamage || 0) >= 1000) {
+                         if (perk === 3 && (this._absorbedDamage || 0) >= 1000) {
                             shockwaveFx.at(this.x, this.y);
                             Units.nearbyEnemies(this.team, this.x, this.y, 200, cons(enemy => {
                                 if (enemy != null && enemy.isValid()) enemy.damage(100);
@@ -357,8 +344,7 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
                             }));
                         }
 
-                        // Phúc lợi 6
-                        if (perk === 6) {
+                         if (perk === 6) {
                             this._perk6Absorbed = (this._perk6Absorbed || 0) + absorbed;
                             if (this._perk6Absorbed >= 100 && this._orbitingBullets.length < 8) {
                                 this._orbitingBullets.push(true);
@@ -380,13 +366,11 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
                             }
                         }
 
-                        // Tải chu kỳ tích sát thương (chỉ dùng cho skill, KHÔNG hồi khiên)
-                        if ((this._absorbedDamage || 0) >= 1000) {
+                         if ((this._absorbedDamage || 0) >= 1000) {
                             this._absorbedDamage -= 1000;
                         }
 
-                        // Xử lý phản đạn
-                        if (Mathf.chance(this.getReflectingChance())) {
+                         if (Mathf.chance(this.getReflectingChance())) {
                             let oldX = b.x;
                             let oldY = b.y;
                             let oldRot = b.rotation();
@@ -411,13 +395,11 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
                     }
                 }));
             } catch (err) {
-                // Ignore
-            }
+             }
         }
     },
 
-    // ==================== VẼ KHIÊN REFLECTOR ====================
-    draw() {
+     draw() {
         this.super$draw();
 
         let currentRadius = this.getShieldRadius();
@@ -715,11 +697,9 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
     }
 });
 
-// ==================== CẤU HÌNH BAR HIỂN THỊ ĐỘ BỀN KHIÊN ====================
-reflecounum.addBar("shield", packFunc(e => {
+ reflecounum.addBar("shield", packFunc(e => {
     return new Bar(
-        // 1. Text hiển thị số HP
-        packProv(() => {
+         packProv(() => {
             if (!e) return "Khiên: 0 / 0";
             if (typeof e.isShieldBroken === "function" && e.isShieldBroken()) return "Khiên: [ĐÃ VỠ]";
             
@@ -728,10 +708,8 @@ reflecounum.addBar("shield", packFunc(e => {
             
             return "Khiên: " + cur + " / " + max;
         }),
-        // 2. Màu sắc bar
-        packProv(() => (e && typeof e.isShieldBroken === "function" && e.isShieldBroken()) ? Color.gray : reflectorColor),
-        // 3. Tiến trình thanh lấp đầy (0.0 -> 1.0)
-        packFloatp(() => {
+         packProv(() => (e && typeof e.isShieldBroken === "function" && e.isShieldBroken()) ? Color.gray : reflectorColor),
+         packFloatp(() => {
             if (!e || (typeof e.isShieldBroken === "function" && e.isShieldBroken())) return 0.0;
             let cur = (typeof e.getShieldHp === "function") ? e.getShieldHp() : 0;
             let max = (typeof e.getMaxShieldHp === "function") ? e.getMaxShieldHp() : 5000;
@@ -742,8 +720,7 @@ reflecounum.addBar("shield", packFunc(e => {
     );
 }));
 
-// Event Phúc lợi 5
-Events.on(UnitDamageEvent, cons(e => {
+ Events.on(UnitDamageEvent, cons(e => {
     let unit = e.unit;
     if (unit == null || !unit.isValid()) return;
 

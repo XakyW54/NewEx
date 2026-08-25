@@ -2,7 +2,7 @@ const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
-// Khởi tạo các biến global để lưu dữ liệu an toàn
+ 
 if (typeof global !== "undefined") {
     if (!global.bemodStacks) global.bemodStacks = {};
     if (!global.cornerBuffedTurrets) global.cornerBuffedTurrets = {};
@@ -16,8 +16,7 @@ function getBemodStatus() {
 const reqMK2 = { titanium: 500, silicon: 300 };
 const reqMK2B = { titanium: 800, silicon: 400, plastanium: 200 }; 
 const reqSpecial = { copper: 4000, lead: 4000, silicon: 4000 };
-
-// --- EFFECT VÒNG TRÒN VIỀN ĐẬM & KÍCH THƯỚC NGẪU NHIÊN CHẠY THEO ĐUÔI ĐẠN ---
+ 
 const bulletCircleTrailFx = new Effect(12, cons(e => {
     Draw.z(Layer.bullet - 0.01);
 
@@ -38,7 +37,7 @@ const bulletCircleTrailFx = new Effect(12, cons(e => {
     Draw.reset();
 }));
 
-// --- EFFECT HÌNH TRÒN ZOOM TO/NHỎ THEO 2/3 KÍCH THƯỚC PHÁO ĐƯỢC BUFF ---
+ 
 const buffTurretPulseFx = new Effect(40, cons(e => {
     Draw.z(Layer.effect + 0.05);
 
@@ -62,8 +61,7 @@ const buffTurretPulseFx = new Effect(40, cons(e => {
 
     Draw.reset();
 }));
-
-// --- EFFECT TIA ĐIỆN LI TI "HEL" NỐI TỪ INDENITER SANG PHÁO ĐƯỢC BUFF ---
+ 
 const hel = new Effect(35, cons(e => {
     Draw.z(Layer.effect + 0.01);
 
@@ -106,8 +104,7 @@ const hel = new Effect(35, cons(e => {
 
     Draw.reset();
 }));
-
-// --- HÀM TẠO EFFECT NỔ TÙY CHỈNH THEO BÁN KÍNH ---
+ 
 function createExplosionEffect(radius, colorHex) {
     let col = colorHex ? Color.valueOf(colorHex) : Color.valueOf("#ff3300");
     return new Effect(50, cons(e => {
@@ -154,8 +151,7 @@ const fxPerk4 = createExplosionEffect(75);
 const fxPerk5 = createExplosionEffect(150, "#00ffcc");
 const fxPerk6 = createExplosionEffect(200, "#ff0055");
 const fxCornerTurret = createExplosionEffect(50, "#ffaa00");
-
-// --- ĐẠN SHOTGUN CHO PHÚC LỢI 5 ---
+ 
 const perk5ShotgunBullet = extend(BasicBulletType, {
     speed: 11,
     damage: 18,
@@ -170,8 +166,7 @@ const perk5ShotgunBullet = extend(BasicBulletType, {
     hitEffect: Fx.hitBulletSmall,
     despawnEffect: Fx.hitBulletSmall
 });
-
-// --- HÀM KÍCH NỔ BEMOD ---
+ 
 function triggerBemodExplosion(building, targetUnit, perkTier, isMK2, isSubExplosion, isCornerTurret) {
     if (targetUnit == null || !targetUnit.isValid()) return;
 
@@ -314,8 +309,7 @@ function triggerBemodExplosion(building, targetUnit, perkTier, isMK2, isSubExplo
         }
     }
 }
-
-// --- HÀM TẠO LOẠI ĐẠN HOOK HIT ENTITY ---
+ 
 function createCustomBulletType(baseProperties) {
     return extend(BasicBulletType, Object.assign({}, baseProperties, {
         hitEntity(b, other, initialHealth) {
@@ -326,8 +320,7 @@ function createCustomBulletType(baseProperties) {
         }
     }));
 }
-
-// --- ĐẠN INDENITER MK1, MK2, MK2B ---
+ 
 const indeniterBullet = createCustomBulletType({
     speed: 8, damage: 9, lifetime: 35, width: 16, height: 16, 
     frontColor: Color.white, backColor: Color.valueOf("#ff6b35"),
@@ -352,8 +345,7 @@ const indeniterMK2BBullet = createCustomBulletType({
     trailEffect: bulletCircleTrailFx,
     trailInterval: 2
 });
-
-// --- THÁP PHÁO INDENITER ---
+ 
 const indeniter = extend(ItemTurret, "indeniter", {
     configurable: true
 });
@@ -379,7 +371,7 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
         this.customRecoil = 0.0;
         this.nonRecoil = 0.0;
         this.shootingVisual = 0.0;
-        this.energyCharge = 0.0; // Lưu tiến trình nạp/tạo quả cầu năng lượng
+        this.energyCharge = 0.0;  
         this.isBursting = false;
         this.subBulletTimer = 0.0; 
         return this;
@@ -531,8 +523,7 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
             this.shootingVisual = Mathf.approach(this.shootingVisual, 0.0, visualSpeed);
         }
 
-        // Cập nhật trạng thái năng lượng cho quả cầu (tự động nở ra khi bắn, thu nhỏ khi ngừng bắn)
-        let activeShooting = (this.isShooting || this.isBursting) && this.hasAmmo();
+            let activeShooting = (this.isShooting || this.isBursting) && this.hasAmmo();
         let chargeSpeed = activeShooting ? 0.1 * Time.delta : 0.08 * Time.delta;
         this.energyCharge = Mathf.approach(this.energyCharge, activeShooting ? 1.0 : 0.0, chargeSpeed);
 
@@ -601,12 +592,10 @@ buildConfiguration(table) {
     table.clear(); 
     table.row();
 
-    // ==================== NÚT 1: MỞ TRUNG TÂM NÂNG CẤP & QUAY PHÚC LỢI ====================
-    table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
+      table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
         let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Indeniter", {});
         
-        // --- CẬP NHẬT TÀI NGUYÊN KHO LÕI TỰ ĐỘNG ---
-        let reqCell = dialog.cont.label(packProv(() => {
+           let reqCell = dialog.cont.label(packProv(() => {
             let core = this.team.core();
             if (core == null) return "[red]Không tìm thấy Lõi Đội![]";
             let cCop = core.items.get(Items.copper);
@@ -638,8 +627,7 @@ buildConfiguration(table) {
         dialog.cont.add().height(10).row();
 
         let branchesTable = new Table();
-
-        // --- KHU VỰC PHÚC LỢI ĐẶC BIỆT (GACHA) ---
+ 
         let spBox = new Table(); 
         spBox.background(Styles.black6); 
         spBox.margin(12);
@@ -666,8 +654,7 @@ buildConfiguration(table) {
                     core.items.remove(Items.copper, 4000); 
                     core.items.remove(Items.lead, 4000); 
                     core.items.remove(Items.silicon, 4000);
-
-                    // Tỷ lệ Quay Gacha
+ 
                     let rand = Mathf.random(100);
                     let resultPerk = 3; 
 
@@ -724,8 +711,7 @@ buildConfiguration(table) {
         branchesTable.add(spBox).width(360); 
         branchesTable.row();
         branchesTable.add().height(12).row();
-
-        // --- KHU VỰC CHỌN NHÁNH NÂNG CẤP (MK2 / MK2B) ---
+ 
         if (tier == 0) {
             let b1 = new Table(); 
             b1.background(Styles.black6); 
@@ -809,7 +795,7 @@ buildConfiguration(table) {
         dialog.show();
     })).size(50, 40).tooltip("Nâng cấp hệ thống Indeniter");
 
-    // ==================== NÚT 2: BẢNG BÁO CÁO THÔNG SỐ HIỆN TẠI ====================
+ 
     table.button(Icon.info, Styles.cleari, 40, packRun(() => {
         let title = " Thông số pháo Indeniter ";
         let descStr = "";
@@ -843,7 +829,7 @@ buildConfiguration(table) {
         dialog.show();
     })).size(50, 40).tooltip("Xem thông số chi tiết hệ thống");
 },
-//21436289539578953171946439561426014274
+ 
 
 
 
@@ -853,7 +839,7 @@ buildConfiguration(table) {
         let modName = this.block.name.split("-")[0]; 
         let baseRegion = Core.atlas.find(this.block.basePrefix + "" + this.block.size);
         
-        // Vẽ chân đế
+ 
         if(baseRegion.found()){
             Draw.rect(baseRegion, this.x, this.y);
         } else {
@@ -864,13 +850,13 @@ buildConfiguration(table) {
         let cos = Math.cos(rad);
         let sin = Math.sin(rad);
 
-        // Lưu Layer gốc của Turret (mặc định là Layer.turret)
+ 
         let baseZ = Layer.turret;
 
-        // ==================== 1. LỚP THẤP HƠN (Z - 0.01) ====================
+ 
         Draw.z(baseZ - 0.01);
 
-        // --- CẢ 2 CÁNH DỊCH CHUYỂN 15PX SANG 2 BÊN ---
+ 
         let wingSpread = this.shootingVisual * 15.0;
 
         let wing1Region = Core.atlas.find(modName + "-indeniter-wing1");
@@ -887,7 +873,7 @@ buildConfiguration(table) {
             Draw.rect(wing2Region, w2x, w2y, this.rotation);
         }
 
-        // --- PHẦN "NON" ---
+ 
         let maxNonRecoilDistance = -8.0;
         let nonRecoilOffset = this.nonRecoil * maxNonRecoilDistance; 
         let nonBaseBack = -8.8; 
@@ -901,7 +887,7 @@ buildConfiguration(table) {
             Draw.rect(nonRegion, nonX, nonY, this.rotation);
         }
 
-        // ==================== 2. LỚP ĐẦU PHÁO & THÂN CHÍNH ====================
+   
         Draw.z(baseZ);
 
         let barrel1Region = Core.atlas.find(modName + "-indeniter-barrel1");
@@ -918,35 +904,30 @@ buildConfiguration(table) {
             Draw.rect(b1Region, b1ax, b1ay, this.rotation);
         }
 
-        // ==================== 3. HIỆU ỨNG QUẢ CẦU NĂNG LƯỢNG NÒNG PHÁO ====================
-        if (this.energyCharge > 0.001) {
+            if (this.energyCharge > 0.001) {
             Draw.z(Layer.turret + 0.01);
 
-            // Lấy màu khói/đuôi đạn của đạn hiện tại
+ 
             let bulletType = this.peekAmmo();
             let energyColor = bulletType.backColor ? bulletType.backColor : Color.valueOf("#ffcc00");
 
-            // Tọa độ đỉnh nòng pháo (nhích lên phía trước nòng)
-            let barrelOffset = 14.0 + (this.customRecoil * -5.0); 
+                    let barrelOffset = 14.0 + (this.customRecoil * -5.0); 
             let ballX = this.x + barrelOffset * cos;
             let ballY = this.y + barrelOffset * sin;
 
-            // Kích thước quả cầu biến thiên linh hoạt tạo hiệu ứng năng lượng đang hoạt động
-            let pulse = Mathf.absin(Time.time, 3.0, 1.5);
+                    let pulse = Mathf.absin(Time.time, 3.0, 1.5);
             let baseRadius = (5.0 + pulse) * this.energyCharge;
 
-            // Vẽ quầng sáng năng lượng xung quanh
-            Draw.color(energyColor);
+                     Draw.color(energyColor);
             Draw.alpha(0.35 * this.energyCharge);
             Fill.circle(ballX, ballY, baseRadius * 1.8);
 
-            // Vẽ vòng viền năng lượng bên ngoài
+ 
             Draw.color(energyColor);
             Draw.alpha(0.8 * this.energyCharge);
             Lines.stroke(1.5 * this.energyCharge);
             Lines.circle(ballX, ballY, baseRadius * 1.3);
-
-            // Vẽ lõi cầu năng lượng trắng rực
+ 
             Draw.color(Color.white);
             Draw.alpha(0.9 * this.energyCharge);
             Fill.circle(ballX, ballY, baseRadius * 0.7);
@@ -976,8 +957,7 @@ buildConfiguration(table) {
         this.subBulletTimer = 0.0;
     }
 });
-
-// ==================== EVENT XỬ LÝ SÁT THƯƠNG PHÁO BUFF (PHÚC LỢI 5) ====================
+ 
 Events.on(UnitDamageEvent, cons(e => {
     let unit = e.unit;
     if (unit == null || !unit.isValid()) return;

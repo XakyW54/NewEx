@@ -2,36 +2,29 @@ Events.on(ContentInitEvent, () => {
     const xeuwGate = Vars.content.block("newex-xeuw-conveyor-mk1");
 
     if (xeuwGate != null) {
-        // Effect 1: Hạt tam giác 5px bay từ Cổng gửi -> Cổng nhận
-        const teleportEffect = new Effect(20, e => {
+         const teleportEffect = new Effect(20, e => {
             Draw.color(Color.sky, Color.white, e.fin());
             
-            // Lấy góc quay truyền từ rotation
-            let rad = e.rotation * Mathf.degRad;
+             let rad = e.rotation * Mathf.degRad;
             let speed = 25 * e.fin();
             
-            // Tính vị trí di chuyển chuẩn xác
-            let px = e.x + Math.cos(rad) * speed;
+             let px = e.x + Math.cos(rad) * speed;
             let py = e.y + Math.sin(rad) * speed;
             
-            // Vẽ tam giác 3 cạnh, bán kính 5px thu nhỏ dần
-            Fill.poly(px, py, 3, 5 * e.fout(), e.rotation);
+             Fill.poly(px, py, 3, 5 * e.fout(), e.rotation);
         });
 
-        // Effect 2: Hạt tam giác bị hút vào Cổng nhận
-        const receiveEffect = new Effect(25, e => {
+         const receiveEffect = new Effect(25, e => {
             Draw.color(Color.sky, Pal.heal, e.fin());
             
-            // Hạt xuất phát từ ngoài thu nhỏ dần vào tâm
-            let radius = 14 * e.fout();
+             let radius = 14 * e.fout();
             let angle = e.rotation + e.fin() * 180;
             let rad = angle * Mathf.degRad;
             
             let rx = e.x + Math.cos(rad) * radius;
             let ry = e.y + Math.sin(rad) * radius;
 
-            // Vẽ tam giác nhỏ bị hút vào tâm
-            Fill.poly(rx, ry, 3, 4 * e.fout(), angle);
+             Fill.poly(rx, ry, 3, 4 * e.fout(), angle);
         });
 
         xeuwGate.buildType = () => extend(StorageBlock.StorageBuild, xeuwGate, {
@@ -39,7 +32,7 @@ Events.on(ContentInitEvent, () => {
             targetY: 0,
             isTeleporting: false,
             selectingTarget: false,
-            maxRange: 380, // Phạm vi tối đa 380px (~47.5 ô)
+            maxRange: 380, 
 
             created() {
                 this.super$created();
@@ -62,8 +55,7 @@ Events.on(ContentInitEvent, () => {
                     let destX = pos.x * Vars.tilesize;
                     let destY = pos.y * Vars.tilesize;
 
-                    // Kiểm tra phạm vi 380px
-                    if (Mathf.dst(this.x, this.y, destX, destY) <= this.maxRange) {
+                     if (Mathf.dst(this.x, this.y, destX, destY) <= this.maxRange) {
                         this.targetX = destX;
                         this.targetY = destY;
                     } else {
@@ -87,8 +79,7 @@ Events.on(ContentInitEvent, () => {
             updateTile() {
                 this.super$updateTile();
 
-                // Lắng nghe chọn điểm
-                if (this.selectingTarget) {
+                 if (this.selectingTarget) {
                     if (Core.input.keyTap(KeyCode.mouseLeft)) {
                         let worldVec = Core.camera.unproject(Core.input.mouse());
                         let tile = Vars.world.tileWorld(worldVec.x, worldVec.y);
@@ -102,8 +93,7 @@ Events.on(ContentInitEvent, () => {
 
                 this.isTeleporting = false;
 
-                // Kiểm tra điều kiện dịch chuyển đồ trong tầm 380px
-                let dst = Mathf.dst(this.x, this.y, this.targetX, this.targetY);
+                 let dst = Mathf.dst(this.x, this.y, this.targetX, this.targetY);
                 if (this.items != null && this.items.total() > 0 && dst > 1 && dst <= this.maxRange) {
                     let destTile = Vars.world.tileWorld(this.targetX, this.targetY);
                     
@@ -121,8 +111,7 @@ Events.on(ContentInitEvent, () => {
 
                                 let angleToTarget = Angles.angle(this.x, this.y, targetBuild.x, targetBuild.y);
 
-                                // 1. Bắn các hạt tam giác 5px bay về phía cổng nhận (dùng rotation để truyền góc)
-                                if (Mathf.chance(0.4)) {
+                                 if (Mathf.chance(0.4)) {
                                     teleportEffect.at(
                                         this.x + Mathf.range(3), 
                                         this.y + Mathf.range(3), 
@@ -130,8 +119,7 @@ Events.on(ContentInitEvent, () => {
                                     );
                                 }
 
-                                // 2. Hiệu ứng hạt tam giác bị hút vào ở cổng nhận
-                                if (Mathf.chance(0.4)) {
+                                 if (Mathf.chance(0.4)) {
                                     receiveEffect.at(
                                         targetBuild.x, 
                                         targetBuild.y, 
@@ -147,8 +135,7 @@ Events.on(ContentInitEvent, () => {
             draw() {
                 Draw.rect(xeuwGate.region, this.x, this.y);
 
-                // Dải sáng hạt tam giác xoay ở tâm khi đang hoạt động
-                if (this.isTeleporting) {
+                 if (this.isTeleporting) {
                     Draw.color(Color.sky);
                     Draw.alpha(0.6 + Math.sin(Time.time / 4) * 0.3);
                     Lines.stroke(1.5);
@@ -160,13 +147,11 @@ Events.on(ContentInitEvent, () => {
             drawConfigure() {
                 this.super$drawConfigure();
                 
-                // Vẽ vòng tròn phạm vi 380px khi bấm chọn
-                Draw.color(Color.sky);
+                 Draw.color(Color.sky);
                 Lines.stroke(1);
                 Lines.circle(this.x, this.y, this.maxRange);
 
-                // Vẽ đường nối nét đứt nếu trong phạm vi
-                if (Mathf.dst(this.x, this.y, this.targetX, this.targetY) <= this.maxRange && (this.targetX !== this.x || this.targetY !== this.y)) {
+                 if (Mathf.dst(this.x, this.y, this.targetX, this.targetY) <= this.maxRange && (this.targetX !== this.x || this.targetY !== this.y)) {
                     Lines.dashLine(this.x, this.y, this.targetX, this.targetY, Math.floor(Mathf.dst(this.x, this.y, this.targetX, this.targetY) / 8));
                 }
                 Draw.reset();
@@ -175,8 +160,7 @@ Events.on(ContentInitEvent, () => {
     }
 });
 
-// HIỂN THỊ PHẠM VI KHI CẦM KHỐI TRÊN TAY
-Events.run(Trigger.draw, () => {
+ Events.run(Trigger.draw, () => {
     let build = Vars.control.input.block;
     if (build != null && build.name === "newex-xeuw-conveyor-mk1") {
         let tile = Vars.world.tileWorld(Core.input.mouseWorldX(), Core.input.mouseWorldY());

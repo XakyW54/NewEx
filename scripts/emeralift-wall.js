@@ -1,10 +1,19 @@
 Events.on(ContentInitEvent, () => {
-    const redstoneWall = Vars.content.block("newex-redstone-wall");
+ 
+    const emeraliftWall = Vars.content.block("newex-emeralift-wall");
 
-    if (redstoneWall != null) {
-        redstoneWall.update = true;
+    if (emeraliftWall != null) {
+ 
+        const circleWaveFx = new Effect(30, cons(e => {
+            Draw.color(Color.valueOf("84e070"));  
+            Lines.stroke(1.5 * e.fout());  
+            Lines.circle(e.x, e.y, 4 + e.fin() * 16); 
+            Draw.reset();
+        }));
 
-        redstoneWall.buildType = prov(() => {
+        emeraliftWall.update = true;
+
+        emeraliftWall.buildType = prov(() => {
             return extend(Building, {
                 lifetime: 300 * 60,
                 timeRemaining: 300 * 60,
@@ -17,7 +26,6 @@ Events.on(ContentInitEvent, () => {
                     this.timeRemaining = this.lifetime;
                     this.nextShockTime = Mathf.random(60, 120);
                 },
-
  
                 applyComduikDrain() {
                     this.drainTicks = 2;  
@@ -25,7 +33,8 @@ Events.on(ContentInitEvent, () => {
 
                 updateTile() {
                     this.super$updateTile();
- 
+
+    
                     let decayMultiplier = (this.drainTicks > 0) ? 1.8 : 1.0;
                     if (this.drainTicks > 0) this.drainTicks--;
 
@@ -36,22 +45,13 @@ Events.on(ContentInitEvent, () => {
                         return;
                     }
 
-                    let lifeProgress = Math.max(0, this.timeRemaining / this.lifetime);
-
                     this.shockTimer += Time.delta;
                     if (this.shockTimer >= this.nextShockTime) {
                         this.shockTimer = 0;
                         this.nextShockTime = Mathf.random(60, 120);
 
-                        let maxBolts = Math.floor(1 + lifeProgress * 4);
-                        let boltCount = Math.floor(Mathf.random(1, maxBolts + 1));
-
-                        for (let i = 0; i < boltCount; i++) {
-                            let randomAngle = Mathf.random(360);
-                            Lightning.create(this.team, Color.valueOf("ff4444"), 20, this.x, this.y, randomAngle, 5);
-                        }
-
-                        try { Fx.spark.at(this.x, this.y); } catch(e) {}
+                
+                        circleWaveFx.at(this.x, this.y);
                     }
                 },
 

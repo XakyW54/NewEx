@@ -4,15 +4,11 @@ const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
-// ==========================================
-// --- CHI PHÍ NÂNG CẤP TÙY CHỈNH ---
-// ==========================================
+ 
 const reqMK2 = { surgeAlloy: 500, plastanium: 1200, copper: 9000 };
 const reqMK2B = { thorium: 1900, titanium: 2400, silicon: 3100 };
 
-// ==========================================
-// --- HÀM VẼ HÌNH TRÒN MÉO (TỪ BLIXALUM) ---
-// ==========================================
+ 
 function drawWindRing(cx, cy, radiusX, radiusY, angle, strokeWidth, color){
     Draw.color(color); 
     Lines.stroke(strokeWidth);
@@ -29,10 +25,7 @@ function drawWindRing(cx, cy, radiusX, radiusY, angle, strokeWidth, color){
     }
     Draw.reset();
 }
-
-// ==========================================
-// --- HIỆU ỨNG TÙY CHỈNH (CUSTOM EFFECTS) ---
-// ==========================================
+ 
 
 const emperfumMuzzleEffect = new Effect(20, e => {
     let tColor = e.data || Color.valueOf("#80deea");
@@ -69,9 +62,7 @@ const clusterFlashEffect = new Effect(18, e => {
     Draw.reset();
 });
 
-// ==========================================
-// --- KHAI BÁO CÁC LOẠI ĐẠN ---
-// ==========================================
+ 
 
 const emperfumMicroBullet = extend(BasicBulletType, {
     speed: 4, drag: 0.025, damage: 350, splashDamage: 750,
@@ -315,9 +306,7 @@ const emperfumMainBulletMK2B = extend(BasicBulletType, {
     }
 });
 
-// ==========================================
-// --- KHAI BÁO THÁP PHÁO EMPERFUM ---
-// ==========================================
+ 
 
 let emperfum = extend(ItemTurret, "emperfum", {
     squareSprite: false
@@ -393,7 +382,7 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
                 let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Emperfum", {});
                 
-                // --- BẢNG YÊU CẦU TÀI NGUYÊN ---
+ 
                 let reqTable = new Table();
                 reqTable.background(Styles.black6);
                 reqTable.margin(10);
@@ -409,7 +398,7 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
                         return;
                     }
                     
-                    // Lấy tài nguyên Lõi hiện có
+              
                     let cSurge = core.items.get(Items.surgeAlloy);
                     let cPla = core.items.get(Items.plastanium);
                     let cCop = core.items.get(Items.copper);
@@ -418,7 +407,7 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
                     let cTit = core.items.get(Items.titanium);
                     let cSil = core.items.get(Items.silicon);
 
-                    // Đổi màu hiển thị (Xanh: Đủ / Đỏ: Thiếu)
+                  
                     let surCol1 = cSurge >= reqMK2.surgeAlloy ? "[lime]" : "[scarlet]";
                     let plaCol1 = cPla >= reqMK2.plastanium ? "[lime]" : "[scarlet]";
                     let copCol1 = cCop >= reqMK2.copper ? "[lime]" : "[scarlet]";
@@ -442,10 +431,10 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
 
                 dialog.cont.add(reqTable).width(340).padBottom(10).row();
 
-                // --- BẢNG CÁC NHÁNH NÂNG CẤP ---
+              
                 let branchesTable = new Table();
 
-                // NHÁNH MK2
+            
                 let b1 = new Table(); b1.background(Styles.black8); b1.margin(10);
                 b1.add("[cyan]⚡ [BOLD]CẤU HÌNH MK2 - GIA TỐC XUYÊN PHÁ[] ⚡").center().row();
                 b1.add().height(6).row();
@@ -465,7 +454,7 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
                        core.items.get(Items.plastanium) >= reqMK2.plastanium && 
                        core.items.get(Items.copper) >= reqMK2.copper){
                         
-                        // Trừ tài nguyên Lõi
+                        
                         core.items.remove(Items.surgeAlloy, reqMK2.surgeAlloy); 
                         core.items.remove(Items.plastanium, reqMK2.plastanium);
                         core.items.remove(Items.copper, reqMK2.copper);
@@ -481,7 +470,7 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
                     }
                 })).size(200, 40).center();
 
-                // NHÁNH MK2B
+               
                 let b2 = new Table(); b2.background(Styles.black8); b2.margin(10);
                 b2.add("[pink]🔥 [BOLD]CẤU HÌNH MK2B - XUNG KÍCH TẦM NHIỆT[] 🔥").center().row();
                 b2.add().height(6).row();
@@ -501,7 +490,7 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
                        core.items.get(Items.titanium) >= reqMK2B.titanium && 
                        core.items.get(Items.silicon) >= reqMK2B.silicon){
                         
-                        // Trừ tài nguyên Lõi
+                        
                         core.items.remove(Items.thorium, reqMK2B.thorium); 
                         core.items.remove(Items.titanium, reqMK2B.titanium); 
                         core.items.remove(Items.silicon, reqMK2B.silicon);
@@ -532,7 +521,7 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
             })).size(50, 40).tooltip("Đã đạt cấp tối đa");
         }
 
-        // --- NÚT XEM BẢNG THÔNG TIN MÔ TẢ PHÁO ---
+      
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
             let title = " Thông số pháo Emperfum: ";
             let descStr = "";

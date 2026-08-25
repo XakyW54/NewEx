@@ -4,7 +4,7 @@ const DIR_Y = [0, 1, 0, -1];
 const lyvervonLightningColor = Color.valueOf("7fd4ff");
 const transferColor = Color.valueOf("00ffcc");
 
-// 1. Hiệu ứng tia sét hút điện từ tường Redstone
+ 
 const lyvervonLightningEffect = new Effect(10, e => {
     if (!(e.data instanceof Seq)) return;
     const points = e.data;
@@ -20,7 +20,7 @@ const lyvervonLightningEffect = new Effect(10, e => {
     Draw.reset();
 });
 
-// 2. Hiệu ứng Vòng tròn Zoom tại khối nhận điện
+ 
 const comduikTransferFx = new Effect(30, cons(e => {
     Draw.z(Layer.effect + 0.05);
 
@@ -43,7 +43,7 @@ const comduikTransferFx = new Effect(30, cons(e => {
     Draw.reset();
 }));
 
-// 3. Hiệu ứng Tia điện ĐÃ ĐỔI HƯỚNG: Bắn từ Comduik ra khối nhận điện
+ 
 const helTransfer = new Effect(25, cons(e => {
     Draw.z(Layer.effect + 0.01);
     if (e.data == null || typeof e.data.tx === "undefined") return;
@@ -145,7 +145,7 @@ Events.on(ContentInitEvent, () => {
                     let bounds = this.getRangeBounds();
                     this.activeTargets = [];
 
-                    // 1. HÚT ĐIỆN TỪ REDSTONE WALL (MỖI 30 TICK VẼ SÉT)
+           
                     Units.nearbyBuildings(
                         (bounds.minX + bounds.maxX) / 2, 
                         (bounds.minY + bounds.maxY) / 2, 
@@ -179,7 +179,7 @@ Events.on(ContentInitEvent, () => {
                         })
                     );
 
-                    // 2. PHÁT ĐIỆN TỚI TẤT CẢ KHỐI Ở 3 MẶT (TRÁI, PHẢI, SAU LƯNG)
+                   
                     if (this.power && this.power.status > 0) {
                         let capacity = this.block.consPower.capacity;
                         let currentStored = this.power.status * capacity;
@@ -196,11 +196,11 @@ Events.on(ContentInitEvent, () => {
 
                         let processedTargets = {};
 
-                        // Quét diện rộng để không bị sót khối to
+                     
                         Units.nearbyBuildings(this.x, this.y, (this.block.size * 8) + 16, cons(target => {
                             if (target == null || target === this || target.team !== this.team || processedTargets[target.id]) return;
 
-                            // Kiểm tra xem vị trí khối target có nằm ở 1 trong 3 hướng bên hông/sau lưng không
+                            
                             let isSideTarget = false;
                             for (let i = 0; i < sideDirections.length; i++) {
                                 let dir = sideDirections[i];
@@ -227,7 +227,7 @@ Events.on(ContentInitEvent, () => {
                                         
                                         target.power.status = Math.min(1.0, (targetCurrent + transfer) / targetCap);
 
-                                        // Hiệu ứng đổi hướng: Bắn từ COMDUIK sang KHỐI NHẬN
+                                
                                         if (canPlayFx) {
                                             let targetPixelSize = target.block.size * Vars.tilesize;
                                             comduikTransferFx.at(target.x, target.y, 0, targetPixelSize);

@@ -289,7 +289,7 @@ const lavunderLaserBullet = extend(BulletType, {
 
         if(currentPoints > 2) {
             let scaleFactor = 1 + (currentPoints / 180); 
-            let ringCount = 2; // TỐI ƯU: Giảm số lượng vòng laser rendered
+            let ringCount = 2;  
             for(let r = 0; r < ringCount; r++){
                 let ringProgress = ((Time.time * 0.8) + (r * (dist / ringCount))) % dist;
                 let rt = ringProgress / dist;
@@ -297,7 +297,7 @@ const lavunderLaserBullet = extend(BulletType, {
                 drawLaserRing(rx, ry, 1.5 * scaleFactor, 4.0 * scaleFactor, laserAngle, 0.4 * Mathf.sin(rt * Math.PI), laserColor);
             }
 
-            // TỐI ƯU: Giảm số lượng hạt particle tối đa từ 48 -> 16[cite: 2]
+ 
             let particleCount = Math.floor(Mathf.lerp(4, 16, currentPoints / 100));
             Draw.color(particleColor);
             for(let i = 0; i < particleCount; i++){
@@ -325,7 +325,7 @@ const lavunderLaserBullet = extend(BulletType, {
             Draw.color(Color.white);
             Fill.circle(endX, endY, baseRadius * 0.55); 
 
-            let pCount = Math.floor(Mathf.lerp(3, 8, currentPoints / 100)); // TỐI ƯU: Giảm hạt hiệu ứng
+            let pCount = Math.floor(Mathf.lerp(3, 8, currentPoints / 100)); 
             Draw.color(particleColor);
             for(let i = 0; i < pCount; i++){
                 let hSeed = i * 45.7 + turretId;
@@ -407,7 +407,7 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
 
     placed(){
         this.super$placed();
-        // Đã loại bỏ hoàn toàn cơ chế kiểm tra giới hạn 1 pháo[cite: 2]
+ 
         this.downxOffset = 0;
         this.wingsOffset = 0;
     },
@@ -514,8 +514,7 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
                 dialog.cont.row(); dialog.cont.add().height(10).row();
 
                 let branchesTable = new Table();
-
-                // Nhánh 1: MK2 
+ 
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                 b1.add("[cyan]===(MK2)===[]").row();
                 let b1D = b1.add("Mô-đun kích xung hỏa lực liên hoàn:\n" +
@@ -536,8 +535,7 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
                         Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]");
                     }
                 })).size(180, 38);
-
-                // Nhánh 2: MK2B
+ 
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                 b2.add("[purple]===(MK2B)===[]").row();
                 let b2D = b2.add("Lõi hội tụ quang phổ hủy diệt diện rộng:\n" +
@@ -573,8 +571,7 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
                 Vars.ui.showInfo("[scarlet]HỆ THỐNG LAVUNDER ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]");
             })).size(50, 40).tooltip("Đã đạt cấp tối đa");
         }
-
-        // Cập nhật Dialog thông tin
+ 
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
             let title = " Thông số pháo Lavunder: ";
             let descStr = "";

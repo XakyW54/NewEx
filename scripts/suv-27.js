@@ -1,6 +1,4 @@
-// ==========================================
-// SUV-27 & VUS-27 (SINGLEPLAYER OPTIMIZED)
-// ==========================================
+ 
 
 function getSuv27UpgradeRequirements(currentLevel) {
     return {

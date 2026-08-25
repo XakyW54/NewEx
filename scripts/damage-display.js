@@ -1,44 +1,42 @@
-// ==========================================
-// DAMAGE DISPLAY SYSTEM (AUTO TOGGLE INTERLOCK)
-// ==========================================
+ 
 
 const damagePopups = new Seq();
 const tempColor = new Color();
 const entityHpCache = new ObjectMap();
 const entityDamageCache = new ObjectMap();
 
-// 1. ĐĂNG KÝ NÚT (SỬ DỤNG HÀM CHUẨN CỦA MINDUSTRY)
+ 
 Events.on(ClientLoadEvent, () => {
-    // Đăng ký Eatsuki TT
+ 
     Vars.ui.settings.game.checkPref(
         "show-hp-popup-eatsuki-tt",
         true,
         val => {
             if (val) {
-                // Nếu BẬT Eatsuki TT -> TẮT Damage Popup
+ 
                 Core.settings.put("show-damage-popup", false);
-                // Làm mới menu Cài đặt để nút kia tự gạt sang Tắt
+ 
                 if (Vars.ui.settings != null) Vars.ui.settings.game.rebuild();
             }
         }
     );
 
-    // Đăng ký Floating Damage Popup
+ 
     Vars.ui.settings.game.checkPref(
         "show-damage-popup",
         false,
         val => {
             if (val) {
-                // Nếu BẬT Damage Popup -> TẮT Eatsuki TT
+ 
                 Core.settings.put("show-hp-popup-eatsuki-tt", false);
-                // Làm mới menu Cài đặt
+ 
                 if (Vars.ui.settings != null) Vars.ui.settings.game.rebuild();
             }
         }
     );
 });
 
-// 2. RESET DỮ LIỆU
+ 
 Events.on(WorldLoadEvent, () => {
     damagePopups.clear();
     entityHpCache.clear();
@@ -56,7 +54,7 @@ function isZoomedTooFar() {
     return Core.camera.width > 1024;
 }
 
-// 3. XÁC ĐỊNH CHẾ ĐỘ HIỆN TẠI
+ 
 function getActiveMode() {
     if (isZoomedTooFar()) return "none";
 
@@ -69,9 +67,7 @@ function getActiveMode() {
     return "none";
 }
 
-// ==========================================
-// A. LOGIC DAME ĐỨNG YÊN CỘNG DỒN (EATSUKI TT)
-// ==========================================
+ 
 
 function findEatsukiPopup(entityId) {
     for (let i = 0; i < damagePopups.size; i++) {
@@ -119,9 +115,7 @@ function addEatsukiDamage(entity, damage, hitSize) {
     }
 }
 
-// ==========================================
-// B. LOGIC DAME NẢY BẬT (FLOATING POPUP)
-// ==========================================
+ 
 
 function formatPopupText(amount, isHeal) {
     let absAmount = Math.abs(amount);
@@ -157,9 +151,7 @@ function createFloatingPopup(x, y, amount, isHeal, hitSize, entityId) {
     });
 }
 
-// ==========================================
-// VÒNG LẶP CẬP NHẬT (TRIGGER UPDATE)
-// ==========================================
+ 
 
 Events.run(Trigger.update, () => {
     let mode = getActiveMode();
@@ -175,7 +167,7 @@ Events.run(Trigger.update, () => {
 
     let bounds = Core.camera.bounds(new Rect());
 
-    // THEO DÕI UNIT
+ 
     Groups.unit.intersect(bounds.x, bounds.y, bounds.width, bounds.height, cons(u => {
         if (!u.isValid() || u.health === Number.POSITIVE_INFINITY) return;
 
@@ -194,7 +186,7 @@ Events.run(Trigger.update, () => {
         entityHpCache.put(id, u.health);
     }));
 
-    // QUẢN LÝ THỜI GIAN TỒN TẠI
+ 
     for (let i = damagePopups.size - 1; i >= 0; i--) {
         let popup = damagePopups.get(i);
 
@@ -220,9 +212,7 @@ Events.run(Trigger.update, () => {
     if (entityDamageCache.size > 1000) entityDamageCache.clear();
 });
 
-// ==========================================
-// VÒNG LẶP VẼ (TRIGGER DRAW)
-// ==========================================
+ 
 
 Events.run(Trigger.draw, () => {
     let mode = getActiveMode();
@@ -238,7 +228,7 @@ Events.run(Trigger.draw, () => {
     for (let i = 0; i < damagePopups.size; i++) {
         let popup = damagePopups.get(i);
 
-        // HIỂN THỊ DẠNG EATSUKI TT
+ 
         if (mode === "eatsuki" && popup.type === "eatsuki") {
             let fadeOut = popup.life / popup.maxLife;
             let curX = popup.x;
@@ -252,7 +242,7 @@ Events.run(Trigger.draw, () => {
             font.draw(text, curX, curY, Align.center);
         }
         
-        // HIỂN THỊ DẠNG POPUP NẢY BẬT
+ 
         else if (mode === "popup" && popup.type === "popup") {
             let progress = (popup.maxLife - popup.life) / popup.maxLife;
             let fadeOut = popup.life / popup.maxLife;
@@ -285,7 +275,7 @@ Events.run(Trigger.draw, () => {
     Draw.reset();
 });
 
-// EVENT SÁT THƯƠNG CÔNG TRÌNH
+ 
 Events.on(BuildDamageEvent, e => {
     let mode = getActiveMode();
     if (mode === "none") return;

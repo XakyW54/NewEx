@@ -1,6 +1,4 @@
-// =========================================================================
-// 1. ĐỊNH NGHĨA HIỆU ỨNG ĐỒ HỌA (EFFECTS FX)
-// =========================================================================
+ 
 const laserAimColor = Color.valueOf("#ff8888"); 
 const secondaryLaserAimColor = Color.valueOf("#ffaa00"); 
 const bulletColor = Color.valueOf("#00ffff");   
@@ -29,9 +27,7 @@ const shieldHitFX = new Effect(10, e => {
     Draw.reset();
 });
 
-// =========================================================================
-// 2. CÁC HÀM ĐÓNG GÓI ĐỐI TƯỢNG JAVA (PACKERS)
-// =========================================================================
+ 
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
@@ -39,9 +35,7 @@ const packProv = (func) => new Prov({ get: func });
 const reqMK2 = { titanium: 4000, silicon: 4000, plastanium: 0 };
 const reqMK2B = { titanium: 8800, silicon: 6400, plastanium: 4200 };
 
-// =========================================================================
-// 3. CÁC HÀM HOẠT ẢNH DRAWER
-// =========================================================================
+ 
 function drawExpandingBarrels(build) {
     if (build.animRecoil === undefined) build.animRecoil = 0;
     build.animRecoil = Mathf.lerpDelta(build.animRecoil, 0, 0.08);
@@ -103,9 +97,7 @@ function drawHexagonAperture(build) {
     Draw.reset();
 }
 
-// =========================================================================
-// 4. ĐỊNH NGHĨA HỆ THỐNG ĐẠN
-// =========================================================================
+ 
 const holyderMainBullet = extend(BasicBulletType, {});
 holyderMainBullet.speed = 35;             
 holyderMainBullet.lifetime = 15;          
@@ -152,9 +144,7 @@ const holyderlaser = extend(BulletType, {
 holyderlaser.speed = 0;
 holyderlaser.lifetime = 1;
 
-// =========================================================================
-// 5. LOGIC BUILD CHUNG CHỨA HỆ THỐNG GIAO DIỆN NÂNG CẤP & THÔNG TIN
-// =========================================================================
+ 
 function makeBuildSetup(initialTier) {
     return {
         holyderInternalTier: initialTier,
@@ -182,7 +172,7 @@ function makeBuildSetup(initialTier) {
 
         placed() {
             this.super$placed();
-            // Đã loại bỏ hoàn toàn cơ chế kiểm tra giới hạn 4 block[cite: 1]
+        
         },
 
         setTier(val) {
@@ -243,7 +233,7 @@ function makeBuildSetup(initialTier) {
 
                     let branchesTable = new Table();
 
-                    // Nhánh 1: MK2
+           
                     let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                     b1.add("[cyan]===(MK2)===[]").row();
                     let b1D = b1.add("Mô-đun cấu hình hỏa lực tiêu chuẩn mở rộng:\n" +
@@ -261,7 +251,7 @@ function makeBuildSetup(initialTier) {
                         } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                     })).size(180, 38);
 
-                    // Nhánh 2: MK2B
+   
                     let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                     b2.add("[purple]===(MK2B)===[]").row();
                     let b2D = b2.add("Cấu hình mạch xung kích bến thế trọng pháo giáp:\n" +
@@ -294,7 +284,7 @@ function makeBuildSetup(initialTier) {
                 })).size(50, 40).tooltip("Đã đạt cấp tối đa");
             }
 
-            // --- NÚT THÔNG TIN PHÁO HOLYDER ---
+        
             table.button(Icon.info, Styles.cleari, 40, packRun(() => {
                 let title = " Thông số pháo Holyder: ";
                 let descStr = "";
@@ -513,7 +503,7 @@ function makeBuildSetup(initialTier) {
                 Draw.reset();
             }
 
-            // TỐI ƯU HÓA: Rút gọn các bước vẽ lưới Hexagon giảm lag cho GPU[cite: 1]
+       
             if (this.shieldVisualScale > 0 && this.shieldHealth > 0 && !this.isShieldBroken) {
                 Draw.z(Layer.bullet + 2); 
                 let currentRadius = this.shieldRadius * this.shieldVisualScale;
@@ -576,9 +566,7 @@ function makeBuildSetup(initialTier) {
     };
 }
 
-// =========================================================================
-// 6. KHỞI TẠO BLOCK CỐT LÕI
-// =========================================================================
+ 
 const holyder = extend(PowerTurret, "holyder", {
     init() { this.super$init(); },
     setBars() { this.super$setBars(); }

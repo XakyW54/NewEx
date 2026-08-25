@@ -1,29 +1,11 @@
-// laser-brey.js
-// Script dành cho khối "newex-laser-brey" trong Mod Mindustry
-
 const RAYKSTONE_NAME = "newex-raykstone";
-const BREAK_TIME = 60 * 60; // 60 giây gốc (3600 ticks)
+const BREAK_TIME = 60 * 60;
 
 const DIR_X = [1, 0, -1, 0];
 const DIR_Y = [0, 1, 0, -1];
 
 Events.on(ContentInitEvent, () => {
     const laserBrey = Vars.content.block("newex-laser-brey");
-
-    // Lấy danh sách khối an toàn qua Vars.content.block để tránh crash game
-    const vanillaWallNames = [
-        "stone-wall", "spore-wall", "dirt-wall", "dacite-wall", 
-        "ice-wall", "snow-wall", "dune-wall", "regolith-wall", 
-        "yellow-stone-wall", "rhyolite-wall", "carbon-wall", 
-        "ferric-stone-wall", "beryllic-stone-wall", "arkyic-wall", 
-        "crystal-cluster", "red-ice-wall", "red-stone-wall"
-    ];
-
-    let vanillaWalls = [];
-    for (let i = 0; i < vanillaWallNames.length; i++) {
-        let b = Vars.content.block(vanillaWallNames[i]);
-        if (b != null) vanillaWalls.push(b);
-    }
 
     if (laserBrey != null) {
         laserBrey.rotate = true;
@@ -44,7 +26,6 @@ Events.on(ContentInitEvent, () => {
                 this.super$onDestroy();
             },
 
-            // Kiểm tra xem Tile có phải Raykstone không
             isRaykstone(tile) {
                 if (tile == null) return false;
                 let b = tile.block();
@@ -56,14 +37,13 @@ Events.on(ContentInitEvent, () => {
                        (o != null && o.name === RAYKSTONE_NAME);
             },
 
-            // Kiểm tra xem Tile có phải tường địa hình Vanilla không
             isVanillaWall(tile) {
                 if (tile == null) return false;
                 let b = tile.block();
-                return b != null && vanillaWalls.includes(b);
+                
+                return b != null && b.isStatic() && !b.synthetic() && b.name !== RAYKSTONE_NAME;
             },
 
-            // Kiểm tra xem ô có thể đào được hay không
             isMineable(tile) {
                 return this.isRaykstone(tile) || this.isVanillaWall(tile);
             },
@@ -79,7 +59,6 @@ Events.on(ContentInitEvent, () => {
                 let startX = this.x + dirX * 8;
                 let startY = this.y + dirY * 8;
 
-                // Tia 1 (Bên trái)
                 this.target1 = null;
                 for (let i = 1; i <= this.maxTiles; i++) {
                     let checkX = startX + pX + dirX * (i * 8 - 4);
@@ -92,7 +71,6 @@ Events.on(ContentInitEvent, () => {
                     }
                 }
 
-                // Tia 2 (Bên phải)
                 this.target2 = null;
                 for (let i = 1; i <= this.maxTiles; i++) {
                     let checkX = startX - pX + dirX * (i * 8 - 4);
@@ -106,7 +84,6 @@ Events.on(ContentInitEvent, () => {
                 }
             },
 
-            // Cơ chế nhả item - CHỈ hoạt động khi đào Raykstone
             handleMining(tile, itemTimerKey, progress) {
                 if (tile == null || !this.isRaykstone(tile)) return;
 
@@ -159,10 +136,12 @@ Events.on(ContentInitEvent, () => {
                     this.findTargets();
                 }
 
-                // Xử lý Tia 1
                 if (this.target1 != null) {
                     this.handleMining(this.target1, "itemTimer1", progress);
-                    let added = this.processTarget(this.target1, "timer1", progress);
+
+                    let targetProgress1 = this.isVanillaWall(this.target1) ? progress * 1.75 : progress;
+
+                    let added = this.processTarget(this.target1, "timer1", targetProgress1);
                     if (added === null) {
                         this.target1 = null;
                         this.itemTimer1 = 0;
@@ -172,10 +151,12 @@ Events.on(ContentInitEvent, () => {
                     this.itemTimer1 = 0;
                 }
 
-                // Xử lý Tia 2
                 if (this.target2 != null) {
                     this.handleMining(this.target2, "itemTimer2", progress);
-                    let added = this.processTarget(this.target2, "timer2", progress);
+
+                    let targetProgress2 = this.isVanillaWall(this.target2) ? progress * 1.75 : progress;
+
+                    let added = this.processTarget(this.target2, "timer2", targetProgress2);
                     if (added === null) {
                         this.target2 = null;
                         this.itemTimer2 = 0;
@@ -280,7 +261,6 @@ Events.on(ContentInitEvent, () => {
     }
 });
 
-// Hiển thị phạm vi khi kéo chọn từ Menu
 Events.run(Trigger.draw, () => {
     let input = Vars.control.input;
     if (input == null) return;

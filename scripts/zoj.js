@@ -8,8 +8,7 @@ const zojBullet = extend(BasicBulletType, {
     backColor: Color.valueOf("#e5ff00"),
     trailColor: Color.valueOf("#daea80"),
 
-    // Hiệu ứng truy đuổi
-    homingPower: 0.8,
+     homingPower: 0.8,
     homingRange: 300,
     homingDelay: 0,
 
@@ -18,23 +17,18 @@ const zojBullet = extend(BasicBulletType, {
 
         let owner = b.owner;
         if (owner != null && owner.team != null && owner.isValid()) {
-            // 1. Cộng 20 Copper vào Lõi
-            let core = owner.team.core();
+             let core = owner.team.core();
             if (core != null) {
                 core.items.add(Items.copper, 20);
             }
 
-            // Tính 10% lượng máu tối đa
-            let healthPercent = owner.maxHealth * 0.10;
+             let healthPercent = owner.maxHealth * 0.10;
 
-            // 2. Logic thực tế: 70% Giảm máu / 30% Hồi máu
-            if (Math.random() < 0.7) {
-                // 70% Trừ 10% máu
-                owner.damage(healthPercent);
-                Fx.blockCrash.at(owner.x, owner.y); // Hiệu ứng vỡ/mất máu
+             if (Math.random() < 0.7) {
+                 owner.damage(healthPercent);
+                Fx.blockCrash.at(owner.x, owner.y); 
             } else {
-                // 30% Hồi 10% máu (Dùng hàm nội bộ để né chặn hồi máu ngoài)
-                if (owner.customSelfHeal !== undefined) {
+                 if (owner.customSelfHeal !== undefined) {
                     owner.customSelfHeal(healthPercent);
                 }
             }
@@ -51,19 +45,16 @@ Events.on(ClientLoadEvent, cons(e => {
         const baseCost = 16;
         const maxCost = 99999;
 
-        // Biến toàn cục lưu tổng số lần ĐÃ ĐẶT pháo
-        let totalPlacedCount = 0;
+         let totalPlacedCount = 0;
 
-        // Reset điểm đếm khi vào trận mới hoặc tải lại map
-        Events.on(WorldLoadEvent, cons(event => {
+         Events.on(WorldLoadEvent, cons(event => {
             totalPlacedCount = 0;
             updateCost();
         }));
 
-        // Lắng nghe sự kiện XÂY HOÀN TẤT một công trình
-        Events.on(BlockBuildEndEvent, cons(event => {
+         Events.on(BlockBuildEndEvent, cons(event => {
             if (event.tile != null && event.tile.block() === zojBlock && !event.breaking) {
-                totalPlacedCount++; // Tăng 1 điểm khi đặt pháo
+                totalPlacedCount++;  
                 updateCost();
             }
         }));
@@ -82,23 +73,18 @@ Events.on(ClientLoadEvent, cons(e => {
             }
         }
 
-        // Cấu hình BuildType để chặn hồi máu từ bên ngoài
-        zojBlock.buildType = () => extend(ItemTurret.ItemTurretBuild, zojBlock, {
+         zojBlock.buildType = () => extend(ItemTurret.ItemTurretBuild, zojBlock, {
             
-            // CHẶN HỒI MÁU TỪ BÊN NGOÀI (Chặn công trình hồi máu, mender, beam,...)
-            heal(amount) {
-                // Không làm gì cả để vô hiệu hóa hoàn toàn hồi máu bên ngoài
-            },
+             heal(amount) {
+             },
 
-            // Hàm tự hồi máu nội bộ dành riêng cho đạn pháo
-            customSelfHeal(amount) {
+             customSelfHeal(amount) {
                 this.health = Math.min(this.health + amount, this.maxHealth);
                 Fx.heal.at(this.x, this.y);
             }
         });
 
-        // Cập nhật giá theo thời gian thực
-        Events.run(Trigger.update, () => {
+         Events.run(Trigger.update, () => {
             updateCost();
         });
     }

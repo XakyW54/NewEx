@@ -1,6 +1,6 @@
 let antikeiBlock;
 let mapHasAntikei = false;
-let flowMap = {}; 
+let flowMap = new java.util.HashMap();
 
 Events.on(ContentInitEvent, () => {
     antikeiBlock = Vars.content.block("newex-antikei");
@@ -14,39 +14,50 @@ function getPlayerCore() {
     return null;
 }
 
-function generateFlowMap() {
-    flowMap = {};
+function getClosestPlayerCoreDynamic(x, y) {
+    let teamData = Vars.state.teams.get(Vars.player.team());
+    if (teamData != null && teamData.cores != null && !teamData.cores.isEmpty()) {
+        return Geometry.findClosest(x, y, teamData.cores);
+    }
+    return null;
+}
+
+function getTileKey(x, y) {
+    return (x & 0xFFFF) | ((y & 0xFFFF) << 16);
+}
+
+function updateDynamicFlowMapMultiCore() {
     if (!antikeiBlock || Vars.world == null) return;
 
-    let targetCore = getPlayerCore();
-    if (!targetCore) return;
+    let teamData = Vars.state.teams.get(Vars.player.team());
+    if (teamData == null || teamData.cores == null || teamData.cores.isEmpty()) {
+        flowMap.clear();
+        return;
+    }
 
+    let dynamicFlowMap = new java.util.HashMap();
     let queue = [];
     let visited = new java.util.HashSet();
+    let dirs = [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [-1, -1], [1, -1], [-1, 1]];
 
-    let startTile = null;
-    let minDst = Infinity;
+    teamData.cores.each(core => {
+        let coreTileX = core.tileX();
+        let coreTileY = core.tileY();
+        let radius = 10;
 
-    for (let x = 0; x < Vars.world.width(); x++) {
-        for (let y = 0; y < Vars.world.height(); y++) {
-            let tile = Vars.world.tile(x, y);
-            if (tile != null && tile.floor() === antikeiBlock) {
-                let dst = Mathf.dst2(tile.worldx(), tile.worldy(), targetCore.x, targetCore.y);
-                if (dst < minDst) {
-                    minDst = dst;
-                    startTile = tile;
+        for (let dx = -radius; dx <= radius; dx++) {
+            for (let dy = -radius; dy <= radius; dy++) {
+                let tile = Vars.world.tile(coreTileX + dx, coreTileY + dy);
+                if (tile != null && tile.floor() === antikeiBlock) {
+                    let key = getTileKey(tile.x, tile.y);
+                    if (!visited.contains(key)) {
+                        visited.add(key);
+                        queue.push(tile);
+                    }
                 }
             }
         }
-    }
-
-    if (!startTile) return;
-
-    let key = startTile.x + "," + startTile.y;
-    queue.push(startTile);
-    visited.add(key);
-
-    let dirs = [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [-1, -1], [1, -1], [-1, 1]];
+    });
 
     while (queue.length > 0) {
         let current = queue.shift();
@@ -54,16 +65,18 @@ function generateFlowMap() {
         for (let i = 0; i < dirs.length; i++) {
             let nx = current.x + dirs[i][0];
             let ny = current.y + dirs[i][1];
-            let neighborKey = nx + "," + ny;
+            let neighborKey = getTileKey(nx, ny);
 
             let neighbor = Vars.world.tile(nx, ny);
             if (neighbor != null && neighbor.floor() === antikeiBlock && !visited.contains(neighborKey)) {
                 visited.add(neighborKey);
-                flowMap[neighborKey] = current;
+                dynamicFlowMap.put(neighborKey, current);
                 queue.push(neighbor);
             }
         }
     }
+
+    flowMap = dynamicFlowMap;
 }
 
 function checkMapHasAntikei() {
@@ -96,174 +109,35 @@ function clearOresOnAntikei() {
     }
 }
 
-function findNearestAntikei(unit) {
+function findNearestAntikeiFast(unit) {
     let uTileX = unit.tileX();
     let uTileY = unit.tileY();
-    let nearest = null;
-    let minDst = Infinity;
-    let radius = 30;
 
-    for (let dx = -radius; dx <= radius; dx++) {
-        for (let dy = -radius; dy <= radius; dy++) {
-            let tile = Vars.world.tile(uTileX + dx, uTileY + dy);
-            if (tile != null && tile.floor() === antikeiBlock) {
-                let dst = Mathf.dst2(unit.x, unit.y, tile.worldx(), tile.worldy());
-                if (dst < minDst) {
-                    minDst = dst;
-                    nearest = tile;
-                }
-            }
+    for (let r = 1; r <= 15; r++) {
+        for (let dx = -r; dx <= r; dx++) {
+            let tile1 = Vars.world.tile(uTileX + dx, uTileY - r);
+            if (tile1 != null && tile1.floor() === antikeiBlock) return tile1;
+            let tile2 = Vars.world.tile(uTileX + dx, uTileY + r);
+            if (tile2 != null && tile2.floor() === antikeiBlock) return tile2;
+        }
+        for (let dy = -r + 1; dy <= r - 1; dy++) {
+            let tile1 = Vars.world.tile(uTileX - r, uTileY + dy);
+            if (tile1 != null && tile1.floor() === antikeiBlock) return tile1;
+            let tile2 = Vars.world.tile(uTileX + r, uTileY + dy);
+            if (tile2 != null && tile2.floor() === antikeiBlock) return tile2;
         }
     }
-    return nearest;
+    return null;
 }
 
 Events.on(WorldLoadEvent, () => {
     checkMapHasAntikei();
     if (mapHasAntikei) {
         clearOresOnAntikei();
-        generateFlowMap();
+        updateDynamicFlowMapMultiCore();
     }
 });
 
-Events.run(Trigger.update, () => {
-    if (!antikeiBlock || Vars.state.isMenu() || !mapHasAntikei) return;
-
-    if (Vars.state.isPlaying() && Time.time % 60 == 0) {
-        clearOresOnAntikei();
-    }
-
-    let isDefenseOrPlanetSector = Vars.state.rules.mode().id == 1 || Vars.state.rules.mode().id == 2 || Vars.state.isCampaign();
-    let hasEnemyUnits = Groups.unit.contains(u => u.team != Vars.player.team());
-
-    if (!isDefenseOrPlanetSector && !hasEnemyUnits) return;
-
-    let targetCore = getPlayerCore();
-
-    Groups.unit.each(unit => {
-        if (unit == null || !unit.isAdded() || unit.isFlying()) return;
-
-        // BỎ QUA UNIT PHE NGƯỜI CHƠI (CHỈ ÁP DỤNG VỚI QUÁI ĐỊCH)
-        if (unit.team == Vars.player.team()) return;
-
-        let range = unit.range ? unit.range() : 100;
-        let currentTile = unit.tileOn();
-        if (currentTile == null) return;
-
-        let uTileX = unit.tileX();
-        let uTileY = unit.tileY();
-        let moveTargetX = unit.x;
-        let moveTargetY = unit.y;
-
-        if (currentTile.floor() === antikeiBlock) {
-            let currentKey = uTileX + "," + uTileY;
-            let nextTile = flowMap[currentKey];
-
-            if (nextTile != null) {
-                moveTargetX = nextTile.worldx();
-                moveTargetY = nextTile.worldy();
-            } else if (targetCore) {
-                moveTargetX = targetCore.x;
-                moveTargetY = targetCore.y;
-            }
-        } else {
-            let nearestAntikei = findNearestAntikei(unit);
-            if (nearestAntikei != null) {
-                moveTargetX = nearestAntikei.worldx();
-                moveTargetY = nearestAntikei.worldy();
-            } else {
-                unit.vel.set(0, 0);
-                return;
-            }
-        }
-
-        let moveAngle = unit.angleTo(moveTargetX, moveTargetY);
-        unit.vel.trns(moveAngle, unit.speed());
-
-        let target = Units.closestTarget(unit.team, unit.x, unit.y, range);
-
-        if (target != null) {
-            unit.lookAt(target.x, target.y);
-            unit.aim(target.x, target.y);
-            unit.controlWeapons(true, true);
-        } else {
-            unit.lookAt(moveAngle);
-            unit.aim(moveTargetX, moveTargetY);
-            unit.controlWeapons(false, false);
-        }
-    });
-});
-
-// =========================================================================
-// --- BỔ SUNG CÁC HÀM MỚI: TỰ ĐỘNG TÌM ĐƯỜNG ĐẾN TẤT CẢ CÁC BASE CÒN SỐNG ---
-// =========================================================================
-
-// Hàm lấy Core gần nhất CÒN SỐNG thuộc phe người chơi
-function getClosestPlayerCoreDynamic(x, y) {
-    let teamData = Vars.state.teams.get(Vars.player.team());
-    if (teamData != null && teamData.cores != null && !teamData.cores.isEmpty()) {
-        return Geometry.findClosest(x, y, teamData.cores);
-    }
-    return null;
-}
-
-// Hàm cập nhật lại FlowMap hoàn chỉnh nối đến TẤT CẢ các Base còn sống hiện tại
-function updateDynamicFlowMapMultiCore() {
-    if (!antikeiBlock || Vars.world == null) return;
-
-    let teamData = Vars.state.teams.get(Vars.player.team());
-    if (teamData == null || teamData.cores == null || teamData.cores.isEmpty()) {
-        flowMap = {};
-        return;
-    }
-
-    let dynamicFlowMap = {};
-    let queue = [];
-    let visited = new java.util.HashSet();
-    let dirs = [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [-1, -1], [1, -1], [-1, 1]];
-
-    // Đưa tất cả các ô antikeiBlock nằm xung quanh MỌI CORE CÒN SỐNG vào hàng chờ BFS
-    teamData.cores.each(core => {
-        let coreTileX = core.tileX();
-        let coreTileY = core.tileY();
-        let radius = 10; // Quét trong bán kính để tìm điểm chạm khối antikei
-
-        for (let dx = -radius; dx <= radius; dx++) {
-            for (let dy = -radius; dy <= radius; dy++) {
-                let tile = Vars.world.tile(coreTileX + dx, coreTileY + dy);
-                if (tile != null && tile.floor() === antikeiBlock) {
-                    let key = tile.x + "," + tile.y;
-                    if (!visited.contains(key)) {
-                        visited.add(key);
-                        queue.push(tile);
-                    }
-                }
-            }
-        }
-    });
-
-    // Loang thuật toán BFS ngược từ các Core về phía các đường antikei
-    while (queue.length > 0) {
-        let current = queue.shift();
-
-        for (let i = 0; i < dirs.length; i++) {
-            let nx = current.x + dirs[i][0];
-            let ny = current.y + dirs[i][1];
-            let neighborKey = nx + "," + ny;
-
-            let neighbor = Vars.world.tile(nx, ny);
-            if (neighbor != null && neighbor.floor() === antikeiBlock && !visited.contains(neighborKey)) {
-                visited.add(neighborKey);
-                dynamicFlowMap[neighborKey] = current; // Ô lân cận sẽ chỉ hướng di chuyển về 'current' (về phía core)
-                queue.push(neighbor);
-            }
-        }
-    }
-
-    flowMap = dynamicFlowMap; // Cập nhật lại flowMap dùng chung
-}
-
-// Lắng nghe sự kiện một công trình bị nổ để tính lại đường ngay lập tức
 Events.on(BlockDestroyEvent, event => {
     if (!mapHasAntikei) return;
     if (event.tile != null && event.tile.build != null && event.tile.build.team == Vars.player.team()) {
@@ -271,23 +145,20 @@ Events.on(BlockDestroyEvent, event => {
     }
 });
 
-// Chạy vòng lặp bổ sung để sửa hướng di chuyển của địch mỗi tick
 Events.run(Trigger.update, () => {
     if (!antikeiBlock || Vars.state.isMenu() || !mapHasAntikei) return;
 
-    // Cập nhật lại FlowMap mỗi 1 giây (60 ticks) để đảm bảo cập nhật khi player đặt thêm sàn antikei
     if (Vars.state.isPlaying() && Time.time % 60 == 0) {
+        clearOresOnAntikei();
         updateDynamicFlowMapMultiCore();
     }
 
-    // Duyệt và ép quái địch chuyển hướng sang Core còn sống
+    let playerTeam = Vars.player.team();
+
     Groups.unit.each(unit => {
-        if (unit == null || !unit.isAdded() || unit.isFlying()) return;
-        if (unit.team == Vars.player.team()) return;
+        if (unit == null || !unit.isAdded() || unit.isFlying() || unit.team == playerTeam) return;
 
         let liveCore = getClosestPlayerCoreDynamic(unit.x, unit.y);
-
-        // Trường hợp tất cả các Core phe ta đều nổ hết
         if (liveCore == null) {
             unit.vel.set(0, 0);
             return;
@@ -302,19 +173,18 @@ Events.run(Trigger.update, () => {
         let moveTargetY = unit.y;
 
         if (currentTile.floor() === antikeiBlock) {
-            let currentKey = uTileX + "," + uTileY;
-            let nextTile = flowMap[currentKey];
+            let currentKey = getTileKey(uTileX, uTileY);
+            let nextTile = flowMap.get(currentKey);
 
             if (nextTile != null) {
                 moveTargetX = nextTile.worldx();
                 moveTargetY = nextTile.worldy();
             } else {
-                // Nếu đường antikei bị đứt đoạn không chạm tới flowMap, đi thẳng tới Core còn sống gần nhất
                 moveTargetX = liveCore.x;
                 moveTargetY = liveCore.y;
             }
         } else {
-            let nearestAntikei = findNearestAntikei(unit);
+            let nearestAntikei = findNearestAntikeiFast(unit);
             if (nearestAntikei != null) {
                 moveTargetX = nearestAntikei.worldx();
                 moveTargetY = nearestAntikei.worldy();
@@ -324,8 +194,20 @@ Events.run(Trigger.update, () => {
             }
         }
 
-        // Ghi đè vector vận tốc chính xác tuyệt đối
         let moveAngle = unit.angleTo(moveTargetX, moveTargetY);
         unit.vel.trns(moveAngle, unit.speed());
+
+        let range = unit.range ? unit.range() : 100;
+        let target = Units.closestTarget(unit.team, unit.x, unit.y, range);
+
+        if (target != null) {
+            unit.lookAt(target.x, target.y);
+            unit.aim(target.x, target.y);
+            unit.controlWeapons(true, true);
+        } else {
+            unit.lookAt(moveAngle);
+            unit.aim(moveTargetX, moveTargetY);
+            unit.controlWeapons(false, false);
+        }
     });
 });

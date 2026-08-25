@@ -13,7 +13,7 @@ const turretChargeMap = new ObjectMap();
 const turretMilestoneMap = new ObjectMap();    
 const turretCountdownMap = new ObjectMap();
 
-// Bộ lưu trữ danh sách mục tiêu phụ cho MK2b ứng với các mốc điểm
+ 
 const subTargetsMap = new ObjectMap(); 
 
 const packCons2 = (func) => new Cons2({ get: func });
@@ -106,11 +106,11 @@ const flazerdLaserBullet = extend(BulletType, {
         if(tier == 2) baseDamage = 33 * 3.5; 
         else if(tier == 3) baseDamage = 33 * 6.0; 
 
-        // 1 điểm sạc tăng 2% sát thương cho cấu hình mới của tháp pháo
+ 
         let damageBonusPercent = currentPoints * 0.02; 
         let currentTickDamage = baseDamage * (1 + damageBonusPercent);
 
-        // --- HỆ THỐNG KHÓA MỤC TIÊU CHO TIA CHÍNH ---
+ 
         let mainTarget = null;
         if(b.data.mainTargetId != -1){
             let potential = Groups.unit.getByID(b.data.mainTargetId);
@@ -131,7 +131,7 @@ const flazerdLaserBullet = extend(BulletType, {
 
             mainTarget.damage(currentTickDamage / 60);
 
-            // Xử lý sạc tụ năng lượng %
+ 
             if(currentPoints >= 200){
                 if(countdown == -1){
                     turretCountdownMap.put(turretId, 300); 
@@ -157,9 +157,9 @@ const flazerdLaserBullet = extend(BulletType, {
                 turretChargeMap.put(turretId, currentPoints);
             }
 
-            // --- CHỈNH SỬA CHO MK2B (TIER 3): CƠ CHẾ TIA PHỤ THEO MỐC 20 -> 200 SẠC ---
+ 
             if(tier == 3) {
-                subTargetsList.clear(); // Làm mới các tia phụ mỗi tick
+                subTargetsList.clear();  
 
                 let activeMilestones = 0;
                 let milestoneLimits = [20, 40, 60, 80, 100, 120, 140, 160, 180, 200];
@@ -238,7 +238,7 @@ const flazerdLaserBullet = extend(BulletType, {
         let damageBonusPercent = currentPoints * 0.02; 
         let thicknessScale = 1.0 + (damageBonusPercent * 0.5); 
 
-        // Vẽ trục laser chính tâm
+ 
         Draw.color(laserColor); Lines.stroke(3.6 * thicknessScale); Lines.line(startX, startY, endX, endY);
         Draw.color(Color.white); Lines.stroke(1.2 * thicknessScale); Lines.line(startX, startY, endX, endY);
 
@@ -360,7 +360,7 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
 
     placed(){
         this.super$placed();
-        // Đã gỡ bỏ logic giới hạn số lượng đặt tháp pháo ở đây
+ 
         this.wingsOffset = 0;
     },
 
@@ -463,7 +463,7 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
 
                 let branchesTable = new Table();
 
-                // Nhánh 1: MK2
+ 
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                 b1.add("[cyan]===(MK2)===[]").row();
                 let b1D = b1.add("Mô-đun mạch xung hỏa lực bứt tốc:\n" +
@@ -481,7 +481,7 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
                     } else { Vars.ui.showInfoToast("[red]Không đủ tài nguyên cho nhánh MK2![]", 2); }
                 })).size(180, 38);
 
-                // Nhánh 2: MK2B
+ 
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                 b2.add("[purple]===(MK2B)===[]").row();
                 let b2D = b2.add("Lõi hội tụ đa chùm phổ hủy diệt tầng cao:\n" +

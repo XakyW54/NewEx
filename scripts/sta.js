@@ -1,16 +1,13 @@
-// ==================== KHAI BÁO GLOBAL & STATUS EFFECTS ====================
-global.deotLastHealth = {};  
+ global.deotLastHealth = {};  
 global.deotDamagedTime = {}; 
 global.doteiStacks = {};     
 global.bemodStacks = {};
-global.ceiStacks = {};       // Lưu điểm tích lũy của Status CEI theo unit.id
-global.ceiTimers = {};       // Đếm thời gian 1s của Status CEI theo unit.id
+global.ceiStacks = {};   
+global.ceiTimers = {};    
 
 let isDoteiDamageActive = false;
 
-// --- KHAI BÁO CÁC EFFECT CỦA CEI ---
-
-// 1. Effect hạt khói xanh nước nhạt zoom/thu nhỏ từ ngoài vào tâm Unit
+ 
 const ceiSmokeIngatherFx = new Effect(30, cons(e => {
     Draw.z(Layer.effect + 0.1);
     
@@ -30,15 +27,13 @@ const ceiSmokeIngatherFx = new Effect(30, cons(e => {
     Draw.reset();
 }));
 
-// 2. EFFECT ĐỒ HỌA VÙNG BĂNG GIÁ TÙY CHỈNH THEO BÁN KÍNH
-const ceiFieldFx = new Effect(1800, cons(e => { // 1800 ticks = 30 giây
+ const ceiFieldFx = new Effect(1800, cons(e => { 
     let radius = (e.data != null && typeof e.data === "number") ? e.data : 200; 
     let x = e.x, y = e.y;
 
     Draw.z(Layer.effect + 0.5);
 
-    // --- 1. LÕI MỜ VÀ VIỀN SIÊU MỎNG ---
-    Draw.color(Color.valueOf("90e0ef"));
+     Draw.color(Color.valueOf("90e0ef"));
     Draw.alpha(0.18 * e.fout());
     Fill.circle(x, y, radius);
 
@@ -47,8 +42,7 @@ const ceiFieldFx = new Effect(1800, cons(e => { // 1800 ticks = 30 giây
     Lines.stroke(1.2); 
     Lines.circle(x, y, radius);
 
-    // --- 2. CÁC HẠT LI TI BAY SIÊU NHANH ---
-    const particleColors = [
+     const particleColors = [
         Color.valueOf("0077b6"), 
         Color.valueOf("00b4d8"), 
         Color.valueOf("90e0ef"), 
@@ -77,8 +71,7 @@ const ceiFieldFx = new Effect(1800, cons(e => { // 1800 ticks = 30 giây
         Fill.circle(px, py, pSize);
     }
 
-    // --- 3. CÁC VẠCH CONG NGẮN BAY XOAY TRÒN BÊN TRONG LÕI ---
-    Lines.stroke(1.5);
+     Lines.stroke(1.5);
     for (let i = 0; i < 12; i++) {
         let seed = e.id + i * 555;
         
@@ -98,18 +91,16 @@ const ceiFieldFx = new Effect(1800, cons(e => { // 1800 ticks = 30 giây
     Draw.reset();
 }));
 
-// --- MANAGEMENT HỆ THỐNG VÙNG BĂNG GIÁ ĐANG HOẠT ĐỘNG ---
-let activeCeiFields = [];
+ let activeCeiFields = [];
 
 function spawnCeiField(x, y, targetUnit, sourceTurret) {
     let perkTier = (sourceTurret != null && typeof sourceTurret.getPerkTier === "function") ? sourceTurret.getPerkTier() : 0;
     
-    // Tính bán kính vùng băng giá theo Phúc lợi
-    let radius = 200;
-    if (perkTier == 2) radius *= 2.20;       // +120%
-    if (perkTier == 3) radius *= 0.50;       // -50%
-    if (perkTier == 5) radius *= 0.80;       // -20%
-    if (perkTier == 6) radius *= 3.00;       // +200%
+     let radius = 200;
+    if (perkTier == 2) radius *= 2.20;      
+    if (perkTier == 3) radius *= 0.50;      
+    if (perkTier == 5) radius *= 0.80;    
+    if (perkTier == 6) radius *= 3.00;     
 
     ceiFieldFx.at(x, y, 0, radius); 
     
@@ -128,15 +119,14 @@ function spawnCeiField(x, y, targetUnit, sourceTurret) {
     });
 }
 
-// Loop quét sát thương vùng băng giá
-Events.run(Trigger.update, () => {
+ Events.run(Trigger.update, () => {
     for (let i = activeCeiFields.length - 1; i >= 0; i--) {
         let field = activeCeiFields[i];
         
         field.timer += Time.delta;
         field.totalTime -= Time.delta;
 
-        if (field.timer >= 180.0) { // Mỗi 3s
+        if (field.timer >= 180.0) {  
             field.timer = 0;
 
             let fx = field.x;
@@ -147,29 +137,25 @@ Events.run(Trigger.update, () => {
 
             let hpPercent = (perk == 5) ? 0.05 : 0.01;
 
-            // 1. Quét Unit phe kẻ địch
-            Groups.unit.each(u => {
+             Groups.unit.each(u => {
                 if (u != null && u.isValid() && u.team == vTeam && Mathf.dst(u.x, u.y, fx, fy) <= r) {
                     let baseDmg = 330;
-                    if (perk == 1) baseDmg *= 1.50; // Phúc lợi 1: +50% dmg status
+                    if (perk == 1) baseDmg *= 1.50;  
                     
                     let dmg = baseDmg + (u.maxHealth * hpPercent);
                     
-                    // Phúc lợi 2: gây thêm 100 dmg xuyên giáp 100% mỗi giây (300 dmg / 3s)
-                    if (perk == 2) dmg += 300; 
+                     if (perk == 2) dmg += 300; 
 
                     u.damage(dmg);
 
-                    // Phúc lợi 6: giảm 100% giáp (hoặc áp dụng khi gây sát thương)
-                    if (perk == 6) {
-                        u.damage(200); // gây 200 sát thương thêm mỗi 3s
+                     if (perk == 6) {
+                        u.damage(200); 
                     }
 
                     u.apply(StatusEffects.freezing, 300); 
                     u.apply(StatusEffects.wet, 300);
 
-                    // Phúc lợi 5: Cộng 5 tầng CEI
-                    if (perk == 5) {
+                     if (perk == 5) {
                         let uid = u.id;
                         if (!global.ceiStacks[uid]) global.ceiStacks[uid] = 0;
                         global.ceiStacks[uid] += 5;
@@ -177,8 +163,7 @@ Events.run(Trigger.update, () => {
                 }
             });
 
-            // 2. Quét Công trình/Căn cứ phe kẻ địch
-            Vars.indexer.eachBlock(null, fx, fy, r, b => b.team == vTeam, b => {
+             Vars.indexer.eachBlock(null, fx, fy, r, b => b.team == vTeam, b => {
                 let baseDmg = 330;
                 if (perk == 1) baseDmg *= 1.50;
                 let dmg = baseDmg + (b.maxHealth * hpPercent);
@@ -193,8 +178,7 @@ Events.run(Trigger.update, () => {
     }
 });
 
-// --- 1. STATUS CEI ---
-var cei = extend(StatusEffect, "cei", {
+ var cei = extend(StatusEffect, "cei", {
     init() {
         this.super$init();
         this.uiIcon = StatusEffects.freezing.uiIcon;
@@ -213,8 +197,7 @@ var cei = extend(StatusEffect, "cei", {
         if (global.ceiTimers[id] >= 60.0) {
             global.ceiTimers[id] = 0;
             
-            // Tích lũy 1 điểm/s
-            global.ceiStacks[id] += 1;
+             global.ceiStacks[id] += 1;
 
             let currentStacks = global.ceiStacks[id];
 
@@ -222,8 +205,7 @@ var cei = extend(StatusEffect, "cei", {
                 ceiSmokeIngatherFx.at(unit.x, unit.y);
             }
 
-            // Kiểm tra mốc tạo vùng băng giá (Mặc định 75, Phúc lợi 3 còn 60, Phúc lợi 6 còn 30)
-            let reqLimit = 75;
+             let reqLimit = 75;
             let lastTurret = global.ceiLastAppliedTurret ? global.ceiLastAppliedTurret[id] : null;
             let perk = (lastTurret != null && typeof lastTurret.getPerkTier === "function") ? lastTurret.getPerkTier() : 0;
 
@@ -237,44 +219,35 @@ var cei = extend(StatusEffect, "cei", {
         }
     },
 
-// Vẽ hiệu ứng vết kẻ cong siêu nhỏ, di chuyển độc lập quanh tâm unit
-    draw(unit) {
+     draw(unit) {
         let stacks = global.ceiStacks[unit.id] || 0;
         if (stacks <= 0) return;
 
         Draw.z(Layer.effect + 0.05);
         Draw.color(Color.valueOf("90e0ef"));
         
-        // Độ dày nét vẽ thu nhỏ (1.2px)
-        Lines.stroke(1.2 / Scl.scl(1.0));
+         Lines.stroke(1.2 / Scl.scl(1.0));
 
-        // Chiều dài vệt cong thu nhỏ (chỉ 12 độ)
-        let arcDegree = 12;                      
+         let arcDegree = 12;                      
         let arcFraction = arcDegree / 360.0;     
 
         for (let i = 0; i < stacks; i++) {
-            // Seed cố định cho từng vệt kẻ dựa trên ID unit + chỉ số vệt kẻ
-            let seed = unit.id * 1000 + i;
+             let seed = unit.id * 1000 + i;
 
-            // Góc ban đầu ngẫu nhiên [0, 360)
-            let baseAngle = Mathf.randomSeed(seed, 0, 360);
+             let baseAngle = Mathf.randomSeed(seed, 0, 360);
             
-            // Tốc độ xoay ngẫu nhiên từ 1.0 đến 3.5, hướng xoay ngẫu nhiên (+1 hoặc -1)
-            let rotSpeed = Mathf.randomSeed(seed + 1, 1.0, 3.5);
+             let rotSpeed = Mathf.randomSeed(seed + 1, 1.0, 3.5);
             let dir = (i % 2 === 0) ? 1 : -1;
             let currentAngle = baseAngle + (Time.time * rotSpeed * dir);
 
-            // Bán kính ngẫu nhiên tính từ tâm (từ hitSize * 0.4 đến hitSize + 2px)
-            let minR = Math.max(3.0, unit.hitSize * 0.4);
+             let minR = Math.max(3.0, unit.hitSize * 0.4);
             let maxR = unit.hitSize + 2.0;
             let baseRadius = Mathf.randomSeed(seed + 2, minR, maxR);
             
-            // Dao động vị trí nhẹ theo thời gian (nhấp nháy di chuyển ra/vào tâm)
-            let radiusOffset = Math.sin((Time.time + seed) * 0.1) * 1.5;
+             let radiusOffset = Math.sin((Time.time + seed) * 0.1) * 1.5;
             let currentRadius = Math.max(2.0, baseRadius + radiusOffset);
 
-            // Vẽ vệt cong nhỏ
-            Lines.arc(unit.x, unit.y, currentRadius, arcFraction, currentAngle);
+             Lines.arc(unit.x, unit.y, currentRadius, arcFraction, currentAngle);
         }
 
         Draw.reset();
@@ -287,8 +260,7 @@ var cei = extend(StatusEffect, "cei", {
     }
 });
 
-// --- 2. STATUS DOTEI ---
-var dotei = extend(StatusEffect, "dotei", {
+ var dotei = extend(StatusEffect, "dotei", {
     init() { 
         this.super$init(); 
         this.uiIcon = StatusEffects.corroded.uiIcon; 
@@ -308,8 +280,7 @@ var dotei = extend(StatusEffect, "dotei", {
     onRemoved(unit) { delete global.doteiStacks[unit.id]; }
 });
 
-// --- 3. STATUS DEOT ---
-var deot = extend(StatusEffect, "deot", {
+ var deot = extend(StatusEffect, "deot", {
     init() { 
         this.super$init(); 
         this.uiIcon = StatusEffects.shielded.uiIcon; 
@@ -327,8 +298,7 @@ var deot = extend(StatusEffect, "deot", {
     }
 });
 
-// --- 4. STATUS BEMOD ---
-const bemodLoopFx = new Effect(35, cons(e => {
+ const bemodLoopFx = new Effect(35, cons(e => {
     Draw.z(Layer.effect + 0.05);
     let seed = e.id;
     let baseSize = 20 + Mathf.randomSeed(seed, -5, 10);
@@ -364,8 +334,7 @@ var bemod = extend(StatusEffect, "bemod", {
 
 function packRun(func) { return new java.lang.Runnable({ run: func }); }
 
-// --- 5. STATUS ATKSPEED ---
-const customAtkSpeedFx = new Effect(45, cons(e => {
+ const customAtkSpeedFx = new Effect(45, cons(e => {
     Draw.z(Layer.effect + 0.01);
     Draw.color(Color.valueOf("ff6e6e"));
     Lines.stroke(1.5);
@@ -386,8 +355,7 @@ var atkspeed = extend(StatusEffect, "atkspeed", {
     color: Color.sky 
 });
 
-// --- LẮNG NGHE SỰ KIỆN HỦY UNIT ---
-Events.on(UnitDestroyEvent, cons(e => {
+ Events.on(UnitDestroyEvent, cons(e => {
     let id = e.unit.id;
     delete global.deotLastHealth[id];
     delete global.deotDamagedTime[id];
@@ -398,8 +366,7 @@ Events.on(UnitDestroyEvent, cons(e => {
     if (global.ceiLastAppliedTurret) delete global.ceiLastAppliedTurret[id];
 }));
 
-// --- NẠP HIỂN THỊ TÊN VÀ MÔ TẢ ---
-Events.on(ClientLoadEvent, () => {
+ Events.on(ClientLoadEvent, () => {
     cei.localizedName = "Cei Frost Field";
     cei.description = "Tích lũy 1 điểm mỗi giây. Đủ mốc sẽ tạo Vùng Băng Giá tồn tại 30s.";
     dotei.localizedName = "Dotei";

@@ -5,42 +5,50 @@ const packProv = (func) => new Prov({ get: func });
 const reqPerkA = { copper: 2000, lead: 2000, silicon: 2000 };
 const reqPerkB = { titanium: 1000, thorium: 1000, graphite: 1000 };
 
-// 1. HIỆU ỨNG TỤ LỰC (CHARGING EFFECT)
-const vChargeFx = new Effect(25, cons(e => {
+ 
+const vChainLinkFx = new Effect(15, cons(e => {
+    Draw.z(Layer.effect + 0.05);
+    let fout = e.fout();
+
+    if (e.data != null) {
+        let tx = e.data.x;
+        let ty = e.data.y;
+        
+        Draw.color(Color.valueOf("#ff2222"), Color.white, e.fin());
+        Lines.stroke(4.0 * fout);
+        Lines.line(e.x, e.y, tx, ty);
+
+        Draw.color(Color.white);
+        Lines.stroke(1.5 * fout);
+        Lines.line(e.x, e.y, tx, ty);
+
+        Fill.circle(e.x, e.y, 5.0 * fout);
+        Fill.circle(tx, ty, 5.0 * fout);
+    }
+    Draw.reset();
+}));
+
+ 
+const vChargeFx = new Effect(20, cons(e => {
     Draw.z(Layer.effect + 0.01);
     let fin = e.fin();
-    let fout = e.fout();
     let rot = e.rotation;
 
     let startX = e.x;
     let startY = e.y;
-    let slashLength = e.data != null ? Number(e.data) : 320.0;
+    let slashLength = e.data != null ? Number(e.data) : 1100.0;
 
     let endX = startX + Angles.trnsx(rot, slashLength);
     let endY = startY + Angles.trnsy(rot, slashLength);
 
     Draw.color(Color.valueOf("#ff4444"), Color.white, fin);
-    Draw.alpha(fin * 0.8);
-    Lines.stroke(1.5 * fin);
+    Draw.alpha(fin * 0.5);
+    Lines.stroke(1.2 * fin);
     Lines.line(startX, startY, endX, endY);
-
-    Draw.color(Color.white, Color.valueOf("#ff5533"), fin);
-    let sparkCount = 4;
-    for (let i = 0; i < sparkCount; i++) {
-        let seed = e.id * 50 + i + Math.floor(fin * 8);
-        let dist = Mathf.randomSeed(seed, 10, 35) * fout;
-        let angle = rot + Mathf.randomSeed(seed + 1, -180, 180);
-
-        let sx = startX + Angles.trnsx(angle, dist);
-        let sy = startY + Angles.trnsy(angle, dist);
-
-        Lines.stroke(1.2 * fin);
-        Lines.line(sx, sy, startX, startY);
-    }
     Draw.reset();
 }));
 
-// 2. HIỆU ỨNG NHÁT CHÉM THẲNG (VFX Đỏ Cam - Hỗ trợ độ rộng & độ dài động)
+ 
 const vSlashHitFx = new Effect(25, cons(e => {
     Draw.z(Layer.effect + 0.02);
     
@@ -51,78 +59,48 @@ const vSlashHitFx = new Effect(25, cons(e => {
     let startX = e.x;
     let startY = e.y;
     
-    // e.data truyền vào dạng { len: float, widthMult: float }
-    let slashLength = (e.data != null && e.data.len) ? e.data.len : 320.0;
+    let slashLength = (e.data != null && e.data.len) ? e.data.len : 1100.0;
     let wMult = (e.data != null && e.data.widthMult) ? e.data.widthMult : 1.0;
 
     let endX = startX + Angles.trnsx(rot, slashLength * Math.min(1.0, fin * 1.5));
     let endY = startY + Angles.trnsy(rot, slashLength * Math.min(1.0, fin * 1.5));
 
-    // Glow bên ngoài
     Draw.color(Color.valueOf("#ff3333"), Color.valueOf("#ff6644"), fin);
     Draw.alpha(fout * 0.7);
-    Lines.stroke(32.0 * wMult * fout);
+    Lines.stroke(24.0 * wMult * fout);
     Lines.line(startX, startY, endX, endY);
 
-    // Thân nhát chém lớn
-    Draw.color(Color.valueOf("#ff8866"), Color.valueOf("#ffe0cc"), fin);
-    Draw.alpha(fout);
-    
-    let layers = 5;
-    for (let i = 0; i < layers; i++) {
-        let offset = (i - layers / 2) * 2.5 * wMult;
-        let perpX = Angles.trnsx(rot + 90, offset);
-        let perpY = Angles.trnsy(rot + 90, offset);
-        let strokeSize = (14.0 - Math.abs(i - layers / 2) * 2.2) * wMult * fout;
-        
-        Lines.stroke(strokeSize);
-        Lines.line(startX + perpX, startY + perpY, endX + perpX, endY + perpY);
-    }
-
-    // Lõi trắng sáng
     Draw.color(Color.white);
     Draw.alpha(fout);
-    Lines.stroke(6.0 * wMult * fout);
+    Lines.stroke(4.0 * wMult * fout);
     Lines.line(startX, startY, endX, endY);
 
     Draw.reset();
 }));
 
-// 3. ĐẠN QUẢ CẦU NĂNG LƯỢNG (PHÚC LỢI 2B)
+ 
 const energyOrbBullet = extend(BasicBulletType, {
     speed: 7.0,
     damage: 35,
     lifetime: 60,
-    width: 16,
-    height: 16,
+    width: 14,
+    height: 14,
     shrinkX: 0,
     shrinkY: 0,
 
     draw(b) {
         Draw.z(Layer.bullet);
-        let fout = b.fout();
-        
-        // Quả cầu nén nhiều lớp đỏ cam trắng
         Draw.color(Color.valueOf("#ff3333"));
-        Fill.circle(b.x, b.y, 10.0);
+        Fill.circle(b.x, b.y, 8.0);
         
-        Draw.color(Color.valueOf("#ff8866"));
-        Fill.circle(b.x, b.y, 7.0);
-
         Draw.color(Color.white);
-        Fill.circle(b.x, b.y, 4.0);
-
-        // Vòng năng lượng tỏa nhẹ
-        Lines.stroke(1.5 * fout, Color.valueOf("#ff6644"));
-        Lines.circle(b.x, b.y, 12.0 + (1.0 - fout) * 4.0);
-
+        Fill.circle(b.x, b.y, 3.0);
         Draw.reset();
     }
 });
 
-// Hàm Gây Sát Thương Dọc Theo Nhát Chém
 function damageStraightSlash(team, startX, startY, rotation, length, damageAmount) {
-    let steps = Math.floor(length / 25.0);
+    let steps = Math.floor(length / 30.0);
     let stepDist = length / steps;
     let hitRadius = 24.0;
 
@@ -134,19 +112,21 @@ function damageStraightSlash(team, startX, startY, rotation, length, damageAmoun
     }
 }
 
-// Khai báo pháo LAZASH
 const lazash = extend(PowerTurret, "lazash", {
     configurable: true
 });
 
 lazash.health = 3600;
-lazash.range = 320; 
+lazash.range = 1100;
 lazash.reload = 120; 
 
-// Đạn Laser Vanilla (10 dmg mỗi 0.2s)
+lazash.targetAir = false;
+lazash.targetGround = false;
+lazash.targetBuildings = true;
+
 lazash.shootType = extend(LaserBulletType, {
     damage: 10, 
-    length: 320, 
+    length: 1100, 
     width: 18,
     colors: [Color.valueOf("#ff4444"), Color.valueOf("#ff8866"), Color.white]
 });
@@ -172,15 +152,21 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
         this.perkBState = 0;
 
         this.chargeTimer = 0.0;
-        this.isCharging = false;
+        this.isChargingState = false;
         this.reloadTimer = 0.0;
         this.laserTimer = 0.0;
 
-        // Trạng thái cho Phúc lợi 2B
         this.slashCount2B = 0;
         this.isFrenzy2B = false;
         this.frenzyShotsLeft = 0;
         this.frenzyTimer = 0.0;
+
+        this.targetScanTimer = 0.0;
+        this.isChainFiring = false;
+        
+        this.slaveTicks = 0;
+        this.slaveTargetAngle = 0.0;
+        this.slaveIsShooting = false;
 
         return this;
     },
@@ -190,12 +176,59 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
     getPerkB() { return this.perkBState || 0; },
     setPerkB(val) { this.perkBState = Number(val); },
 
-    // Tính toán Tầm bắn dựa trên Phúc lợi
+    getIsCharging() { return !!this.isChargingState; },
+
+ 
+    setSlaveCommand(angle, isShooting) {
+        this.slaveTicks = 5; 
+        this.slaveTargetAngle = Number(angle);
+        this.slaveIsShooting = !!isShooting;
+    },
+
     range() {
         let perkA = this.getPerkA();
-        let baseR = 320.0;
-        if (perkA == 3) baseR = 320.0 * 2.5; // Phúc lợi 3A: Tăng 150% (320 * 2.5 = 800px)
-        return baseR;
+        return (perkA == 2) ? 1100.0 * 1.12 : 1100.0;
+    },
+
+    findTarget() {
+        let perkA = this.getPerkA();
+        let r = this.range();
+
+        if (perkA == 3) {
+            let enemyCore = Units.closestCore(this.x, this.y, r, cons(c => c.team != this.team));
+            if (enemyCore != null) {
+                this.target = enemyCore;
+                return;
+            }
+        }
+
+        let bestTarget = null;
+        let bestVal = -1;
+
+        let activeTeams = Vars.state.teams.present;
+        for (let i = 0; i < activeTeams.size; i++) {
+            let teamData = activeTeams.get(i);
+            if (teamData.team != this.team) {
+                let buildings = teamData.buildings;
+                if (buildings != null) {
+                    for (let j = 0; j < buildings.size; j++) {
+                        let build = buildings.get(j);
+                        if (build != null && build.isValid() && this.within(build, r)) {
+                            let score = 0;
+                            if (perkA == 1) score = 9999999 - build.health;
+                            else if (perkA == 2) score = build.maxHealth;
+                            else score = 999999 - this.dst(build);
+
+                            if (score > bestVal) {
+                                bestVal = score;
+                                bestTarget = build;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        this.target = bestTarget;
     },
 
     executeSlash(angleOffset) {
@@ -206,125 +239,196 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
         let slashLen = this.range(); 
         let baseSlashDmg = 49.0;
 
-        // --- CỘNG DỒN MULTIPLIER SÁT THƯƠNG ---
         let dmgMult = 1.0;
-        if (perkA == 3) dmgMult += 0.20; // 3A: +20%
-        if (perkB == 1) dmgMult += 0.50; // 1B: +50%
-        if (perkB == 3) dmgMult += 2.00; // 3B: +200%
+        if (perkA == 1) dmgMult += 0.50;
+        if (perkA == 2) dmgMult += 0.08;
+        if (perkB == 1) dmgMult += 0.50;
+        if (perkB == 3) dmgMult += 2.00;
 
-        let widthMult = (perkB == 3) ? 2.5 : 1.0; // 3B: Tăng 150% kích thước diện rộng (2.5x)
+        let widthMult = (perkB == 3) ? 2.5 : 1.0; 
 
-        // Vẽ FX nhát chém
         vSlashHitFx.at(this.x, this.y, angle, { len: slashLen, widthMult: widthMult });
         damageStraightSlash(this.team, this.x, this.y, angle, slashLen, baseSlashDmg * dmgMult);
 
-        // Phúc lợi 1A: 50% tỉ lệ bắn thêm 1 tia vSlashHitFx phụ
-        if (perkA == 1 && Mathf.chance(0.50)) {
-            let bonusAngle = angle + Mathf.range(15);
-            vSlashHitFx.at(this.x, this.y, bonusAngle, { len: slashLen, widthMult: widthMult });
-            damageStraightSlash(this.team, this.x, this.y, bonusAngle, slashLen, (baseSlashDmg * dmgMult) * 0.5);
-        }
-
-        // Đếm số lần bắn cho Phúc lợi 2B
         if (perkB == 2 && !this.isFrenzy2B) {
             this.slashCount2B++;
             if (this.slashCount2B >= 5) {
                 this.slashCount2B = 0;
                 this.isFrenzy2B = true;
-                this.frenzyShotsLeft = 100; // Khóa pháo bắn 100 viên
+                this.frenzyShotsLeft = 100;
             }
         }
+    },
+ 
+    syncChainCommand(targetAngle, isShooting) {
+        if (this.isChainFiring) return;
+        this.isChainFiring = true;
+
+        let adjacentRadius = (this.block.size * 8) + 8.0; 
+
+        Units.nearbyBuildings(this.x, this.y, adjacentRadius, cons(b => {
+            if (b != null && b !== this && b.block === this.block && b.team === this.team) {
+                let dstX = Math.abs(this.x - b.x);
+                let dstY = Math.abs(this.y - b.y);
+                
+                let isAdjacent = (dstX < 4.0 && dstY <= adjacentRadius) || (dstY < 4.0 && dstX <= adjacentRadius);
+
+                if (isAdjacent && typeof b.setSlaveCommand === "function") {
+                    b.setSlaveCommand(targetAngle, isShooting);
+
+                    if (isShooting) {
+                        vChainLinkFx.at(this.x, this.y, 0, { x: Number(b.x), y: Number(b.y) });
+                    }
+
+                    if (typeof b.syncChainCommand === "function") {
+                        b.syncChainCommand(targetAngle, isShooting);
+                    }
+                }
+            }
+        }));
+
+        this.isChainFiring = false;
+    },
+
+ 
+    drawSelect() {
+        this.super$drawSelect();
+
+        let adjacentRadius = (this.block.size * 8) + 8.0;
+
+        Units.nearbyBuildings(this.x, this.y, adjacentRadius, cons(b => {
+            if (b != null && b !== this && b.block === this.block && b.team === this.team) {
+                let dstX = Math.abs(this.x - b.x);
+                let dstY = Math.abs(this.y - b.y);
+                
+                let isAdjacent = (dstX < 4.0 && dstY <= adjacentRadius) || (dstY < 4.0 && dstX <= adjacentRadius);
+
+                if (isAdjacent) {
+                    Draw.z(Layer.power + 1);
+                    
+                    Draw.color(Color.valueOf("#ff2222"));
+                    Lines.stroke(2.5);
+                    Lines.line(this.x, this.y, b.x, b.y);
+
+                    Draw.color(Color.white);
+                    Lines.stroke(1.0);
+                    Lines.line(this.x, this.y, b.x, b.y);
+
+                    Draw.color(Color.valueOf("#ff4444"));
+                    Fill.circle(b.x, b.y, 3.5);
+
+                    Draw.reset();
+                }
+            }
+        }));
     },
 
     updateTile() {
         this.super$updateTile();
 
+        if (this.slaveTicks > 0) {
+            this.slaveTicks--;
+        }
+
         let perkA = this.getPerkA();
         let perkB = this.getPerkB();
 
-        // Tốc độ hồi nạp đạn (Reload Speed Multiplier)
         let speedMult = 1.0;
-        if (perkA == 2) speedMult *= 2.0; // 2A: Giảm 50% thời gian bắn (gấp 2 tốc độ)
-        if (perkB == 1) speedMult *= 1.428; // 1B: Giảm 30% thời gian bắn (gấp 1/0.7 tốc độ)
-        if (perkB == 3) speedMult *= 0.5; // 3B: Giảm 50% tốc độ bắn
+        if (perkA == 3) speedMult *= 1.5;
+        if (perkB == 1) speedMult *= 1.428; 
+        if (perkB == 3) speedMult *= 0.5; 
 
         if (this.reloadTimer > 0) {
             this.reloadTimer -= Time.delta * speedMult;
         }
 
-        this.findTarget();
-        let isControlled = this.isControlled() || this.logicControlled();
-        let hasPower = this.power != null && this.power.status > 0.5;
+        let isDirectControlled = this.isControlled() || this.logicControlled();
+        let isSlaveControlled = (this.slaveTicks > 0);
+        let hasPower = this.power != null && this.power.status > 0.1;
 
-        // --- TRẠNG THÁI BẮN LOẠN 100 VIÊN (PHÚC LỢI 2B) ---
         if (this.isFrenzy2B) {
             if (hasPower) {
                 this.frenzyTimer += Time.delta;
-                if (this.frenzyTimer >= 3.0) { // Bắn nhanh liên tục mỗi 3 ticks
+                if (this.frenzyTimer >= 3.0) {
                     this.frenzyTimer = 0.0;
-
                     let targetAngle = this.rotation;
-                    if (this.target != null) {
-                        targetAngle = this.angleTo(this.target);
-                    }
-                    let spreadAngle = targetAngle + Mathf.range(8.0); // Độ lệch 8 độ
-
+                    if (this.target != null) targetAngle = this.angleTo(this.target);
+                    
+                    let spreadAngle = targetAngle + Mathf.range(8.0);
                     energyOrbBullet.create(this, this.team, this.x, this.y, spreadAngle);
-                    Fx.shootBig.at(this.x, this.y, spreadAngle);
 
                     this.frenzyShotsLeft--;
-                    if (this.frenzyShotsLeft <= 0) {
-                        this.isFrenzy2B = false; // Xả hết 100 viên mới thoát trạng thái
-                    }
+                    if (this.frenzyShotsLeft <= 0) this.isFrenzy2B = false;
                 }
             }
-            return; // Đang bắn loạn thì tạm dừng các cơ chế bắn thường
+            return;
         }
 
-        // --- BẮN THƯỜNG / XOAY NÒNG ---
-        if (hasPower) {
-            if (isControlled) {
-                let u = this.unit;
-                if (u != null) {
-                    this.turnToTarget(this.angleTo(u.aimX, u.aimY));
-                }
-            } else if (this.target != null && this.within(this.target, this.range())) {
+ 
+        if (isDirectControlled) {
+            this.slaveTicks = 0;
+            let u = this.unit;
+            if (u != null) {
+                let aimAngle = this.angleTo(u.aimX, u.aimY);
+                this.rotation = aimAngle; 
+                
+ 
+                this.syncChainCommand(aimAngle, this.isShooting);
+            }
+        } else if (isSlaveControlled) {
+ 
+            this.rotation = this.slaveTargetAngle;
+        } else {
+ 
+            this.targetScanTimer += Time.delta;
+            if (this.targetScanTimer >= 15.0) {
+                this.targetScanTimer = 0.0;
+                this.findTarget();
+            }
+
+            if (hasPower && this.target != null && this.within(this.target, this.range())) {
                 this.turnToTarget(this.angleTo(this.target));
             }
         }
 
-        let canShoot = hasPower && (
-            (isControlled && this.isShooting) || 
-            (!isControlled && this.target != null && this.within(this.target, this.range()))
-        );
+ 
+        let canShoot = false;
+        if (hasPower) {
+            if (isDirectControlled) {
+                canShoot = this.isShooting;
+            } else if (isSlaveControlled) {
+                canShoot = this.slaveIsShooting;
+            } else {
+                canShoot = (this.target != null && this.within(this.target, this.range()));
+            }
+        }
 
-        // Bắn Tia Laser Vanilla mỗi 0.2s
         if (canShoot) {
             this.laserTimer += Time.delta;
             if (this.laserTimer >= 12.0) { 
                 this.laserTimer = 0.0;
                 let lType = lazash.shootType;
-                lType.length = this.range(); // Cập nhật độ dài tia laser bằng range
+                lType.length = this.range();
                 lType.create(this, this.team, this.x, this.y, this.rotation);
             }
         } else {
             this.laserTimer = 0.0;
         }
 
-        if (canShoot && this.reloadTimer <= 0 && !this.isCharging) {
-            this.isCharging = true;
+        if (canShoot && this.reloadTimer <= 0 && !this.isChargingState) {
+            this.isChargingState = true;
             this.chargeTimer = 25.0; 
         }
 
-        if (this.isCharging) {
+        if (this.isChargingState) {
             this.chargeTimer -= Time.delta;
             
-            if (Mathf.chance(0.6)) {
+            if (Mathf.chance(0.2)) {
                 vChargeFx.at(this.x, this.y, this.rotation, this.range());
             }
 
             if (this.chargeTimer <= 0) {
-                this.isCharging = false;
+                this.isChargingState = false;
                 this.reloadTimer = 120.0; 
                 this.executeSlash(0.0);
             }
@@ -376,10 +480,10 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
 
             let perkA = this.getPerkA();
             if (perkA == 0) {
-                let txtADesc = boxA.add("Kích hoạt giao thức nâng cấp ngẫu nhiên nhận 1 trong 3 phúc lợi A:\n" +
-                                        " • [green]Phúc lợi 1A:[] 50% Tỉ lệ bắn thêm 1 tia vSlashHitFx khi trúng.\n" +
-                                        " • [green]Phúc lợi 2A:[] Giảm 50% thời gian hồi bắn tia vSlashHitFx.\n" +
-                                        " • [green]Phúc lợi 3A:[] Tăng phạm vi & độ dài vSlashHitFx thêm +150% (800px), +20% Sát thương.");
+                let txtADesc = boxA.add("Kích hoạt giao thức nâng cấp ngẫu nhiên nhận 1 trong 3 phúc lợi A (Tỉ lệ 50% mỗi Option):\n" +
+                                        " • [green]Phúc lợi 1A:[] Ưu tiên bắn các công trình máu giấy, tăng 50% dmg gốc.\n" +
+                                        " • [green]Phúc lợi 2A:[] Tăng 12% phạm vi bắn, 8% dmg gốc và dmg phụ, ưu tiên bắn các công trình có máu trâu.\n" +
+                                        " • [green]Phúc lợi 3A:[] Ưu tiên bắn base địch, tăng tốc độ bắn.");
                 txtADesc.width(340).get().setWrap(true);
                 txtADesc.get().setAlignment(Align.left);
                 boxA.row();
@@ -391,7 +495,18 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
                         core.items.remove(Items.lead, 2000);
                         core.items.remove(Items.silicon, 2000);
 
-                        let res = Math.floor(Mathf.random(1, 3.99));
+                        let res = 1;
+                        let options = [];
+                        if (Mathf.chance(0.50)) options.push(1);
+                        if (Mathf.chance(0.50)) options.push(2);
+                        if (Mathf.chance(0.50)) options.push(3);
+
+                        if (options.length > 0) {
+                            res = options[Mathf.randomInt(0, options.length - 1)];
+                        } else {
+                            res = Mathf.randomInt(1, 3);
+                        }
+
                         this.setPerkA(res);
                         this.configure(10 + res);
 
@@ -406,9 +521,9 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
                 })).size(280, 40);
             } else {
                 let txtA = "";
-                if (perkA == 1) txtA = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1A\n• 50% Cơ hội bắn thêm 1 tia vSlashHitFx phụ[]";
-                if (perkA == 2) txtA = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2A\n• Giảm 50% thời gian hồi bắn nhát chém[]";
-                if (perkA == 3) txtA = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3A\n• Tầm bắn & Độ dài tia +150% (800px)\n• Sát thương vSlashHitFx +20%[]";
+                if (perkA == 1) txtA = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1A\n• Ưu tiên bắn công trình máu giấy\n• Sát thương gốc +50%[]";
+                if (perkA == 2) txtA = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2A\n• Ưu tiên bắn công trình máu trâu\n• Tầm bắn +12%\n• Sát thương gốc & phụ +8%[]";
+                if (perkA == 3) txtA = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3A\n• Ưu tiên bắn Base/Lõi địch\n• Tăng 50% tốc độ bắn[]";
 
                 let txtACell = boxA.add(txtA);
                 txtACell.width(340).get().setWrap(true);
@@ -476,8 +591,10 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
             let title = " Thông số pháo Lazash ";
             let descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN PHÁO LAZASH ⚡[]\n" +
-                          "• Máu: 3,600 | Tầm bắn mặc định: 320px\n" +
-                          "• Sát thương vSlashHitFx: 49.0 | Sát thương Laser Vanilla: 10.0 (0.2s/lần)";
+                          "• Máu: 3,600 | Tầm bắn mặc định: 1100px\n" +
+                          "• Mục tiêu: Chỉ bắn Công Trình phe địch\n" +
+                          "• Sát thương vSlashHitFx: 49.0 | Sát thương Laser Vanilla: 10.0 (0.2s/lần)\n" +
+                          "• [cyan]Cơ chế liên kết:[] Xây các pháo kề sát vách 4 hướng. Khi player nhảy vào điều khiển 1 pháo, toàn bộ pháo liên kết sẽ ngưng tự bắn, tự động xoay và chỉ xả đạn đồng loạt khi player bấm nút bắn!";
 
             let dialog = extend(BaseDialog, title, {});
             let infoTable = new Table();

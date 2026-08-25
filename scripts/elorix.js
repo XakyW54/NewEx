@@ -1,32 +1,27 @@
-// ==================== ELORIX.JS (AUTO DASH & AUTO TARGET) ====================
-
-// === HÀM TÍNH TOÁN ĐIỂM LƯỚT AN TOÀN NÂNG CẤP (QUÉT VIỀN TƯỜNG) ===
+ 
 function findSafeDashTarget(unit, startX, startY, targetX, targetY) {
     let angle = Angles.angle(startX, startY, targetX, targetY);
     let maxDist = Mathf.dst(startX, startY, targetX, targetY);
     
-    // An toàn = Bán kính va chạm (hitSize / 2) + 10px khoảng trống dự phòng
-    let hitSizeRadius = (unit && unit.hitSize) ? unit.hitSize / 2 : 12;
+       let hitSizeRadius = (unit && unit.hitSize) ? unit.hitSize / 2 : 12;
     let safePadding = hitSizeRadius + 10; 
 
-    let step = 4; // Bước kiểm tra 4px để đảm bảo không bỏ sót viền tường
+    let step = 4; 
     let traveled = 0;
 
     while (traveled < maxDist) {
         let nextX = startX + Angles.trnsx(angle, traveled + step);
         let nextY = startY + Angles.trnsy(angle, traveled + step);
 
-        // Lấy tile tại vị trí tiếp theo
+ 
         let tile = Vars.world.tileWorld(nextX, nextY);
 
-        // Nếu va phải tường/địa hình không đi qua được
+ 
         if (tile != null && (tile.solid() || !tile.passable())) {
-            // Điểm va chạm đầu tiên chính là vị trí đâm trúng viền tường
+           
             let hitX = nextX;
             let hitY = nextY;
-
-            // Lùi lại chính xác khỏi viền tường theo chiều ngược góc lướt
-            let safeX = hitX - Angles.trnsx(angle, safePadding);
+    let safeX = hitX - Angles.trnsx(angle, safePadding);
             let safeY = hitY - Angles.trnsy(angle, safePadding);
 
             return { x: safeX, y: safeY, hitWall: true };
@@ -35,7 +30,7 @@ function findSafeDashTarget(unit, startX, startY, targetX, targetY) {
         traveled += step;
     }
 
-    // Nếu không vướng tường thì hạ cánh tại đích gốc
+    
     return { x: targetX, y: targetY, hitWall: false };
 }
 
@@ -216,11 +211,11 @@ Events.on(ClientLoadEvent, () => {
                 burstTimer: 0,
                 
                 dashCooldown: 0, 
-                maxCooldownRecord: 360, // 360 ticks = 6 giây
+                maxCooldownRecord: 360,  
                 dashDelayTimer: 0,
                 dashAngleToMove: 0, 
 
-                // TỌA ĐỘ HẠ CÁNH AN TOÀN ĐƯỢC KHÓA BẢO VỆ
+             
                 dashTargetX: 0,
                 dashTargetY: 0,
 
@@ -230,9 +225,9 @@ Events.on(ClientLoadEvent, () => {
                 update(){
                     this.super$update(); 
 
-                    // --- 1. TỰ ĐỘNG GIẮM & BẮN CẢM BIẾN MỤC TIÊU ---
+                
                     if (Vars.player.unit() != this) { 
-                        let shootRange = 8.5 * 38; // Tầm bắn = speed * lifetime
+                        let shootRange = 8.5 * 38; 
                         let target = Units.closestTarget(this.team, this.x, this.y, shootRange, u => u.checkTarget(true, true), b => true);
 
                         if (target != null) {
@@ -243,8 +238,7 @@ Events.on(ClientLoadEvent, () => {
                             this.isShooting = false;
                         }
                     }
-
-                    // --- 2. XỬ LÝ VŨ KHÍ & NẠP ĐẠN ---
+ 
                     let speedMultiplier = 1.0 + (this.level * 0.05);
                     if (this.customReloadTimer > 0) {
                         this.customReloadTimer -= speedMultiplier * Time.delta;
@@ -280,23 +274,23 @@ Events.on(ClientLoadEvent, () => {
                         this.armorRecoil = Mathf.lerpDelta(this.armorRecoil, 0, 0.15);
                     }
 
-                    // --- 3. TỰ ĐỘNG KÍCH HOẠT KĨ NĂNG KHI DI CHUYỂN ---
+                  
                     if(this.vel.len() > 0.05 && this.dashCooldown <= 0 && this.dashDelayTimer <= 0) {
-                        let dashDistance = 15 * 8; // 15 ô
+                        let dashDistance = 15 * 8; 
                         let moveAngle = this.vel.angle();
                         let tempTargetX = this.x + Angles.trnsx(moveAngle, dashDistance);
                         let tempTargetY = this.y + Angles.trnsy(moveAngle, dashDistance);
 
-                        // Tính vị trí an toàn né tường
+                
                         let safePos = findSafeDashTarget(this, this.x, this.y, tempTargetX, tempTargetY);
                         let actualDistance = Mathf.dst(this.x, this.y, safePos.x, safePos.y);
 
-                        // CHỈ kích hoạt nếu khoảng cách lướt an toàn lớn hơn bán kính thân unit
+                   
                         if (actualDistance > (this.hitSize / 2) + 6) {
-                            this.dashDelayTimer = 42; // Gồng 0.7s
+                            this.dashDelayTimer = 42;  
                             this.dashAngleToMove = moveAngle; 
                             
-                            // KHÓA VỊ TRÍ HẠ CÁNH AN TOÀN
+                        
                             this.dashTargetX = safePos.x;
                             this.dashTargetY = safePos.y;
 
@@ -309,15 +303,15 @@ Events.on(ClientLoadEvent, () => {
                         }
                     }
 
-                    // --- 4. XỬ LÝ GỒNG & TELEPORT THEO TỌA ĐỘ ĐÃ KHÓA ---
+              
                     if(this.dashDelayTimer > 0) {
                         this.dashDelayTimer -= Time.delta;
 
-                        // Khóa vận tốc trong thời gian gồng
+                       
                         this.vel.set(0, 0);
 
                         if(this.dashDelayTimer <= 0) {
-                            // Hạ cánh chính xác tại vị trí an toàn đã lưu
+                       
                             this.set(this.dashTargetX, this.dashTargetY);
                             Fx.spawnShockwave.at(this.x, this.y);
 
@@ -336,7 +330,7 @@ Events.on(ClientLoadEvent, () => {
                         }
                     }
 
-                    // --- 5. TỰ ĐỘNG HÚT VẬT LIỆU NÂNG CẤP ---
+             
                     let req = getElorixUpgradeRequirements(this.level);
                     if(this.level < this.maxLevel && this.stack != null){
                         if(this.copperAbsorbed < req.copperNeeded && this.stack.item == req.copperItem && this.stack.amount > 0){
@@ -397,7 +391,7 @@ Events.on(ClientLoadEvent, () => {
                         Draw.color(Color.white); Fill.circle(laserOriginX, laserOriginY, ballRadius * 0.6); Draw.color();
                     }
 
-                    // --- VẼ THIN-ARMOR DRAWER ---
+       
                     if(this.thinArmorTimer > 0 && thinArmorRegion != null && thinArmorRegion.found()){
                         let progress = 1.0 - (this.thinArmorTimer / 300.0);
                         

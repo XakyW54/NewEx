@@ -1,4 +1,4 @@
-// 1. Hàm yêu cầu tài nguyên nâng cấp riêng cho Leolyr
+ 
 function getLeolyrUpgradeRequirements(currentLevel) {
     return {
         copperNeeded: 400,
@@ -8,11 +8,11 @@ function getLeolyrUpgradeRequirements(currentLevel) {
     };
 }
 
-// 2. Loại đạn riêng cho Leolyr
+ 
 const leolyrLeftBullet = extend(BasicBulletType, { speed: 9.0, damage: 15, width: 6, height: 11, lifetime: 35 });
 const leolyrRightBullet = extend(BasicBulletType, { speed: 9.0, damage: 65, width: 6, height: 11, lifetime: 35 });
 
-// 3. Biến quản lý trạng thái
+ 
 let leolyrLastTapTime = 0;
 const leolyrDoubleTapInterval = 250; 
 
@@ -21,22 +21,19 @@ let leolyrMk2TargetY = 0;
 let leolyrIsMarkedMK2 = false;
 
 let leolyrStarSpeedsMap = new ObjectMap();
-
-// Hàm tính vị trí lướt: Né địa hình núi, xuyên được tường nếu điểm đích an toàn
+ 
 function getSafeDashTarget(startX, startY, targetX, targetY) {
     let distance = Mathf.dst(startX, startY, targetX, targetY);
     let angle = Angles.angle(startX, startY, targetX, targetY);
     
-    // Kiểm tra điểm đích trước: Nếu điểm đích KHÔNG nằm trong địa hình cứng, lướt thẳng tới đích (xuyên tường)
-    let endTile = Vars.world.tileWorld(targetX, targetY);
+        let endTile = Vars.world.tileWorld(targetX, targetY);
     let isEndTileTerrain = endTile != null && endTile.solid() && endTile.build == null;
 
     if (!isEndTileTerrain) {
         return { x: targetX, y: targetY };
     }
 
-    // Nếu điểm đích rơi đúng vào LÒNG TƯỜNG ĐỊA HÌNH, rà soát ngược từ điểm xuất phát để tìm điểm dừng an toàn
-    let step = 4.0; 
+        let step = 4.0; 
     let currentDist = 0;
     let safeX = startX;
     let safeY = startY;
@@ -50,12 +47,10 @@ function getSafeDashTarget(startX, startY, targetX, targetY) {
 
         let tile = Vars.world.tileWorld(checkX, checkY);
         
-        // Chỉ coi là chướng ngại vật khi: Tile cứng (solid) VÀ KHÔNG PHẢI là công trình xây dựng (build == null)
-        let isTerrainWall = tile != null && tile.solid() && tile.build == null;
+               let isTerrainWall = tile != null && tile.solid() && tile.build == null;
 
         if (isTerrainWall) {
-            // Lùi lại một khoảng ngắn trước khi va vào địa hình
-            let safeDist = Math.max(0, currentDist - step - 6.0);
+                 let safeDist = Math.max(0, currentDist - step - 6.0);
             return {
                 x: startX + Angles.trnsx(angle, safeDist),
                 y: startY + Angles.trnsy(angle, safeDist)
@@ -132,7 +127,7 @@ Events.on(ClientLoadEvent, () => {
                 hexSize: 5.5,              
                 ignoreNextDamage: false,   
                 
-                // TẠO MẢNG GIÁP TĨNH RIÊNG CHO MỖI UNIT
+      
                 myStaticShields: [],
 
                 damage(amount){
@@ -150,7 +145,7 @@ Events.on(ClientLoadEvent, () => {
                     let currentMaxShield = 100 + (this.level * 250); 
                     let currentShieldRadius = (7 * 8) * (1.0 + (this.level * 0.10)); 
 
-                    // GIÁP CÁ NHÂN
+                   
                     if(this.shieldHealth > 0){
                         let currentShield = this;
                         Groups.bullet.intersect(this.x - currentShieldRadius - 16, this.y - currentShieldRadius - 16, (currentShieldRadius + 16) * 2, (currentShieldRadius + 16) * 2, cons(b => {
@@ -178,7 +173,7 @@ Events.on(ClientLoadEvent, () => {
                     }
                     this.ignoreNextDamage = false; 
 
-                    // CẬP NHẬT TẤT CẢ GIÁP TĨNH CỦA UNIT NÀY
+     
                     if(this.myStaticShields != null && this.myStaticShields.length > 0){
                         let self = this;
                         for(let i = this.myStaticShields.length - 1; i >= 0; i--){
@@ -203,7 +198,7 @@ Events.on(ClientLoadEvent, () => {
                                 }));
                             }
 
-                            // Chỉ xóa khi HẾT CẢ THỜI GIAN và HẾT MÁU
+                    
                             if(s.lifetime <= 0 || s.hp <= 0){
                                 this.myStaticShields.splice(i, 1);
                             }
@@ -298,13 +293,13 @@ Events.on(ClientLoadEvent, () => {
                             this.apply(atkSpeedStatus, 300);
                         }
 
-                        // THÊM GIÁP TĨNH VÀO MẢNG CỦA CHÍNH UNIT NÀY
+                     
                         if(this.myStaticShields == null) this.myStaticShields = [];
                         this.myStaticShields.push({
                             x: oldX, y: oldY, 
                             rad: currentShieldRadius, 
-                            hp: currentMaxShield * 1.5, // Tăng lượng máu giáp tĩnh lên 1.5 lần
-                            lifetime: 600 // Cố định 10 giây (600 ticks)
+                            hp: currentMaxShield * 1.5, 
+                            lifetime: 600  
                         });
                     }
                 },
@@ -417,7 +412,7 @@ Events.on(ClientLoadEvent, () => {
                         Lines.circle(this.x, this.y, DynamicRadius); Draw.reset();
                     }
 
-                    // VẼ GIÁP TĨNH CỦA BẢN THÂN
+              
                     if(this.myStaticShields != null){
                         this.myStaticShields.forEach(s => {
                             if(s.hp > 0 && s.lifetime > 0){

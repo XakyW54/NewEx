@@ -1,10 +1,10 @@
-// ==================== SUMMONER BLOCK (LEOLYR, ELORIX & VUS-27) ====================
+ 
 
 const packCons = (func) => new Cons({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
-// THUẬT TOÁN ĐỒ HỌA: Vẽ vòng elip dẹt 3D đồng thời XOAY NGHIÊNG một góc theo trục la-zer
+ 
 function draw3DRotatedEllipseWave(centerX, centerY, radiusX, radiusY, rotationDeg) {
     let points = 24;
     let rotationRad = rotationDeg * Mathf.degRad;
@@ -30,8 +30,7 @@ function draw3DRotatedEllipseWave(centerX, centerY, radiusX, radiusY, rotationDe
         lastY = nextY;
     }
 }
-
-// VFX 1: RADAR KHÓA MỤC TIÊU DÙNG CHO CẢ 5s SPAWN (ĐỔI MÀU THÀNH TÍM HỒNG ĐA SẮC)
+ 
 const orbitalLockOnEffect = new Effect(40, packCons((e) => {
     let progress = e.data; 
     
@@ -66,8 +65,7 @@ const orbitalLockOnEffect = new Effect(40, packCons((e) => {
     
     Draw.reset();
 }));
-
-// VFX 2: HIỆU ỨNG VA CHẠM TÍM HỒNG KHI KẾT THÚC TRIỆU HỒI
+ 
 const satelliteImpactEffect = new Effect(60, packCons((e) => {
     Draw.z(Layer.effect + 3);
     
@@ -115,8 +113,7 @@ const satelliteImpactEffect = new Effect(60, packCons((e) => {
     
     Draw.reset();
 }));
-
-// Khởi động lắng nghe sự kiện nạp Mod
+ 
 Events.on(ClientLoadEvent, () => {
     let leolyrSummoner = Vars.content.getByName(ContentType.block, "newex-leolyr-spawner");
     if(leolyrSummoner == null){
@@ -126,8 +123,7 @@ Events.on(ClientLoadEvent, () => {
     if(leolyrSummoner != null){
         leolyrSummoner.configurable = true;
         leolyrSummoner.update = true;
-        
-        // CẤU HÌNH KHO CHỨA ĐỂ NHẬN ITEM TỰ ĐỘNG
+         
         leolyrSummoner.hasItems = true;
         leolyrSummoner.itemCapacity = 10000;
         leolyrSummoner.acceptsItems = true;
@@ -135,13 +131,12 @@ Events.on(ClientLoadEvent, () => {
         leolyrSummoner.buildType = () => extend(Building, {
             summoning: false,       
             summonTimer: 0,         
-            selectedUnit: "newex-elorix", // Mặc định chọn Elorix
+            selectedUnit: "newex-elorix", 
 
             acceptItem(source, item){
                 return this.items.get(item) < this.block.itemCapacity;
             },
-
-            // Lấy chi phí tài nguyên yêu cầu tùy theo unit
+ 
             getRequirements(){
                 if (this.selectedUnit.includes("elorix")) {
                     return { copper: 4000, silicon: 500 };
@@ -156,8 +151,7 @@ Events.on(ClientLoadEvent, () => {
                 table.clear();
                 if(this.summoning) return;
                 table.row();
-
-                // 1. NÚT KÍCH HOẠT TRIỆU HỒI BẰNG TAY (RÚT TÀI NGUYÊN TỪ CORE)
+ 
                 table.button(Icon.ok, Styles.cleari, 40, packRun(() => {
                     let core = this.team.core();
                     if(core == null) {
@@ -166,8 +160,7 @@ Events.on(ClientLoadEvent, () => {
                     }
 
                     let req = this.getRequirements();
-
-                    // KIỂM TRA TÀI NGUYÊN TRONG NHA CHÍNH (CORE)
+ 
                     if(!core.items.has(Items.copper, req.copper) || !core.items.has(Items.silicon, req.silicon)){
                         Vars.ui.showInfo(
                             "[scarlet]Không đủ tài nguyên trong Lõi![]\n" +
@@ -175,19 +168,17 @@ Events.on(ClientLoadEvent, () => {
                         );
                         return;
                     }
-
-                    // TRỪ TÀI NGUYÊN TRONG LÕI
+ 
                     core.items.remove(Items.copper, req.copper);
                     core.items.remove(Items.silicon, req.silicon);
 
                     this.summoning = true;
-                    this.summonTimer = 300; // Đếm ngược 5 giây (300 ticks)
+                    this.summonTimer = 300; 
                     
                     Fx.shieldApply.at(this.x, this.y, 0, Color.valueOf("c084fc"));
                     this.deselect(); 
                 })).size(50, 40).tooltip("Triệu hồi thủ công (Rút tài nguyên từ Lõi Core & Chờ 5s)");
-
-                // 2. NÚT CHỌN ĐƠN VỊ & XEM CHI TIẾT
+ 
                 table.button(Icon.add, Styles.cleari, 40, packRun(() => {
                     let dialog = extend(BaseDialog, "Hệ Thống Kén Triệu Hồi", {});
                     dialog.cont.add("[yellow]DANH SÁCH ĐƠN VỊ CÓ THỂ TRIỆU HỒI:[]").row();
@@ -197,7 +188,7 @@ Events.on(ClientLoadEvent, () => {
                     infoCard.background(Styles.black6);
                     infoCard.margin(10);
                     
-                    // --- NÚT CHỌN ELORIX ---
+ 
                     infoCard.button("[orange]⚡ CHỌN TRIỆU HỒI: ELORIX UNIT[]", packRun(() => {
                         this.selectedUnit = "newex-elorix";
                         Vars.ui.showInfo("[orange]Đã cài đặt mục tiêu: Elorix[]");
@@ -216,8 +207,7 @@ Events.on(ClientLoadEvent, () => {
                     elorixDesc.get().setAlignment(Align.left);
 
                     infoCard.add().height(16).row();
-
-                    // --- NÚT CHỌN LEOLYR ---
+ 
                     infoCard.button("[cyan]🤖 CHỌN TRIỆU HỒI: LEOLYR UNIT[]", packRun(() => {
                         this.selectedUnit = "newex-leolyr";
                         Vars.ui.showInfo("[cyan]Đã cài đặt mục tiêu: Leolyr[]");
@@ -236,8 +226,7 @@ Events.on(ClientLoadEvent, () => {
                     leolyrDesc.get().setAlignment(Align.left);
 
                     infoCard.add().height(16).row();
-
-                    // --- NÚT CHỌN VUS-27 ---
+ 
                     infoCard.button("[purple]👾 CHỌN TRIỆU HỒI: VUS-27 UNIT[]", packRun(() => {
                         this.selectedUnit = "newex-vus-27";
                         Vars.ui.showInfo("[purple]Đã cài đặt mục tiêu: VUS-27[]");
@@ -268,21 +257,20 @@ Events.on(ClientLoadEvent, () => {
             updateTile(){
                 this.super$updateTile();
 
-                // TỰ ĐỘNG TÍCH LŨY ITEM TỪ BĂNG CHUYỀN
+    
                 if(!this.summoning){
                     let req = this.getRequirements();
                     if(this.items.has(Items.copper, req.copper) && this.items.has(Items.silicon, req.silicon)){
-                        // Khấu trừ tài nguyên tích lũy trong kho của khối
+ 
                         this.items.remove(Items.copper, req.copper);
                         this.items.remove(Items.silicon, req.silicon);
 
                         this.summoning = true;
-                        this.summonTimer = 300; // Đếm ngược 5s
+                        this.summonTimer = 300;  
                         Fx.shieldApply.at(this.x, this.y, 0, Color.valueOf("c084fc"));
                     }
                 }
-
-                // TIẾN TRÌNH ĐẾM NGƯỢC VÀ SPAWN
+ 
                 if(this.summoning){
                     this.summonTimer -= Time.delta;
                     let progressRatio = Math.max(0.0, this.summonTimer / 300.0);

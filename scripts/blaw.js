@@ -2,9 +2,7 @@ const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
-// ==============================================================================
-// KHAI BÁO ÂM THANH
-// ==============================================================================
+ 
 const shootSoundCannon = Vars.tree.loadSound("cannon-shot-1");
 
 const reqBlawMK2 = { copper: 4000, lead: 4000, titanium: 0 };
@@ -103,7 +101,7 @@ blaw.reload = 30;
 blaw.deadZone = 0; 
 blaw.configurable = true;
 blaw.category = Category.turret;
-blaw.shootSound = shootSoundCannon; // Gán âm thanh bắn mặc định
+blaw.shootSound = shootSoundCannon; 
 blaw.ammo(Items.titanium, blawBlueMK1); 
 
 blaw.config(java.lang.Integer, packCons2((tile, value) => {
@@ -307,7 +305,7 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
             let calculatedDmg = 220 * damageMultiplier;
             let selectedShotgunBullet = this.barrelSide ? blawBlueBulletMK2B : blawRedBulletMK2B;
 
-            // Phát âm thanh bắn khi khai hỏa dạng Shotgun MK2B
+    
             if (shootSoundCannon) shootSoundCannon.at(this.x, this.y, Mathf.random(0.9, 1.1));
 
             for(let i = 0; i < 10; i++){
@@ -329,7 +327,7 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
             let finalDmg = selectedBulletType.damage * damageMultiplier;
             Call.createBullet(selectedBulletType, this.team, spawnX, spawnY, this.rotation, finalDmg, selectedBulletType.speed, 1.0);
 
-            // Phát âm thanh bắn khi khai hỏa đạn thường MK1 / MK2
+     
             if (shootSoundCannon) shootSoundCannon.at(this.x, this.y, Mathf.random(0.9, 1.1));
         }
     },

@@ -5,6 +5,13 @@ size: 2
 hasItems: true
 itemCapacity: 300
 update: true
+  consumes: {
+    items: {
+      items: [
+    newex-raykstone/1
+      ]
+    }
+  }
 category: production
 buildVisibility: shown
 research: newex

@@ -4,7 +4,7 @@ Events.on(ContentInitEvent, () => {
 
     if (coreBlock == null || raykstoneBlock == null) return;
 
-    // Hiệu ứng hạt xanh lá nhạt
+ 
     const gatherEffect = new Effect(30, e => {
         Draw.color(Pal.heal, Color.white, e.fin());
         let radius = 18 * e.fout();
@@ -16,7 +16,7 @@ Events.on(ContentInitEvent, () => {
 
     let activeCores = [];
 
-    // Tải danh sách vị trí 1 lần duy nhất khi load map
+ 
     Events.on(WorldLoadEvent, () => {
         activeCores = [];
         for (let x = 0; x < Vars.world.width(); x++) {
@@ -33,11 +33,11 @@ Events.on(ContentInitEvent, () => {
         }
     });
 
-    // Cập nhật logic
+ 
     Events.run(Trigger.update, () => {
         if (!Vars.state.isPlaying() || activeCores.length === 0) return;
 
-        // Kiểm tra xem hiệu ứng ánh sáng (Bloom) có đang BẬT hay không
+ 
         let enableLightingEffects = Core.settings.getBool("bloom", true);
 
         let d2 = [[-1, 0], [1, 0], [0, -1], [0, 1]];
@@ -59,7 +59,7 @@ Events.on(ContentInitEvent, () => {
             if (emptyTiles.length > 0) {
                 data.time += Time.delta;
 
-                // CHỈ phát hiệu ứng hạt khi cài đặt ánh sáng đang MỞ
+ 
                 if (enableLightingEffects && Mathf.chance(0.15)) {
                     gatherEffect.at(tile.drawx(), tile.drawy(), Mathf.random(360));
                 }

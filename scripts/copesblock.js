@@ -10,13 +10,13 @@ const copesBuffCircleEffect = new Effect(35, e => {
     Draw.reset();
 });
 
-// Hàm cập nhật ẩn/hiện Menu xây dựng cho người chơi
+ 
 function updateMenuVisibility() {
     const wallBuff = Vars.content.block("newex-copesblock") || Vars.content.block("copesblock");
     if (!Vars.player || !wallBuff) return;
 
     let playerTeam = Vars.player.team();
-    let maxAllowed = playerTeam.cores().size; // Lấy số lượng Lõi hiện tại
+    let maxAllowed = playerTeam.cores().size;  
     
     let currentCount = 0;
     Groups.build.each(b => {
@@ -25,7 +25,7 @@ function updateMenuVisibility() {
         }
     });
 
-    // Nếu số khối hiện tại < số Lõi -> HIỆN khối trong Menu
+ 
     if (currentCount < maxAllowed) {
         wallBuff.buildVisibility = BuildVisibility.shown;
     } else {
@@ -80,19 +80,19 @@ Events.on(ContentInitEvent, () => {
     }
 });
 
-// 1. Cập nhật ngay khi LOAD VÀO MAP MỚI
+ 
 Events.on(WorldLoadEvent, event => {
     Time.run(10, () => {
         updateMenuVisibility();
     });
 });
 
-// 2. Cập nhật khi XÂY XONG bất kỳ khối nào
+ 
 Events.on(BlockBuildEndEvent, event => {
     updateMenuVisibility();
 });
 
-// 3. Cập nhật khi CÓ KHỐI BỊ PHÁ HỦY (Xử lý mất Lõi)
+ 
 Events.on(BlockDestroyEvent, event => {
     const wallBuff = Vars.content.block("newex-copesblock") || Vars.content.block("copesblock");
     if (!wallBuff) return;
@@ -102,8 +102,7 @@ Events.on(BlockDestroyEvent, event => {
 
     let destroyedBuild = destroyedTile.build;
     let victimTeam = destroyedBuild.team;
-
-    // Nếu khối bị phá là LÕI
+ 
     if (destroyedBuild.block instanceof CoreBlock) {
         let teamData = victimTeam.data();
         let maxAllowed = teamData.cores.size - 1;
@@ -129,7 +128,7 @@ Events.on(BlockDestroyEvent, event => {
     updateMenuVisibility();
 });
 
-// Hiển thị tầm hiệu ứng khi đang chọn khối để đặt
+ 
 Events.run(Trigger.draw, () => {
     let build = Vars.control.input.block;
     if (build != null && (build.name == "newex-copesblock" || build.name == "copesblock")) {

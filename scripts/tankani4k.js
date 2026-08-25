@@ -2,16 +2,16 @@ const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
-// Yêu cầu tài nguyên nâng cấp cấu hình tháp pháo 
+ 
 const reqMK2 = { copper: 6000, lead: 6000, titanium: 0 }; 
 const reqMK2B = { copper: 6000, lead: 6000, titanium: 3000 }; 
 
-// Cấu hình cơ chế thăng tiến sát thương (Stack) 
+ 
 const hitsPerStack = 10; 
 const maxStackNormal = 8; 
 const maxStackMK2B = 18; 
 
-// ==================== ĐỊNH NGHĨA HIỆU ỨNG ====================
+ 
 
 const crumbleExplosionEffect = new Effect(40, new Cons({
     get: function(e) {
@@ -65,7 +65,7 @@ const tankaniDespawnEffect = new MultiEffect(
     hitSparkLargeEffect
 );
 
-// ==================== ĐỊNH NGHĨA ĐẠN HỆ THỐNG ==================== 
+ 
 
 const tankaniNormalBullet = extend(BasicBulletType, { 
     speed: 15, damage: 1673, width: 10, height: 33, lifetime: 60, 
@@ -121,7 +121,7 @@ const tankaniMK2BBullet = extend(BasicBulletType, {
     }
 });
 
-// ==================== KHỞI TẠO BLOCK THÁP PHÁO ==================== 
+ 
 
 Events.on(ClientLoadEvent, new Cons({
     get: function(e) {
@@ -269,7 +269,7 @@ Events.on(ClientLoadEvent, new Cons({
 
                             let branchesTable = new Table(); 
 
-                            // NHÁNH MK2 
+                   
                             let b1 = new Table(); b1.background(Styles.black6); b1.margin(12); 
                             b1.add("[cyan]===(MK2)===[]").row(); 
                             let b1D = b1.add("Tích hợp công nghệ nổ mảnh diện rộng:\n" + 
@@ -290,7 +290,7 @@ Events.on(ClientLoadEvent, new Cons({
                                 } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); } 
                             })).size(180, 38); 
 
-                            // NHÁNH MK2B 
+                       
                             let b2 = new Table(); b2.background(Styles.black6); b2.margin(12); 
                             b2.add("[purple]===(MK2B)===[]").row(); 
                             let b2D = b2.add("Chuyển đổi sang pháo cối tầm xa siêu tăng trưởng:\n" + 
@@ -403,10 +403,7 @@ Events.on(ClientLoadEvent, new Cons({
                         
                         this.super$shoot(tankaniMK2BBullet); 
                         
-                        // ĐẶT LẠI TIẾN TRÌNH HỒI ĐẠN: 
-                        // Khi bắn xong, hồi đạn bị đẩy về âm (-67% thời gian reload gốc) 
-                        // Điều này khiến pháo phải mất thêm thời gian chờ, làm giảm chính xác 40% Tốc độ bắn (Tần suất bắn)
-                        this.reloadCounter = -turretBlock.reload * 0.667; 
+                         this.reloadCounter = -turretBlock.reload * 0.667; 
                     } else { 
                         tankaniNormalBullet.damage = this.getModifiedDamage(1673); 
                         

@@ -5,8 +5,7 @@ const packProv = (func) => new Prov({ get: func });
 const reqPerkA = { copper: 2000, lead: 2000, silicon: 2000 };
 const reqPerkB = { titanium: 1000, thorium: 1000, graphite: 1000 };
 
-// 1. Hàm hỗ trợ vẽ sprite swordoder-sword
-function drawSwordRegion(x, y, rot, scale) {
+ function drawSwordRegion(x, y, rot, scale) {
     let swordRegion = Core.atlas.find("newex-swordoder-sword");
     if (!swordRegion.found()) swordRegion = Core.atlas.find("swordoder-sword");
 
@@ -17,8 +16,7 @@ function drawSwordRegion(x, y, rot, scale) {
     }
 }
 
-// 2. Hàm kiểm tra và xử lý kết liễu nếu mục tiêu còn <= 1% máu
-function checkExecute(unit, team) {
+ function checkExecute(unit, team) {
     if (unit != null && unit.team != team && !unit.dead) {
         if (unit.health / unit.maxHealth <= 0.01) {
             unit.damage(999999);
@@ -26,8 +24,7 @@ function checkExecute(unit, team) {
     }
 }
 
-// 3. Hàm gây sát thương vòng cung khi vệt chém kích hoạt (FIXED CRASH)
-function damageArc(team, x, y, rotation, radius, arcAngle, damageAmount) {
+ function damageArc(team, x, y, rotation, radius, arcAngle, damageAmount) {
     let originX = x - Angles.trnsx(rotation, radius);
     let originY = y - Angles.trnsy(rotation, radius);
     
@@ -41,21 +38,18 @@ function damageArc(team, x, y, rotation, radius, arcAngle, damageAmount) {
         let px = originX + Angles.trnsx(currentAngle, radius);
         let py = originY + Angles.trnsy(currentAngle, radius);
 
-        // Sát thương Unit + Nội tại Tận diệt 1% HP
-        Units.nearbyEnemies(team, px - hitRadius, py - hitRadius, hitRadius * 2, hitRadius * 2, cons(unit => {
+         Units.nearbyEnemies(team, px - hitRadius, py - hitRadius, hitRadius * 2, hitRadius * 2, cons(unit => {
             if (unit.within(px, py, hitRadius)) {
                 unit.damage(damageAmount);
                 checkExecute(unit, team);
             }
         }));
 
-        // Sát thương công trình (Dùng Damage.damage chuẩn thay vì Building.damage)
-        Damage.damage(team, px, py, hitRadius, damageAmount, true, true);
+         Damage.damage(team, px, py, hitRadius, damageAmount, true, true);
     }
 }
 
-// 4. Hiệu ứng vệt chém + Khói + Điện
-const vSlashHitFx = new Effect(24, cons(e => {
+ const vSlashHitFx = new Effect(24, cons(e => {
     Draw.z(Layer.effect + 0.01);
     
     let fin = e.fin(); 
@@ -182,8 +176,7 @@ function triggerSlashArea(b) {
     }
 }
 
-// 5. Định nghĩa Đạn cơ bản
-const swordoderBulletBase = extend(BasicBulletType, {
+ const swordoderBulletBase = extend(BasicBulletType, {
     speed: 6,
     damage: 30,
     width: 24,
@@ -227,8 +220,7 @@ const swordoderBulletBase = extend(BasicBulletType, {
     }
 });
 
-// 6. Định nghĩa Pháo
-const swordoder = extend(ItemTurret, "swordoder", {
+ const swordoder = extend(ItemTurret, "swordoder", {
     configurable: true
 });
 
@@ -248,8 +240,7 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
     }
 }));
 
-// 7. Thực thể Pháo (BuildType)
-swordoder.buildType = () => extend(ItemTurret.ItemTurretBuild, swordoder, {
+ swordoder.buildType = () => extend(ItemTurret.ItemTurretBuild, swordoder, {
     created() {
         this.super$created();
         this.perkAState = 0;

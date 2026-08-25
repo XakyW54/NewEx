@@ -15,23 +15,16 @@ const coolSpeedMK2 = 0.12;
 const gainPerShotMK2B = 0.03; 
 const coolSpeedMK2B = 0.08;  
 
-// =========================================================
-// HỆ THỐNG HIỆU ỨNG TỰ TẠO (CUSTOM EFFECTS)
-// =========================================================
-
-// Hiệu ứng hạt li ti phun ra từ cánh (Zoom từ 5px -> 0px)
+ 
 const wingParticleEffect = new Effect(35, e => {
     Draw.color(Color.lightGray, Color.gray, e.fin());
     
-    // Giảm kích thước tối đa xuống 2.2px và thu nhỏ dần về 0
-    let size = 1.8 * e.fout();
+     let size = 1.8 * e.fout();
     
-    // Tăng tốc độ để hạt bay ra xa hơn (không dùng e.fout() ở đây để tránh bị hút ngược lại)
-    let speed = 1.4; 
+     let speed = 1.4; 
     let rad = e.rotation * Mathf.degRad;
     
-    // Tọa độ tịnh tiến tịnh tiến liên tục đi ra xa theo thời gian e.time
-    let px = e.x + Math.cos(rad) * speed * e.time;
+     let px = e.x + Math.cos(rad) * speed * e.time;
     let py = e.y + Math.sin(rad) * speed * e.time;
     
     Fill.circle(px, py, size);
@@ -79,8 +72,7 @@ const mk3HitElectricEffect = new Effect(15, e => {
     Draw.reset();
 });
 
-// Hiệu ứng hạt buff di chuyển lên trên
-const nucleytorBuffEffect = new Effect(40, e => {
+ const nucleytorBuffEffect = new Effect(40, e => {
     let size = e.rotation > 0 ? e.rotation : 16; 
     let halfSize = size / 2;
     let rand = new Rand(e.id);
@@ -133,8 +125,7 @@ const applyGradiusAcceleration = (b, baseSpeed) => {
     }
 };
 
-// Các loại đạn
-const nucleytorBullet = extend(BasicBulletType, {
+ const nucleytorBullet = extend(BasicBulletType, {
     speed: 8, damage: 9, lifetime: 72, width: 9, height: 14,
     frontColor: Color.white, backColor: Color.valueOf("#ffef9e"),
     workspace: true, pierce: true, pierceCap: 3, pierceBuilding: true, knockback: 1, impact: true,
@@ -225,8 +216,7 @@ const nucleytorMK2BBullet = extend(BasicBulletType, {
     }
 });
 
-// Khởi tạo block Turret
-const nucleytor = extend(ItemTurret, "nucleytor", {
+ const nucleytor = extend(ItemTurret, "nucleytor", {
     configurable: true,
     recoil: 0.0 
 });
@@ -449,7 +439,7 @@ updateTile(){
         this.super$updateTile();
         let tier = this.getTier();
 
-        // TRẠNG THÁI CHIẾN ĐẤU
+ 
         let inCombat = this.isShooting || (this.isActive() && this.target != null);
         if (inCombat) {
             this.combatProgress = Mathf.approach(this.combatProgress, 1.0, 0.05 * Time.delta);
@@ -457,15 +447,12 @@ updateTile(){
             this.combatProgress = Mathf.approach(this.combatProgress, 0.0, 0.03 * Time.delta);
         }
 
-// ====================================================================
-        // HIỆU ỨNG HẠT LI TI PHUN TỪ VỊ TRÍ CHÉO 2 BÊN CÁCH TÂM PHÁO 3 PIXEL (HƯỚNG NGƯỢC LẠI)
-        // ====================================================================
+ 
         if (inCombat && !this.isAmplified && Mathf.chance(0.35 * Time.delta)) {
             let rad = this.rotation * Mathf.degRad;
             let cos = Math.cos(rad);
             let sin = Math.sin(rad);
-
-            // Tọa độ chéo sang 2 bên sườn cố định 3 pixel từ tâm
+ 
             let sideDist = 5.0; 
 
             let wingLeftX = this.x + (sideDist * -sin);
@@ -474,12 +461,10 @@ updateTile(){
             let wingRightX = this.x + (-sideDist * -sin);
             let wingRightY = this.y + (-sideDist * cos);
 
-            // ĐẢO NGƯỢC HƯỚNG PHUN: Thay vì hướng về sau (-135 / +135), hạt sẽ phun chéo lên phía trước (+45 / -45)
-            let leftAngle = this.rotation + 145 + Mathf.range(10);
+             let leftAngle = this.rotation + 145 + Mathf.range(10);
             let rightAngle = this.rotation - 145 + Mathf.range(10);
 
-            // Kích hoạt hiệu ứng hạt li ty siêu mịn bay ra xa theo hướng mới
-            wingParticleEffect.at(wingLeftX, wingLeftY, leftAngle);
+             wingParticleEffect.at(wingLeftX, wingLeftY, leftAngle);
             wingParticleEffect.at(wingRightX, wingRightY, rightAngle);
         }
 
@@ -574,8 +559,7 @@ updateTile(){
     draw(){
         let modName = this.block.name.split("-")[0]; 
 
-        // 1. VẼ ĐẾ THÁP PHÁO (BASE LAYER)
-        let baseRegion = Core.atlas.find(this.block.basePrefix + "" + this.block.size);
+         let baseRegion = Core.atlas.find(this.block.basePrefix + "" + this.block.size);
         if(baseRegion.found()){
             Draw.rect(baseRegion, this.x, this.y);
         } else {
@@ -595,10 +579,8 @@ updateTile(){
         let arr2Reg = Core.atlas.find(modName + "-nucleytor-arr2");
         let cored1Reg = Core.atlas.find(modName + "-nucleytor-cored1");
         let cored2Reg = Core.atlas.find(modName + "-nucleytor-cored2");
-
-        // =========================================================
-        // 2. CỬA GIÓ CÁNH - WINGS LAYER (CHUYỂN ĐỘNG CHÉO 2 PIXEL)
-        // =========================================================
+ 
+ 
         if(wing1Reg.found() && wing2Reg.found()){
             let wSide = this.combatProgress * 1.414;   
             let wBack = this.combatProgress * -1.414;
@@ -612,9 +594,7 @@ updateTile(){
             Draw.rect(wing2Reg, w2x, w2y, this.rotation - 90);
         }
 
-        // =========================================================
-        // 3. CỔNG XẢ - PORTS LAYER (Tịnh tiến sườn 1px + giật lùi recoil)
-        // =========================================================
+ 
         if(por1Reg.found() && por2Reg.found()){
             let pSide = this.combatProgress * 1.0; 
             let pBack = this.customRecoil * -8.0; 
@@ -628,16 +608,12 @@ updateTile(){
             Draw.rect(por2Reg, p2x, p2y, this.rotation - 90);
         }
 
-        // =========================================================
-        // 4. THÂN THÁP PHÁO CHÍNH - BODY LAYER (Tĩnh)
-        // =========================================================
+ 
         if(bodyReg.found()){
             Draw.rect(bodyReg, this.x, this.y, this.rotation - 90);
         }
 
-        // =========================================================
-        // 5. MŨI TÊN GIA TỐC - ARROWS LAYER (Tiến lên 2px và GIỮ YÊN khi CHIẾN ĐẤU)
-        // =========================================================
+ 
         if(arr1Reg.found() && arr2Reg.found()){
             let aForward = this.combatProgress * 2.0; 
 
@@ -650,11 +626,7 @@ updateTile(){
             Draw.rect(arr2Reg, a2x, a2y, this.rotation - 90);
         }
 
-        // =========================================================
-        // 6. CỬA CHE LÒ & CƠ CHẾ LÕI HẠT NHÂN (CORE & DOORS LAYER)
-        // =========================================================
-        
-        // A. QUẢ CẦU NĂNG LƯỢNG LỤC GIÁC (CHỈ HIỆN KHI CÓ BUFF)
+ 
         if(this.coreOpen > 0.01){
             Draw.blend(Blending.additive); 
             
@@ -682,8 +654,7 @@ updateTile(){
             Draw.reset();
         }
 
-        // B. HAI CỬA CHE LÒ (Tịnh tiến ra ngoài đúng 3.0 pixel)
-        if(cored1Reg.found() && cored2Reg.found()){
+         if(cored1Reg.found() && cored2Reg.found()){
             let cSide = this.coreOpen * 3.0; 
 
             let c1x = this.x + (cSide * -sin);
@@ -695,9 +666,7 @@ updateTile(){
             Draw.rect(cored2Reg, c2x, c2y, this.rotation - 90);
         }
 
-        // =========================================================
-        // 7. VÒNG TỪ TRƯỜNG TẦM XA (NUCLEAR AMPLIFIER FIELD LAYER)
-        // =========================================================
+ 
         if (this.isAmplified) {
             let maxRadius = 100.0;
             let radius = maxRadius;

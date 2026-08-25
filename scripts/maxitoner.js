@@ -2,22 +2,21 @@ const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
-// ==================== KHAI BÁO ÂM THANH ====================
+ 
 const shootSound = Vars.tree.loadSound("shotbatt");
 
-// ==================== TÙY CHỈNH MÀU SẮC VỤ NỔ NITOUÍ ====================
+ 
 const EXPLODE_COLOR = Color.orange; 
-const EXPLODE_COLOR_LIGHT = Color.valueOf("#ffdfa9"); // Màu ánh sáng tâm/nhân vụ nổ
+const EXPLODE_COLOR_LIGHT = Color.valueOf("#ffdfa9");  
 
-// Chi phí Roll Phúc lợi Maxitoner
+ 
 const reqPerkA = { copper: 1500, lead: 1500, silicon: 1500 };
 const reqPerkB = { titanium: 1500, thorium: 1500, silicon: 1500 };
 const reqPerkC = { surgeAlloy: 500, phaseFabric: 500, silicon: 2000 };
-
-// Map lưu trữ trạng thái cộng dồn Nitoui: Map<Unit, { count: number }>
+ 
 const nitouiMap = new java.util.WeakHashMap();
 
-// ==================== 1. HIỆU ỨNG VỤ NỔ NITOUÍ ====================
+ 
 const nitouiExplodeFx = new Effect(35, cons(e => {
     Draw.z(Layer.effect + 0.1);
     
@@ -31,7 +30,7 @@ const nitouiExplodeFx = new Effect(35, cons(e => {
     let coreScale = 0.2 + 0.8 * zoomProgress;
     let coreRadius = (radius * 0.3) * coreScale;
 
-    // AURA VỤ NỔ
+ 
     Draw.color(EXPLODE_COLOR);
     Draw.alpha(0.5 * fout);
     Fill.circle(e.x, e.y, coreRadius * 3.5);
@@ -44,7 +43,7 @@ const nitouiExplodeFx = new Effect(35, cons(e => {
     Draw.alpha(1.0 * fout);
     Fill.circle(e.x, e.y, coreRadius * 1.3);
 
-    // VIỀN VÒNG TRÒN
+ 
     let ringStroke = 3.0 * Math.sin(fin * Math.PI);
     Draw.color(EXPLODE_COLOR);
     Draw.alpha(0.6 * fout);
@@ -56,7 +55,7 @@ const nitouiExplodeFx = new Effect(35, cons(e => {
     Lines.stroke(ringStroke);
     Lines.circle(e.x, e.y, radius * fin);
 
-    // TỨ GIÁC BẮT SÁNG
+    
     let quadCount = 12;
     for (let i = 0; i < quadCount; i++) {
         let seed = e.id + i * 123;
@@ -74,7 +73,7 @@ const nitouiExplodeFx = new Effect(35, cons(e => {
     
     Draw.blend();
 
-    // NHÂN VỤ NỔ SẮC NÉT
+ 
     Draw.color(Color.white);
     Fill.circle(e.x, e.y, coreRadius * 0.6 * fout);
 
@@ -99,7 +98,7 @@ const nitouiExplodeFx = new Effect(35, cons(e => {
     Draw.reset();
 }));
 
-// ==================== 2. HẠT STATUS NITOUÍ ====================
+ 
 const nitouiIngatherFx = new Effect(20, cons(e => {
     Draw.z(Layer.effect + 0.05);
     
@@ -147,7 +146,7 @@ var nitouiStatus = extend(StatusEffect, "nitoui-status", {
     }
 });
 
-// Hiệu ứng bắn gốc
+ 
 const maxitonerShootFx = new Effect(25, cons(e => {
     Draw.z(Layer.effect);
     Draw.blend(Blending.additive);
@@ -167,7 +166,7 @@ const maxitonerShootFx = new Effect(25, cons(e => {
     Draw.reset();
 }));
 
-// Hiệu ứng bắn NHỎ
+ 
 const maxitonerShootFxSmall = new Effect(20, cons(e => {
     Draw.z(Layer.effect);
     Draw.blend(Blending.additive);
@@ -187,7 +186,7 @@ const maxitonerShootFxSmall = new Effect(20, cons(e => {
     Draw.reset();
 }));
 
-// Đạn gốc Maxitoner
+ 
 const maxitonerBulletBase = extend(BasicBulletType, {
     speed: 7.0,
     damage: 10,
@@ -223,7 +222,7 @@ const maxitonerBulletBase = extend(BasicBulletType, {
     }
 });
 
-// Khởi tạo Pháo Maxitoner
+ 
 const maxitoner = extend(ItemTurret, "maxitoner", {
     configurable: true
 });
@@ -435,7 +434,7 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
 
         maxitonerShootFx.at(this.x, this.y);
 
-        // --- PHÁT ÂM THANH BẮN SHOTBATT ---
+ 
         if (shootSound != null) {
             shootSound.at(this.x, this.y, Mathf.random(0.9, 1.1));
         }
@@ -528,8 +527,7 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
             dialog.cont.add().height(10).row();
 
             let mainTable = new Table();
-
-            // BOX PHÚC LỢI A
+ 
             let boxA = new Table(); boxA.background(Styles.black6); boxA.margin(12);
             boxA.add("[yellow]★ ROLL PHÚC LỢI A (NGẪU NHIÊN) ★[]").row();
 
@@ -576,8 +574,7 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
             }
             mainTable.add(boxA).width(360).row();
             mainTable.add().height(12).row();
-
-            // BOX PHÚC LỢI B
+ 
             let boxB = new Table(); boxB.background(Styles.black6); boxB.margin(12);
             boxB.add("[cyan]★ ROLL PHÚC LỢI B (NGẪU NHIÊN) ★[]").row();
 
@@ -625,7 +622,7 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
             mainTable.add(boxB).width(360).row();
             mainTable.add().height(12).row();
 
-            // BOX PHÚC LỢI C
+ 
             let boxC = new Table(); boxC.background(Styles.black6); boxC.margin(12);
             boxC.add("[purple]★ ROLL PHÚC LỢI C (NGẪU NHIÊN) ★[]").row();
 
@@ -741,7 +738,7 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
     }
 });
 
-// ==================== 3. HIỂN THỊ HP UNIT (SMOOTH HP BAR) ====================
+ 
 const smoothHpMap = new ObjectMap();
 const lastDamageTimeMap = new ObjectMap(); 
 

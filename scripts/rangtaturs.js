@@ -412,8 +412,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
     },
 
     updateTile(){
-        // LOẠI BỎ TOÀN BỘ VÒNG LẶP KIỂM TRA GIỚI HẠN BLOCK TẠI ĐÂY
-        this.super$updateTile();
+         this.super$updateTile();
 
         if(this.evolutionTier == 2){
             if (this.customReloadTimer > 0) {
@@ -526,7 +525,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
             }
         } else {
             let pType = this.evolutionTier;
-            let pellets = 29; // Cập nhật MK1 từ 9 viên -> 29 viên đạn
+            let pellets = 29; 
             let spread = 8;        
             let dmgMul = 1.0;      
             let spdMul = 1.0;      

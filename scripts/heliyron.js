@@ -1,13 +1,10 @@
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
-
-// ==============================================================================
-// KHAI BÁO ÂM THANH
-// ==============================================================================
+ 
 const shootSoundBlaster = Vars.tree.loadSound("loudly-blaster-shot-1");
 
-// Hàm tìm Sprite an toàn (tìm tên gốc -> newex- -> reinforced-)
+ 
 function getModRegion(spriteName) {
     if (Core.atlas.has(spriteName)) return Core.atlas.find(spriteName);
     if (Core.atlas.has("newex-" + spriteName)) return Core.atlas.find("newex-" + spriteName);
@@ -15,11 +12,10 @@ function getModRegion(spriteName) {
     return Core.atlas.find("clear");
 }
 
-// Yêu cầu tài nguyên nâng cấp từ MK1
+ 
 const reqMK2 = { copper: 8000, lead: 4000, titanium: 0 };
 const reqMK2B = { copper: 8000, lead: 4000, titanium: 2000 };
-
-// --- EFFECT HẠT BAY TRƯỚC VÀ SAU VIÊN ĐẠN ---
+ 
 const heliyronParticleEffect = new Effect(18, e => {
     Draw.color(e.color);
     let angles = [0, 90, 180, 270];
@@ -31,7 +27,7 @@ const heliyronParticleEffect = new Effect(18, e => {
     }
 });
 
-// --- BULLET TYPES ---
+ 
 const heliyronMK1Bullet = extend(BasicBulletType, {
     speed: 17, damage: 150, width: 7, height: 38, lifetime: 33,
     frontColor: Color.valueOf("#e0f7fa"), backColor: Color.valueOf("#d47c00"),
@@ -78,35 +74,35 @@ const heliyronMK2BBullet = extend(BasicBulletType, {
     }
 });
 
-// --- ĐẠN PHỤ NÓNG BẮN THẲNG (NHÓM 1 - 4 VIÊN) ---
+ 
 const heliyronSubBullet = extend(BasicBulletType, {
     speed: 15, damage: 120, width: 5, height: 26, lifetime: 50,
     frontColor: Color.valueOf("#e0f7fa"), backColor: Color.valueOf("#ff9800"),
     hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor,
-    homingPower: 0.35,  // Đuổi mạnh
-    homingRange: 80,    // Phạm vi ngắn
+    homingPower: 0.35,  
+    homingRange: 80,    
     trailEffect: heliyronParticleEffect,
     trailInterval: 3
 });
 
-// --- ĐẠN PHỤ BẮN CHÉO (NHÓM 2 - 4 VIÊN THÊM SAU) ---
+ 
 const heliyronSubBullet2 = extend(BasicBulletType, {
     speed: 16, damage: 120, width: 5, height: 26, lifetime: 50,
     frontColor: Color.valueOf("#ffffff"), backColor: Color.valueOf("#00e5ff"),
     hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor,
     homingPower: 0.25,  
-    homingRange: 240,   // Phạm vi truy đuổi cao
+    homingRange: 240, 
     trailEffect: heliyronParticleEffect,
     trailInterval: 3
 });
 
-// --- BLOCK CONFIG ---
+ 
 let heliyron = extend(ItemTurret, "heliyron", {
     squareSprite: false,
 
     load(){
         this.super$load();
-        // Nạp phụ kiện custom
+ 
         this.bodyRegion = getModRegion("heliyron-body") || getModRegion("heliyron");
         this.c1Region = getModRegion("heliyron-c1");
         this.c2Region = getModRegion("heliyron-c2");
@@ -117,10 +113,10 @@ let heliyron = extend(ItemTurret, "heliyron", {
 heliyron.health = 1450;
 heliyron.size = 3;
 heliyron.reload = 35;
-heliyron.recoil = 0; // Quản lý recoil mượt bằng JS
+heliyron.recoil = 0; 
 heliyron.configurable = true;
 heliyron.category = Category.turret;
-heliyron.shootSound = shootSoundBlaster; // Gán âm thanh bắn mặc định
+heliyron.shootSound = shootSoundBlaster; 
 
 heliyron.ammo(Items.copper, heliyronMK1Bullet, Items.lead, heliyronMK1Bullet);
 
@@ -130,7 +126,7 @@ heliyron.config(java.lang.Integer, packCons2((tile, value) => {
     }
 }));
 
-// --- BUILD TYPE ---
+ 
 heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
     tierState: 0,
     customRecoil: 0.0,
@@ -173,15 +169,15 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
     updateTile(){
         this.super$updateTile();
 
-        // Giảm recoil theo thời gian
+ 
         this.customRecoil = Mathf.approach(this.customRecoil, 0.0, 0.08 * Time.delta);
 
-        // Nội suy zoom lõi efcore theo lượng HP đã mất
+ 
         let missingHpRatio = Math.max(0, 1 - (this.health / this.maxHealth));
         let targetScale = 0.3 + (missingHpRatio * 0.7);
         this.coreScaleVisual = Mathf.approach(this.coreScaleVisual, targetScale, 0.05 * Time.delta);
 
-        // Nội tại MK2B
+ 
         let tier = this.getTier();
         if(tier == 2 && (this.health / this.maxHealth) < 0.50){
             if(this.isShooting && this.hasAmmo()){
@@ -200,25 +196,25 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
 
         let dmgMultiplier = this.getDamageMultiplier();
         
-        // PHÁT ÂM THANH BẮN (với độ biến thiên pitch nhẹ)
+ 
         if (shootSoundBlaster) shootSoundBlaster.at(this.x, this.y, Mathf.random(0.9, 1.1));
 
-        // 1. BẮN VIÊN ĐẠN CHÍNH
+ 
         let b = bullet.create(this, this.team, this.x, this.y, this.rotation);
         if(b != null){
             b.damage = bullet.damage * dmgMultiplier;
         }
 
-        // 2. 40% CƠ HỘI BẮN THÊM 8 VIÊN ĐẠN PHỤ
+   
         if(Mathf.chance(0.4)){
             let rad = this.rotation * Mathf.degRad;
             let cos = Math.cos(rad);
             let sin = Math.sin(rad);
 
-            // Sát thương bằng 80% đạn gốc
+ 
             let subDamage = (bullet.damage * 0.8) * dmgMultiplier;
 
-            // --- NHÓM 1: BẮN THẲNG (CỰ LÝ TRUY ĐUỔI NGẮN) ---
+ 
             let sideOffsets1 = [-2.0, 2.0];
             for(let i = 0; i < sideOffsets1.length; i++){
                 let side = sideOffsets1[i];
@@ -238,7 +234,7 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
                 if(sb != null) sb.damage = subDamage;
             }
 
-            // --- NHÓM 2: BẮN CHÉO (CỰ LÝ TRUY ĐUỔI TẦM XA) ---
+ 
             let sideOffsets10 = [-10.0, 10.0];
             let angleOffsets10 = [-25.0, 25.0];
             for(let i = 0; i < sideOffsets10.length; i++){
@@ -264,7 +260,7 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
         }
     },
 
-    // --- VẼ CÁC PHỤ KIỆN VÀ ANIMATION (MINDUSTRY TỰ VẼ ĐẾ QUA super$draw) ---
+ 
     draw() {
         this.super$draw();
 
@@ -273,19 +269,17 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
         let cos = Math.cos(rad);
         let sin = Math.sin(rad);
 
-        // 1. VẼ KHUNG BODY (heliyron-body)
+ 
         if (heliyron.bodyRegion != null && heliyron.bodyRegion.found()) {
             Draw.rect(heliyron.bodyRegion, this.x, this.y, rot);
         }
-
-        // 2. TÍNH TOÁN VÀ VẼ CÁNH C1, C2 KHI GIẬT
+ 
         let recoilDist = this.customRecoil * 5.0;
 
-        // heliyron-c1: Di chuyển sang trái 5px + lùi 5px
+ 
         let c1X = this.x + (-sin * recoilDist) - (cos * recoilDist);
         let c1Y = this.y + (cos * recoilDist) - (sin * recoilDist);
-
-        // heliyron-c2: Di chuyển sang phải 5px + lùi 5px
+ 
         let c2X = this.x + (sin * recoilDist) - (cos * recoilDist);
         let c2Y = this.y + (-cos * recoilDist) - (sin * recoilDist);
 
@@ -296,7 +290,7 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
             Draw.rect(heliyron.c2Region, c2X, c2Y, rot);
         }
 
-        // 3. VẼ LÕI EFCORE VỚI ANIMATION ZOOM MƯỢT
+ 
         if (heliyron.efcoreRegion != null && heliyron.efcoreRegion.found()) {
             Draw.z(Layer.turret + 0.01);
             let coreWidth = heliyron.efcoreRegion.width * Draw.scl * this.coreScaleVisual;
@@ -313,7 +307,7 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
         table.clear(); table.row();
         let tier = this.getTier();
 
-        // --- NÚT NÂNG CẤP (Icon ^) ---
+ 
         if(tier == 0) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
                 let dialog = extend(BaseDialog, "Trung tâm Nâng cấp Heliyron", {});
@@ -341,7 +335,7 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
 
                 let branchesTable = new Table();
 
-                // NHÁNH 1: MK2
+ 
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                 b1.add("[cyan]===(CẤU HÌNH MK2)===[]").row();
                 let b1D = b1.add(
@@ -361,7 +355,7 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
                     } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho MK2![]"); }
                 })).size(180, 38);
 
-                // NHÁNH 2: MK2B
+ 
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                 b2.add("[purple]===(CẤU HÌNH MK2B)===[]").row();
                 let b2D = b2.add(
@@ -396,7 +390,7 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
             })).size(50, 40).tooltip("Đã đạt cấp tối đa");
         }
 
-        // --- NÚT THÔNG TIN (Icon i) ---
+ 
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
             let currentTier = this.getTier();
             let title = " Thông số Heliyron: ";

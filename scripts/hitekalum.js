@@ -127,13 +127,13 @@ Events.on(ContentInitEvent, () => {
                 return this;
             },
 
-            // Cập nhật hàm kiểm tra Redstone Wall xung quanh bằng Units.nearbyBuildings
+ 
             checkRedstoneWallCorners() {
                 if (redstoneWall == null) return 0;
                 let count = 0;
                 let foundWalls = {};
 
-                // Phạm vi quét linh hoạt dựa trên kích thước pháo + lề tiếp xúc
+       
                 let scanRadius = (this.block.size * Vars.tilesize / 2) + 16;
 
                 Units.nearbyBuildings(this.x, this.y, scanRadius, cons(b => {
@@ -143,7 +143,7 @@ Events.on(ContentInitEvent, () => {
                     }
                 }));
 
-                // Tối đa 4 stack buff
+ 
                 return Math.min(4, count);
             },
 
@@ -309,8 +309,7 @@ Events.on(ContentInitEvent, () => {
 
             updateTile(){
                 this.super$updateTile();
-
-                // Cập nhật số khối Redstone Wall đứng xung quanh pháo
+ 
                 this.redstoneBuffStacks = this.checkRedstoneWallCorners();
 
                 if(this.power == null || this.power.status <= 0) return;

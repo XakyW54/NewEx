@@ -65,8 +65,7 @@ const bulletSlashEffect = new Effect(15, e => {
     Draw.reset();
 });
 
-// --- ĐẠN VENDICUM TIER 0 ---
-const vendicumBullet = extend(BasicBulletType, {
+ const vendicumBullet = extend(BasicBulletType, {
     speed: 8, damage: 45, lifetime: 48, width: 11, height: 16, 
     frontColor: Color.white, backColor: Color.valueOf("#e0b080"),
     textType: "vendicumBullet",
@@ -78,8 +77,7 @@ const vendicumBullet = extend(BasicBulletType, {
     trailChance: 0.20
 });
 
-// --- ĐẠN VENDICUM MK2 ---
-const vendicumMK2Bullet = extend(BasicBulletType, {
+ const vendicumMK2Bullet = extend(BasicBulletType, {
     speed: 10, damage: 65, lifetime: 45, width: 13, height: 20, 
     frontColor: Color.white, backColor: Color.valueOf("#ffaa66"),
     pierce: true, pierceCap: 5, pierceBuilding: true, knockback: 1.4, impact: true,
@@ -90,8 +88,7 @@ const vendicumMK2Bullet = extend(BasicBulletType, {
     trailChance: 0.40
 });
 
-// --- ĐẠN VENDICUM MK2B ---
-const vendicumMK2BBullet = extend(BasicBulletType, {
+ const vendicumMK2BBullet = extend(BasicBulletType, {
     speed: 9, damage: 122.5, lifetime: 50, width: 5, height: 64, 
     frontColor: Color.white, backColor: Color.valueOf("#831006"),
     trailEffect: Fx.disperseTrail, trailChance: 0.40, 
@@ -103,8 +100,7 @@ const vendicumMK2BBullet = extend(BasicBulletType, {
     despawnEffect: Fx.disperseTrail
 });
 
-// --- PHẦN LOGIC THÁP PHÁO ---
-const vendicum = extend(ItemTurret, "vendicum", {
+ const vendicum = extend(ItemTurret, "vendicum", {
     configurable: true
 });
 

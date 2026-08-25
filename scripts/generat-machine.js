@@ -4,9 +4,11 @@ const DIR_Y = [0, 1, 0, -1];
 Events.on(ContentInitEvent, () => {
     const genMachine = Vars.content.block("newex-generat-machine");
     const redstoneWall = Vars.content.block("newex-redstone-wall");
+    const emeraliftWall = Vars.content.block("newex-emeralift-wall");
+    const pinfyr = Vars.content.block("newex-pinfyr");
     const raykstone = Vars.content.item("newex-raykstone");
 
-    if (genMachine != null && redstoneWall != null && raykstone != null) {
+    if (genMachine != null && redstoneWall != null && emeraliftWall != null && pinfyr != null && raykstone != null) {
         genMachine.rotate = true;
         genMachine.update = true;
         genMachine.hasItems = true;
@@ -15,7 +17,9 @@ Events.on(ContentInitEvent, () => {
             return extend(Building, {
                 spawnTimer: 0,
                 nextSpawnTime: 120 * 60,
-                fuelTimer: 0, // Bộ đếm thời gian nhiên liệu (tính bằng tick)
+                fuelTimer: 0,
+                isPinfyrNearby: false,
+                checkTimer: 0,
 
                 placed() {
                     this.super$placed();
@@ -24,10 +28,39 @@ Events.on(ContentInitEvent, () => {
 
                 resetTimer() {
                     this.spawnTimer = 0;
-                    this.nextSpawnTime = Mathf.random(120 * 60, 300 * 60);
+                    if (this.isPinfyrNearby) {
+                        this.nextSpawnTime = 120 * 60; 
+                    } else {
+                        this.nextSpawnTime = Mathf.random(120 * 60, 300 * 60);
+                    }
                 },
 
-                // Định nghĩa đúng hàm acceptItem ở cấp Building
+               
+                checkPinfyrNearby() {
+                    let rot = this.rotation & 3;
+                    let targetTile = this.getTargetTile();
+                    let targetX = targetTile != null ? targetTile.x : -1;
+                    let targetY = targetTile != null ? targetTile.y : -1;
+
+                    let found = false;
+
+ 
+                    if (this.proximity != null) {
+                        for (let i = 0; i < this.proximity.size; i++) {
+                            let other = this.proximity.get(i);
+                            if (other != null && other.block === pinfyr) {
+   
+                                let isTargetLocation = (other.tileX === targetX && other.tileY === targetY);
+                                if (!isTargetLocation) {
+                                    found = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    return found;
+                },
+
                 acceptItem(source, item) {
                     return item === raykstone && this.items.get(raykstone) < this.block.itemCapacity;
                 },
@@ -105,7 +138,6 @@ Events.on(ContentInitEvent, () => {
                     return !hasUnit;
                 },
 
-                // Xử lý tiêu thụ 1 item raykstone = 1 giây (60 ticks)
                 consumeFuel() {
                     if (this.fuelTimer > 0) {
                         this.fuelTimer -= Time.delta;
@@ -114,7 +146,7 @@ Events.on(ContentInitEvent, () => {
 
                     if (this.items.has(raykstone, 1)) {
                         this.items.remove(raykstone, 1);
-                        this.fuelTimer += 60; // 60 ticks = 1 giây
+                        this.fuelTimer += 60;
                         return true;
                     }
 
@@ -126,6 +158,17 @@ Events.on(ContentInitEvent, () => {
 
                     if (this.efficiency <= 0) return;
 
+ 
+                    this.checkTimer += Time.delta;
+                    if (this.checkTimer >= 15) {
+                        this.checkTimer = 0;
+                        let pinfyrDetected = this.checkPinfyrNearby();
+                        if (pinfyrDetected !== this.isPinfyrNearby) {
+                            this.isPinfyrNearby = pinfyrDetected;
+                            this.resetTimer();
+                        }
+                    }
+
                     if (this.canSpawn()) {
                         let hasPowerFuel = this.consumeFuel();
 
@@ -136,7 +179,8 @@ Events.on(ContentInitEvent, () => {
                             if (this.spawnTimer >= this.nextSpawnTime) {
                                 let target = this.getTargetTile();
                                 if (target != null) {
-                                    target.setBlock(redstoneWall, this.team, 0);
+                                    let spawnBlock = this.isPinfyrNearby ? emeraliftWall : redstoneWall;
+                                    target.setBlock(spawnBlock, this.team, 0);
                                 }
                                 this.resetTimer();
                             }
@@ -188,7 +232,8 @@ Events.on(ContentInitEvent, () => {
                             let spawnY = this.y + dy * 16;
 
                             let progress = Math.min(1.0, Math.max(0.0, this.spawnTimer / this.nextSpawnTime));
-                            let region = redstoneWall.region;
+                            let spawnBlock = this.isPinfyrNearby ? emeraliftWall : redstoneWall;
+                            let region = spawnBlock.region;
 
                             if (region != null && region.found()) {
                                 Draw.z(Layer.blockOver);

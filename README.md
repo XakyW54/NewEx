@@ -85,3 +85,9 @@
    - tăng tốc độ từ 0.9 lên 1.1
 + Unit Elorix:
    - tăng máu từ 1890 lên 5870
+
+
+
+-------------------------------------------
+> Điều chỉnh cân bằng bản 0.6.9:
+- Khối Laser Brey: tăng 75% tốc độ đào pháo tường địa hình Vanilla.

@@ -1,6 +1,9 @@
 {
   "type": "Block",
-  "requirements": [ "newex-obs/10", "newex-obsidis/8" ],
+  "requirements": [ 
+    "copper/152",
+    "lead/100",
+"metaglass/150" ],
   "category": "production",
   "tier": 4,
   "size": 2,
@@ -22,7 +25,8 @@
   },
     "research": "newex",
   "outputItems": [
-    "obsidis/20",
-    "titan/200"
+    "copper/5200",
+    "lead/2000",
+"metaglass/1500"
   ]
 }

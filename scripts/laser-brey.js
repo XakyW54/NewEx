@@ -1,5 +1,7 @@
 const RAYKSTONE_NAME = "newex-raykstone";
+const EMERALIFT_NAMES = ["emeralift-wall", "newex-emeralift-wall"];
 const BREAK_TIME = 60 * 60;
+const BUFF_RADIUS = 5;
 
 const DIR_X = [1, 0, -1, 0];
 const DIR_Y = [0, 1, 0, -1];
@@ -20,10 +22,45 @@ Events.on(ContentInitEvent, () => {
             timer2: 0,
             itemTimer1: 0,
             itemTimer2: 0,
-            maxTiles: 5,
+            baseMaxTiles: 5,
+            hasBuff: false,
 
             onDestroy() {
                 this.super$onDestroy();
+            },
+
+            checkEmeraldBuff() {
+                let rot = this.rotation & 3;
+                let found = false;
+
+                const checkDirs = [(rot + 1) & 3, (rot + 2) & 3, (rot + 3) & 3];
+
+                for (let dx = -BUFF_RADIUS; dx <= BUFF_RADIUS; dx++) {
+                    for (let dy = -BUFF_RADIUS; dy <= BUFF_RADIUS; dy++) {
+                        if (dx * dx + dy * dy > BUFF_RADIUS * BUFF_RADIUS) continue;
+
+                        let checkX = this.tile.x + dx;
+                        let checkY = this.tile.y + dy;
+
+                        let isFront = false;
+                        if (DIR_X[rot] !== 0) isFront = Math.sign(dx) === DIR_X[rot];
+                        if (DIR_Y[rot] !== 0) isFront = Math.sign(dy) === DIR_Y[rot];
+
+                        if (isFront) continue;
+
+                        let neighborTile = Vars.world.tile(checkX, checkY);
+                        if (neighborTile != null && neighborTile.build != null) {
+                            let bName = neighborTile.build.block.name;
+                            if (EMERALIFT_NAMES.some(name => bName === name || bName.endsWith("/" + name))) {
+                                found = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (found) break;
+                }
+                this.hasBuff = found;
+                return found;
             },
 
             isRaykstone(tile) {
@@ -40,7 +77,6 @@ Events.on(ContentInitEvent, () => {
             isVanillaWall(tile) {
                 if (tile == null) return false;
                 let b = tile.block();
-                
                 return b != null && b.isStatic() && !b.synthetic() && b.name !== RAYKSTONE_NAME;
             },
 
@@ -59,8 +95,10 @@ Events.on(ContentInitEvent, () => {
                 let startX = this.x + dirX * 8;
                 let startY = this.y + dirY * 8;
 
+                let currentMaxTiles = this.hasBuff ? (this.baseMaxTiles * 3) : this.baseMaxTiles;
+
                 this.target1 = null;
-                for (let i = 1; i <= this.maxTiles; i++) {
+                for (let i = 1; i <= currentMaxTiles; i++) {
                     let checkX = startX + pX + dirX * (i * 8 - 4);
                     let checkY = startY + pY + dirY * (i * 8 - 4);
                     let checkTile = Vars.world.tileWorld(checkX, checkY);
@@ -72,7 +110,7 @@ Events.on(ContentInitEvent, () => {
                 }
 
                 this.target2 = null;
-                for (let i = 1; i <= this.maxTiles; i++) {
+                for (let i = 1; i <= currentMaxTiles; i++) {
                     let checkX = startX - pX + dirX * (i * 8 - 4);
                     let checkY = startY - pY + dirY * (i * 8 - 4);
                     let checkTile = Vars.world.tileWorld(checkX, checkY);
@@ -112,7 +150,19 @@ Events.on(ContentInitEvent, () => {
                 if (this[timerKey] + progress >= BREAK_TIME) {
                     let tx = tile.worldx();
                     let ty = tile.worldy();
+                    let isVanilla = this.isVanillaWall(tile);
+
                     tile.setBlock(Blocks.air);
+
+                    let dropChance = this.hasBuff ? 0.60 : 0.40;
+
+                    if (isVanilla && Mathf.chance(dropChance)) {
+                        let raykItem = Vars.content.item(RAYKSTONE_NAME);
+                        if (raykItem != null) {
+                            this.handleItem(this, raykItem);
+                            try { Fx.itemTransfer.at(tx, ty, 0, raykItem, this); } catch(e) {}
+                        }
+                    }
 
                     try {
                         Fx.smallExplosion.at(tx, ty);
@@ -129,6 +179,8 @@ Events.on(ContentInitEvent, () => {
             updateTile() {
                 if (this.efficiency <= 0 || !this.shouldConsume()) return;
 
+                this.checkEmeraldBuff();
+
                 let liquidBoost = (this.liquids != null && this.liquids.currentAmount() > 0) ? 0.5 : 0;
                 let progress = this.delta() * this.efficiency * (1 + liquidBoost);
 
@@ -136,10 +188,12 @@ Events.on(ContentInitEvent, () => {
                     this.findTargets();
                 }
 
+                let vanillaSpeedMult = this.hasBuff ? 3.85 : 1.75;
+
                 if (this.target1 != null) {
                     this.handleMining(this.target1, "itemTimer1", progress);
 
-                    let targetProgress1 = this.isVanillaWall(this.target1) ? progress * 1.75 : progress;
+                    let targetProgress1 = this.isVanillaWall(this.target1) ? progress * vanillaSpeedMult : progress;
 
                     let added = this.processTarget(this.target1, "timer1", targetProgress1);
                     if (added === null) {
@@ -154,7 +208,7 @@ Events.on(ContentInitEvent, () => {
                 if (this.target2 != null) {
                     this.handleMining(this.target2, "itemTimer2", progress);
 
-                    let targetProgress2 = this.isVanillaWall(this.target2) ? progress * 1.75 : progress;
+                    let targetProgress2 = this.isVanillaWall(this.target2) ? progress * vanillaSpeedMult : progress;
 
                     let added = this.processTarget(this.target2, "timer2", targetProgress2);
                     if (added === null) {
@@ -179,10 +233,39 @@ Events.on(ContentInitEvent, () => {
 
                 let pX = -DIR_Y[rot] * 4;
                 let pY = DIR_X[rot] * 4;
-                let range = this.maxTiles * 8;
+                
+                let currentMaxTiles = this.hasBuff ? (this.baseMaxTiles * 3) : this.baseMaxTiles;
+                let range = currentMaxTiles * 8;
 
-                Drawf.dashLine(Pal.accent, startX + pX, startY + pY, startX + pX + dirX * range, startY + pY + dirY * range);
-                Drawf.dashLine(Pal.accent, startX - pX, startY - pY, startX - pX + dirX * range, startY - pY + dirY * range);
+                let lineColor = this.hasBuff ? Color.valueOf("#10b981") : Pal.accent;
+
+                Drawf.dashLine(lineColor, startX + pX, startY + pY, startX + pX + dirX * range, startY + pY + dirY * range);
+                Drawf.dashLine(lineColor, startX - pX, startY - pY, startX - pX + dirX * range, startY - pY + dirY * range);
+
+                Draw.z(Layer.power + 1);
+                Drawf.dashCircle(this.x, this.y, BUFF_RADIUS * 8, Color.valueOf("#10b981"));
+
+                for (let dx = -BUFF_RADIUS; dx <= BUFF_RADIUS; dx++) {
+                    for (let dy = -BUFF_RADIUS; dy <= BUFF_RADIUS; dy++) {
+                        if (dx * dx + dy * dy > BUFF_RADIUS * BUFF_RADIUS) continue;
+
+                        let isFront = false;
+                        if (DIR_X[rot] !== 0) isFront = Math.sign(dx) === DIR_X[rot];
+                        if (DIR_Y[rot] !== 0) isFront = Math.sign(dy) === DIR_Y[rot];
+
+                        if (isFront) continue;
+
+                        let checkTile = Vars.world.tile(this.tile.x + dx, this.tile.y + dy);
+                        if (checkTile != null && checkTile.build != null) {
+                            let bName = checkTile.build.block.name;
+                            if (EMERALIFT_NAMES.some(name => bName === name || bName.endsWith("/" + name))) {
+                                Lines.stroke(1.5, Color.valueOf("#10b981"));
+                                Lines.dashLine(this.x, this.y, checkTile.build.x, checkTile.build.y, 4);
+                            }
+                        }
+                    }
+                }
+                Draw.reset();
             },
 
             draw() {
@@ -217,7 +300,7 @@ Events.on(ContentInitEvent, () => {
                 let pX = -DIR_Y[rot] * 4;
                 let pY = DIR_X[rot] * 4;
 
-                let laserColor = Color.valueOf("ffd37f");
+                let laserColor = this.hasBuff ? Color.valueOf("#10b981") : Color.valueOf("#ffd37f");
                 let pulse = Mathf.absin(Time.time, 4, 0.2);
 
                 Draw.z(Layer.power + 1);
@@ -270,15 +353,17 @@ Events.run(Trigger.draw, () => {
         let cursorX = Core.input.mouseWorldX();
         let cursorY = Core.input.mouseWorldY();
 
-        let tileX = Math.floor((cursorX) / 8) * 8 + 4;
-        let tileY = Math.floor((cursorY) / 8) * 8 + 4;
+        let tileX = Math.floor(cursorX / 8);
+        let tileY = Math.floor(cursorY / 8);
+        let worldX = tileX * 8 + 4;
+        let worldY = tileY * 8 + 4;
 
         let rot = input.rotation & 3;
         let dirX = DIR_X[rot];
         let dirY = DIR_Y[rot];
 
-        let startX = tileX + dirX * 8;
-        let startY = tileY + dirY * 8;
+        let startX = worldX + dirX * 8;
+        let startY = worldY + dirY * 8;
 
         let pX = -DIR_Y[rot] * 4;
         let pY = DIR_X[rot] * 4;
@@ -286,5 +371,30 @@ Events.run(Trigger.draw, () => {
 
         Drawf.dashLine(Pal.accent, startX + pX, startY + pY, startX + pX + dirX * range, startY + pY + dirY * range);
         Drawf.dashLine(Pal.accent, startX - pX, startY - pY, startX - pX + dirX * range, startY - pY + dirY * range);
+
+        Draw.z(Layer.power + 1);
+        Drawf.dashCircle(worldX, worldY, BUFF_RADIUS * 8, Color.valueOf("#10b981"));
+
+        for (let dx = -BUFF_RADIUS; dx <= BUFF_RADIUS; dx++) {
+            for (let dy = -BUFF_RADIUS; dy <= BUFF_RADIUS; dy++) {
+                if (dx * dx + dy * dy > BUFF_RADIUS * BUFF_RADIUS) continue;
+
+                let isFront = false;
+                if (DIR_X[rot] !== 0) isFront = Math.sign(dx) === DIR_X[rot];
+                if (DIR_Y[rot] !== 0) isFront = Math.sign(dy) === DIR_Y[rot];
+
+                if (isFront) continue;
+
+                let checkTile = Vars.world.tile(tileX + dx, tileY + dy);
+                if (checkTile != null && checkTile.build != null) {
+                    let bName = checkTile.build.block.name;
+                    if (EMERALIFT_NAMES.some(name => bName === name || bName.endsWith("/" + name))) {
+                        Lines.stroke(1.5, Color.valueOf("#10b981"));
+                        Lines.dashLine(worldX, worldY, checkTile.build.x, checkTile.build.y, 4);
+                    }
+                }
+            }
+        }
+        Draw.reset();
     }
 });

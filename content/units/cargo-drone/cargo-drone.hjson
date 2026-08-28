@@ -1,0 +1,62 @@
+type: flying
+name: Cargo Drone
+description: .
+flying: true
+lowAltitude: true
+speed: 2.5
+accel: 0.1
+drag: 0.05
+health: 120
+armor: 1
+hitSize: 8
+
+// Khả năng vận chuyển
+itemCapacity: 30
+isEnemy: false
+mineTier: 0
+buildSpeed: 0
+
+// Khả năng điều khiển và logic
+logicControllable: true
+playerControllable: false
+allowedInMinimap: true
+
+// Âm thanh và hiệu ứng
+engineOffset: 5.5
+engineSize: 2
+drawCell: false
+
+weapons: [    
+  {
+      "name": "firelock-bullet",
+      "rotate": true,
+      "rotateSpeed": 6,
+      "x": 2,
+      "y": 2,
+      "shake": 1,
+      "shootY": 8,
+      "layerOffset": 25, 
+      "ejectEffect": "casing1",
+      "reload": 12,
+      "shootSound": "shootCyclone",
+      "top": true,
+      "shoot": { "shots": 4, "shotDelay": 3 },
+      "inaccuracy": 2,
+      "bullet": {
+        "frontColor": "ffa665",
+        "backColor": "d06b53",
+        "lightColor": "ffa665",
+        "damage": 44,
+        "speed": 9,
+        "lifetime": 60,
+        "width": 10,
+        "height": 22,
+        "spin": -12,
+        "pierceArmor": false,
+        "shootEffect": "shootBigColor",
+        "hitColor": "ffa665",
+        "knockback": 1,
+        "layer": 109
+      }
+    },
+    ]

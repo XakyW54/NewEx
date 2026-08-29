@@ -1,8 +1,0 @@
-{
-  "name": "obsidis ore",
-  "type": "OreBlock",
-  "oreDefault": true,
-  "oreScale": 22.45,
-  "oreThreshold": 0.87,
-  "itemDrop": "obsidis"
-}

@@ -1,0 +1,43 @@
+
+name: Emperfum
+description: "Pháo Heliyron: Càng mất máu bắn càng đau! Tự gây sát thương lên bản thân để đổi lấy khả năng kích hoạt mưa đạn phụ truy đuổi diện rộng và bùng nổ tốc bắn khi máu xuống thấp."
+health: 1450
+size: 5
+reload: 300
+range: 550
+inaccuracy: 2
+targetAir: true
+targetGround: true
+maxAmmo: 10
+ammoPerShot: 1
+ammoTypes: {
+  titanium: {
+    type: BasicBulletType
+    speed: 15
+    damage: 300
+    width: 7
+    height: 9
+    lifetime: 120
+    frontColor: e0ea87
+    backColor: e5ff00
+    trailColor: daea80
+  }
+}
+
+
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+
+}
+
+researchCostMultiplier: 0.1
+requirements: [
+  copper/12000
+  lead/5600
+  thorium/5200
+  silicon/5000
+  surge-alloy/2900
+]
+category: turret
+research: blixalum

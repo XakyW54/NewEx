@@ -1,0 +1,32 @@
+{
+  "type": "Block",
+  "requirements": [ 
+    "copper/152",
+    "lead/100",
+"metaglass/150" ],
+  "category": "production",
+  "tier": 4,
+  "size": 2,
+  "update": true,
+  "solid": true,
+  "rotate": true,
+  "hasPower": true,
+  "hasLiquids": true,
+  "liquidCapacity": 10,
+  "consumes": {
+    "power": 10.5,
+    "liquid": {
+      "liquid": "water",
+      "amount": 0.1,
+      "booster": true,
+      "optional": true,
+      "boostScale": 0.5
+    }
+  },
+    "research": "newex",
+  "outputItems": [
+    "copper/5200",
+    "lead/2000",
+"metaglass/1500"
+  ]
+}

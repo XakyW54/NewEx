@@ -1,0 +1,141 @@
+{
+  name: "Braiver Factory"
+  description: "."
+  type: GenericCrafter
+  health: 200
+  size: 3
+  hasItems: true
+  itemCapacity: 150
+  craftTime: 285
+  craftEffect: [
+    {
+      type: WaveEffect
+      sizeFrom: 20
+      sizeTo: 0
+      strokeFrom: 2
+      strokeTo: 0
+      lifetime: 35
+      colorFrom: "ffffff"
+      colorTo: "808080"
+    }
+    {
+      type: RadialEffect
+      rotationSpacing: 90
+      rotationOffset: 0
+      lengthOffset: 14
+      amount: 4
+      effect: {
+        type: ParticleEffect
+        particles: 2
+        length: 21
+        lifetime: 240
+        sizeFrom: 2
+        sizeTo: 3
+        cone: 30
+        interp: pow10Out
+        colorFrom: "929292"
+        colorTo: "92929200"
+        layer: 100.3
+      }
+    }
+    {
+      type: RadialEffect
+      rotationSpacing: 90
+      rotationOffset: 0
+      lengthOffset: 14
+      amount: 4
+      effect: {
+        type: ParticleEffect
+        particles: 1
+        length: 16
+        lifetime: 160
+        sizeFrom: 1
+        sizeTo: 1
+        cone: 60
+        interp: pow5Out
+        colorFrom: "929292"
+        colorTo: "92929200"
+        layer: 100.3
+      }
+    }
+    {
+      type: RadialEffect
+      rotationSpacing: 90
+      rotationOffset: 0
+      lengthOffset: 14
+      amount: 4
+      effect: {
+        startDelay: 50
+        type: ParticleEffect
+        particles: 2
+        length: 7
+        lifetime: 900
+        sizeFrom: 2
+        sizeTo: 2
+        cone: 50
+        interp: circleOut
+        colorFrom: "6D6D6D"
+        colorTo: "6D6D6D05"
+        layer: 100.3
+      }
+    }
+  ]
+  drawer: {
+    type: DrawMulti
+    drawers: [
+      {
+        type: DrawDefault
+      }
+      {
+        type: DrawShape
+        sides: 7
+        radius: 4
+        stroke: 1.5
+        color: "ffffff"
+        useWarmup: true
+      }
+      {
+        type: DrawGlow
+        color: "ffffff"
+        radius: 6
+        glowScale: 3
+      }
+    ]
+  }
+  emitLight: true
+  lightColor: "ffffff"
+  lightRadius: 35
+  hasPower: true
+  hasLiquids: false
+  updateEffect: {
+    type: ParticleEffect
+    particles: 20
+    length: 0
+    lifetime: 25
+    colorFrom: "ffffff"
+    colorTo: "808080"
+    sizeFrom: 3
+    sizeTo: 0
+  }
+  ambientSound: smelter
+  ambientSoundVolume: 10.07
+  consumes: {
+    power: 10.95
+    items: [
+      newex-raykstone/4
+    ]
+  }
+  researchCostMultiplier: 0.5
+  requirements: [
+    copper/1500
+    lead/1200
+    metaglass/1000
+    raykstone/120
+  ]
+  category: crafting
+  research: newex-laser-brey
+  outputItems: [
+    newex-obsidis/1
+    newex-obs/1
+  ]
+}

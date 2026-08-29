@@ -1,0 +1,14 @@
+localizedName: Defxy-2
+description: .
+sector: 460
+
+difficulty: 0
+planet: zorynex
+
+parent: serpulo
+techTree: serpulo
+
+allowLaunchLoadout: true
+allowLaunchSchematics: true
+addStartingItems: true
+overrideLaunchDefaults: true

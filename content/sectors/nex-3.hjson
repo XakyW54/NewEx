@@ -1,0 +1,14 @@
+localizedName: Nex-3
+description: .
+sector: 34
+
+difficulty: 0
+planet: zorynex
+
+parent: serpulo
+techTree: serpulo
+
+allowLaunchLoadout: true
+allowLaunchSchematics: true
+addStartingItems: true
+overrideLaunchDefaults: true

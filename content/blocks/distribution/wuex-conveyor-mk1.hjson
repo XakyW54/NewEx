@@ -1,0 +1,23 @@
+name: "cổng chuyển dịch Xeuw mk1"
+description: "Cổng không gian thế hệ thứ hai. Tự động gom và chuyển dịch tới 500 item trong 1 giây từ mục tiêu đến cổng."
+type: StorageBlock
+category: distribution
+health: 1800
+armor: 50
+size: 3
+itemCapacity: 500
+configurable: true
+solid: true
+update: true
+hasItems: true
+destructible: true
+
+requirements: [
+  thorium/100
+  titanium/150
+  silicon/200
+  phase-fabric/50
+  obs/200
+  obsidis/1500
+]
+research: xeuw-conveyor-mk1

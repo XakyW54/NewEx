@@ -1,0 +1,70 @@
+
+name: Nucleytor
+description: Tháp Pháo Nucleytor: là pháo phòng thủ gia tốc năng lượng cao với cơ chế hoạt động chính:Tích Năng Tăng Công Suất: Bắn liên tục để tích tụ năng lượng giúp tăng tối đa sát thương và tốc độ bắn (tự hạ nhiệt khi ngừng bắn).  Gồng Trạng Thái Quá Tải: Đạt 100% năng lượng sẽ tự tăng giáp và phát vùng từ trường tăng tốc độ bắn cho các tháp pháo đồng minh lân cận.  Đạn Phản Lực Gia Tốc: Đạn khựng nhẹ tích năng lúc vừa bắn ra rồi mới bứt tốc lao đến mục tiêu.  Giới Hạn Tối Đa: Tối đa 10 pháo cho mỗi đội.
+health: 2200
+size: 3
+reload: 20
+range: 490
+recoil: 0
+inaccuracy: 2
+rotateSpeed: 2
+shootWarmupSpeed: 0.002
+  "velocityRnd": 0.05,
+configurable: true
+shoot: {
+  type: ShootBarrel
+  shots: 1
+  shotDelay: 3.75
+
+}
+shootSound: minal
+shootCone: 45
+shootEffect: none
+maxAmmo: 30
+ammoPerShot: 2
+cooldownTime: 150
+unitSort: closest
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+  
+}
+  "smokeEffect": [
+    {
+      "followParent": false,
+      "particles": 16,
+      "length": 25.0,
+      "cone": 15.0,
+      "lifetime": 15,
+      "interp": "pow3Out",
+      "sizeInterp": "pow2Out",
+      "colorFrom": "787878",
+      "colorTo": "787878",
+      "sizeFrom": 2.0,
+      "sizeTo": 0.0,
+      "layer": 104
+    },
+    {
+      "followParent": false,
+      "particles": 12,
+      "length": 40.0,
+      "cone": 25.0,
+      "lifetime": 30,
+      "interp": "pow3Out",
+      "sizeInterp": "pow2Out",
+      "colorFrom": "78787800",
+      "colorTo": "787878",
+      "sizeFrom": 4.0,
+      "sizeTo": 0.0,
+      "layer": 104
+    }
+  ],
+  researchCostMultiplier: 0.1
+requirements: [
+  copper/1440
+  thorium/230
+plastanium/145
+  silicon/105
+]
+category: turret
+research: vendicum

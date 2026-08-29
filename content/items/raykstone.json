@@ -1,0 +1,12 @@
+{
+  "hardness": 14,
+  "cost": 12,
+  "radioactivity": 0,
+  "color": "330542",
+  "research": {
+    "parent": "newex",
+    "requirements": [
+      "copper/1500"
+    ]
+  }
+}

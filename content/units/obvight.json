@@ -1,0 +1,1088 @@
+{
+  "flying": true,
+  "databaseTag": "10special-unit",
+  "drag": 0.08,
+  "speed": 1.8,
+  "rotateSpeed": 2.5, // momiji
+  "accel": 0.09,
+  "health": 2300,
+  "armor": 6,
+  "hitSize": 25,
+  "engineSize": 4.3,
+  "engineOffset": 13.5,
+  "fogRadius": 2.5,
+  "itemCapacity": 0,
+  "flyingLayer": 90,
+  "drawBody": false,
+  "drawCell": false,
+  "research": "light-refabricator",
+  "researchCostMultiplier": 0,
+  "deathSound": "poop",
+  "envDisabled": 0,
+  "outlineColor": "2d2f39",
+  "engineLayer": 89.99,
+  "engines": [
+    {
+      "x": 9.5,
+      "y": -11.5,
+      "radius": 3.1,
+      "rotation": -45
+    },
+    {
+      "x": -9.5,
+      "y": -11.5,
+      "radius": 3.1,
+      "rotation": -135
+    }
+  ],
+  "parts": [
+    {
+      "type": "RegionPart",
+      "suffix": "-weapon",
+      "layer": 90,
+      "under": true
+    },
+    {
+      "type": "RegionPart",
+      "suffix": "-weapon-light",
+      "layer": 105,
+      "outline": false
+    },
+    {
+      "type": "RegionPart",
+      "layer": 104,
+      "name": "ve-obvight-weapon-shell",
+      "outline": false,
+      "mirror": true,
+      "color": "ff6060",
+      "colorTo": "60ff60",
+      "xScl": 0,
+      "yScl": 0,
+      "progress": {
+        "type": "time",
+        "ops": [
+          {
+            "op": "loop",
+            "time": 240
+          },
+          {
+            "op": "compress",
+            "start": 0,
+            "end": 0.333333333
+          }
+        ]
+      },
+      "moves": [
+        {
+          "gx": 1,
+          "gy": 1,
+          "progress": {
+            "type": "time",
+            "ops": [
+              {
+                "op": "loop",
+                "time": 240
+              },
+              {
+                "op": "compress",
+                "start": 0,
+                "end": 0.333333333
+              },
+              {
+                "op": "curve",
+                "interp": "slope"
+              },
+              {
+                "op": "mul",
+                "amount": 1000000
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "RegionPart",
+      "layer": 104,
+      "name": "ve-obvight-weapon-shell",
+      "outline": false,
+      "mirror": true,
+      "color": "60ff60",
+      "colorTo": "6060ff",
+      "xScl": 0,
+      "yScl": 0,
+      "progress": {
+        "type": "time",
+        "ops": [
+          {
+            "op": "loop",
+            "time": 240
+          },
+          {
+            "op": "compress",
+            "start": 0.333333333,
+            "end": 0.666666667
+          }
+        ]
+      },
+      "moves": [
+        {
+          "gx": 1,
+          "gy": 1,
+          "progress": {
+            "type": "time",
+            "ops": [
+              {
+                "op": "loop",
+                "time": 240
+              },
+              {
+                "op": "compress",
+                "start": 0.333333333,
+                "end": 0.666666667
+              },
+              {
+                "op": "curve",
+                "interp": "slope"
+              },
+              {
+                "op": "mul",
+                "amount": 1000000
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "RegionPart",
+      "layer": 104,
+      "name": "ve-obvight-weapon-shell",
+      "outline": false,
+      "mirror": true,
+      "color": "6060ff",
+      "colorTo": "ff6060",
+      "xScl": 0,
+      "yScl": 0,
+      "progress": {
+        "type": "time",
+        "ops": [
+          {
+            "op": "loop",
+            "time": 240
+          },
+          {
+            "op": "compress",
+            "start": 0.666666667,
+            "end": 1
+          }
+        ]
+      },
+      "moves": [
+        {
+          "gx": 1,
+          "gy": 1,
+          "progress": {
+            "type": "time",
+            "ops": [
+              {
+                "op": "loop",
+                "time": 240
+              },
+              {
+                "op": "compress",
+                "start": 0.666666667,
+                "end": 1
+              },
+              {
+                "op": "curve",
+                "interp": "slope"
+              },
+              {
+                "op": "mul",
+                "amount": 1000000
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "RegionPart",
+      "suffix": "-weapon-blade",
+      "moveRot": -10,
+      "moveX": -1,
+      "layer": 90,
+      "moves": [
+        {
+          "progress": "reload",
+          "x": 2,
+          "y": 1,
+          "rot": -5
+        }
+      ],
+      "progress": "warmup",
+      "mirror": true,
+      "children": [
+        {
+          "type": "RegionPart",
+          "layer": 104.1,
+          "name": "ve-obvight-weapon-blade-shell",
+          "outline": false,
+          "mirror": true,
+          "color": "ff6060",
+          "colorTo": "60ff60",
+          "xScl": 0,
+          "yScl": 0,
+          "progress": {
+            "type": "time",
+            "ops": [
+              {
+                "op": "loop",
+                "time": 240
+              },
+              {
+                "op": "compress",
+                "start": 0,
+                "end": 0.333333333
+              }
+            ]
+          },
+          "moves": [
+            {
+              "gx": 1,
+              "gy": 1,
+              "progress": {
+                "type": "time",
+                "ops": [
+                  {
+                    "op": "loop",
+                    "time": 240
+                  },
+                  {
+                    "op": "compress",
+                    "start": 0,
+                    "end": 0.333333333
+                  },
+                  {
+                    "op": "curve",
+                    "interp": "slope"
+                  },
+                  {
+                    "op": "mul",
+                    "amount": 1000000
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "type": "RegionPart",
+          "layer": 104.1,
+          "name": "ve-obvight-weapon-blade-shell",
+          "outline": false,
+          "mirror": true,
+          "color": "60ff60",
+          "colorTo": "6060ff",
+          "xScl": 0,
+          "yScl": 0,
+          "progress": {
+            "type": "time",
+            "ops": [
+              {
+                "op": "loop",
+                "time": 240
+              },
+              {
+                "op": "compress",
+                "start": 0.333333333,
+                "end": 0.666666667
+              }
+            ]
+          },
+          "moves": [
+            {
+              "gx": 1,
+              "gy": 1,
+              "progress": {
+                "type": "time",
+                "ops": [
+                  {
+                    "op": "loop",
+                    "time": 240
+                  },
+                  {
+                    "op": "compress",
+                    "start": 0.333333333,
+                    "end": 0.666666667
+                  },
+                  {
+                    "op": "curve",
+                    "interp": "slope"
+                  },
+                  {
+                    "op": "mul",
+                    "amount": 1000000
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "type": "RegionPart",
+          "layer": 104.1,
+          "name": "ve-obvight-weapon-blade-shell",
+          "outline": false,
+          "mirror": true,
+          "color": "6060ff",
+          "colorTo": "ff6060",
+          "xScl": 0,
+          "yScl": 0,
+          "progress": {
+            "type": "time",
+            "ops": [
+              {
+                "op": "loop",
+                "time": 240
+              },
+              {
+                "op": "compress",
+                "start": 0.666666667,
+                "end": 1
+              }
+            ]
+          },
+          "moves": [
+            {
+              "gx": 1,
+              "gy": 1,
+              "progress": {
+                "type": "time",
+                "ops": [
+                  {
+                    "op": "loop",
+                    "time": 240
+                  },
+                  {
+                    "op": "compress",
+                    "start": 0.666666667,
+                    "end": 1
+                  },
+                  {
+                    "op": "curve",
+                    "interp": "slope"
+                  },
+                  {
+                    "op": "mul",
+                    "amount": 1000000
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "type": "RegionPart",
+          "suffix": "-weapon-blade-light",
+          "layer": 105,
+          "outline": false,
+          "mirror": true
+        },
+        {
+          "type": "RegionPart",
+          "suffix": "-weapon-side",
+          "moveX": 2,
+          "moveY": -2,
+          "progress": "warmup",
+          "under": true,
+          "mirror": true,
+          "layer": 90,
+          "moves": [
+            {
+              "progress": "reload",
+              "x": -2,
+              "y": 2
+            }
+          ],
+          "children": [
+            {
+              "type": "RegionPart",
+              "layer": 104,
+              "name": "ve-obvight-weapon-side-shell",
+              "outline": false,
+              "mirror": true,
+              "color": "ff6060",
+              "colorTo": "60ff60",
+              "xScl": 0,
+              "yScl": 0,
+              "progress": {
+                "type": "time",
+                "ops": [
+                  {
+                    "op": "loop",
+                    "time": 240
+                  },
+                  {
+                    "op": "compress",
+                    "start": 0,
+                    "end": 0.333333333
+                  }
+                ]
+              },
+              "moves": [
+                {
+                  "gx": 1,
+                  "gy": 1,
+                  "progress": {
+                    "type": "time",
+                    "ops": [
+                      {
+                        "op": "loop",
+                        "time": 240
+                      },
+                      {
+                        "op": "compress",
+                        "start": 0,
+                        "end": 0.333333333
+                      },
+                      {
+                        "op": "curve",
+                        "interp": "slope"
+                      },
+                      {
+                        "op": "mul",
+                        "amount": 1000000
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "type": "RegionPart",
+              "layer": 104,
+              "name": "ve-obvight-weapon-side-shell",
+              "outline": false,
+              "mirror": true,
+              "color": "60ff60",
+              "colorTo": "6060ff",
+              "xScl": 0,
+              "yScl": 0,
+              "progress": {
+                "type": "time",
+                "ops": [
+                  {
+                    "op": "loop",
+                    "time": 240
+                  },
+                  {
+                    "op": "compress",
+                    "start": 0.333333333,
+                    "end": 0.666666667
+                  }
+                ]
+              },
+              "moves": [
+                {
+                  "gx": 1,
+                  "gy": 1,
+                  "progress": {
+                    "type": "time",
+                    "ops": [
+                      {
+                        "op": "loop",
+                        "time": 240
+                      },
+                      {
+                        "op": "compress",
+                        "start": 0.333333333,
+                        "end": 0.666666667
+                      },
+                      {
+                        "op": "curve",
+                        "interp": "slope"
+                      },
+                      {
+                        "op": "mul",
+                        "amount": 1000000
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "type": "RegionPart",
+              "layer": 104,
+              "name": "ve-obvight-weapon-side-shell",
+              "outline": false,
+              "mirror": true,
+              "color": "6060ff",
+              "colorTo": "ff6060",
+              "xScl": 0,
+              "yScl": 0,
+              "progress": {
+                "type": "time",
+                "ops": [
+                  {
+                    "op": "loop",
+                    "time": 240
+                  },
+                  {
+                    "op": "compress",
+                    "start": 0.666666667,
+                    "end": 1
+                  }
+                ]
+              },
+              "moves": [
+                {
+                  "gx": 1,
+                  "gy": 1,
+                  "progress": {
+                    "type": "time",
+                    "ops": [
+                      {
+                        "op": "loop",
+                        "time": 240
+                      },
+                      {
+                        "op": "compress",
+                        "start": 0.666666667,
+                        "end": 1
+                      },
+                      {
+                        "op": "curve",
+                        "interp": "slope"
+                      },
+                      {
+                        "op": "mul",
+                        "amount": 1000000
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "weapons": [
+    {
+      "x": 0,
+      "y": -2,
+      "shootSound": "explosionObviate",
+      "shootY": 0,
+      "reload": 140,
+      "mirror": false,
+      "minWarmup": 0.95,
+      "shake": 3,
+      "cooldownTime": 130,
+      "shoot": {
+        "type": "ShootHelix",
+        "mag": 1,
+        "scl": 5
+      },
+      "bullet": {
+        "shootEffect": [
+          "shootTitan",
+          {
+            "type": "WaveEffect",
+            "sizeTo": 26,
+            "colorTo": "bf92f9",
+            "lifetime": 14,
+            "strokeFrom": 4
+          }
+        ],
+        "smokeEffect": "shootSmokeTitan",
+        "despawnSound": "explosionArtilleryShock",
+        "sprite": "large-orb",
+        "trailEffect": "missileTrail",
+        "trailInterval": 3,
+        "trailParam": 4,
+        "speed": 3,
+        "damage": 75,
+        "lifetime": 60,
+        "width": 15,
+        "height": 15,
+        "backColor": "00000000",
+        "frontColor": "00000000",
+        "shrinkX": 0,
+        "shrinkY": 0,
+        "trailColor": "606060",
+        "trailLength": 12,
+        "trailWidth": 2.2,
+        "despawnEffect": "none",
+        "despawnHit": true,
+        "hitEffect": [
+          {
+            "type": "ExplosionEffect",
+            "sparkColor": "ff6060",
+            "smokeColor": "ff6060",
+            "waveColor": "ff6060",
+            "waveRad": 34,
+            "waveLife": 7,
+            "waveStroke": 4,
+            "sparks": 1,
+            "smokes": 2
+          },
+          {
+            "type": "ExplosionEffect",
+            "sparkColor": "ffff60",
+            "smokeColor": "ffff60",
+            "waveColor": "ffff60",
+            "waveRad": 36,
+            "waveLife": 8,
+            "waveStroke": 4,
+            "sparks": 1,
+            "smokes": 2
+          },
+          {
+            "type": "ExplosionEffect",
+            "sparkColor": "60ff60",
+            "smokeColor": "60ff60",
+            "waveColor": "60ff60",
+            "waveRad": 38,
+            "waveLife": 9,
+            "waveStroke": 4,
+            "sparks": 1,
+            "smokes": 2
+          },
+          {
+            "type": "ExplosionEffect",
+            "sparkColor": "60ffff",
+            "smokeColor": "60ffff",
+            "waveColor": "60ffff",
+            "waveRad": 40,
+            "waveLife": 10,
+            "waveStroke": 4,
+            "sparks": 1,
+            "smokes": 2
+          },
+          {
+            "type": "ExplosionEffect",
+            "sparkColor": "6060ff",
+            "smokeColor": "6060ff",
+            "waveColor": "6060ff",
+            "waveRad": 42,
+            "waveLife": 11,
+            "waveStroke": 4,
+            "sparks": 1,
+            "smokes": 2
+          },
+          {
+            "type": "ExplosionEffect",
+            "sparkColor": "ff60ff",
+            "smokeColor": "ff60ff",
+            "waveColor": "ff60ff",
+            "waveRad": 44,
+            "waveLife": 12,
+            "waveStroke": 4,
+            "sparks": 1,
+            "smokes": 2
+          }
+        ],
+        "lightColor": "ffffff",
+        "bulletInterval": 4,
+        "intervalBullet": {
+          "type": "MultiBulletType",
+          "damage": 16,
+          "buildingDamageMultiplier": 0.25,
+          "status": "shocked",
+          "statusDuration": 10,
+          "bullets": [
+            {
+              "createChance": 0.16,
+              "type": "LightningBulletType",
+              "damage": 16,
+              "collidesAir": false,
+              "lightningColor": "ff6060",
+              "lightningLength": 3,
+              "lightningLengthRand": 6,
+              "buildingDamageMultiplier": 0.25,
+              "lightningType": {
+                "type": "BulletType",
+                "speed": 0.0001,
+                "damage": 0,
+                "lifetime": 1,
+                "hitEffect": "hitLancer",
+                "despawnEffect": "none",
+                "status": "shocked",
+                "statusDuration": 10,
+                "hittable": false,
+                "lightColor": "ff6060",
+                "buildingDamageMultiplier": 0.25
+              }
+            },
+            {
+              "createChance": 0.16,
+              "type": "LightningBulletType",
+              "damage": 16,
+              "collidesAir": false,
+              "lightningColor": "ffff60",
+              "lightningLength": 3,
+              "lightningLengthRand": 6,
+              "buildingDamageMultiplier": 0.25,
+              "lightningType": {
+                "type": "BulletType",
+                "speed": 0.0001,
+                "damage": 0,
+                "lifetime": 1,
+                "hitEffect": "hitLancer",
+                "despawnEffect": "none",
+                "status": "shocked",
+                "statusDuration": 10,
+                "hittable": false,
+                "lightColor": "ffff60",
+                "buildingDamageMultiplier": 0.25
+              }
+            },
+            {
+              "createChance": 0.16,
+              "type": "LightningBulletType",
+              "damage": 16,
+              "collidesAir": false,
+              "lightningColor": "60ff60",
+              "lightningLength": 3,
+              "lightningLengthRand": 6,
+              "buildingDamageMultiplier": 0.25,
+              "lightningType": {
+                "type": "BulletType",
+                "speed": 0.0001,
+                "damage": 0,
+                "lifetime": 1,
+                "hitEffect": "hitLancer",
+                "despawnEffect": "none",
+                "status": "shocked",
+                "statusDuration": 10,
+                "hittable": false,
+                "lightColor": "60ff60",
+                "buildingDamageMultiplier": 0.25
+              }
+            },
+            {
+              "createChance": 0.16,
+              "type": "LightningBulletType",
+              "damage": 16,
+              "collidesAir": false,
+              "lightningColor": "60ffff",
+              "lightningLength": 3,
+              "lightningLengthRand": 6,
+              "buildingDamageMultiplier": 0.25,
+              "lightningType": {
+                "type": "BulletType",
+                "speed": 0.0001,
+                "damage": 0,
+                "lifetime": 1,
+                "hitEffect": "hitLancer",
+                "despawnEffect": "none",
+                "status": "shocked",
+                "statusDuration": 10,
+                "hittable": false,
+                "lightColor": "60ffff",
+                "buildingDamageMultiplier": 0.25
+              }
+            },
+            {
+              "createChance": 0.16,
+              "type": "LightningBulletType",
+              "damage": 16,
+              "collidesAir": false,
+              "lightningColor": "6060ff",
+              "lightningLength": 3,
+              "lightningLengthRand": 6,
+              "buildingDamageMultiplier": 0.25,
+              "lightningType": {
+                "type": "BulletType",
+                "speed": 0.0001,
+                "damage": 0,
+                "lifetime": 1,
+                "hitEffect": "hitLancer",
+                "despawnEffect": "none",
+                "status": "shocked",
+                "statusDuration": 10,
+                "hittable": false,
+                "lightColor": "6060ff",
+                "buildingDamageMultiplier": 0.25
+              }
+            },
+            {
+              "createChance": 0.16,
+              "type": "LightningBulletType",
+              "damage": 16,
+              "collidesAir": false,
+              "lightningColor": "ff60ff",
+              "lightningLength": 3,
+              "lightningLengthRand": 6,
+              "buildingDamageMultiplier": 0.25,
+              "lightningType": {
+                "type": "BulletType",
+                "speed": 0.0001,
+                "damage": 0,
+                "lifetime": 1,
+                "hitEffect": "hitLancer",
+                "despawnEffect": "none",
+                "status": "shocked",
+                "statusDuration": 10,
+                "hittable": false,
+                "lightColor": "ff60ff",
+                "buildingDamageMultiplier": 0.25
+              }
+            }
+          ]
+        },
+        "fragBullets": 1,
+        "fragOffsetMax": 0,
+        "fragOffsetMin": 0,
+        "fragOnHit": true,
+        "fragOnDespawn": true,
+        "fragBullet": {
+          "type": "MultiBulletType",
+          "damage": 17,
+          "status": "shocked",
+          "statusDuration": 10,
+          "bullets": [
+            {
+              "type": "LightningBulletType",
+              "lightningColor": "ff6060",
+              "damage": 17,
+              "lightningLength": 2,
+              "lightningLengthRand": 8 // momiji
+            },
+            {
+              "type": "LightningBulletType",
+              "lightningColor": "ffff60",
+              "damage": 17,
+              "lightningLength": 2,
+              "lightningLengthRand": 8 // momiji
+            },
+            {
+              "type": "LightningBulletType",
+              "lightningColor": "60ff60",
+              "damage": 17,
+              "lightningLength": 2,
+              "lightningLengthRand": 8 // momiji
+            },
+            {
+              "type": "LightningBulletType",
+              "lightningColor": "60ffff",
+              "damage": 17,
+              "lightningLength": 2,
+              "lightningLengthRand": 8 // momiji
+            },
+            {
+              "type": "LightningBulletType",
+              "lightningColor": "6060ff",
+              "damage": 17,
+              "lightningLength": 2,
+              "lightningLengthRand": 8 // momiji
+            },
+            {
+              "type": "LightningBulletType",
+              "lightningColor": "ff60ff",
+              "damage": 17,
+              "lightningLength": 2,
+              "lightningLengthRand": 8 // momiji
+            },
+            {
+              "type": "LightningBulletType",
+              "lightningColor": "ffffff",
+              "damage": 17,
+              "lightningLength": 2,
+              "lightningLengthRand": 8 // momiji
+            },
+            {
+              "type": "LightningBulletType",
+              "lightningColor": "ffffff",
+              "damage": 17,
+              "lightningLength": 2,
+              "lightningLengthRand": 8 // momiji
+            }
+          ]
+        },
+        "parts": [
+          {
+            "type": "RegionPart",
+            "layer": 100.1,
+            "name": "large-orb",
+            "outline": false,
+            "color": "ffffff",
+            "xScl": 0.75,
+            "yScl": 0.75
+          },
+          {
+            "type": "RegionPart",
+            "layer": 100,
+            "name": "large-orb-back",
+            "outline": false,
+            "color": "ff6060",
+            "colorTo": "60ff60",
+            "xScl": 0,
+            "yScl": 0,
+            "progress": {
+              "type": "time",
+              "ops": [
+                {
+                  "op": "loop",
+                  "time": 120
+                },
+                {
+                  "op": "compress",
+                  "start": 0,
+                  "end": 0.333333333
+                }
+              ]
+            },
+            "moves": [
+              {
+                "gx": 0.75,
+                "gy": 0.75,
+                "progress": {
+                  "type": "time",
+                  "ops": [
+                    {
+                      "op": "loop",
+                      "time": 120
+                    },
+                    {
+                      "op": "compress",
+                      "start": 0,
+                      "end": 0.333333333
+                    },
+                    {
+                      "op": "curve",
+                      "interp": "slope"
+                    },
+                    {
+                      "op": "mul",
+                      "amount": 1000000
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "type": "RegionPart",
+            "layer": 100,
+            "name": "large-orb-back",
+            "outline": false,
+            "color": "60ff60",
+            "colorTo": "6060ff",
+            "xScl": 0,
+            "yScl": 0,
+            "progress": {
+              "type": "time",
+              "ops": [
+                {
+                  "op": "loop",
+                  "time": 120
+                },
+                {
+                  "op": "compress",
+                  "start": 0.333333333,
+                  "end": 0.666666667
+                }
+              ]
+            },
+            "moves": [
+              {
+                "gx": 0.75,
+                "gy": 0.75,
+                "progress": {
+                  "type": "time",
+                  "ops": [
+                    {
+                      "op": "loop",
+                      "time": 120
+                    },
+                    {
+                      "op": "compress",
+                      "start": 0.333333333,
+                      "end": 0.666666667
+                    },
+                    {
+                      "op": "curve",
+                      "interp": "slope"
+                    },
+                    {
+                      "op": "mul",
+                      "amount": 1000000
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "type": "RegionPart",
+            "layer": 100,
+            "name": "large-orb-back",
+            "outline": false,
+            "color": "6060ff",
+            "colorTo": "ff6060",
+            "xScl": 0,
+            "yScl": 0,
+            "progress": {
+              "type": "time",
+              "ops": [
+                {
+                  "op": "loop",
+                  "time": 120
+                },
+                {
+                  "op": "compress",
+                  "start": 0.666666667,
+                  "end": 1
+                }
+              ]
+            },
+            "moves": [
+              {
+                "gx": 0.75,
+                "gy": 0.75,
+                "progress": {
+                  "type": "time",
+                  "ops": [
+                    {
+                      "op": "loop",
+                      "time": 120
+                    },
+                    {
+                      "op": "compress",
+                      "start": 0.666666667,
+                      "end": 1
+                    },
+                    {
+                      "op": "curve",
+                      "interp": "slope"
+                    },
+                    {
+                      "op": "mul",
+                      "amount": 1000000
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "obvight-cell",
+      "display": false,
+      "noAttack": true,
+      "minWarmup": 2,
+      "mirror": false,
+      "useAttackRange": false,
+      "controllable": false,
+      "layerOffset": 15,
+      "x": 0
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+name: Maxitoner
+description: Pháo tầm trung Maxitoner sử dụng kính (Metaglass) làm đạn, có khả năng tích tụ status Nitoui lên mục tiêu. Khi đạt đủ tầng quy định, Nitoui sẽ phát nổ gây sát thương diện rộng. Sở hữu hệ thống nâng cấp Phúc lợi A, B, C phong phú.
+health: 120
+size: 3
+range: 350
+reload: 48
+recoil: 1.5
+inaccuracy: 2
+rotateSpeed: 6
+shootSound: shoot
+targetAir: true
+targetGround: true
+maxAmmo: 200
+ammoPerShot: 1
+shootY: 5
+shootX: 0
+ammoTypes: {
+  metaglass: {
+    type: BasicBulletType
+    speed: 7
+    damage: 10
+    width: 8
+    height: 12
+    lifetime: 50
+    frontColor: e2f3f5
+    backColor: 22d1ee
+    hitEffect: hitBulletColor
+    despawnEffect: hitBulletColor
+  }
+}
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+  parts: [
+    {
+      type: RegionPart
+      suffix: -barr
+      under: false
+      moveY: -3
+      progress: reload
+      heatProgress: reload
+    }
+  ]
+}
+requirements: [
+  copper/250
+  lead/150
+  metaglass/100
+]
+category: turret
+research: duo

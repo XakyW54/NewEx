@@ -120,6 +120,9 @@ require("cargo-drone");
 require("drone-launcher");
 
 
+require("erysidus");
+require("erysidus-drone");
+
 Events.on(ClientLoadEvent, e => {
   let zorynex = Vars.content.getByName(ContentType.planet, "zorynex") || 
                 Vars.content.getByName(ContentType.planet, "newex-zorynex");

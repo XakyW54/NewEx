@@ -1,0 +1,54 @@
+type: ItemTurret
+name: "Erysidus"
+description: "Tháp pháo cao cấp phóng đơn vị tên lửa erysidusrocket càn quét mục tiêu. Tích tụ đủ năng lượng sẽ kích hoạt chưởng Repulsor gây thêm 200% sát thương đối với các đơn vị trên không."
+
+size: 3
+health: 1250
+armor: 5
+rotateSpeed: 4.5
+range: 450
+reload: 42
+recoil: 2
+shootCone: 15
+targetAir: true
+targetGround: true
+
+shootSound: missile
+shootEffect: shootBig
+
+shoot: {
+  type: ShootAlternate
+  shots: 2
+  barrels: 2
+  spread: 9.5
+  shotDelay: 4
+  shootY: 2.0
+}
+
+ammoTypes: {
+  silicon: {
+    type: BasicBulletType
+    speed: 8
+    damage: 0
+    lifetime: 10
+    spawnUnit: "erysidusrocket"
+  }
+
+  pyratite: {
+    type: BasicBulletType
+    speed: 8
+    damage: 0
+    lifetime: 10
+    spawnUnit: "erysidusrocket"
+  }
+}
+
+requirements: [
+  copper/120
+  lead/90
+  silicon/75
+  titanium/50
+]
+
+category: turret
+research: ripple

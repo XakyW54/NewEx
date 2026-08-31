@@ -10,6 +10,9 @@ targetAir: true
 targetGround: true
 maxAmmo: 10
 ammoPerShot: 1
+consumes: {
+  power: 200
+}
 shootType: {
   type: LaserBulletType
   damage: 10

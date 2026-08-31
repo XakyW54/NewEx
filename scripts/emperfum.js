@@ -604,6 +604,8 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
             if(tier >= 1){
                 let dist = Mathf.dst(this.x, this.y, targetPos.x, targetPos.y);
                 b.lifetime = (dist / bulletToShoot.speed) + 2;
+
+                        this.useAmmo();
             }
         }
     },

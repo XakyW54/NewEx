@@ -371,7 +371,7 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
         }
     },
 
-    shoot(type) {
+shoot(type) {
         if (!this.isCharged) return;
         let tier = this.getTier();
         let selectedBullet = (tier == 1) ? blixalumMK2Bullet : ((tier == 2) ? blixalumMK2BBullet : blixalumMK1Bullet);
@@ -381,12 +381,14 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
         let tierColor = (tier == 1) ? Color.valueOf("#00ffff") : ((tier == 2) ? Color.valueOf("#33ddff") : Color.valueOf("#e5ff00"));
         blixalumMuzzleDistort.at(spawnX, spawnY, this.rotation, tierColor);
 
- 
         if (shootSound != null) {
             shootSound.at(this.x, this.y, Mathf.random(0.9, 1.1));
         }
 
         this.customRecoil = 1.0;
+
+ 
+        this.useAmmo();
     },
 
     draw() {

@@ -169,6 +169,9 @@ therdum.buildType = () => extend(ItemTurret.ItemTurretBuild, therdum, {
                 b.vel.setLength(rndSpeed);
                 b.lifetime = calculatedLifetime;
                 b.damage = baseDmg;
+
+        this.useAmmo();
+
             }
         }
     },

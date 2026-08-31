@@ -512,7 +512,6 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                     this.shotgunMagTimer = 0;
                     this.shotgunBarrelRecoil = 1.0;
 
- 
                     if(shootSoundAetherod) shootSoundAetherod.at(this.x, this.y, Mathf.random(0.9, 1.1));
 
                     if(tier == 2) {
@@ -535,7 +534,17 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                     }
                     
                     Fx.shootBig.at(muzzleX, muzzleY, this.rotation);
-                    this.useAmmo();
+
+ 
+                    if(this.ammo.size > 0){
+                        let entry = this.ammo.peek();
+                        entry.amount--;
+                        this.totalAmmo--;
+                        if(entry.amount <= 0){
+                            this.ammo.pop();
+                        }
+                    }
+
                     this.firedMagazines++;
                     if(this.firedMagazines >= 10){
                         this.shotgunReloadTimer = 180;
@@ -600,38 +609,40 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
         if(this.shieldHitTime > 0) this.shieldHitTime -= Time.delta;
     },
 
-    shoot(type){
-        let tier = this.getTier();
-        let activationThreshold = (tier == 2) ? 145 : 100;
+shoot(type){
+    let tier = this.getTier();
+    let activationThreshold = (tier == 2) ? 145 : 100;
 
-        if(this.target != null){
-            let distance = Mathf.dst(this.x, this.y, this.target.x, this.target.y);
-            if(distance < activationThreshold){
-                return; 
-            }
+    if(this.target != null){
+        let distance = Mathf.dst(this.x, this.y, this.target.x, this.target.y);
+        if(distance < activationThreshold){
+            return; 
         }
+    }
 
-        this.sideRecoil = 1.0;
-        this.mainWeaponRecoil = 1.0;
+    this.sideRecoil = 1.0;
+    this.mainWeaponRecoil = 1.0;
 
-        let rad = this.rotation * Mathf.degRad;
-        let muzzleDist = 13.0;
-        let muzzleX = this.x + Math.cos(rad) * muzzleDist;
-        let muzzleY = this.y + Math.sin(rad) * muzzleDist;
+    let rad = this.rotation * Mathf.degRad;
+    let muzzleDist = 13.0;
+    let muzzleX = this.x + Math.cos(rad) * muzzleDist;
+    let muzzleY = this.y + Math.sin(rad) * muzzleDist;
 
-        if(tier == 2){
-            laserBulletB.create(this, this.team, muzzleX, muzzleY, this.rotation);
-            Fx.lightningCharge.at(muzzleX, muzzleY);
-        } else {
-            let activeNormalBullet = (tier == 1) ? dtgSoldernmk2NormalBullet : dtgSoldernNormalBullet;
-            activeNormalBullet.create(this, this.team, muzzleX, muzzleY, this.rotation);
-        }
-        
+    if(tier == 2){
+        laserBulletB.create(this, this.team, muzzleX, muzzleY, this.rotation);
+        Fx.lightningCharge.at(muzzleX, muzzleY);
+    } else {
+        let activeNormalBullet = (tier == 1) ? dtgSoldernmk2NormalBullet : dtgSoldernNormalBullet;
+        activeNormalBullet.create(this, this.team, muzzleX, muzzleY, this.rotation);
+    }
+
  
-        if(shootSoundAetherod) shootSoundAetherod.at(this.x, this.y, Mathf.random(0.9, 1.1));
+    this.useAmmo();
+    
+    if(shootSoundAetherod) shootSoundAetherod.at(this.x, this.y, Mathf.random(0.9, 1.1));
 
-        Fx.shootBig.at(muzzleX, muzzleY, this.rotation);
-    },
+    Fx.shootBig.at(muzzleX, muzzleY, this.rotation);
+},
 
     write(write){
         this.super$write(write); write.b(this.getTier()); 

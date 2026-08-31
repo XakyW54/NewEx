@@ -484,6 +484,9 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
                 b.vel.setLength(rndSpeed);
                 b.lifetime = calculatedLifetime;
                 b.damage = baseDmg;
+
+        this.useAmmo();
+
             }
         }
     },

@@ -275,7 +275,7 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
         }
     },
 
-    shoot(type){
+shoot(type){
         let tier = this.getTier();
         if(tier == 2 && this.shotgunTimer > 0) return; 
 
@@ -305,7 +305,6 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
             let calculatedDmg = 220 * damageMultiplier;
             let selectedShotgunBullet = this.barrelSide ? blawBlueBulletMK2B : blawRedBulletMK2B;
 
-    
             if (shootSoundCannon) shootSoundCannon.at(this.x, this.y, Mathf.random(0.9, 1.1));
 
             for(let i = 0; i < 10; i++){
@@ -327,9 +326,11 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
             let finalDmg = selectedBulletType.damage * damageMultiplier;
             Call.createBullet(selectedBulletType, this.team, spawnX, spawnY, this.rotation, finalDmg, selectedBulletType.speed, 1.0);
 
-     
             if (shootSoundCannon) shootSoundCannon.at(this.x, this.y, Mathf.random(0.9, 1.1));
         }
+
+ 
+        this.useAmmo();
     },
 
     draw(){

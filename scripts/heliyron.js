@@ -257,6 +257,8 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
             }
 
             Fx.shootBig.at(this.x, this.y, this.rotation);
+
+                    this.useAmmo();
         }
     },
 

@@ -24,6 +24,7 @@ Events.on(ContentInitEvent, () => {
             itemTimer2: 0,
             baseMaxTiles: 5,
             hasBuff: false,
+            buffCount: 0,
 
             onDestroy() {
                 this.super$onDestroy();
@@ -31,9 +32,7 @@ Events.on(ContentInitEvent, () => {
 
             checkEmeraldBuff() {
                 let rot = this.rotation & 3;
-                let found = false;
-
-                const checkDirs = [(rot + 1) & 3, (rot + 2) & 3, (rot + 3) & 3];
+                let count = 0;
 
                 for (let dx = -BUFF_RADIUS; dx <= BUFF_RADIUS; dx++) {
                     for (let dy = -BUFF_RADIUS; dy <= BUFF_RADIUS; dy++) {
@@ -52,15 +51,14 @@ Events.on(ContentInitEvent, () => {
                         if (neighborTile != null && neighborTile.build != null) {
                             let bName = neighborTile.build.block.name;
                             if (EMERALIFT_NAMES.some(name => bName === name || bName.endsWith("/" + name))) {
-                                found = true;
-                                break;
+                                count++;
                             }
                         }
                     }
-                    if (found) break;
                 }
-                this.hasBuff = found;
-                return found;
+                this.buffCount = count;
+                this.hasBuff = count > 0;
+                return this.hasBuff;
             },
 
             isRaykstone(tile) {
@@ -85,39 +83,59 @@ Events.on(ContentInitEvent, () => {
             },
 
             findTargets() {
-                let rot = this.rotation & 3;
-                let dirX = DIR_X[rot];
-                let dirY = DIR_Y[rot];
+                if (this.hasBuff) {
+                    // Mỗi tầng cộng dồn 20% phạm vi (Gốc 31 ô -> Bán kính 15 ô)
+                    let baseRadius = 15;
+                    let areaRadius = Math.floor(baseRadius * (1 + 0.20 * this.buffCount));
+                    let targets = [];
 
-                let pX = -DIR_Y[rot] * 4;
-                let pY = DIR_X[rot] * 4;
-
-                let startX = this.x + dirX * 8;
-                let startY = this.y + dirY * 8;
-
-                let currentMaxTiles = this.hasBuff ? (this.baseMaxTiles * 3) : this.baseMaxTiles;
-
-                this.target1 = null;
-                for (let i = 1; i <= currentMaxTiles; i++) {
-                    let checkX = startX + pX + dirX * (i * 8 - 4);
-                    let checkY = startY + pY + dirY * (i * 8 - 4);
-                    let checkTile = Vars.world.tileWorld(checkX, checkY);
-
-                    if (this.isMineable(checkTile)) {
-                        this.target1 = checkTile;
-                        break;
+                    for (let dx = -areaRadius; dx <= areaRadius; dx++) {
+                        for (let dy = -areaRadius; dy <= areaRadius; dy++) {
+                            let checkTile = Vars.world.tile(this.tile.x + dx, this.tile.y + dy);
+                            if (this.isMineable(checkTile)) {
+                                targets.push(checkTile);
+                                if (targets.length >= 2) break;
+                            }
+                        }
+                        if (targets.length >= 2) break;
                     }
-                }
 
-                this.target2 = null;
-                for (let i = 1; i <= currentMaxTiles; i++) {
-                    let checkX = startX - pX + dirX * (i * 8 - 4);
-                    let checkY = startY - pY + dirY * (i * 8 - 4);
-                    let checkTile = Vars.world.tileWorld(checkX, checkY);
+                    this.target1 = targets.length > 0 ? targets[0] : null;
+                    this.target2 = targets.length > 1 ? targets[1] : null;
+                } else {
+                    // Khoan thẳng mặc định
+                    let rot = this.rotation & 3;
+                    let dirX = DIR_X[rot];
+                    let dirY = DIR_Y[rot];
 
-                    if (this.isMineable(checkTile)) {
-                        this.target2 = checkTile;
-                        break;
+                    let pX = -DIR_Y[rot] * 4;
+                    let pY = DIR_X[rot] * 4;
+
+                    let startX = this.x + dirX * 8;
+                    let startY = this.y + dirY * 8;
+
+                    this.target1 = null;
+                    for (let i = 1; i <= this.baseMaxTiles; i++) {
+                        let checkX = startX + pX + dirX * (i * 8 - 4);
+                        let checkY = startY + pY + dirY * (i * 8 - 4);
+                        let checkTile = Vars.world.tileWorld(checkX, checkY);
+
+                        if (this.isMineable(checkTile)) {
+                            this.target1 = checkTile;
+                            break;
+                        }
+                    }
+
+                    this.target2 = null;
+                    for (let i = 1; i <= this.baseMaxTiles; i++) {
+                        let checkX = startX - pX + dirX * (i * 8 - 4);
+                        let checkY = startY - pY + dirY * (i * 8 - 4);
+                        let checkTile = Vars.world.tileWorld(checkX, checkY);
+
+                        if (this.isMineable(checkTile)) {
+                            this.target2 = checkTile;
+                            break;
+                        }
                     }
                 }
             },
@@ -188,7 +206,8 @@ Events.on(ContentInitEvent, () => {
                     this.findTargets();
                 }
 
-                let vanillaSpeedMult = this.hasBuff ? 3.85 : 1.75;
+                // Tăng 50% tốc độ đào tường cho mỗi tầng khối buff
+                let vanillaSpeedMult = this.hasBuff ? (1.75 * (1 + 0.50 * this.buffCount)) : 1.75;
 
                 if (this.target1 != null) {
                     this.handleMining(this.target1, "itemTimer1", progress);
@@ -225,24 +244,29 @@ Events.on(ContentInitEvent, () => {
 
             drawSelect() {
                 let rot = this.rotation & 3;
-                let dirX = DIR_X[rot];
-                let dirY = DIR_Y[rot];
-
-                let startX = this.x + dirX * 8;
-                let startY = this.y + dirY * 8;
-
-                let pX = -DIR_Y[rot] * 4;
-                let pY = DIR_X[rot] * 4;
-                
-                let currentMaxTiles = this.hasBuff ? (this.baseMaxTiles * 3) : this.baseMaxTiles;
-                let range = currentMaxTiles * 8;
-
                 let lineColor = this.hasBuff ? Color.valueOf("#10b981") : Pal.accent;
 
-                Drawf.dashLine(lineColor, startX + pX, startY + pY, startX + pX + dirX * range, startY + pY + dirY * range);
-                Drawf.dashLine(lineColor, startX - pX, startY - pY, startX - pX + dirX * range, startY - pY + dirY * range);
+                if (this.hasBuff) {
+                    // Hiển thị phạm vi hình vuông đường nét xen kẽ (mỗi tầng +20%)
+                    let totalTiles = Math.floor(31 * (1 + 0.20 * this.buffCount));
+                    let size = totalTiles * 8;
+                    Drawf.dashSquare(lineColor, this.x, this.y, size);
+                } else {
+                    let dirX = DIR_X[rot];
+                    let dirY = DIR_Y[rot];
+                    let startX = this.x + dirX * 8;
+                    let startY = this.y + dirY * 8;
+                    let pX = -DIR_Y[rot] * 4;
+                    let pY = DIR_X[rot] * 4;
+                    let range = this.baseMaxTiles * 8;
+
+                    Drawf.dashLine(lineColor, startX + pX, startY + pY, startX + pX + dirX * range, startY + pY + dirY * range);
+                    Drawf.dashLine(lineColor, startX - pX, startY - pY, startX - pX + dirX * range, startY - pY + dirY * range);
+                }
 
                 Draw.z(Layer.power + 1);
+                
+                // Hiển thị vòng tròn phạm vi nhận buff nét xen kẽ
                 Drawf.dashCircle(this.x, this.y, BUFF_RADIUS * 8, Color.valueOf("#10b981"));
 
                 for (let dx = -BUFF_RADIUS; dx <= BUFF_RADIUS; dx++) {
@@ -306,14 +330,10 @@ Events.on(ContentInitEvent, () => {
                 Draw.z(Layer.power + 1);
 
                 if (this.target1 != null) {
-                    let startLineX = startX + pX;
-                    let startLineY = startY + pY;
-                    
-                    let endLineX = this.target1.worldx() - dirX * 4;
-                    let endLineY = this.target1.worldy() - dirY * 4;
-
-                    if (dirX !== 0) endLineY = startLineY;
-                    if (dirY !== 0) endLineX = startLineX;
+                    let endLineX = this.target1.worldx();
+                    let endLineY = this.target1.worldy();
+                    let startLineX = this.hasBuff ? this.x : startX + pX;
+                    let startLineY = this.hasBuff ? this.y : startY + pY;
 
                     Lines.stroke(2.2, laserColor);
                     Lines.line(startLineX, startLineY, endLineX, endLineY);
@@ -323,14 +343,10 @@ Events.on(ContentInitEvent, () => {
                 }
 
                 if (this.target2 != null) {
-                    let startLineX = startX - pX;
-                    let startLineY = startY - pY;
-
-                    let endLineX = this.target2.worldx() - dirX * 4;
-                    let endLineY = this.target2.worldy() - dirY * 4;
-
-                    if (dirX !== 0) endLineY = startLineY;
-                    if (dirY !== 0) endLineX = startLineX;
+                    let endLineX = this.target2.worldx();
+                    let endLineY = this.target2.worldy();
+                    let startLineX = this.hasBuff ? this.x : startX - pX;
+                    let startLineY = this.hasBuff ? this.y : startY - pY;
 
                     Lines.stroke(2.2, laserColor);
                     Lines.line(startLineX, startLineY, endLineX, endLineY);
@@ -373,6 +389,8 @@ Events.run(Trigger.draw, () => {
         Drawf.dashLine(Pal.accent, startX - pX, startY - pY, startX - pX + dirX * range, startY - pY + dirY * range);
 
         Draw.z(Layer.power + 1);
+        
+        // Nét đứt xen kẽ ở chế độ xem trước đặt công trình
         Drawf.dashCircle(worldX, worldY, BUFF_RADIUS * 8, Color.valueOf("#10b981"));
 
         for (let dx = -BUFF_RADIUS; dx <= BUFF_RADIUS; dx++) {

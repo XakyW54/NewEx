@@ -8,6 +8,9 @@ rotateSpeed: 20.5
 shootSound: Gekko_fire
 shootCone: 25
 shootEffect: none
+consumes: {
+  power: 2
+}
 maxAmmo: 50
 ammoPerShot: 1
 canControl: false
@@ -21,8 +24,8 @@ researchCostMultiplier: 0.1
 requirements: [
   copper/190
   lead/160
-  titanium/230
-  silicon/240
+  titanium/23
+  silicon/24
 ]
 category: turret
 research: newex

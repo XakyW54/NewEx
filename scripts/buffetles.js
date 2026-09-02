@@ -39,30 +39,32 @@ const resetUpgradeEffect = new Effect(30, e => {
 let buffetlesBlock = null;
 
 Events.on(ContentInitEvent, () => {
-    buffetlesBlock = Vars.content.blocks().find(b => b.name.endsWith("buffetles"));
-    if (!buffetlesBlock) return;
+    buffetlesBlock = Vars.content.blocks().find(b => b != null && b.name != null && b.name.endsWith("buffetles"));
+    if (buffetlesBlock == null) return;
 
     buffetlesBlock.configurable = true;
 
-    buffetlesBlock.addBar("crit_rate", new Func({
-        get: function(e){
-            return new Bar(
-                new Prov({ get: function(){ return "CRIT CHANCE: " + (e.getCritRate() * 100).toFixed(1) + "%"; } }),
-                new Prov({ get: function(){ return Color.scarlet; } }),
-                new Floatp({ get: function(){ return e.getCritRate(); } })
-            );
-        }
-    }));
+    try {
+        buffetlesBlock.addBar("crit_rate", new Func({
+            get: function(e){
+                return new Bar(
+                    new Prov({ get: function(){ return "CRIT CHANCE: " + (e.getCritRate != null ? (e.getCritRate() * 100).toFixed(1) : "0") + "%"; } }),
+                    new Prov({ get: function(){ return Color.scarlet; } }),
+                    new Floatp({ get: function(){ return e.getCritRate != null ? e.getCritRate() : 0; } })
+                );
+            }
+        }));
 
-    buffetlesBlock.addBar("crit_damage", new Func({
-        get: function(e){
-            return new Bar(
-                new Prov({ get: function(){ return "CRIT DMG: +" + (e.getCritDamageMultiplier() * 100).toFixed(1) + "%"; } }),
-                new Prov({ get: function(){ return Color.gold; } }),
-                new Floatp({ get: function(){ return Math.min(e.getCritDamageMultiplier() / 3.0, 1.0); } })
-            );
-        }
-    }));
+        buffetlesBlock.addBar("crit_damage", new Func({
+            get: function(e){
+                return new Bar(
+                    new Prov({ get: function(){ return "CRIT DMG: +" + (e.getCritDamageMultiplier != null ? (e.getCritDamageMultiplier() * 100).toFixed(1) : "0") + "%"; } }),
+                    new Prov({ get: function(){ return Color.gold; } }),
+                    new Floatp({ get: function(){ return e.getCritDamageMultiplier != null ? Math.min(e.getCritDamageMultiplier() / 3.0, 1.0) : 0; } })
+                );
+            }
+        }));
+    } catch(err) {}
 
     buffetlesBlock.config(java.lang.Integer, packCons2((tile, value) => {
         if (tile != null && tile.setTier !== undefined) {
@@ -127,7 +129,6 @@ Events.on(ContentInitEvent, () => {
                     this.extraCritDamage += 0.01;
                 }
 
-                // Lưu viên đạn vào danh sách theo dõi thay vì can thiệp thuộc tính hitEntity của Java
                 if(this.trackedBullets != null){
                     this.trackedBullets.add(bullet);
                 }
@@ -145,16 +146,24 @@ Events.on(ContentInitEvent, () => {
                 this.reloadCounter += Time.delta * 5.0 * this.efficiency;
             }
 
-            // Quét danh sách đạn để kiểm tra va chạm
             if(this.trackedBullets != null && this.trackedBullets.size > 0){
                 for(let i = this.trackedBullets.size - 1; i >= 0; i--){
                     let b = this.trackedBullets.get(i);
                     
-                    if(!b.isAdded()){
-                        // Nếu đạn biến mất trước khi chạm đến mốc thời gian sống tối đa (tức là đã đập trúng một vật thể/kẻ địch)
-                        if(b.type != null && b.time < b.type.lifetime - 1){
+                    let isRemoved = (b == null);
+                    if(!isRemoved){
+                        try {
+                            if(b.added !== undefined) isRemoved = !b.added();
+                            else if(b.isAdded !== undefined) isRemoved = !b.isAdded();
+                        } catch(e) {
+                            isRemoved = true;
+                        }
+                    }
+
+                    if(isRemoved){
+                        if(b != null && b.type != null && b.time < b.type.lifetime - 1){
                             if(Mathf.chance(0.20)){
-                                this.speedBuffTimer = 60; // Gán thời gian buff là 60 ticks (1s)
+                                this.speedBuffTimer = 60;
                                 speedBuffEffect.at(this.x, this.y);
                             }
                         }
@@ -166,7 +175,6 @@ Events.on(ContentInitEvent, () => {
 
         draw(){
             this.super$draw();
-            // Vẽ hiệu ứng vòng sáng dưới gầm pháo báo hiệu đang trong trạng thái được Buff bạo tốc
             if(this.speedBuffTimer > 0){
                 Draw.color(Color.gold, Color.orange, Mathf.absin(Time.time, 4, 1));
                 Lines.stroke(1.5);
@@ -176,86 +184,89 @@ Events.on(ContentInitEvent, () => {
         },
 
         buildConfiguration(table){
+            if (table == null) return;
             table.clear(); table.row();
             let tier = this.getTier();
 
             if(tier == 0) {
                 table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
+                    if (Vars.ui == null) return;
                     let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Buffetles", {});
                     
-                    let reqCell = dialog.cont.label(packProv(() => {
-                        let core = this.team.core();
-                        if(core == null) return "[red]Không tìm thấy Lõi Đội![]";
-                        let currentThorium = core.items.get(Items.thorium);
-                        let currentSilicon = core.items.get(Items.silicon);
-                        let currentSurge = core.items.get(Items.surgeAlloy);
-                        let currentPhase = core.items.get(Items.phaseFabric);
+                    if (dialog.cont != null) {
+                        let reqCell = dialog.cont.add(new Table());
+                        reqCell.get().add(new Label(packProv(() => {
+                            let core = this.team != null ? this.team.core() : null;
+                            if(core == null) return "[red]Không tìm thấy Lõi Đội![]";
+                            let currentThorium = core.items.get(Items.thorium);
+                            let currentSilicon = core.items.get(Items.silicon);
+                            let currentSurge = core.items.get(Items.surgeAlloy);
+                            let currentPhase = core.items.get(Items.phaseFabric);
 
-                        let thoColor1 = currentThorium >= reqMK2.thorium ? "[green]" : "[red]";
-                        let silColor1 = currentSilicon >= reqMK2.silicon ? "[green]" : "[red]";
-                        
-                        let surColor2 = currentSurge >= reqMK2B.surgeAlloy ? "[green]" : "[red]";
-                        let silColor2 = currentSilicon >= reqMK2B.silicon ? "[green]" : "[red]";
-                        let phaColor2 = currentPhase >= reqMK2B.phaseFabric ? "[green]" : "[red]";
+                            let thoColor1 = currentThorium >= reqMK2.thorium ? "[green]" : "[red]";
+                            let silColor1 = currentSilicon >= reqMK2.silicon ? "[green]" : "[red]";
+                            
+                            let surColor2 = currentSurge >= reqMK2B.surgeAlloy ? "[green]" : "[red]";
+                            let silColor2 = currentSilicon >= reqMK2B.silicon ? "[green]" : "[red]";
+                            let phaColor2 = currentPhase >= reqMK2B.phaseFabric ? "[green]" : "[red]";
 
-                        return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
-                               "[cyan]Nhánh MK2:[]\n" +
-                               " • Thorium: " + thoColor1 + currentThorium + "[] / " + reqMK2.thorium + "\n" +
-                               " • Silicon: " + silColor1 + currentSilicon + "[] / " + reqMK2.silicon + "\n" +
-                               "[purple]Nhánh MK2B:[]\n" +
-                               " • Kim loại Surge: " + surColor2 + currentSurge + "[] / " + reqMK2B.surgeAlloy + "\n" +
-                               " • Silicon: " + silColor2 + currentSilicon + "[] / " + reqMK2B.silicon + "\n" +
-                               " • Vải Phase: " + phaColor2 + currentPhase + "[] / " + reqMK2B.phaseFabric;
-                    }));
-                    
-                    reqCell.width(360).get().setWrap(true);
-                    reqCell.get().setAlignment(Align.left);
-                    dialog.cont.row(); dialog.cont.add().height(10).row();
+                            return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
+                                   "[cyan]Nhánh MK2:[]\n" +
+                                   " • Thorium: " + thoColor1 + currentThorium + "[] / " + reqMK2.thorium + "\n" +
+                                   " • Silicon: " + silColor1 + currentSilicon + "[] / " + reqMK2.silicon + "\n" +
+                                   "[purple]Nhánh MK2B:[]\n" +
+                                   " • Kim loại Surge: " + surColor2 + currentSurge + "[] / " + reqMK2B.surgeAlloy + "\n" +
+                                   " • Silicon: " + silColor2 + currentSilicon + "[] / " + reqMK2B.silicon + "\n" +
+                                   " • Vải Phase: " + phaColor2 + currentPhase + "[] / " + reqMK2B.phaseFabric;
+                        }))).growX();
 
-                    let branchesTable = new Table();
+                        dialog.cont.row(); dialog.cont.add().height(10).row();
 
-                    let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
-                    b1.add("[cyan]===(MK2 - BẠO KÍCH SIÊU TỐC)===[]").row();
-                    let b1D = b1.add("[white]• Tăng tỉ lệ bạo kích/stack: [green]+0.5%[] (gốc 0.1%)\n\n" +
-                                     "[lightgray]Kỹ năng đặc biệt: Tăng tốc tích lũy tỉ lệ bạo kích gấp 5 lần. Khi bắn đạn có 20% tỉ lệ tăng vĩnh viễn +1% sát thương bạo kích. Đạn trúng đích có 20% tỉ lệ tăng 500% tốc bắn trong 1s.[]");
-                    b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
-                    b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
-                        let core = this.team.core();
-                        if(core != null && core.items.get(Items.thorium) >= reqMK2.thorium && core.items.get(Items.silicon) >= reqMK2.silicon){
-                            core.items.remove(Items.thorium, reqMK2.thorium); core.items.remove(Items.silicon, reqMK2.silicon);
-                            Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(4, 4, this.x, this.y);
-                            this.configure(java.lang.Integer(1)); 
-                            dialog.hide(); this.deselect();
-                        } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); }
-                    })).size(180, 38);
+                        let branchesTable = new Table();
 
-                    let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
-                    b2.add("[purple]===(MK2B - BỘI PHÁT SÁT THƯƠNG)===[]").row();
-                    let b2D = b2.add("[white]• Sát thương gốc của đạn: [green]+50.0%[]\n\n" +
-                                     "[lightgray]Kỹ năng đặc biệt: Duy trì cơ chế bạo kích cực đại và đạn bắn trúng kẻ địch có 20% cơ hội tăng 500% tốc bắn trong 1s.[]");
-                    b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
-                    b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
-                        let core = this.team.core();
-                        if(core != null && core.items.get(Items.surgeAlloy) >= reqMK2B.surgeAlloy && core.items.get(Items.silicon) >= reqMK2B.silicon && core.items.get(Items.phaseFabric) >= reqMK2B.phaseFabric){
-                            core.items.remove(Items.surgeAlloy, reqMK2B.surgeAlloy); core.items.remove(Items.silicon, reqMK2B.silicon); core.items.remove(Items.phaseFabric, reqMK2B.phaseFabric);
-                            Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(4, 4, this.x, this.y);
-                            this.configure(java.lang.Integer(2)); 
-                            dialog.hide(); this.deselect();
-                        } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
-                    })).size(180, 38);
+                        let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
+                        b1.add("[cyan]===(MK2 - BẠO KÍCH SIÊU TỐC)===[]").row();
+                        let b1D = b1.add("[white]• Tăng tỉ lệ bạo kích/stack: [green]+0.5%[] (gốc 0.1%)\n\n" +
+                                         "[lightgray]Kỹ năng đặc biệt: Tăng tốc tích lũy tỉ lệ bạo kích gấp 5 lần. Khi bắn đạn có 20% tỉ lệ tăng vĩnh viễn +1% sát thương bạo kích. Đạn trúng đích có 20% tỉ lệ tăng 500% tốc bắn trong 1s.[]");
+                        b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
+                        b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
+                            let core = this.team != null ? this.team.core() : null;
+                            if(core != null && core.items.get(Items.thorium) >= reqMK2.thorium && core.items.get(Items.silicon) >= reqMK2.silicon){
+                                core.items.remove(Items.thorium, reqMK2.thorium); core.items.remove(Items.silicon, reqMK2.silicon);
+                                Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(4, 4, this.x, this.y);
+                                this.configure(java.lang.Integer(1)); 
+                                dialog.hide(); this.deselect();
+                            } else { if(Vars.ui != null) Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); }
+                        })).size(180, 38);
 
-                    branchesTable.add(b1).width(340); branchesTable.row();
-                    branchesTable.add().height(12).row();
-                    branchesTable.add(b2).width(340);
+                        let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
+                        b2.add("[purple]===(MK2B - BỘI PHÁT SÁT THƯƠNG)===[]").row();
+                        let b2D = b2.add("[white]• Sát thương gốc của đạn: [green]+50.0%[]\n\n" +
+                                         "[lightgray]Kỹ năng đặc biệt: Duy trì cơ chế bạo kích cực đại và đạn bắn trúng kẻ địch có 20% cơ hội tăng 500% tốc bắn trong 1s.[]");
+                        b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
+                        b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
+                            let core = this.team != null ? this.team.core() : null;
+                            if(core != null && core.items.get(Items.surgeAlloy) >= reqMK2B.surgeAlloy && core.items.get(Items.silicon) >= reqMK2B.silicon && core.items.get(Items.phaseFabric) >= reqMK2B.phaseFabric){
+                                core.items.remove(Items.surgeAlloy, reqMK2B.surgeAlloy); core.items.remove(Items.silicon, reqMK2B.silicon); core.items.remove(Items.phaseFabric, reqMK2B.phaseFabric);
+                                Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(4, 4, this.x, this.y);
+                                this.configure(java.lang.Integer(2)); 
+                                dialog.hide(); this.deselect();
+                            } else { if(Vars.ui != null) Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
+                        })).size(180, 38);
 
-                    let scroll = new ScrollPane(branchesTable);
-                    scroll.setScrollingDisabled(true, false);
-                    dialog.cont.add(scroll).maxHeight(400);
-                    dialog.addCloseButton(); dialog.show();
+                        branchesTable.add(b1).width(340); branchesTable.row();
+                        branchesTable.add().height(12).row();
+                        branchesTable.add(b2).width(340);
+
+                        let scroll = new ScrollPane(branchesTable);
+                        scroll.setScrollingDisabled(true, false);
+                        dialog.cont.add(scroll).maxHeight(400);
+                        dialog.addCloseButton(); dialog.show();
+                    }
                 })).size(50, 40).tooltip("Nâng cấp hệ thống Buffetles");
             } else {
                 table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
-                    Vars.ui.showInfo("[scarlet]HỆ THỐNG BUFFETLES ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]");
+                    if (Vars.ui != null) Vars.ui.showInfo("[scarlet]HỆ THỐNG BUFFETLES ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]");
                 })).size(50, 40).tooltip("Đã đạt cấp tối đa");
             }
 
@@ -292,6 +303,7 @@ Events.on(ContentInitEvent, () => {
                               "• Đạn trúng đích có [gold]20% tỉ lệ[] tăng [orange]+500% tốc bắn[] trong 1 giây.";
                 }
 
+                if (Vars.ui == null) return;
                 let dialog = extend(BaseDialog, title, {});
                 let infoTable = new Table();
                 let cell = infoTable.add(descStr).width(360);
@@ -309,16 +321,17 @@ Events.on(ContentInitEvent, () => {
             this.super$write(write); 
             write.i(this.critStacks);
             write.f(this.extraCritDamage);
-            write.b(this.getTier());
+            write.i(this.getTier());
         },
         read(read, revision){ 
             this.super$read(read, revision); 
             this.critStacks = read.i();
             this.extraCritDamage = read.f();
-            this.setTier(read.b());
+            this.tierState = read.i();
             if(this.trackedBullets == null) this.trackedBullets = new Seq();
         }
     });
 });
 
-module.exports = buffetlesBlock;
+// Xuất Module rỗng để chống lỗi null require trong main.js
+module.exports = {};

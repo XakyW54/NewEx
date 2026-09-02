@@ -9,6 +9,9 @@ inaccuracy: 2
 targetAir: true
 targetGround: true
 maxAmmo: 10
+consumes: {
+  power: 20
+}
 ammoPerShot: 1
 shootType: {
   type: LaserBulletType
@@ -28,9 +31,9 @@ drawer: {
 researchCostMultiplier: 0.1
 
 requirements: [
-  copper/266
-    lead/170
-    titanium/500
+  copper/26
+    lead/17
+    titanium/50
 ]
 category: turret
 research: xylaon

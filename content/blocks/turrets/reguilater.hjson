@@ -10,6 +10,9 @@ shootCone: 25
 shootEffect: none
 maxAmmo: 50
 ammoPerShot: 1
+consumes: {
+  power: 2
+}
 unitSort: strongest
 targetGround: true
 drawer: {
@@ -26,10 +29,10 @@ drawer: {
 }
 researchCostMultiplier: 0.1
 requirements: [
-  copper/1350
+  copper/135
   lead/240
-  graphite/230
-  silicon/150
+  graphite/23
+  silicon/15
 ]
 category: turret
 research: newex

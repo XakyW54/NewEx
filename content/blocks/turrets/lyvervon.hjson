@@ -11,6 +11,9 @@ shootEffect: none
 maxAmmo: 50
 ammoPerShot: 1
 unitSort: strongest
+consumes: {
+  power: 2
+}
 targetGround: true
 drawer: {
   type: DrawTurret
@@ -28,8 +31,8 @@ researchCostMultiplier: 0.1
 requirements: [
   copper/250
   lead/140
-  coal/430
-  graphite/120
+  coal/43
+  graphite/12
 ]
 category: turret
 research: newex

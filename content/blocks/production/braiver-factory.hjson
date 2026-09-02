@@ -125,12 +125,12 @@
       newex-raykstone/4
     ]
   }
-  researchCostMultiplier: 0.5
+  researchCostMultiplier: 0.001
   requirements: [
     copper/1500
     lead/1200
     metaglass/1000
-    raykstone/120
+    raykstone/20
   ]
   category: crafting
   research: newex-laser-brey

@@ -3,9 +3,9 @@ name: bayrowfyr
 description: "Pháo phòng không hạng nặng chuyên bắn ra quả cầu quang phổ đa sắc (RGB/Rainbow). Đạn liên tục đổi màu theo thời gian, phát ra các tia sét 6 màu và bùng nổ thành dải sóng sắc màu rực rỡ."
 size: 2
 health: 2400
-armor: 8
-reload: 90
-range: 320
+armor: 18
+reload: 60
+range: 620
 targetGround: false
 targetAir: true
 recoil: 3
@@ -41,7 +41,7 @@ ammoTypes: {
     sprite: large-orb
     speed: 4.5
     damage: 120
-    lifetime: 72
+    lifetime: 152
     width: 18
     height: 18
     collidesGround: false

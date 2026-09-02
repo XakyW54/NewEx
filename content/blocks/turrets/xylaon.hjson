@@ -213,8 +213,8 @@ drawer: {
   ],
   researchCostMultiplier: 0.1
 requirements: [
-  copper/400
-  lead/170
+  copper/40
+  lead/17
   graphite/150
 ]
 category: turret

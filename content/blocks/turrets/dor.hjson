@@ -61,7 +61,7 @@ drawer: {
 
 
 requirements: [
-  copper/300
+  copper/170
 ]
 researchCostMultiplier: 0.1
 category: turret

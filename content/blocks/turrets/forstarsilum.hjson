@@ -1,0 +1,59 @@
+type: PowerTurret
+name: Forstarsilum
+description: Tháp pháo năng lượng nâng cấp. Bắn ra đạn Starsword không lệch tâm mỗi 1 giây. Tự động tích tụ buff năng lượng khi khai hỏa liên tục để tăng sát thương và tốc độ bắn.
+researchCostMultiplier: 0.1
+size: 3
+health: 1200
+reload: 60
+range: 370
+targetAir: true
+targetGround: true
+recoilAmount: 1.5
+restitution: 0.04
+rotateSpeed: 8
+inaccuracy: 0
+shootSound: lasershoot
+
+consumes: {
+  power: 3.0
+}
+powerUse: 3.0
+hasPower: true
+
+shootType: {
+  type: BasicBulletType
+  sprite: starsword
+  absorbable: true
+  chargeEffect: lancerLaserCharge
+  chargeBeginEffect: lancerLaserChargeBegin
+  speed: 6
+  lifetime: 60
+  damage: 78
+  shrinkY: 0
+  shrinkX: 0
+  height: 20
+  width: 13
+  hitEffect: hitLaser
+  despawnEffect: hitLaser
+  pierce: true
+  pierceCap: 3
+  pierceBuilding: true
+  frontColor: bbdefb
+  backColor: 90caf9
+}
+
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+}
+
+requirements: [
+  copper/150
+  lead/120
+  graphite/80
+  silicon/100
+  titanium/75
+]
+
+category: turret
+research: w-guard

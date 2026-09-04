@@ -5,6 +5,7 @@ const packProv = (func) => new Prov({ get: func });
 const reqPerkA = { copper: 2000, lead: 2000, silicon: 2000 };
 const reqPerkB = { titanium: 1000, thorium: 1000, graphite: 1000 };
 
+// Hiệu ứng trúng đích / biến mất của đạn
 const smokeHitFx = new Effect(30, cons(e => {
     Draw.z(Layer.effect + 0.01);
     let alpha = 1.0 - e.fin();
@@ -20,6 +21,34 @@ const smokeHitFx = new Effect(30, cons(e => {
         let py = e.y + Angles.trnsy(angle, dist);
         Fill.circle(px, py, size);
     }
+    Draw.reset();
+}));
+
+// Hiệu ứng vạch kẻ (lines) phun ra ngẫu nhiên từ nòng pháo
+const shootMuzzleFx = new Effect(12, cons(e => {
+    // Tắt effect nếu game đang bị Pause
+    if (Vars.state.isPaused()) return;
+
+    Draw.z(Layer.effect);
+    Draw.color(Color.valueOf("#ffcc44"), Color.valueOf("#ff5500"), e.fin());
+    
+    let stroke = (1.0 - e.fin()) * 1.8;
+    Lines.stroke(stroke);
+
+    // Vẽ 5 vạch kẻ (lines) phun ra ngẫu nhiên theo góc bắn của pháo
+    for (let i = 0; i < 5; i++) {
+        let angle = e.rotation + Mathf.randomSeedRange(e.id + i, 16);
+        let lenStart = Mathf.randomSeed(e.id * 2 + i, 2, 6) + e.fin() * 6;
+        let lenEnd = lenStart + Mathf.randomSeed(e.id * 3 + i, 4, 10) * (1.0 - e.fin() * 0.5);
+
+        let x1 = e.x + Angles.trnsx(angle, lenStart);
+        let y1 = e.y + Angles.trnsy(angle, lenStart);
+        let x2 = e.x + Angles.trnsx(angle, lenEnd);
+        let y2 = e.y + Angles.trnsy(angle, lenEnd);
+
+        Lines.line(x1, y1, x2, y2);
+    }
+
     Draw.reset();
 }));
 
@@ -62,6 +91,7 @@ const therdum = extend(ItemTurret, "therdum", {
 therdum.health = 3600;
 therdum.range = 105;
 therdum.reload = 120;
+therdum.shootOffset = 12.0; // Khoảng cách vị trí nòng súng (pixels)
 
 therdum.config(java.lang.Integer, packCons2((tile, value) => {
     if (tile != null) {
@@ -115,12 +145,22 @@ therdum.buildType = () => extend(ItemTurret.ItemTurretBuild, therdum, {
 
     fireExtraSubBullets(count, spreadDeg) {
         let currentRange = this.range();
+        let offset = therdum.shootOffset || 12.0;
+        
+        let spawnX = this.x + Angles.trnsx(this.rotation, offset);
+        let spawnY = this.y + Angles.trnsy(this.rotation, offset);
+
+        // Vị trí effect lùi về hướng tâm pháo thêm 4 pixel (tổng offset - 6.0)
+        let fxX = this.x + Angles.trnsx(this.rotation, offset - 4.0);
+        let fxY = this.y + Angles.trnsy(this.rotation, offset - 4.0);
+        shootMuzzleFx.at(fxX, fxY, this.rotation);
+
         for (let i = 0; i < count; i++) {
             let rndSpeed = Mathf.random(4.0, 10.0);
             let calculatedLifetime = currentRange / rndSpeed;
             let angle = this.rotation + Mathf.range(spreadDeg);
             
-            let b = therdumBulletBase.create(this, this.team, this.x, this.y, angle);
+            let b = therdumBulletBase.create(this, this.team, spawnX, spawnY, angle);
             if (b != null) {
                 b.vel.setLength(rndSpeed);
                 b.lifetime = calculatedLifetime;
@@ -139,6 +179,15 @@ therdum.buildType = () => extend(ItemTurret.ItemTurretBuild, therdum, {
         let bulletCount = 40;
         let spreadDeg = 12.0;
         let currentRange = this.range();
+        let offset = therdum.shootOffset || 12.0;
+
+        let spawnX = this.x + Angles.trnsx(this.rotation, offset);
+        let spawnY = this.y + Angles.trnsy(this.rotation, offset);
+
+        // Vị trí effect lùi về hướng tâm pháo thêm 4 pixel (tổng offset - 6.0)
+        let fxX = this.x + Angles.trnsx(this.rotation, offset - 6.0);
+        let fxY = this.y + Angles.trnsy(this.rotation, offset - 6.0);
+        shootMuzzleFx.at(fxX, fxY, this.rotation);
 
         if (perkA == 1) {
             baseDmg *= 1.5;
@@ -164,16 +213,14 @@ therdum.buildType = () => extend(ItemTurret.ItemTurretBuild, therdum, {
             let calculatedLifetime = currentRange / rndSpeed;
             let angle = this.rotation + Mathf.range(spreadDeg);
 
-            let b = therdumBulletBase.create(this, this.team, this.x, this.y, angle);
+            let b = therdumBulletBase.create(this, this.team, spawnX, spawnY, angle);
             if (b != null) {
                 b.vel.setLength(rndSpeed);
                 b.lifetime = calculatedLifetime;
                 b.damage = baseDmg;
-
-        this.useAmmo();
-
             }
         }
+        this.useAmmo();
     },
 
     updateTile() {

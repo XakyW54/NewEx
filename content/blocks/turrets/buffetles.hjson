@@ -1,4 +1,6 @@
 type: ItemTurret
+name: Buffetles
+description: Có thể sử dụng kha khá vật phẩm làm đạn, bột phá sức mạnh thoáng chốc.
 category: turret
 size: 3
 outlineColor: 2d2f39

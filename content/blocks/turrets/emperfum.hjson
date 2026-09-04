@@ -27,8 +27,7 @@ ammoTypes: {
 
 drawer: {
   type: DrawTurret
-  basePrefix: reinforced-
-
+  basePrefix: emperfum-base
 }
 
 researchCostMultiplier: 0.1

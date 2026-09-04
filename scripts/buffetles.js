@@ -8,8 +8,6 @@ const reqMK2B = { surgeAlloy: 150, silicon: 500, phaseFabric: 100 };
 
 const critEffect = new Effect(20, e => {
     Draw.color(Color.gold, Color.scarlet, e.fin());
-    Lines.stroke(2 * e.fout());
-    Lines.circle(e.x, e.y, 4 + e.fin() * 12);
 
     for (let i = 0; i < 4; i++) {
         let angle = i * 90 + 45;
@@ -77,12 +75,6 @@ Events.on(ContentInitEvent, () => {
         extraCritDamage: 0.0,
         tierState: 0, 
         speedBuffTimer: 0,
-        trackedBullets: null,
-
-        created(){
-            this.super$created();
-            this.trackedBullets = new Seq();
-        },
 
         getTier(){ return this.tierState == null ? 0 : this.tierState; },
 
@@ -129,8 +121,10 @@ Events.on(ContentInitEvent, () => {
                     this.extraCritDamage += 0.01;
                 }
 
-                if(this.trackedBullets != null){
-                    this.trackedBullets.add(bullet);
+                // CHỈ KÍCH HOẠT 2% KHI CHƯA CÓ BUFF SPEED (speedBuffTimer <= 0)
+                if(this.speedBuffTimer <= 0 && Mathf.chance(0.02)){
+                    this.speedBuffTimer = 60; // Dài 1 giây (60 ticks)
+                    speedBuffEffect.at(this.x, this.y);
                 }
             }
         },
@@ -144,32 +138,6 @@ Events.on(ContentInitEvent, () => {
 
             if(this.speedBuffTimer > 0 && this.isShooting && this.hasAmmo()){
                 this.reloadCounter += Time.delta * 5.0 * this.efficiency;
-            }
-
-            if(this.trackedBullets != null && this.trackedBullets.size > 0){
-                for(let i = this.trackedBullets.size - 1; i >= 0; i--){
-                    let b = this.trackedBullets.get(i);
-                    
-                    let isRemoved = (b == null);
-                    if(!isRemoved){
-                        try {
-                            if(b.added !== undefined) isRemoved = !b.added();
-                            else if(b.isAdded !== undefined) isRemoved = !b.isAdded();
-                        } catch(e) {
-                            isRemoved = true;
-                        }
-                    }
-
-                    if(isRemoved){
-                        if(b != null && b.type != null && b.time < b.type.lifetime - 1){
-                            if(Mathf.chance(0.20)){
-                                this.speedBuffTimer = 60;
-                                speedBuffEffect.at(this.x, this.y);
-                            }
-                        }
-                        this.trackedBullets.remove(i);
-                    }
-                }
             }
         },
 
@@ -227,7 +195,7 @@ Events.on(ContentInitEvent, () => {
                         let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                         b1.add("[cyan]===(MK2 - BẠO KÍCH SIÊU TỐC)===[]").row();
                         let b1D = b1.add("[white]• Tăng tỉ lệ bạo kích/stack: [green]+0.5%[] (gốc 0.1%)\n\n" +
-                                         "[lightgray]Kỹ năng đặc biệt: Tăng tốc tích lũy tỉ lệ bạo kích gấp 5 lần. Khi bắn đạn có 20% tỉ lệ tăng vĩnh viễn +1% sát thương bạo kích. Đạn trúng đích có 20% tỉ lệ tăng 500% tốc bắn trong 1s.[]");
+                                         "[lightgray]Kỹ năng đặc biệt: Tăng tốc tích lũy tỉ lệ bạo kích gấp 5 lần. Khi bắn đạn có 20% tỉ lệ tăng vĩnh viễn +1% sát thương bạo kích. Khi bắn có 2% tỉ lệ tăng 500% tốc bắn trong 1s.[]");
                         b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                         b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
                             let core = this.team != null ? this.team.core() : null;
@@ -242,7 +210,7 @@ Events.on(ContentInitEvent, () => {
                         let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                         b2.add("[purple]===(MK2B - BỘI PHÁT SÁT THƯƠNG)===[]").row();
                         let b2D = b2.add("[white]• Sát thương gốc của đạn: [green]+50.0%[]\n\n" +
-                                         "[lightgray]Kỹ năng đặc biệt: Duy trì cơ chế bạo kích cực đại và đạn bắn trúng kẻ địch có 20% cơ hội tăng 500% tốc bắn trong 1s.[]");
+                                         "[lightgray]Kỹ năng đặc biệt: Duy trì cơ chế bạo kích cực đại và khi bắn có 2% cơ hội tăng 500% tốc bắn trong 1s.[]");
                         b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
                         b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                             let core = this.team != null ? this.team.core() : null;
@@ -283,7 +251,7 @@ Events.on(ContentInitEvent, () => {
                               "[lightgray]Sát thương bạo kích:[] [yellow]+" + (this.getCritDamageMultiplier() * 100).toFixed(1) + "%[]\n\n" +
                               "[sky]⚡ CƠ CHẾ DỒN ĐẠP (STACKS):[]\n" +
                               "• Mỗi lần bắn sẽ tăng stack bạo kích.\n" +
-                              "• Khi đạn trúng đích: 20% cơ hội tăng +500% tốc bắn trong 1 giây.\n" +
+                              "• Khi phát bắn diễn ra: 2% cơ hội tăng +500% tốc bắn trong 1 giây.\n" +
                               "• Khi tỉ lệ bạo kích đạt 100%, reset stack và cộng thêm 15% sát thương bạo kích vĩnh viễn.";
                 } 
                 else if (currentTier == 1) {
@@ -293,14 +261,14 @@ Events.on(ContentInitEvent, () => {
                               "[lightgray]Sát thương bạo kích hiện tại:[] [yellow]+" + (this.getCritDamageMultiplier() * 100).toFixed(1) + "%[]\n\n" +
                               "[lime]⚡ CƠ CHẾ ĐẶC BIỆT MK2:[]\n" +
                               "• Khi bắn có [yellow]20% tỉ lệ[] tăng thêm [green]+1% sát thương bạo kích[] vĩnh viễn.\n" +
-                              "• Đạn trúng đích có [gold]20% cơ hội[] kích hoạt [orange]+500% tốc bắn[] trong 1 giây.";
+                              "• Khi phát bắn diễn ra: [gold]2% cơ hội[] kích hoạt [orange]+500% tốc bắn[] trong 1 giây.";
                 } 
                 else if (currentTier == 2) {
                     title += "[purple](MK2B)[]";
                     descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
                               "[lightgray]Sát thương gốc đạn:[] [lime]+50.0% DMG[]\n\n" +
                               "[purple]🔥 CƠ CHẾ ĐẶC BIỆT MK2B:[]\n" +
-                              "• Đạn trúng đích có [gold]20% tỉ lệ[] tăng [orange]+500% tốc bắn[] trong 1 giây.";
+                              "• Khi phát bắn diễn ra: [gold]2% tỉ lệ[] tăng [orange]+500% tốc bắn[] trong 1 giây.";
                 }
 
                 if (Vars.ui == null) return;
@@ -328,10 +296,8 @@ Events.on(ContentInitEvent, () => {
             this.critStacks = read.i();
             this.extraCritDamage = read.f();
             this.tierState = read.i();
-            if(this.trackedBullets == null) this.trackedBullets = new Seq();
         }
     });
 });
 
-// Xuất Module rỗng để chống lỗi null require trong main.js
 module.exports = {};

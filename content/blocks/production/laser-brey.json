@@ -1,5 +1,7 @@
 {
   "type": "Block",
+  "name": "Laser Brey",
+  "description": "Chiếu Laser phá địa hình.",
   "requirements": [ 
     "copper/152",
     "lead/100",

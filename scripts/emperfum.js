@@ -1,14 +1,93 @@
-/* EMPERFUM TURRET SYSTEM - EXACT DOR UI STYLE */
+/* EMPERFUM TURRET SYSTEM - VECTOR STAR EFFECT, PURPLE-WHITE THEME & PLAYER CONTROL SUPPORT */
 
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
- 
+// Yêu cầu tài nguyên nâng cấp
 const reqMK2 = { surgeAlloy: 500, plastanium: 1200, copper: 9000 };
 const reqMK2B = { thorium: 1900, titanium: 2400, silicon: 3100 };
 
- 
+// Bảng màu Tím - Trắng
+const C_PURPLE_LIGHT = Color.valueOf("#e9d5ff");
+const C_PURPLE_MAIN  = Color.valueOf("#c084fc");
+const C_PURPLE_DARK  = Color.valueOf("#9333ea");
+const C_WHITE        = Color.valueOf("#ffffff");
+
+// Hàm tự tìm sprite cho nòng pháo
+function findTexture(name) {
+    let candidates = [
+        "newex-" + name,
+        name,
+        "newex-blocks-turrets-" + name,
+        "newex-sprites-" + name
+    ];
+    for (let i = 0; i < candidates.length; i++) {
+        let reg = Core.atlas.find(candidates[i]);
+        if (reg != null && reg.found()) return reg;
+    }
+    return Core.atlas.find("clear");
+}
+
+let barrel1Region, barrel2Region;
+
+// Hàm vẽ Ngôi sao 4 cánh nhọn (4-Point Flare Star)
+function draw4PointStar(x, y, size, rotation, mainColor, coreColor) {
+    let rotRad = rotation * Mathf.degRad;
+    let cosA = Math.cos(rotRad);
+    let sinA = Math.sin(rotRad);
+
+    let innerR = size * 0.18; // Độ thắt của eo ngôi sao
+    let outerR = size;        // Độ dài 4 đỉnh nhọn
+
+    let points = [
+        0, outerR,           // Đỉnh trên
+        innerR, innerR,      // Eo trên-phải
+        outerR, 0,           // Đỉnh phải
+        innerR, -innerR,     // Eo dưới-phải
+        0, -outerR,          // Đỉnh dưới
+        -innerR, -innerR,    // Eo dưới-trái
+        -outerR, 0,          // Đỉnh trái
+        -innerR, innerR      // Eo trên-trái
+    ];
+
+    let transformed = new Array(16);
+    for (let i = 0; i < 8; i++) {
+        let px = points[i * 2];
+        let py = points[i * 2 + 1];
+        transformed[i * 2]     = x + (px * cosA - py * sinA);
+        transformed[i * 2 + 1] = y + (px * sinA + py * cosA);
+    }
+
+    // Vẽ lớp viền/nền ngôi sao
+    Draw.color(mainColor);
+    for (let i = 0; i < 8; i++) {
+        let next = (i + 1) % 8;
+        Fill.tri(x, y, transformed[i * 2], transformed[i * 2 + 1], transformed[next * 2], transformed[next * 2 + 1]);
+    }
+
+    // Vẽ lõi màu phản quang
+    if (coreColor) {
+        Draw.color(coreColor);
+        let innerSize = size * 0.55;
+        let outerR2 = innerSize;
+
+        for (let i = 0; i < 8; i++) {
+            let px = points[i * 2] * (outerR2 / outerR);
+            let py = points[i * 2 + 1] * (outerR2 / outerR);
+            transformed[i * 2]     = x + (px * cosA - py * sinA);
+            transformed[i * 2 + 1] = y + (px * sinA + py * cosA);
+        }
+
+        for (let i = 0; i < 8; i++) {
+            let next = (i + 1) % 8;
+            Fill.tri(x, y, transformed[i * 2], transformed[i * 2 + 1], transformed[next * 2], transformed[next * 2 + 1]);
+        }
+    }
+    Draw.reset();
+}
+
+// Hàm vẽ vòng năng lượng
 function drawWindRing(cx, cy, radiusX, radiusY, angle, strokeWidth, color){
     Draw.color(color); 
     Lines.stroke(strokeWidth);
@@ -25,10 +104,11 @@ function drawWindRing(cx, cy, radiusX, radiusY, angle, strokeWidth, color){
     }
     Draw.reset();
 }
- 
+
+/* ================= HIỆU ỨNG (EFFECTS) ================= */
 
 const emperfumMuzzleEffect = new Effect(20, e => {
-    let tColor = e.data || Color.valueOf("#80deea");
+    let tColor = e.data || C_PURPLE_MAIN;
     let baseAngle = e.rotation;
     
     let offset1 = 12 - (e.fin() * 18); 
@@ -39,7 +119,7 @@ const emperfumMuzzleEffect = new Effect(20, e => {
     let offset2 = 18 - (e.fin() * 26);
     let bx2 = e.x + Angles.trnsx(baseAngle, offset2);
     let by2 = e.y + Angles.trnsy(baseAngle, offset2);
-    drawWindRing(bx2, by2, 4.0 + (e.fin() * 7.0), e.fin() * 22.0, baseAngle, 1.8 * e.fout(), Color.white);
+    drawWindRing(bx2, by2, 4.0 + (e.fin() * 7.0), e.fin() * 22.0, baseAngle, 1.8 * e.fout(), C_WHITE);
 
     let offset3 = 35 - (e.fin() * 20); 
     let bx3 = e.x + Angles.trnsx(baseAngle, offset3);
@@ -49,46 +129,125 @@ const emperfumMuzzleEffect = new Effect(20, e => {
     let offset4 = 55 - (e.fin() * 40); 
     let bx4 = e.x + Angles.trnsx(baseAngle, offset4);
     let by4 = e.y + Angles.trnsy(baseAngle, offset4);
-    drawWindRing(bx4, by4, 1.0 + (e.fin() * 7.0), e.fin() * 20.0, baseAngle, 1.6 * e.fout(), Color.white);
+    drawWindRing(bx4, by4, 1.0 + (e.fin() * 7.0), e.fin() * 20.0, baseAngle, 1.6 * e.fout(), C_WHITE);
 });
 
 const clusterFlashEffect = new Effect(18, e => {
-    Draw.color(Color.white, Color.valueOf("#80deea"), e.fin());
+    Draw.color(C_WHITE, C_PURPLE_LIGHT, e.fin());
     Lines.stroke(e.fout() * 4);
     Lines.circle(e.x, e.y, e.finpow() * 28);
-    Draw.color(Color.valueOf("#00bcd4"));
+    Draw.color(C_PURPLE_MAIN);
     Lines.stroke(e.fout() * 2);
     Lines.circle(e.x, e.y, e.finpow() * 16);
     Draw.reset();
 });
 
- 
+const starDespawnEffect = new Effect(25, e => {
+    Draw.z(Layer.bullet + 1);
+    let mainColor = e.color || C_PURPLE_MAIN;
+    let starSize = 18 * e.fout();
+    let rot = e.rotation + (e.fin() * 120);
+
+    draw4PointStar(e.x, e.y, starSize, rot, mainColor, C_WHITE);
+});
+
+/* ================= LOẠI ĐẠN (BULLET TYPES) ================= */
+
+// ĐẠN NGÔI SAO TRUY ĐUỔI CUỐI CÙNG (Gây 1000 Dmg, Tốc bay cực cao, Tàng hình khi bay, Tồn tại 10 tick, Xuyên 999)
+const emperfumStarBullet = extend(BasicBulletType, {
+    speed: 35,
+    drag: 0.0,
+    damage: 1000,
+    homingPower: 0.8,
+    homingRange: 450,
+    lifetime: 10,
+    collidesAir: true,
+    collidesGround: true,
+    collidesTiles: true,
+    collides: true,
+    pierce: true,
+    pierceCap: 999,
+    hitEffect: starDespawnEffect,
+    despawnEffect: starDespawnEffect,
+
+    // Tàng hình hoàn toàn trong suốt quá trình bay (Không vẽ hình ảnh)
+    draw(b){}
+});
+
+// Hàm hỗ trợ spawn 1 viên đạn ngôi sao cuối cùng
+function spawnFinalStarBullets(b) {
+    clusterFlashEffect.at(b.x, b.y);
+    let ownerEntity = b.owner || b;
+    let angle = b.rotation() + Mathf.range(15);
+    let star = emperfumStarBullet.create(ownerEntity, b.team, b.x, b.y, angle);
+    if (star != null) {
+        star.vel.setLength(Mathf.random(30.0, 45.0));
+    }
+}
 
 const emperfumMicroBullet = extend(BasicBulletType, {
     speed: 4, drag: 0.025, damage: 350, splashDamage: 750,
     splashDamageRadius: 45, homingPower: 0.2, homingRange: 120,
-    width: 4, height: 8, lifetime: 20,
-    frontColor: Color.valueOf("#ffffff"), backColor: Color.valueOf("#e0f7fa"),
-    hitEffect: Fx.blastExplosion, despawnEffect: Fx.blastExplosion,
+    width: 8, height: 8, lifetime: 20,
+    frontColor: C_WHITE, backColor: C_PURPLE_MAIN,
+    hitEffect: starDespawnEffect, despawnEffect: starDespawnEffect,
     collidesAir: false, collidesGround: true, collidesTiles: true, collides: true,
-    pierce: true, pierceCap: 15
+    pierce: true, pierceCap: 15,
+
+    draw(b){
+        Draw.z(Layer.bullet);
+        draw4PointStar(b.x, b.y, 10, b.rotation(), C_PURPLE_MAIN, C_WHITE);
+    },
+    despawned(b){ spawnFinalStarBullets(b); },
+    hit(b, x, y){ 
+        if(b.collided.size >= this.pierceCap) {
+            spawnFinalStarBullets(b);
+            b.remove();
+        }
+    },
+    hitTile(b, build, x, y, initialHealth, direct){
+        this.super$hitTile(b, build, x, y, initialHealth, direct);
+        if(b.collided.size >= this.pierceCap) {
+            spawnFinalStarBullets(b);
+            b.remove();
+        }
+    }
 });
 
 const emperfumMicroBulletAir = extend(BasicBulletType, {
     speed: 4, drag: 0.025, damage: 822.5, splashDamage: 1762.5,
     splashDamageRadius: 45, homingPower: 0.25, homingRange: 150,
-    width: 5, height: 10, lifetime: 20,
-    frontColor: Color.valueOf("#ffffff"), backColor: Color.valueOf("#ff80ab"),
-    hitEffect: Fx.blastExplosion, despawnEffect: Fx.blastExplosion,
+    width: 10, height: 10, lifetime: 20,
+    frontColor: C_WHITE, backColor: C_PURPLE_DARK,
+    hitEffect: starDespawnEffect, despawnEffect: starDespawnEffect,
     collidesAir: true, collidesGround: false, collidesTiles: false, collides: true,
-    pierce: true, pierceCap: 15
+    pierce: true, pierceCap: 15,
+
+    draw(b){
+        Draw.z(Layer.bullet);
+        draw4PointStar(b.x, b.y, 12, b.rotation(), C_PURPLE_DARK, C_PURPLE_LIGHT);
+    },
+    despawned(b){ spawnFinalStarBullets(b); },
+    hit(b, x, y){ 
+        if(b.collided.size >= this.pierceCap) {
+            spawnFinalStarBullets(b);
+            b.remove();
+        }
+    },
+    hitTile(b, build, x, y, initialHealth, direct){
+        this.super$hitTile(b, build, x, y, initialHealth, direct);
+        if(b.collided.size >= this.pierceCap) {
+            spawnFinalStarBullets(b);
+            b.remove();
+        }
+    }
 });
 
 const emperfumSubBullet = extend(BasicBulletType, {
     speed: 6, drag: 0.03, damage: 400, splashDamage: 750,
     splashDamageRadius: 45, homingPower: 0.15, homingRange: 160,
     width: 6, height: 12, lifetime: 24,
-    frontColor: Color.valueOf("#e0f7fa"), backColor: Color.valueOf("#00bcd4"),
+    frontColor: C_WHITE, backColor: C_PURPLE_MAIN,
     hitEffect: Fx.blastExplosion, despawnEffect: Fx.blastExplosion,
     collidesAir: false, collidesGround: true, collidesTiles: true, collides: true,
     pierce: true, pierceCap: 15,
@@ -118,7 +277,7 @@ const emperfumSubBulletAir = extend(BasicBulletType, {
     speed: 7, drag: 0.03, damage: 940, splashDamage: 1762.5,
     splashDamageRadius: 45, homingPower: 0.2, homingRange: 200,
     width: 7, height: 14, lifetime: 24,
-    frontColor: Color.valueOf("#ff80ab"), backColor: Color.valueOf("#c2185b"),
+    frontColor: C_WHITE, backColor: C_PURPLE_DARK,
     hitEffect: Fx.blastExplosion, despawnEffect: Fx.blastExplosion,
     collidesAir: true, collidesGround: false, collidesTiles: false, collides: true,
     pierce: true, pierceCap: 15,
@@ -160,7 +319,7 @@ function spawnSubBulletsRandom(b, bulletType, count, minSpeed, maxSpeed, minLife
 const emperfumClusterBullet = extend(BasicBulletType, {
     speed: 7, drag: 0.03, damage: 450, splashDamage: 750, splashDamageRadius: 45,
     width: 10, height: 20, lifetime: 22,
-    frontColor: Color.valueOf("#80deea"), backColor: Color.valueOf("#00bcd4"),
+    frontColor: C_PURPLE_LIGHT, backColor: C_PURPLE_MAIN,
     hitEffect: Fx.blastExplosion, despawnEffect: Fx.blastExplosion,
     collidesAir: false, collidesGround: true, collidesTiles: true, collides: true,
     pierce: true, pierceCap: 15,
@@ -176,7 +335,7 @@ const emperfumClusterBullet = extend(BasicBulletType, {
 const emperfumClusterBulletAir = extend(BasicBulletType, {
     speed: 8, drag: 0.03, damage: 1057.5, splashDamage: 1762.5, splashDamageRadius: 45,
     width: 12, height: 24, lifetime: 22,
-    frontColor: Color.valueOf("#ff80ab"), backColor: Color.valueOf("#880e4f"),
+    frontColor: C_PURPLE_LIGHT, backColor: C_PURPLE_DARK,
     hitEffect: Fx.blastExplosion, despawnEffect: Fx.blastExplosion,
     collidesAir: true, collidesGround: false, collidesTiles: false, collides: true,
     pierce: true, pierceCap: 15,
@@ -189,11 +348,20 @@ const emperfumClusterBulletAir = extend(BasicBulletType, {
     }
 });
 
+function checkTargetExplosion(b) {
+    if (b.data != null) {
+        let target = b.data;
+        if (Mathf.dst(b.x, b.y, target.x, target.y) <= 12) {
+            b.remove();
+        }
+    }
+}
+
 const emperfumMainBulletMK1 = extend(BasicBulletType, {
     speed: 18, drag: 0.035, damage: 500, splashDamageRadius: 15,
     width: 20, height: 40, lifetime: 120,
-    frontColor: Color.valueOf("#ffffff"), backColor: Color.valueOf("#00bcd4"),
-    trailColor: Color.valueOf("#80deea"), trailWidth: 4, trailLength: 10,
+    frontColor: C_WHITE, backColor: C_PURPLE_MAIN,
+    trailColor: C_PURPLE_LIGHT, trailWidth: 4, trailLength: 10,
     hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor,
     collidesAir: true, collidesGround: true, collidesTiles: true, collides: true,
     pierce: true, pierceCap: 15,
@@ -207,7 +375,12 @@ const emperfumMainBulletMK1 = extend(BasicBulletType, {
         let rx = b.x + Angles.trnsx(bAngle, offset);
         let ry = b.y + Angles.trnsy(bAngle, offset);
         let zoomFactor = travelProgress * 1.5; 
-        if (fout > 0.05) drawWindRing(rx, ry, 3.0 + zoomFactor * 5.0, 6.0 + zoomFactor * 10.0, bAngle, 2.0 * fout, Color.valueOf("#80deea"));
+        if (fout > 0.05) drawWindRing(rx, ry, 3.0 + zoomFactor * 5.0, 6.0 + zoomFactor * 10.0, bAngle, 2.0 * fout, C_PURPLE_LIGHT);
+    },
+
+    update(b) {
+        this.super$update(b);
+        checkTargetExplosion(b);
     },
 
     despawned(b){ spawnSubBulletsRandom(b, emperfumClusterBullet, 12, 5.0, 9.5, 15, 28); },
@@ -225,8 +398,8 @@ const emperfumMainBulletMK1 = extend(BasicBulletType, {
 const emperfumMainBulletMK2 = extend(BasicBulletType, {
     speed: 18, drag: 0.0, damage: 500, splashDamage: 750, splashDamageRadius: 45,
     width: 20, height: 40, lifetime: 120,
-    frontColor: Color.valueOf("#ffffff"), backColor: Color.valueOf("#00bcd4"),
-    trailColor: Color.valueOf("#80deea"), trailWidth: 4, trailLength: 10,
+    frontColor: C_WHITE, backColor: C_PURPLE_MAIN,
+    trailColor: C_PURPLE_LIGHT, trailWidth: 4, trailLength: 10,
     hitEffect: Fx.blastExplosion, despawnEffect: Fx.blastExplosion,
     collidesAir: false, collidesGround: true, collidesTiles: true, collides: true,
     pierce: true, pierceCap: 15,
@@ -240,17 +413,12 @@ const emperfumMainBulletMK2 = extend(BasicBulletType, {
         let rx = b.x + Angles.trnsx(bAngle, offset);
         let ry = b.y + Angles.trnsy(bAngle, offset);
         let zoomFactor = travelProgress * 1.5; 
-        if (fout > 0.05) drawWindRing(rx, ry, 3.0 + zoomFactor * 5.0, 6.0 + zoomFactor * 10.0, bAngle, 2.0 * fout, Color.valueOf("#00bcd4"));
+        if (fout > 0.05) drawWindRing(rx, ry, 3.0 + zoomFactor * 5.0, 6.0 + zoomFactor * 10.0, bAngle, 2.0 * fout, C_PURPLE_MAIN);
     },
 
     update(b){
         this.super$update(b);
-        if(b.data != null){
-            let target = b.data;
-            if(Mathf.dst(b.x, b.y, target.x, target.y) <= 12){
-                b.remove();
-            }
-        }
+        checkTargetExplosion(b);
     },
     despawned(b){ spawnSubBulletsRandom(b, emperfumClusterBullet, 12, 5.0, 9.5, 15, 28); },
     hit(b, x, y){ 
@@ -267,8 +435,8 @@ const emperfumMainBulletMK2 = extend(BasicBulletType, {
 const emperfumMainBulletMK2B = extend(BasicBulletType, {
     speed: 22, drag: 0.0, damage: 1175, splashDamage: 1762.5, splashDamageRadius: 45,
     width: 24, height: 48, lifetime: 120,
-    frontColor: Color.valueOf("#ffffff"), backColor: Color.valueOf("#e91e63"),
-    trailColor: Color.valueOf("#ff80ab"), trailWidth: 5, trailLength: 12,
+    frontColor: C_WHITE, backColor: C_PURPLE_DARK,
+    trailColor: C_PURPLE_LIGHT, trailWidth: 5, trailLength: 12,
     hitEffect: Fx.blastExplosion, despawnEffect: Fx.blastExplosion,
     collidesAir: true, collidesGround: false, collidesTiles: false, collides: true,
     pierce: true, pierceCap: 15,
@@ -282,17 +450,12 @@ const emperfumMainBulletMK2B = extend(BasicBulletType, {
         let rx = b.x + Angles.trnsx(bAngle, offset);
         let ry = b.y + Angles.trnsy(bAngle, offset);
         let zoomFactor = travelProgress * 1.5; 
-        if (fout > 0.05) drawWindRing(rx, ry, 4.0 + zoomFactor * 6.0, 8.0 + zoomFactor * 12.0, bAngle, 2.0 * fout, Color.valueOf("#ff80ab"));
+        if (fout > 0.05) drawWindRing(rx, ry, 4.0 + zoomFactor * 6.0, 8.0 + zoomFactor * 12.0, bAngle, 2.0 * fout, C_PURPLE_DARK);
     },
 
     update(b){
         this.super$update(b);
-        if(b.data != null){
-            let target = b.data;
-            if(Mathf.dst(b.x, b.y, target.x, target.y) <= 12){
-                b.remove();
-            }
-        }
+        checkTargetExplosion(b);
     },
     despawned(b){ spawnSubBulletsRandom(b, emperfumClusterBulletAir, 12, 5.0, 9.5, 15, 28); },
     hit(b, x, y){ 
@@ -306,10 +469,15 @@ const emperfumMainBulletMK2B = extend(BasicBulletType, {
     }
 });
 
- 
+/* ================= THÁP PHÁO EMPERFUM ================= */
 
 let emperfum = extend(ItemTurret, "emperfum", {
-    squareSprite: false
+    squareSprite: false,
+    load(){
+        this.super$load();
+        barrel1Region = findTexture("emperfum-barrel-1");
+        barrel2Region = findTexture("emperfum-barrel-2");
+    }
 });
 
 emperfum.health = 1450;
@@ -350,6 +518,7 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
     },
 
     findTarget(){
+        if (this.isControlled()) return;
         let tier = this.getTier();
         if(tier == 2){
             this.target = Units.closestEnemy(this.team, this.x, this.y, this.range(), u => u != null && u.isFlying());
@@ -359,18 +528,60 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
     },
 
     getClampedTarget(){
+        if (this.isControlled() && this.unit != null) {
+            return new Vec2(this.unit.aimX, this.unit.aimY);
+        }
+
         let maxRange = this.range();
-        let dst = Mathf.dst(this.x, this.y, this.targetPos.x, this.targetPos.y);
+        let targetX = this.targetPos != null ? this.targetPos.x : this.x;
+        let targetY = this.targetPos != null ? this.targetPos.y : this.y;
+        let dst = Mathf.dst(this.x, this.y, targetX, targetY);
         
         if(dst <= maxRange){
-            return new Vec2(this.targetPos.x, this.targetPos.y);
+            return new Vec2(targetX, targetY);
         } else {
-            let angle = Angles.angle(this.x, this.y, this.targetPos.x, this.targetPos.y);
+            let angle = Angles.angle(this.x, this.y, targetX, targetY);
             return new Vec2(
                 this.x + Angles.trnsx(angle, maxRange),
                 this.y + Angles.trnsy(angle, maxRange)
             );
         }
+    },
+
+    draw(){
+        this.super$draw();
+
+        let relCounter = (this.reloadCounter != null) ? this.reloadCounter : emperfum.reload;
+        let chargeProgress = 1.0 - (relCounter / emperfum.reload);
+        if(isNaN(chargeProgress) || chargeProgress < 0) chargeProgress = 0;
+
+        let recoilOffset = (this.recoil != null) ? this.recoil : 0; 
+        let chargeShift = chargeProgress * 5.0; 
+        let rot = this.rotation;
+
+        let b1x = this.x + Angles.trnsx(rot + 135, chargeShift) - Angles.trnsx(rot, recoilOffset);
+        let b1y = this.y + Angles.trnsy(rot + 135, chargeShift) - Angles.trnsy(rot, recoilOffset);
+
+        let b2x = this.x + Angles.trnsx(rot - 135, chargeShift) - Angles.trnsx(rot, recoilOffset);
+        let b2y = this.y + Angles.trnsy(rot - 135, chargeShift) - Angles.trnsy(rot, recoilOffset);
+
+        Draw.z(Layer.turret + 0.1);
+
+        if(barrel1Region && barrel1Region.found()){
+            Draw.rect(barrel1Region, b1x, b1y, rot - 90);
+        } else {
+            Draw.color(C_PURPLE_MAIN);
+            Fill.rect(b1x, b1y, 4, 12, rot);
+        }
+
+        if(barrel2Region && barrel2Region.found()){
+            Draw.rect(barrel2Region, b2x, b2y, rot - 90);
+        } else {
+            Draw.color(C_PURPLE_MAIN);
+            Fill.rect(b2x, b2y, 4, 12, rot);
+        }
+        
+        Draw.reset();
     },
 
     buildConfiguration(table){
@@ -382,7 +593,6 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
                 let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Emperfum", {});
                 
- 
                 let reqTable = new Table();
                 reqTable.background(Styles.black6);
                 reqTable.margin(10);
@@ -398,7 +608,6 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
                         return;
                     }
                     
-              
                     let cSurge = core.items.get(Items.surgeAlloy);
                     let cPla = core.items.get(Items.plastanium);
                     let cCop = core.items.get(Items.copper);
@@ -407,7 +616,6 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
                     let cTit = core.items.get(Items.titanium);
                     let cSil = core.items.get(Items.silicon);
 
-                  
                     let surCol1 = cSurge >= reqMK2.surgeAlloy ? "[lime]" : "[scarlet]";
                     let plaCol1 = cPla >= reqMK2.plastanium ? "[lime]" : "[scarlet]";
                     let copCol1 = cCop >= reqMK2.copper ? "[lime]" : "[scarlet]";
@@ -418,11 +626,11 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
 
                     reqCell.setText(
                         "[gold]📦 KHO TÀI NGUYÊN LÕI CẦN THIẾT:[]\n\n" +
-                        "[cyan]🔹 Nhánh MK2 (Xuyên Phá / Đánh Đất):[]\n" +
+                        "[#c084fc]🔹 Nhánh MK2 (Xuyên Phá / Đánh Đất):[]\n" +
                         " • Hợp kim Surge: " + surCol1 + cSurge + "[] / " + reqMK2.surgeAlloy + "\n" +
                         " • Nhựa Plastanium: " + plaCol1 + cPla + "[] / " + reqMK2.plastanium + "\n" +
                         " • Đồng (Copper): " + copCol1 + cCop + "[] / " + reqMK2.copper + "\n\n" +
-                        "[pink]🔸 Nhánh MK2B (Tầm Nhiệt / Phòng Không):[]\n" +
+                        "[#e9d5ff]🔸 Nhánh MK2B (Tầm Nhiệt / Phòng Không):[]\n" +
                         " • Thorium: " + thoCol2 + cTho + "[] / " + reqMK2B.thorium + "\n" +
                         " • Titan: " + titCol2 + cTit + "[] / " + reqMK2B.titanium + "\n" +
                         " • Silicon: " + silCol2 + cSil + "[] / " + reqMK2B.silicon
@@ -431,15 +639,13 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
 
                 dialog.cont.add(reqTable).width(340).padBottom(10).row();
 
-              
                 let branchesTable = new Table();
 
-            
                 let b1 = new Table(); b1.background(Styles.black8); b1.margin(10);
-                b1.add("[cyan]⚡ [BOLD]CẤU HÌNH MK2 - GIA TỐC XUYÊN PHÁ[] ⚡").center().row();
+                b1.add("[#c084fc]⚡ [BOLD]CẤU HÌNH MK2 - GIA TỐC XUYÊN PHÁ[] ⚡").center().row();
                 b1.add().height(6).row();
                 let b1D = b1.add(
-                    "[lightgray]Tối ưu hóa rãnh nòng từ tính, gia tăng hỏa lực càn quét mặt đất:\n" +
+                    "[lightgray]Tối ưu hóa rãnh nòng từ tính tím, gia tăng hỏa lực càn quét mặt đất:\n" +
                     "• [white]Máu tháp pháo: [green]1,885 HP[] [lime](+30%)[]\n" +
                     "• [white]Tầm bắn: [orange]420 pixel[]\n" +
                     "• [white]Sát thương: [yellow]500 thô + 750 nổ diện rộng[]\n" +
@@ -447,13 +653,12 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
                 ).width(300).get();
                 b1D.setWrap(true); b1D.setAlignment(Align.left); b1.row();
                 b1.add().height(8).row();
-                b1.button("[cyan]KÍCH HOẠT MK2[]", packRun(() => {
+                b1.button("[#c084fc]KÍCH HOẠT MK2[]", packRun(() => {
                     let core = this.team.core();
                     if(core != null && 
                        core.items.get(Items.surgeAlloy) >= reqMK2.surgeAlloy && 
                        core.items.get(Items.plastanium) >= reqMK2.plastanium && 
                        core.items.get(Items.copper) >= reqMK2.copper){
-                        
                         
                         core.items.remove(Items.surgeAlloy, reqMK2.surgeAlloy); 
                         core.items.remove(Items.plastanium, reqMK2.plastanium);
@@ -470,26 +675,24 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
                     }
                 })).size(200, 40).center();
 
-               
                 let b2 = new Table(); b2.background(Styles.black8); b2.margin(10);
-                b2.add("[pink]🔥 [BOLD]CẤU HÌNH MK2B - XUNG KÍCH TẦM NHIỆT[] 🔥").center().row();
+                b2.add("[#e9d5ff]🔥 [BOLD]CẤU HÌNH MK2B - XUNG KÍCH TẦM NHIỆT[] 🔥").center().row();
                 b2.add().height(6).row();
                 let b2D = b2.add(
                     "[lightgray]Chuyển đổi sang hệ thống phòng không tầm xa chuyên dụng:\n" +
                     "• [white]Máu tháp pháo: [green]2,610 HP[] [lime](+80%)[]\n" +
                     "• [white]Tầm bắn: [orange]380 pixel[]\n" +
                     "• [white]Sát thương: [red]1,175 thô + 1,762 nổ diện rộng[]\n" +
-                    "• [white]Đặc tính: [pink]Tự động bẻ lái khóa mục tiêu bay[], đạn nổ tỏa ra 40 mảnh đạn truy đuổi phụ."
+                    "• [white]Đặc tính: [#e9d5ff]Tự động bẻ lái khóa mục tiêu bay[], đạn nổ tỏa ra mảnh đạn ngôi sao tím truy đuổi."
                 ).width(300).get();
                 b2D.setWrap(true); b2D.setAlignment(Align.left); b2.row();
                 b2.add().height(8).row();
-                b2.button("[pink]KÍCH HOẠT MK2B[]", packRun(() => {
+                b2.button("[#e9d5ff]KÍCH HOẠT MK2B[]", packRun(() => {
                     let core = this.team.core();
                     if(core != null && 
                        core.items.get(Items.thorium) >= reqMK2B.thorium && 
                        core.items.get(Items.titanium) >= reqMK2B.titanium && 
                        core.items.get(Items.silicon) >= reqMK2B.silicon){
-                        
                         
                         core.items.remove(Items.thorium, reqMK2B.thorium); 
                         core.items.remove(Items.titanium, reqMK2B.titanium); 
@@ -521,7 +724,6 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
             })).size(50, 40).tooltip("Đã đạt cấp tối đa");
         }
 
-      
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
             let title = " Thông số pháo Emperfum: ";
             let descStr = "";
@@ -535,27 +737,27 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
                           "• [lightgray]Mục tiêu:[] Đất & Khai hỏa Pyro\n" +
                           "• [lightgray]Sát thương:[] [yellow]500 thô[] + đạn chùm phân tách\n" +
                           "• [lightgray]Khả năng xuyên:[] [white]15 mục tiêu[]\n\n" +
-                          "[sky]💡 Mô tả: Pháo càn quét diện rộng giai đoạn đầu. Bắn đạn chính tích tụ vòng năng lượng oval, khi chạm mục tiêu sẽ giải phóng 12 đạn con bộc phá.[]";
+                          "[#c084fc]💡 Mô tả: Pháo càn quét diện rộng giai đoạn đầu. Bắn đạn chính tích tụ vòng năng lượng oval tím-trắng, khi chạm mục tiêu sẽ giải phóng đạn ngôi sao tím bộc phá.[]";
             } 
             else if (currentTier == 1) {
-                title += "[cyan](MK2)[]";
-                descStr = "[cyan]⚡ THÔNG SỐ CẤU HÌNH (MK2 - XUYÊN PHÁ) ⚡[]\n\n" +
+                title += "[#c084fc](MK2)[]";
+                descStr = "[#c084fc]⚡ THÔNG SỐ CẤU HÌNH (MK2 - XUYÊN PHÁ) ⚡[]\n\n" +
                           "• [lightgray]Máu pháo:[] [green]1,885 HP [lime](+30%)[]\n" +
                           "• [lightgray]Tầm bắn:[] [orange]420 pixel[]\n" +
                           "• [lightgray]Mục tiêu:[] Chuyên Đánh Đất\n" +
                           "• [lightgray]Sát thương:[] [yellow]500 thô + 750 nổ diện rộng[]\n" +
                           "• [lightgray]Khả năng xuyên:[] [yellow]15 mục tiêu[]\n\n" +
-                          "[lime]💡 Mô tả: Tăng cường kết cấu nòng từ tính xanh lam. Đạn chính bay nhanh hơn, xuyên qua toàn bộ đội hình địch và kích hoạt chuỗi nổ bộc phá liên hoàn.[]";
+                          "[lime]💡 Mô tả: Tăng cường kết cấu nòng từ tính tím thẫm. Đạn chính bay nhanh hơn, xuyên qua toàn bộ đội hình địch và kích hoạt chuỗi nổ bộc phá liên hoàn.[]";
             } 
             else if (currentTier == 2) {
-                title += "[pink](MK2B)[]";
-                descStr = "[pink]⚡ THÔNG SỐ CẤU HÌNH (MK2B - TRUY ĐUỔI TẦM NHIỆT) ⚡[]\n\n" +
+                title += "[#e9d5ff](MK2B)[]";
+                descStr = "[#e9d5ff]⚡ THÔNG SỐ CẤU HÌNH (MK2B - TRUY ĐUỔI TẦM NHIỆT) ⚡[]\n\n" +
                           "• [lightgray]Máu pháo:[] [green]2,610 HP [lime](+80%)[]\n" +
                           "• [lightgray]Tầm bắn:[] [orange]380 pixel[]\n" +
                           "• [lightgray]Mục tiêu:[] Chuyên Phòng Không (Bay)\n" +
                           "• [lightgray]Sát thương:[] [red]1,175 thô + 1,762 nổ diện rộng[]\n" +
-                          "• [lightgray]Khả năng bẻ lái:[] [pink]Truy đuổi tầm nhiệt 200px[]\n\n" +
-                          "[purple]🔥 Mô tả: Chuyển đổi toàn bộ mạch năng lượng sang sắc hồng xung kích. Tự động bẻ lái đuổi theo các đơn vị không quân địch, phát nổ thành hàng chục mảnh đạn truy đuổi phụ.[]";
+                          "• [lightgray]Khả năng bẻ lái:[] [#e9d5ff]Truy đuổi tầm nhiệt 200px[]\n\n" +
+                          "[#c084fc]🔥 Mô tả: Chuyển đổi toàn bộ mạch năng lượng sang sắc tím xung kích. Tự động bẻ lái đuổi theo các đơn vị không quân địch, phát nổ thành mảnh đạn ngôi sao 4 cánh tím-trắng.[]";
             }
 
             let dialog = extend(BaseDialog, title, {});
@@ -582,15 +784,15 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
         let targetPos = this.getClampedTarget();
 
         let bulletToShoot = emperfumMainBulletMK1;
-        let muzzleColor = Color.valueOf("#80deea");
+        let muzzleColor = C_PURPLE_LIGHT;
 
         if(tier == 1) {
             bulletToShoot = emperfumMainBulletMK2;
-            muzzleColor = Color.valueOf("#00bcd4");
+            muzzleColor = C_PURPLE_MAIN;
         }
         if(tier == 2) {
             bulletToShoot = emperfumMainBulletMK2B;
-            muzzleColor = Color.valueOf("#ff80ab");
+            muzzleColor = C_PURPLE_DARK;
         }
 
         let spawnX = this.x + Angles.trnsx(this.rotation, 10);
@@ -598,15 +800,18 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
 
         emperfumMuzzleEffect.at(spawnX, spawnY, this.rotation, muzzleColor);
 
-        let b = bulletToShoot.create(this, this.team, spawnX, spawnY, this.rotation);
+        let shootAngle = (this.isControlled() && this.unit != null)
+            ? Angles.angle(spawnX, spawnY, targetPos.x, targetPos.y) 
+            : this.rotation;
+
+        let b = bulletToShoot.create(this, this.team, spawnX, spawnY, shootAngle);
         if(b != null){
             b.data = targetPos;
-            if(tier >= 1){
-                let dist = Mathf.dst(this.x, this.y, targetPos.x, targetPos.y);
-                b.lifetime = (dist / bulletToShoot.speed) + 2;
+            
+            let dist = Mathf.dst(spawnX, spawnY, targetPos.x, targetPos.y);
+            b.lifetime = (dist / bulletToShoot.speed) + 2;
 
-                        this.useAmmo();
-            }
+            this.useAmmo();
         }
     },
 

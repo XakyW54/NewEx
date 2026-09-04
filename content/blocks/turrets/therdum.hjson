@@ -1,8 +1,8 @@
 
 name: Therdum
-description: ""
+description: "Shotgun"
 health: 6800
-size: 3
+size: 2
 reload: 60
 range: 105
 inaccuracy: 2
@@ -25,45 +25,6 @@ ammoTypes: {
 drawer: {
   type: DrawTurret
   basePrefix: reinforced-
-  parts: [
-    {
-      suffix: -2
-                layer: 51
-      y: 0
-      moveY: -0
-      recoilIndex: 0
-      progress: recoil
-                    children: [
-            {
-              suffix: -2
-              outline: false
-              layer: 50.01
-            }
-
-            {
-              suffix: -1
-              layer: 50.1
-              outline: false
-              layerOffset: -0.001
-              y: 2.5
-              moveY: -1.25
-              progress: reload
-            }
-
-                        {
-              suffix: -1a
-              layer: 50.1
-              outline: false
-              layerOffset: -0.001
-              y: 2.5
-              moveY: -6.25
-              progress: reload
-            }
-
-              ]
-    }
-
-  ]
 }
 
 researchCostMultiplier: 0.1

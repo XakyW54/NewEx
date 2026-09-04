@@ -456,9 +456,10 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
             let angle = Mathf.range(spread);
             this.spawnBullet(angle, 1.0, is3C, is3C, true);
 
-        this.useAmmo();
+
 
         }
+                this.useAmmo();
     },
 
     updateTile() {

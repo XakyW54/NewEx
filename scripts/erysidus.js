@@ -213,7 +213,8 @@ drawPlace(x, y, rotation, valid){
 
                     let tier = this.getTier();
 
-                    let beamTarget = Units.bestTarget(this.team, this.x, this.y, 280, e => e.checkTarget(true, true), e => e.health, (a, b) => b - a);
+                    // Đã sửa lỗi: lọc mục tiêu hợp lệ bằng boolean và so sánh máu của 2 mục tiêu
+                    let beamTarget = Units.bestTarget(this.team, this.x, this.y, 280, e => e.checkTarget(true, true), e => true, (a, b) => b.health - a.health);
                     let hasTargetInBeamRange = (beamTarget != null) || (this.target != null && this.dst(this.target) <= 280);
 
                     if(this.hasAmmo()){

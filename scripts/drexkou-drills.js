@@ -16,15 +16,12 @@ Events.on(ContentInitEvent, () => {
             range: 200,
             cachedTiles: [],  
 
- 
             getTileDrop(t) {
                 if (t == null) return null;
                 
- 
                 let drop = t.drop();
                 if (drop != null) return drop;
 
- 
                 if (t.block() != null) {
                     let name = t.block().name;
                     if (name === "graphitic-wall" || name === "ore-wall-graphite" || name === "graphite-wall") {
@@ -35,27 +32,53 @@ Events.on(ContentInitEvent, () => {
                 return null;
             },
 
- 
+            // Khôi phục lựa chọn item dựa vào tọa độ ô sau khi đặt/tải map
+            loadSelectedItem() {
+                let key = "drexkou-item-" + this.tileX() + "-" + this.tileY();
+                let itemId = Core.settings.getInt(key, -1);
+                if (itemId !== -1) {
+                    this.selectedItem = Vars.content.item(itemId);
+                } else {
+                    this.selectedItem = null;
+                }
+            },
+
+            // Lưu lựa chọn item với ép kiểu sang Java Integer ép buộc
+            saveSelectedItem(item) {
+                this.selectedItem = item;
+                let key = "drexkou-item-" + this.tileX() + "-" + this.tileY();
+                if (item != null) {
+                    Core.settings.put(key, java.lang.Integer(item.id));
+                } else {
+                    Core.settings.remove(key);
+                }
+            },
+
             placed() {
                 this.super$placed();
                 this.scanAndCacheTiles();
+                this.loadSelectedItem();
                 this.findTarget();
             },
- 
-            read(read, revision) {
-                this.super$read(read, revision);
-                Time.run(10, () => {
-                    this.scanAndCacheTiles();
-                    this.findTarget();
+
+            created() {
+                this.super$created();
+                Core.app.post(() => {
+                    if (this.added) {
+                        this.scanAndCacheTiles();
+                        this.loadSelectedItem();
+                        this.findTarget();
+                    }
                 });
             },
 
             onDestroy() {
+                let key = "drexkou-item-" + this.tileX() + "-" + this.tileY();
+                Core.settings.remove(key);
                 this.releaseTarget();
                 this.super$onDestroy();
             },
 
- 
             scanAndCacheTiles() {
                 this.cachedTiles = [];
                 let rangeTiles = Math.ceil(this.range / 8);
@@ -97,7 +120,6 @@ Events.on(ContentInitEvent, () => {
                 let drop = this.getTileDrop(tile);
                 if (drop == null) return false;
 
- 
                 if (tile.build != null) {
                     let name = tile.block().name;
                     let isGraphiteWall = (name === "graphitic-wall" || name === "ore-wall-graphite" || name === "graphite-wall");
@@ -120,7 +142,6 @@ Events.on(ContentInitEvent, () => {
                 return true;
             },
 
- 
             findTarget() {
                 if (this.cachedTiles.length === 0) {
                     this.setTarget(null);
@@ -211,7 +232,8 @@ Events.on(ContentInitEvent, () => {
                     let item = itemsInArea.get(i);
                     
                     let btn = table.button(new TextureRegionDrawable(item.uiIcon), Styles.clearTogglei, 40, () => {
-                        this.selectedItem = (this.selectedItem === item) ? null : item;
+                        let nextItem = (this.selectedItem === item) ? null : item;
+                        this.saveSelectedItem(nextItem);
                         this.setTarget(null);
                         this.findTarget(); 
                         this.deselect();
@@ -231,7 +253,6 @@ Events.on(ContentInitEvent, () => {
 
                 if (this.efficiency <= 0) return;
 
- 
                 if (!this.isValidTarget(this.targetTile)) {
                     this.releaseTarget();
                     this.findTarget();
@@ -345,7 +366,6 @@ Events.on(ContentInitEvent, () => {
     }
 });
 
- 
 Events.run(Trigger.draw, () => {
     let build = Vars.control.input.block;
     if (build != null && build.name === "newex-drexkou-drills") {

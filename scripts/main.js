@@ -142,6 +142,14 @@ require("vela");
 
 
 
+
+
+
+
+
+
+require("loadout-selection");
+
 Events.on(ClientLoadEvent, e => {
   let zorynex = Vars.content.getByName(ContentType.planet, "zorynex") || 
                 Vars.content.getByName(ContentType.planet, "newex-zorynex");

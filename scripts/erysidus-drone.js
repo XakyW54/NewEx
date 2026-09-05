@@ -1,9 +1,8 @@
- 
 const mainColor = Color.valueOf("90caf9");
 const lightColor = Color.valueOf("e3f2fd");
 const coreColor = Color.white;
 
- const customHitEffect = new Effect(24, new Cons({
+const customHitEffect = new Effect(24, new Cons({
     get: function(e){
         Draw.color(mainColor, lightColor, e.fout());
         Lines.stroke(e.fout() * 2.5);
@@ -107,14 +106,15 @@ Events.on(ClientLoadEvent, new Cons({
                             }
                         });
 
-                            if(data.beamDurationTimer > 0){
+                        if(data.beamDurationTimer > 0){
                             data.beamDurationTimer -= Time.delta;
 
-                            let target = Units.bestTarget(u.team, u.x, u.y, 280, e => e.checkTarget(true, true), e => e.health, (a, b) => b - a);
+                            // Đã sửa lỗi: lọc mục tiêu bằng boolean và truyền hàm so sánh máu chính xác
+                            let target = Units.bestTarget(u.team, u.x, u.y, 280, e => e.checkTarget(true, true), e => true, (a, b) => b.health - a.health);
                             let targetAngle = u.rotation;
                             if(target != null){
                                 targetAngle = u.angleTo(target);
-                                    u.rotation = Mathf.slerpDelta(u.rotation, targetAngle, 0.25);
+                                u.rotation = Mathf.slerpDelta(u.rotation, targetAngle, 0.25);
                             }
 
                             if(Mathf.mod(data.beamDurationTimer, 3) < Time.delta){
@@ -128,10 +128,10 @@ Events.on(ClientLoadEvent, new Cons({
                                 data.beamCooldownTimer = 300;  
                             }
                         } 
-                          else if(data.beamCooldownTimer > 0){
+                        else if(data.beamCooldownTimer > 0){
                             data.beamCooldownTimer = Math.max(0, data.beamCooldownTimer - Time.delta);
                         } 
-                            else {
+                        else {
                             let target = Units.closestTarget(u.team, u.x, u.y, 280);
                             if(target != null){
                                 data.beamDurationTimer = 42;  

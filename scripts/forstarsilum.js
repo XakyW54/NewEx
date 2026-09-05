@@ -1,4 +1,5 @@
 (function() {
+    const packCons = (func) => new Cons({ get: func });
     const packCons2 = (func) => new Cons2({ get: func });
     const packRun = (func) => new java.lang.Runnable({ run: func });
     const packProv = (func) => new Prov({ get: func });
@@ -240,6 +241,7 @@
             chargeTimer: 0.0,
             isChargingUlt: false,
             noResetChanceMK2B: 0.80, // Tỷ lệ giữ buff ban đầu cho MK2B
+            activeUltBullets: [], // Mảng theo dõi các viên đòn tụ lực để tính 75% True Damage
 
             peekAmmo(){
                 let tier = this.getTier();
@@ -308,7 +310,7 @@
                         let b1D = b1.add("[white]• Máu cấu trúc: [green]+50%[] (1,800 HP)\n" +
                                          "• Tầm bắn: [gold]750 px[]\n" +
                                          "• Sát thương gốc: [green]+34.6%[] (105 DMG)\n\n" +
-                                         "[lightgray]Kỹ năng đặc biệt: Gia Tốc Từ Tính — Tích lũy buff gấp đôi (+20%/viên), [gold]40% cơ hội bắn đòn dồn lực (tụ kiếm 1s) theo mỗi phát bắn thường[].[]");
+                                         "[lightgray]Kỹ năng đặc biệt: Gia Tốc Từ Tính — Tích lũy buff gấp đôi (+20%/viên), [gold]40% cơ hội bắn đòn dồn lực (tụ kiếm 1s, gây 75% True Damage)[] theo mỗi phát bắn thường.[]");
                         b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                         b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
                             let core = this.team.core();
@@ -325,7 +327,7 @@
                         let b2D = b2.add("[white]• Máu cấu trúc: [green]+33.3%[] (1,600 HP)\n" +
                                          "• Tầm bắn: [gold]750 px[]\n" +
                                          "• Sát thương gốc: [green]+111.5%[] (165 DMG)\n\n" +
-                                         "[lightgray]Kỹ năng đặc biệt: Duy Trì Năng Lượng — Sau khi bắn đòn dồn lực, [gold]có xác suất KHÔNG RESET thanh buff (80% -> 70% -> ... -> 0%)[].[]");
+                                         "[lightgray]Kỹ năng đặc biệt: Duy Trì Năng Lượng — Sau khi bắn đòn dồn lực (gây 75% True Damage), [gold]có xác suất KHÔNG RESET thanh buff (80% -> 70% -> ... -> 0%)[].[]");
                         b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
                         b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                             let core = this.team.core();
@@ -363,6 +365,7 @@
                                   "[lightgray]Máu tháp pháo:[] [green]1,200[]\n" +
                                   "[lightgray]Tầm bắn hiệu dụng:[] [orange]750 pixel[]\n" +
                                   "[lightgray]Sát thương gốc:[] [yellow]78.00 DMG[]\n" +
+                                  "[lightgray]Đòn Tụ Lực (Kiếm):[] [scarlet]75% True Damage (Xuyên giáp, khiên & cơ chế Vela)[]\n" +
                                   "[lightgray]Tốc độ bắn:[] [white]1 phát / 1.0 giây[]\n\n" +
                                   "[sky]⚡ CƠ CHẾ NĂNG LƯỢNG TÍCH LŨY (BUFF):[]\n" +
                                   "• [lightgray]Tích lũy Buff:[] Mỗi phát bắn trúng/kích hoạt sẽ tăng [green]+10.0%[] buff.\n" +
@@ -373,7 +376,8 @@
                         descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
                                   "[lightgray]Máu tháp pháo:[] [green]1,800 [lime](+50%)[]\n" +
                                   "[lightgray]Tầm bắn hiệu dụng:[] [orange]750 pixel[]\n" +
-                                  "[lightgray]Sát thương gốc:[] [yellow]105.00 DMG [lime](+34.6%)[]\n\n" +
+                                  "[lightgray]Sát thương gốc:[] [yellow]105.00 DMG [lime](+34.6%)[]\n" +
+                                  "[lightgray]Đòn Tụ Lực (Kiếm):[] [scarlet]75% True Damage (Xuyên giáp, khiên & cơ chế Vela)[]\n\n" +
                                   "[lime]⚡ CƠ CHẾ ĐẶC BIỆT MK2:[]\n" +
                                   "• [lightgray]Xác suất Ult:[] Có [gold]40% cơ hội[] kích hoạt tụ kiếm 1s bắn đòn dồn lực theo mỗi phát bắn thường.\n" +
                                   "• [lightgray]Tốc độ tích tụ:[] Tăng [green]+20.0%[] buff mỗi phát bắn.\n" +
@@ -384,7 +388,8 @@
                         descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
                                   "[lightgray]Máu tháp pháo:[] [green]1,600 [lime](+33.3%)[]\n" +
                                   "[lightgray]Tầm bắn hiệu dụng:[] [orange]750 pixel[]\n" +
-                                  "[lightgray]Sát thương gốc:[] [red]165.00 DMG (+111.5%)[]\n\n" +
+                                  "[lightgray]Sát thương gốc:[] [red]165.00 DMG (+111.5%)[]\n" +
+                                  "[lightgray]Đòn Tụ Lực (Kiếm):[] [scarlet]75% True Damage (Xuyên giáp, khiên & cơ chế Vela)[]\n\n" +
                                   "[purple]🔥 CƠ CHẾ ĐẶC BIỆT MK2B:[]\n" +
                                   "• [lightgray]Không Reset Buff:[] Sau đòn dồn lực, có cơ hội [gold]giữ nguyên 100% buff[] không bị reset (80% -> 70% -> ... -> 0%).\n" +
                                   "• [lightgray]Mạch định vị:[] Đạn Starsword [pink]tự động bẻ lái tìm mục tiêu[] (300px).\n" +
@@ -404,9 +409,29 @@
 
             config() { return java.lang.Integer(this.getTier()); },
 
-            // Hàm thực thi bắn đòn dồn lực ngay lập tức
+            // Hàm thực thi bắn đòn dồn lực ngay lập tức với 75% True Damage
             executeUltFire(muzzleX, muzzleY) {
-                ultBullet.create(this, this.team, muzzleX, muzzleY, this.rotation, 1.0, 1.0);
+                let bullet = ultBullet.create(this, this.team, muzzleX, muzzleY, this.rotation, 1.0, 1.0);
+                
+                if (bullet != null) {
+                    let totalDmg = bullet.damage * (1 + this.energyState * 5);
+                    
+                    let trueDmgVal = totalDmg * 0.75;  // 75% True Damage
+                    let normalDmgVal = totalDmg * 0.25; // 25% Normal Damage
+
+                    bullet.damage = normalDmgVal; 
+
+                    if (bullet.type != null) {
+                        bullet.type.absorbable = false;
+                        bullet.type.hittable = false;
+                        bullet.type.reflectable = false;
+                        bullet.type.pierceArmor = true;
+                    }
+
+                    if (this.activeUltBullets == null) this.activeUltBullets = [];
+                    this.activeUltBullets.push({ bullet: bullet, trueDmg: trueDmgVal });
+                }
+
                 ultShockwaveEffect.at(muzzleX, muzzleY, this.rotation);
                 Effect.shake(5, 5, this.x, this.y);
             },
@@ -437,7 +462,7 @@
                     this.startUltCharge();
                 }
 
-                // TIẾN TRÌNH TỤ 5 KIẾM (ĐỦ 60 TICKS = 1 GÂY MỚI BẮN)
+                // TIẾN TRÌNH TỤ 5 KIẾM (ĐỦ 60 TICKS = 1 GIÂY MỚI BẮN)
                 if(this.isChargingUlt){
                     this.chargeTimer += Time.delta;
 
@@ -463,6 +488,49 @@
                 }
 
                 this.customRecoil = Mathf.approach(this.customRecoil, 0.0, 0.12 * Time.delta);
+
+                // XỬ LÝ 75% TRUE DAMAGE DÀNH RIÊNG CHO ĐÒN TỤ LỰC (TRỪ THẲNG MÁU, XUYÊN KHEN/VELA)
+                if(this.activeUltBullets != null && this.activeUltBullets.length > 0){
+                    for(let i = this.activeUltBullets.length - 1; i >= 0; i--){
+                        let entry = this.activeUltBullets[i];
+                        if(entry == null) {
+                            this.activeUltBullets.splice(i, 1);
+                            continue;
+                        }
+
+                        let b = entry.bullet;
+                        let trueDmg = entry.trueDmg;
+
+                        if(b == null || !b.isAdded() || b.lifetime <= 0){
+                            this.activeUltBullets.splice(i, 1);
+                            continue;
+                        }
+
+                        let radius = (b.type != null ? b.type.hitSize : 12) + 4;
+                        let bTeam = this.team;
+
+                        // True Damage trừ trực tiếp vào Máu Unit
+                        Groups.unit.intersect(b.x - radius, b.y - radius, radius * 2, radius * 2, cons(u => {
+                            if (u != null && u.isValid() && u.team != bTeam && Mathf.dst(b.x, b.y, u.x, u.y) <= radius + u.hitSize) {
+                                u.health -= trueDmg;
+                                Fx.hitBulletSmall.at(u.x, u.y);
+
+                                if (u.health <= 0) u.kill();
+                            }
+                        }));
+
+                        // True Damage trừ trực tiếp vào Máu Công trình
+                        if (b.isAdded()) {
+                            let tileBuild = Vars.world.build(World.toTile(b.x), World.toTile(b.y));
+                            if (tileBuild != null && tileBuild.team != bTeam) {
+                                tileBuild.health -= trueDmg;
+                                Fx.hitBulletSmall.at(tileBuild.x, tileBuild.y);
+
+                                if (tileBuild.health <= 0) tileBuild.kill();
+                            }
+                        }
+                    }
+                }
             },
 
             shoot(type){

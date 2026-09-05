@@ -31,8 +31,8 @@ drawer: {
 }
   researchCostMultiplier: 0.1
 requirements: [
-  copper/1840
-  lead/1630
+  copper/184
+  lead/163
 plastanium/245
   silicon/285
 ]

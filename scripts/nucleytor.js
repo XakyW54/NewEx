@@ -15,18 +15,13 @@ const coolSpeedMK2 = 0.12;
 const gainPerShotMK2B = 0.03; 
 const coolSpeedMK2B = 0.08;  
 
- 
 const wingParticleEffect = new Effect(35, e => {
     Draw.color(Color.lightGray, Color.gray, e.fin());
-    
-     let size = 1.8 * e.fout();
-    
-     let speed = 1.4; 
+    let size = 1.8 * e.fout();
+    let speed = 1.4; 
     let rad = e.rotation * Mathf.degRad;
-    
-     let px = e.x + Math.cos(rad) * speed * e.time;
+    let px = e.x + Math.cos(rad) * speed * e.time;
     let py = e.y + Math.sin(rad) * speed * e.time;
-    
     Fill.circle(px, py, size);
     Draw.reset();
 });
@@ -72,7 +67,7 @@ const mk3HitElectricEffect = new Effect(15, e => {
     Draw.reset();
 });
 
- const nucleytorBuffEffect = new Effect(40, e => {
+const nucleytorBuffEffect = new Effect(40, e => {
     let size = e.rotation > 0 ? e.rotation : 16; 
     let halfSize = size / 2;
     let rand = new Rand(e.id);
@@ -125,7 +120,7 @@ const applyGradiusAcceleration = (b, baseSpeed) => {
     }
 };
 
- const nucleytorBullet = extend(BasicBulletType, {
+const nucleytorBullet = extend(BasicBulletType, {
     speed: 8, damage: 9, lifetime: 72, width: 9, height: 14,
     frontColor: Color.white, backColor: Color.valueOf("#ffef9e"),
     workspace: true, pierce: true, pierceCap: 3, pierceBuilding: true, knockback: 1, impact: true,
@@ -216,7 +211,7 @@ const nucleytorMK2BBullet = extend(BasicBulletType, {
     }
 });
 
- const nucleytor = extend(ItemTurret, "nucleytor", {
+const nucleytor = extend(ItemTurret, "nucleytor", {
     configurable: true,
     recoil: 0.0 
 });
@@ -259,6 +254,7 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
     amplifierTimer: 0.0,
     isAmplified: false,
     maxAmplifierDuration: 30.0 * 60.0, 
+    activeBullets: [], // Mảng lưu trữ các viên đạn để xử lý True Damage
 
     getTier(){ return this.tierState == null ? 0 : this.tierState; },
     setTier(val){ 
@@ -322,6 +318,7 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
                 b1.add("[cyan]===(MK2 - XUYÊN PHÁ)===[]").row();
                 let b1D = b1.add("Cải tiến cấu trúc nòng hạt nhân gia tốc:\n" +
                                  " [white]• Sát thương cơ bản điều chỉnh thành [green]9 đơn vị[] và tầm bắn rộng [green]420 pixel[].[]\n" +
+                                 " [white]• SÁT THƯƠNG CHUẨN: [scarlet]100% True Damage (Trừ thẳng Máu, xuyên giáp, khiên & cơ chế Vela)[]\n" +
                                  " [white]• Đạn xuyên qua tối đa [yellow]5 mục tiêu[].[]\n" +
                                  " [white]• Tối ưu hóa tản nhiệt, giữ gia tốc lâu hơn khi dừng bắn.[]\n" +
                                  " [white]• Nâng cấp giáp tháp pháo, tăng [green]+50% Máu[].[]");
@@ -340,6 +337,7 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
                 b2.add("[purple]===(MK2B - TIẾN HÓA)===[]").row();
                 let b2D = b2.add("Chuyển đổi sang lõi nhiệt phân rã:\n" +
                                  " [white]• Sát thương tinh chỉnh thành [green]9 đơn vị[], gia tốc nhiệt lượng cực nhanh ([green]+3% mỗi phát bắn[]).[]\n" +
+                                 " [white]• SÁT THƯƠNG CHUẨN: [scarlet]100% True Damage (Trừ thẳng Máu, xuyên giáp, khiên & cơ chế Vela)[]\n" +
                                  " [white]• Tầm bắn đạt [green]360 pixel[].[]\n" +
                                  " [white]• Loại bỏ hoàn toàn khả năng xuyên thấu và tự dẫn đường.[]");
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
@@ -392,6 +390,7 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
                 descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
                           "[lightgray]Máu tháp pháo:[] [green]1,800 [lime](+50%)[]\n" +
                           "[lightgray]Tầm bắn hiệu dụng:[] [orange]420 pixel [lime](+31.2%)[]\n" +
+                          "[lightgray]Loại Sát Thương:[] [scarlet]100% True Damage (Xuyên giáp, khiên, cơ chế Vela)[]\n" +
                           "[lightgray]Sát thương cơ bản:[] [yellow]9.00[]\n" +
                           "[lightgray]Khả năng xuyên thấu:[] [yellow]5 mục tiêu [lime](+2)[]\n" +
                           "[scarlet]⚠ Giới hạn: Tối đa 10 cấu trúc trên sân[]\n\n" +
@@ -406,6 +405,7 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
                 descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
                           "[lightgray]Máu tháp pháo:[] [green]1,600 [lime](+33.3%)[]\n" +
                           "[lightgray]Tầm bắn hiệu dụng:[] [orange]360 pixel [lime](+12.5%)[]\n" +
+                          "[lightgray]Loại Sát Thương:[] [scarlet]100% True Damage (Xuyên giáp, khiên, cơ chế Vela)[]\n" +
                           "[lightgray]Sát thương cơ bản:[] [red]9.00[]\n" +
                           "[lightgray]Khả năng xuyên thấu:[] [red]Không (Mất khả năng xuyên)[]\n" +
                           "[scarlet]⚠ Giới hạn: Tối đa 10 cấu trúc trên sân[]\n\n" +
@@ -428,7 +428,30 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
 
     config() { return java.lang.Integer(this.getTier()); },
 
-updateTile(){
+    handleBullet(bullet, x, y, angle){ 
+        this.super$handleBullet(bullet, x, y, angle); 
+
+        if(bullet != null){
+            let calculatedDmg = bullet.type.damage * (1 + this.energyState * 12);
+
+            // TÍNH NĂNG 100% TRUE DAMAGE DÀNH CHO CẢ MK1, MK2, MK2B
+            let trueDamageVal = calculatedDmg; 
+            bullet.damage = 0; // Đặt sát thương gốc của đạn về 0
+
+            if(bullet.type != null){
+                bullet.type.absorbable = false;
+                bullet.type.hittable = false;
+                bullet.type.reflectable = false;
+                bullet.type.pierceArmor = true;
+            }
+
+            if(this.activeBullets == null) this.activeBullets = [];
+            // Lưu đạn cùng lượng True Damage vào mảng JS
+            this.activeBullets.push({ bullet: bullet, trueDmg: trueDamageVal });
+        }
+    },
+
+    updateTile(){
         this.limitCheck += Time.delta;
         if(this.limitCheck >= 15){
             this.limitCheck = 0; let count = 0; let firstBuild = null;
@@ -439,7 +462,6 @@ updateTile(){
         this.super$updateTile();
         let tier = this.getTier();
 
- 
         let inCombat = this.isShooting || (this.isActive() && this.target != null);
         if (inCombat) {
             this.combatProgress = Mathf.approach(this.combatProgress, 1.0, 0.05 * Time.delta);
@@ -447,7 +469,6 @@ updateTile(){
             this.combatProgress = Mathf.approach(this.combatProgress, 0.0, 0.03 * Time.delta);
         }
 
- 
         if (inCombat && !this.isAmplified && Mathf.chance(0.35 * Time.delta)) {
             let rad = this.rotation * Mathf.degRad;
             let cos = Math.cos(rad);
@@ -461,10 +482,10 @@ updateTile(){
             let wingRightX = this.x + (-sideDist * -sin);
             let wingRightY = this.y + (-sideDist * cos);
 
-             let leftAngle = this.rotation + 145 + Mathf.range(10);
+            let leftAngle = this.rotation + 145 + Mathf.range(10);
             let rightAngle = this.rotation - 145 + Mathf.range(10);
 
-             wingParticleEffect.at(wingLeftX, wingLeftY, leftAngle);
+            wingParticleEffect.at(wingLeftX, wingLeftY, leftAngle);
             wingParticleEffect.at(wingRightX, wingRightY, rightAngle);
         }
 
@@ -521,8 +542,52 @@ updateTile(){
         }
 
         this.coreOpen = Mathf.approach(this.coreOpen, this.isAmplified ? 1.0 : 0.0, 0.08 * Time.delta);
-
         this.customRecoil = Mathf.approach(this.customRecoil, 0.0, 0.12 * Time.delta);
+
+        // XỬ LÝ 100% SÁT THƯƠNG CHUẨN (TRỪ THẲNG MÁU, XUYÊN KHEN/VELA)
+        if(this.activeBullets != null && this.activeBullets.length > 0){
+            for(let i = this.activeBullets.length - 1; i >= 0; i--){
+                let entry = this.activeBullets[i];
+                if(entry == null) {
+                    this.activeBullets.splice(i, 1);
+                    continue;
+                }
+
+                let b = entry.bullet;
+                let trueDmg = entry.trueDmg;
+
+                if(b == null || !b.isAdded() || b.lifetime <= 0){
+                    this.activeBullets.splice(i, 1);
+                    continue;
+                }
+
+                let radius = (b.type != null ? b.type.hitSize : 8) + 4;
+                let bTeam = this.team;
+
+                // True Damage trừ trực tiếp vào lượng Máu của Unit
+                Groups.unit.intersect(b.x - radius, b.y - radius, radius * 2, radius * 2, cons(u => {
+                    if (u != null && u.isValid() && u.team != bTeam && Mathf.dst(b.x, b.y, u.x, u.y) <= radius + u.hitSize) {
+                        u.health -= trueDmg;
+                        Fx.hitBulletSmall.at(u.x, u.y);
+
+                        if (u.health <= 0) u.kill();
+                        b.remove();
+                    }
+                }));
+
+                // True Damage trừ trực tiếp vào lượng Máu của Công trình
+                if (b.isAdded()) {
+                    let tileBuild = Vars.world.build(World.toTile(b.x), World.toTile(b.y));
+                    if (tileBuild != null && tileBuild.team != bTeam) {
+                        tileBuild.health -= trueDmg;
+                        Fx.hitBulletSmall.at(tileBuild.x, tileBuild.y);
+
+                        if (tileBuild.health <= 0) tileBuild.kill();
+                        b.remove();
+                    }
+                }
+            }
+        }
     },
 
     shoot(type){
@@ -547,11 +612,6 @@ updateTile(){
         this.customRecoil = 1.0;
     },
 
-    handleBullet(bullet, x, y, angle){ 
-        if(bullet != null) bullet.damage = bullet.type.damage * (1 + this.energyState * 12); 
-        this.super$handleBullet(bullet, x, y, angle); 
-    },
-
     baseReloadSpeed(){ return this.efficiency * (1 + this.energyState * 0.5); },
     getDmgRatio(){ return this.energyState; }, 
     getAsRatio(){ return this.energyState; },
@@ -559,7 +619,7 @@ updateTile(){
     draw(){
         let modName = this.block.name.split("-")[0]; 
 
-         let baseRegion = Core.atlas.find(this.block.basePrefix + "" + this.block.size);
+        let baseRegion = Core.atlas.find(this.block.basePrefix + "" + this.block.size);
         if(baseRegion.found()){
             Draw.rect(baseRegion, this.x, this.y);
         } else {
@@ -579,8 +639,7 @@ updateTile(){
         let arr2Reg = Core.atlas.find(modName + "-nucleytor-arr2");
         let cored1Reg = Core.atlas.find(modName + "-nucleytor-cored1");
         let cored2Reg = Core.atlas.find(modName + "-nucleytor-cored2");
- 
- 
+
         if(wing1Reg.found() && wing2Reg.found()){
             let wSide = this.combatProgress * 1.414;   
             let wBack = this.combatProgress * -1.414;
@@ -594,7 +653,6 @@ updateTile(){
             Draw.rect(wing2Reg, w2x, w2y, this.rotation - 90);
         }
 
- 
         if(por1Reg.found() && por2Reg.found()){
             let pSide = this.combatProgress * 1.0; 
             let pBack = this.customRecoil * -8.0; 
@@ -608,12 +666,10 @@ updateTile(){
             Draw.rect(por2Reg, p2x, p2y, this.rotation - 90);
         }
 
- 
         if(bodyReg.found()){
             Draw.rect(bodyReg, this.x, this.y, this.rotation - 90);
         }
 
- 
         if(arr1Reg.found() && arr2Reg.found()){
             let aForward = this.combatProgress * 2.0; 
 
@@ -626,7 +682,6 @@ updateTile(){
             Draw.rect(arr2Reg, a2x, a2y, this.rotation - 90);
         }
 
- 
         if(this.coreOpen > 0.01){
             Draw.blend(Blending.additive); 
             
@@ -654,7 +709,7 @@ updateTile(){
             Draw.reset();
         }
 
-         if(cored1Reg.found() && cored2Reg.found()){
+        if(cored1Reg.found() && cored2Reg.found()){
             let cSide = this.coreOpen * 3.0; 
 
             let c1x = this.x + (cSide * -sin);
@@ -666,7 +721,6 @@ updateTile(){
             Draw.rect(cored2Reg, c2x, c2y, this.rotation - 90);
         }
 
- 
         if (this.isAmplified) {
             let maxRadius = 100.0;
             let radius = maxRadius;

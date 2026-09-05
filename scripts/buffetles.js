@@ -75,6 +75,7 @@ Events.on(ContentInitEvent, () => {
         extraCritDamage: 0.0,
         tierState: 0, 
         speedBuffTimer: 0,
+        activeBullets: [], 
 
         getTier(){ return this.tierState == null ? 0 : this.tierState; },
 
@@ -105,26 +106,50 @@ Events.on(ContentInitEvent, () => {
             this.super$handleBullet(bullet, x, y, angle);
 
             if(bullet != null){
-                if(this.getTier() == 2){
-                    bullet.damage *= 1.5;
+                let currentTier = this.getTier();
+
+                // TÍNH TOÁN SÁT THƯƠNG
+                let finalDamage = bullet.damage;
+
+                if(currentTier == 2){
+                    finalDamage *= 1.5;
                 }
 
                 let critRate = this.getCritRate();
                 if(Mathf.chance(critRate)){
-                    bullet.damage *= (1.0 + this.getCritDamageMultiplier());
+                    finalDamage *= (1.0 + this.getCritDamageMultiplier());
                     critEffect.at(bullet.x, bullet.y);
                 }
 
                 this.addStack();
 
-                if(this.getTier() == 1 && Mathf.chance(0.20)){
+                if(currentTier == 1 && Mathf.chance(0.20)){
                     this.extraCritDamage += 0.01;
                 }
 
-                // CHỈ KÍCH HOẠT 2% KHI CHƯA CÓ BUFF SPEED (speedBuffTimer <= 0)
                 if(this.speedBuffTimer <= 0 && Mathf.chance(0.02)){
-                    this.speedBuffTimer = 60; // Dài 1 giây (60 ticks)
+                    this.speedBuffTimer = 60;
                     speedBuffEffect.at(this.x, this.y);
+                }
+
+                // XỬ LÝ CHIA SÁT THƯƠNG THƯỜNG VÀ TRUE DAMAGE (50% / 50%)
+                if(currentTier > 0){
+                    let damageNormal = finalDamage * 0.5; // 50% Sát thương thường gốc của đạn
+                    let damageTrue = finalDamage * 0.5;   // 50% Sát thương chuẩn trừ thẳng Máu
+
+                    bullet.damage = damageNormal;
+
+                    if(bullet.type != null){
+                        bullet.type.absorbable = false;
+                        bullet.type.hittable = false;
+                        bullet.type.reflectable = false;
+                        bullet.type.pierceArmor = true;
+                    }
+                    if(this.activeBullets == null) this.activeBullets = [];
+                    // Lưu dưới dạng JS Object đơn giản tránh lỗi gán trực tiếp vào Java Bullet
+                    this.activeBullets.push({ bullet: bullet, trueDmg: damageTrue });
+                } else {
+                    bullet.damage = finalDamage;
                 }
             }
         },
@@ -138,6 +163,51 @@ Events.on(ContentInitEvent, () => {
 
             if(this.speedBuffTimer > 0 && this.isShooting && this.hasAmmo()){
                 this.reloadCounter += Time.delta * 5.0 * this.efficiency;
+            }
+
+            // XỬ LÝ 50% SÁT THƯƠNG CHUẨN (XUYÊN VELA & SHIELD)
+            if(this.getTier() > 0 && this.activeBullets != null && this.activeBullets.length > 0){
+                for(let i = this.activeBullets.length - 1; i >= 0; i--){
+                    let entry = this.activeBullets[i];
+                    if(entry == null) {
+                        this.activeBullets.splice(i, 1);
+                        continue;
+                    }
+
+                    let b = entry.bullet;
+                    let trueDmg = entry.trueDmg;
+
+                    if(b == null || !b.isAdded() || b.lifetime <= 0){
+                        this.activeBullets.splice(i, 1);
+                        continue;
+                    }
+
+                    let radius = (b.type != null ? b.type.hitSize : 8) + 4;
+                    let bTeam = this.team;
+
+                    // 50% True Damage trừ thẳng biến health của Unit (Xuyên Vela Shield)
+                    Groups.unit.intersect(b.x - radius, b.y - radius, radius * 2, radius * 2, cons(u => {
+                        if (u != null && u.isValid() && u.team != bTeam && Mathf.dst(b.x, b.y, u.x, u.y) <= radius + u.hitSize) {
+                            u.health -= trueDmg;
+                            Fx.hitBulletSmall.at(u.x, u.y);
+
+                            if (u.health <= 0) u.kill();
+                            b.remove();
+                        }
+                    }));
+
+                    // 50% True Damage trừ thẳng biến health của công trình
+                    if (b.isAdded()) {
+                        let tileBuild = Vars.world.build(World.toTile(b.x), World.toTile(b.y));
+                        if (tileBuild != null && tileBuild.team != bTeam) {
+                            tileBuild.health -= trueDmg;
+                            Fx.hitBulletSmall.at(tileBuild.x, tileBuild.y);
+
+                            if (tileBuild.health <= 0) tileBuild.kill();
+                            b.remove();
+                        }
+                    }
+                }
             }
         },
 
@@ -194,7 +264,8 @@ Events.on(ContentInitEvent, () => {
 
                         let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                         b1.add("[cyan]===(MK2 - BẠO KÍCH SIÊU TỐC)===[]").row();
-                        let b1D = b1.add("[white]• Tăng tỉ lệ bạo kích/stack: [green]+0.5%[] (gốc 0.1%)\n\n" +
+                        let b1D = b1.add("[white]• Tăng tỉ lệ bạo kích/stack: [green]+0.5%[] (gốc 0.1%)\n" +
+                                         "• SÁT THƯƠNG CHUẨN: [scarlet]50% True Damage (Xuyên giáp, khiên, cơ chế Vela)[]\n\n" +
                                          "[lightgray]Kỹ năng đặc biệt: Tăng tốc tích lũy tỉ lệ bạo kích gấp 5 lần. Khi bắn đạn có 20% tỉ lệ tăng vĩnh viễn +1% sát thương bạo kích. Khi bắn có 2% tỉ lệ tăng 500% tốc bắn trong 1s.[]");
                         b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                         b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
@@ -209,7 +280,8 @@ Events.on(ContentInitEvent, () => {
 
                         let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                         b2.add("[purple]===(MK2B - BỘI PHÁT SÁT THƯƠNG)===[]").row();
-                        let b2D = b2.add("[white]• Sát thương gốc của đạn: [green]+50.0%[]\n\n" +
+                        let b2D = b2.add("[white]• Sát thương gốc của đạn: [green]+50.0%[]\n" +
+                                         "• SÁT THƯƠNG CHUẨN: [scarlet]50% True Damage (Xuyên giáp, khiên, cơ chế Vela)[]\n\n" +
                                          "[lightgray]Kỹ năng đặc biệt: Duy trì cơ chế bạo kích cực đại và khi bắn có 2% cơ hội tăng 500% tốc bắn trong 1s.[]");
                         b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
                         b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
@@ -257,6 +329,7 @@ Events.on(ContentInitEvent, () => {
                 else if (currentTier == 1) {
                     title += "[cyan](MK2)[]";
                     descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
+                              "[lightgray]Loại Sát Thương:[] [scarlet]50% Sát thương Chuẩn (Xuyên Vela Shield, Giáp, Khiên)[]\n" +
                               "[lightgray]Mức tích lũy bạo kích:[] [lime]+0.5% / stack (x5 tốc độ)[]\n" +
                               "[lightgray]Sát thương bạo kích hiện tại:[] [yellow]+" + (this.getCritDamageMultiplier() * 100).toFixed(1) + "%[]\n\n" +
                               "[lime]⚡ CƠ CHẾ ĐẶC BIỆT MK2:[]\n" +
@@ -266,6 +339,7 @@ Events.on(ContentInitEvent, () => {
                 else if (currentTier == 2) {
                     title += "[purple](MK2B)[]";
                     descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
+                              "[lightgray]Loại Sát Thương:[] [scarlet]50% Sát thương Chuẩn (Xuyên Vela Shield, Giáp, Khiên)[]\n" +
                               "[lightgray]Sát thương gốc đạn:[] [lime]+50.0% DMG[]\n\n" +
                               "[purple]🔥 CƠ CHẾ ĐẶC BIỆT MK2B:[]\n" +
                               "• Khi phát bắn diễn ra: [gold]2% tỉ lệ[] tăng [orange]+500% tốc bắn[] trong 1 giây.";

@@ -22,6 +22,7 @@ Timer.schedule(() => {
 
     Groups.unit.each(u => {
         if (u != null && u.isValid() && u.type == daggerUnit) {
+            
             let id = u.id;
             if (!daggerTimers[id]) {
                 daggerTimers[id] = 0;
@@ -29,35 +30,46 @@ Timer.schedule(() => {
 
             daggerTimers[id] += Time.delta;
 
-            // Quét đồng minh xung quanh mỗi 1 giây (60 ticks)
-            if (daggerTimers[id] >= 60.0) {
+            // Quét đồng minh xung quanh mỗi 10 giây (600 ticks)
+            if (daggerTimers[id] >= 600.0) {
                 daggerTimers[id] = 0;
 
-                let range = 80;
-                let hasNearbyDagger = false;
+                // Phạm vi bán kính 40 units
+                let range = 40;
+                let unbuffedTargets = [];
+                let buffedTargets = [];
 
                 Groups.unit.intersect(u.x - range, u.y - range, range * 2, range * 2, cons(near => {
                     if (near != u && near.team == u.team && near.type == daggerUnit && near.isValid()) {
                         let dst = Mathf.dst(u.x, u.y, near.x, near.y);
                         if (dst <= range) {
-                            hasNearbyDagger = true;
-
-                            if (u.id < near.id) {
-                                linkPulseFx.at(u.x, u.y, 0, near);
+                            // Phân loại các Dagger xung quanh: chưa có buff và đã có buff
+                            if (sta.daggerProtect != null && !near.hasEffect(sta.daggerProtect)) {
+                                unbuffedTargets.push(near);
+                            } else {
+                                buffedTargets.push(near);
                             }
                         }
                     }
                 }));
 
-                if (hasNearbyDagger) {
-                    // Tăng 10% tốc độ trong 1 giây
-                    if (sta.daggerSpeed != null) {
-                        u.apply(sta.daggerSpeed, 60);
+                // Ưu tiên chọn Dagger chưa có buff, nếu không có mới dùng danh sách đã buff
+                let target = unbuffedTargets.length > 0 ? unbuffedTargets[0] : (buffedTargets.length > 0 ? buffedTargets[0] : null);
+
+                if (target != null) {
+                    // Tạo hiệu ứng tia chớp nối với mục tiêu được chọn
+                    if (u.id < target.id) {
+                        linkPulseFx.at(u.x, u.y, 0, target);
                     }
 
-                    // Áp dụng trạng thái bảo vệ (Giảm 99% sát thương) trong 10 giây
-                    if (sta.daggerProtect != null) {
+                    // Nếu bản thân Dagger hiện tại chưa có buff thì tự áp dụng cho chính nó
+                    if (sta.daggerProtect != null && !u.hasEffect(sta.daggerProtect)) {
                         u.apply(sta.daggerProtect, 600);
+                    }
+
+                    // Nếu mục tiêu được chọn chưa có buff thì áp dụng luôn buff cho mục tiêu đó
+                    if (sta.daggerProtect != null && !target.hasEffect(sta.daggerProtect)) {
+                        target.apply(sta.daggerProtect, 600);
                     }
                 }
             }

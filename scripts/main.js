@@ -139,7 +139,8 @@ require("flasallow-factory");
 require("dagger-aura");
 require("crawler-dash");
 require("vela");
-
+require("flare");
+require("nova");
 
 
 

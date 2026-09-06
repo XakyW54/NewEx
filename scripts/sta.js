@@ -7,7 +7,76 @@ global.ceiTimers = {};
 
 let isDoteiDamageActive = false;
 
-const daggerAuraFx = new Effect(20, cons(e => {
+// Effect hình tứ giác méo biến dạng theo hướng va chạm khi Bất Tử
+const atraxShieldHitFx = new Effect(15, cons(e => {
+    Draw.z(Layer.effect + 0.2);
+    Draw.color(Color.valueOf("ff3333"), Color.white, e.fout());
+    
+    let hitAngle = (e.data != null) ? e.data : 0;
+    let size = 16 + e.fout() * 6;
+    let offset = 12;
+
+    let cx = e.x + Angles.trnsx(hitAngle, offset);
+    let cy = e.y + Angles.trnsy(hitAngle, offset);
+
+    Fill.quad(
+        cx + Angles.trnsx(hitAngle + 90, size * 0.6), cy + Angles.trnsy(hitAngle + 90, size * 0.6),
+        cx + Angles.trnsx(hitAngle, size * 1.4),       cy + Angles.trnsy(hitAngle, size * 1.4),
+        cx + Angles.trnsx(hitAngle - 90, size * 0.6), cy + Angles.trnsy(hitAngle - 90, size * 0.6),
+        cx + Angles.trnsx(hitAngle + 180, size * 0.3), cy + Angles.trnsy(hitAngle + 180, size * 0.3)
+    );
+
+    Draw.reset();
+}));
+
+const atraxSoloAuraFx = new Effect(20, cons(e => {
+    Draw.z(Layer.effect - 0.01);
+    Draw.color(Color.valueOf("e56f48"));
+    Lines.stroke(1.5 * e.fout());
+    Lines.circle(e.x, e.y, 6 + e.fin() * 10);
+    Draw.reset();
+}));
+
+// STATUS EFFECT ATRAX KHI DI CHUYỂN (+150% HP, +100% Giáp, +200% Tốc bắn, +20% Dmg, +50% Speed)
+var atraxSoloBuff = extend(StatusEffect, "atraxSoloBuff", {
+    healthMultiplier: 2.5,       // +150% Max HP
+    armorMultiplier: 2.0,        // +100% Giáp
+    reloadMultiplier: 3.0,       // +200% Tốc độ bắn
+    damageMultiplier: 1.2,       // +20% Sát thương
+    speedMultiplier: 1.5,        // +50% Tốc độ di chuyển
+    color: Color.valueOf("e56f48"),
+    show: true,
+    effect: atraxSoloAuraFx,
+    effectChance: 0.08,
+
+    draw(unit) {
+        this.super$draw(unit);
+        Draw.z(Layer.effect);
+        Draw.color(Color.valueOf("e56f48"));
+        Lines.stroke(1.2);
+        Lines.circle(unit.x, unit.y, unit.hitSize + 3 + Math.sin(Time.time * 0.15) * 2);
+        Draw.reset();
+    }
+});
+atraxSoloBuff.init();
+
+// STATUS EFFECT BẤT TỬ KHI DƯỚI 15% MÁU
+var atraxInvulnerableBuff = extend(StatusEffect, "atraxInvulnerableBuff", {
+    color: Color.valueOf("ff3333"),
+    show: true,
+
+    draw(unit) {
+        this.super$draw(unit);
+        Draw.z(Layer.effect + 0.1);
+        Draw.color(Color.valueOf("ff3333"));
+        Lines.stroke(1.8);
+        Lines.circle(unit.x, unit.y, unit.hitSize + 4 + Math.sin(Time.time * 0.3) * 2);
+        Draw.reset();
+    }
+});
+atraxInvulnerableBuff.init();
+
+var daggerAuraFx = new Effect(20, cons(e => {
     Draw.z(Layer.effect - 0.01);
     Draw.color(Color.valueOf("84f491"));
     Lines.stroke(1.2 * e.fout());
@@ -16,22 +85,13 @@ const daggerAuraFx = new Effect(20, cons(e => {
 }));
 
 var daggerSpeed = extend(StatusEffect, "daggerSpeed", {
-    init() {
-        this.super$init();
-        this.uiIcon = StatusEffects.overdrive.uiIcon;
-        this.fullIcon = StatusEffects.overdrive.fullIcon;
-    },
     speedMultiplier: 1.10, 
     color: Color.valueOf("84f491"),
     show: false
 });
+daggerSpeed.init();
 
 var daggerProtect = extend(StatusEffect, "daggerProtect", {
-    init() {
-        this.super$init();
-        this.uiIcon = StatusEffects.shielded.uiIcon;
-        this.fullIcon = StatusEffects.shielded.fullIcon;
-    },
     healthMultiplier: 100.0, 
     color: Color.valueOf("84f491"),
     show: true,
@@ -47,6 +107,7 @@ var daggerProtect = extend(StatusEffect, "daggerProtect", {
         Draw.reset();
     }
 });
+daggerProtect.init();
 
 const ceiSmokeIngatherFx = new Effect(30, cons(e => {
     Draw.z(Layer.effect + 0.1);
@@ -181,11 +242,6 @@ Events.run(Trigger.update, () => {
 });
 
 var cei = extend(StatusEffect, "cei", {
-    init() {
-        this.super$init();
-        this.uiIcon = StatusEffects.freezing.uiIcon;
-        this.fullIcon = StatusEffects.freezing.fullIcon;
-    },
     color: Color.valueOf("90e0ef"),
     update(unit, time) {
         this.super$update(unit, time);
@@ -243,13 +299,9 @@ var cei = extend(StatusEffect, "cei", {
         if (global.ceiLastAppliedTurret) delete global.ceiLastAppliedTurret[unit.id];
     }
 });
+cei.init();
 
 var dotei = extend(StatusEffect, "dotei", {
-    init() { 
-        this.super$init(); 
-        this.uiIcon = StatusEffects.corroded.uiIcon; 
-        this.fullIcon = StatusEffects.corroded.fullIcon; 
-    },
     color: Color.valueOf("a15bf7"),
     damage: 0, 
     update(unit, time) {
@@ -263,13 +315,9 @@ var dotei = extend(StatusEffect, "dotei", {
     },
     onRemoved(unit) { delete global.doteiStacks[unit.id]; }
 });
+dotei.init();
 
 var deot = extend(StatusEffect, "deot", {
-    init() { 
-        this.super$init(); 
-        this.uiIcon = StatusEffects.shielded.uiIcon; 
-        this.fullIcon = StatusEffects.shielded.fullIcon; 
-    },
     color: Color.valueOf("4be391"),
     update(unit, time) { 
         this.super$update(unit, time); 
@@ -281,6 +329,7 @@ var deot = extend(StatusEffect, "deot", {
         delete global.deotDamagedTime[unit.id]; 
     }
 });
+deot.init();
 
 const bemodLoopFx = new Effect(35, cons(e => {
     Draw.z(Layer.effect + 0.05);
@@ -295,11 +344,6 @@ const bemodLoopFx = new Effect(35, cons(e => {
 }));
 
 var bemod = extend(StatusEffect, "bemod", {
-    init() { 
-        this.super$init(); 
-        this.uiIcon = StatusEffects.blasted.uiIcon; 
-        this.fullIcon = StatusEffects.blasted.fullIcon; 
-    },
     color: Color.valueOf("ff4500"),
     update(unit, time) {
         this.super$update(unit, time);
@@ -315,6 +359,7 @@ var bemod = extend(StatusEffect, "bemod", {
     },
     onRemoved(unit) { delete global.bemodStacks[unit.id]; }
 });
+bemod.init();
 
 function packRun(func) { return new java.lang.Runnable({ run: func }); }
 
@@ -338,14 +383,9 @@ var atkspeed = extend(StatusEffect, "atkspeed", {
     effectChance: 0.18, 
     color: Color.sky 
 });
+atkspeed.init();
 
-// STATUS EFFECT KHIÊN LỤC GIÁC TẠI CHỖ
 var velaSiege = extend(StatusEffect, "velaSiege", {
-    init() {
-        this.super$init();
-        this.uiIcon = StatusEffects.shielded.uiIcon;
-        this.fullIcon = StatusEffects.shielded.fullIcon;
-    },
     speedMultiplier: 1.0,  
     color: Color.valueOf("ffaa59"),
     show: true,
@@ -357,12 +397,10 @@ var velaSiege = extend(StatusEffect, "velaSiege", {
         let radius = unit.hitSize + 6;
         let rot = Time.time * 1.2;
 
-        // Vòng lục giác ngoài
         Draw.color(Color.valueOf("ffaa59"));
         Lines.stroke(1.8);
         Lines.poly(unit.x, unit.y, 6, radius + Math.sin(Time.time * 0.1) * 1.5, rot);
 
-        // Vòng lục giác trong mờ
         Draw.color(Color.valueOf("ff8833"));
         Draw.alpha(0.4 + Math.sin(Time.time * 0.2) * 0.2);
         Lines.stroke(1.2);
@@ -371,17 +409,14 @@ var velaSiege = extend(StatusEffect, "velaSiege", {
         Draw.reset();
     }
 });
+velaSiege.init();
 
 var velaHealBuff = extend(StatusEffect, "velaHealBuff", {
-    init() {
-        this.super$init();
-        this.uiIcon = StatusEffects.overclock.uiIcon;
-        this.fullIcon = StatusEffects.overclock.fullIcon;
-    },
     damageMultiplier: 1.20,
     color: Color.valueOf("84f491"),
     show: true
 });
+velaHealBuff.init();
 
 Events.on(UnitDestroyEvent, cons(e => {
     let id = e.unit.id;
@@ -407,6 +442,10 @@ Events.on(ClientLoadEvent, () => {
     velaSiege.description = "Dừng di chuyển hoàn toàn, nhận lớp khiên lục giác miễn nhiễm sát thương.";
     velaHealBuff.localizedName = "Vela Aura Boost";
     velaHealBuff.description = "Tăng 20% sát thương gây ra khi được Vela khôi phục máu.";
+    atraxSoloBuff.localizedName = "Atrax Cơ Động";
+    atraxSoloBuff.description = "Tăng mạnh chỉ số, giảm 70% sát thương nhận vào và hồi máu liên tục khi di chuyển.";
+    atraxInvulnerableBuff.localizedName = "Atrax Bất Tử";
+    atraxInvulnerableBuff.description = "Không nhận bất kỳ sát thương nào trong 10 giây khi máu dưới 15%.";
 });
 
 module.exports = { 
@@ -418,5 +457,8 @@ module.exports = {
     daggerProtect: daggerProtect,
     daggerSpeed: daggerSpeed,
     velaSiege: velaSiege,
-    velaHealBuff: velaHealBuff
+    velaHealBuff: velaHealBuff,
+    atraxSoloBuff: atraxSoloBuff,
+    atraxInvulnerableBuff: atraxInvulnerableBuff,
+    atraxShieldHitFx: atraxShieldHitFx
 };

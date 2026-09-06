@@ -1,5 +1,3 @@
- 
-
 function getSuv27UpgradeRequirements(currentLevel) {
     return {
         leadNeeded: 340 + (currentLevel * 100),
@@ -24,36 +22,88 @@ let healEffect = null;
 let moveX = 0;
 let moveY = 0;
 
+// Bảng lưu trữ trạng thái Custom JS cho từng Unit ID
+const unitDataMap = {};
+
+function getUnitData(unit) {
+    if (!unit || unit.id === undefined) return null;
+    let id = unit.id;
+    if (!unitDataMap[id]) {
+        unitDataMap[id] = {
+            level: 0,
+            maxLevel: 10,
+            leadAbsorbed: 0,
+            siliconAbsorbed: 0,
+            transformTimer: 0,
+            transformCooldown: 0,
+            coneShotCooldown: 0,
+            hybridSkillCooldown: 0,
+            doubleTapCooldown: 0,
+            firingDuration: 0,
+            overdriveTimer: 0,
+            autoPulseTimer: 0,
+            flightAccelTimer: 0,
+            wasMoving: false,
+            gunMode: 0,
+            lastTapTimeInternal: 0
+        };
+    }
+    return unitDataMap[id];
+}
+
+function sendSkillCommand(action) {
+    if (Vars.net.client()) {
+        Call.sendChatMessage("/suv_action " + action);
+    } else if (Vars.player != null && Vars.player.unit() != null) {
+        executeUnitAction(Vars.player.unit(), action);
+    }
+}
+
 function transformToUnit(oldUnit, targetUnitName, remainingCooldown) {
-    let targetType = Vars.content.getByName(ContentType.unit, "newex-" + targetUnitName);
-    if (targetType == null) targetType = Vars.content.getByName(ContentType.unit, targetUnitName);
+    if (Vars.net.client() || !oldUnit || !oldUnit.isValid()) return;
 
-    if (targetType == null || !oldUnit.isValid()) return;
+    let targetType = Vars.content.getByName(ContentType.unit, "newex-" + targetUnitName)
+                  || Vars.content.getByName(ContentType.unit, targetUnitName);
 
-    let savedLevel = (oldUnit.level !== undefined && oldUnit.level !== null) ? oldUnit.level : 0;
-    let savedLead = (oldUnit.leadAbsorbed !== undefined && oldUnit.leadAbsorbed !== null) ? oldUnit.leadAbsorbed : 0;
-    let savedSilicon = (oldUnit.siliconAbsorbed !== undefined && oldUnit.siliconAbsorbed !== null) ? oldUnit.siliconAbsorbed : 0;
+    if (targetType == null) return;
+
+    let oldData = getUnitData(oldUnit);
+    let savedLevel = oldData ? oldData.level : 0;
+    let savedLead = oldData ? oldData.leadAbsorbed : 0;
+    let savedSilicon = oldData ? oldData.siliconAbsorbed : 0;
 
     let controllingPlayer = Groups.player.find(p => p.unit() == oldUnit);
 
-    let newUnit = targetType.create(oldUnit.team);
-    newUnit.set(oldUnit.x, oldUnit.y);
-    newUnit.rotation = oldUnit.rotation;
+    let oldX = oldUnit.x;
+    let oldY = oldUnit.y;
+    let oldRot = oldUnit.rotation;
+    let oldTeam = oldUnit.team;
+    let healthPercent = oldUnit.maxHealth > 0 ? (oldUnit.health / oldUnit.maxHealth) : 1.0;
 
-    let maxH = oldUnit.maxHealth;
-    let healthPercent = maxH > 0 ? (oldUnit.health / maxH) : 1.0;
+    // 1. Khởi tạo Unit mới tại vị trí cũ
+    let newUnit = targetType.create(oldTeam);
+    newUnit.set(oldX, oldY);
+    newUnit.rotation = oldRot;
     newUnit.health = newUnit.maxHealth * healthPercent;
-
     newUnit.add();
 
-    if (newUnit.initUnitData) {
-        newUnit.initUnitData(savedLevel, savedLead, savedSilicon, remainingCooldown);
-    }
-
-    oldUnit.remove();
-
+    // 2. Chuyển quyền điều khiển của Player sang Unit mới
     if (controllingPlayer != null) {
         controllingPlayer.unit(newUnit);
+    }
+
+    // 3. Gọi lệnh hủy Unit cũ đồng bộ qua mạng gửi tới tất cả Client
+    delete unitDataMap[oldUnit.id];
+    Call.unitDestroy(oldUnit.id);
+    if (oldUnit.added) oldUnit.remove();
+
+    // 4. Gán dữ liệu Custom JS cho Unit mới
+    let newData = getUnitData(newUnit);
+    if (newData) {
+        newData.level = savedLevel;
+        newData.leadAbsorbed = savedLead;
+        newData.siliconAbsorbed = savedSilicon;
+        newData.transformCooldown = remainingCooldown;
     }
 }
 
@@ -63,174 +113,123 @@ function fireSUVShotgun(unit) {
     let bulletCount = Mathf.random(12, 16); 
     for (let i = 0; i < bulletCount; i++) {
         let spreadAngle = unit.rotation + Mathf.range(10);
-        let customLifetime = Mathf.random(24, 60);
+        Call.createBullet(suvShotgunBulletType, unit.team, unit.x, unit.y, spreadAngle, suvShotgunBulletType.damage, 1, 1);
+    }
+}
 
-        let b = suvShotgunBulletType.create(unit, unit.team, unit.x, unit.y, spreadAngle);
-        if (b != null) {
-            b.lifetime = customLifetime;
+function executeUnitAction(unit, action) {
+    if (unit == null) return;
+    let data = getUnitData(unit);
+    if (!data) return;
+
+    let isSUV = unit.type && unit.type.name && unit.type.name.includes("suv-27") && !unit.type.name.includes("vus-27");
+
+    if (action === "transform") {
+        if (data.transformCooldown <= 0 && data.transformTimer <= 0) {
+            if (isSUV && data.flightAccelTimer > 30) {
+                fireSUVShotgun(unit);
+            }
+            data.transformTimer = TRANSFORM_DELAY;
+            data.transformCooldown = TRANSFORM_COOLDOWN;
+        }
+    } else if (action === "pulse_cone") {
+        if (data.coneShotCooldown <= 0) {
+            data.coneShotCooldown = CONE_SHOT_COOLDOWN;
+            if (pulseBurstEffect != null) Call.effect(pulseBurstEffect, unit.x, unit.y, 0, Color.white);
+
+            if (pulseBulletType != null) {
+                let bulletCount = 20;
+                let spread = 12.0; 
+                let baseAngle = unit.rotation;
+                for (let i = 0; i < bulletCount; i++) {
+                    let fireAngle = baseAngle + Mathf.range(spread / 2.0);
+                    Call.createBullet(pulseBulletType, unit.team, unit.x, unit.y, fireAngle, pulseBulletType.damage, 1, 1);
+                }
+            }
+        }
+    } else if (action === "hybrid_skill") {
+        if (data.hybridSkillCooldown <= 0) {
+            if (isSUV) {
+                data.gunMode = data.gunMode === 0 ? 1 : 0;
+                data.hybridSkillCooldown = HYBRID_SKILL_COOLDOWN;
+            } else {
+                data.hybridSkillCooldown = HYBRID_SKILL_COOLDOWN;
+                let healAmount = unit.maxHealth * 0.01;
+                unit.health = Math.min(unit.maxHealth, unit.health + healAmount);
+                if (healEffect != null) Call.effect(healEffect, unit.x, unit.y, 0, Color.white);
+            }
+        }
+    } else if (action === "double_tap") {
+        if (data.doubleTapCooldown <= 0) {
+            data.doubleTapCooldown = DOUBLE_TAP_COOLDOWN;
+            if (isSUV) {
+                let rocketType = Vars.content.getByName(ContentType.unit, "newex-vus-27-rocket") || Vars.content.getByName(ContentType.unit, "vus-27-rocket");
+                if (rocketType != null) {
+                    try {
+                        let sideOffset = 12;
+                        let rx1 = unit.x + Angles.trnsx(unit.rotation + 90, sideOffset);
+                        let ry1 = unit.y + Angles.trnsy(unit.rotation + 90, sideOffset);
+                        let r1 = rocketType.create(unit.team);
+                        r1.set(rx1, ry1);
+                        r1.rotation = unit.rotation;
+                        r1.add();
+
+                        let rx2 = unit.x + Angles.trnsx(unit.rotation - 90, sideOffset);
+                        let ry2 = unit.y + Angles.trnsy(unit.rotation - 90, sideOffset);
+                        let r2 = rocketType.create(unit.team);
+                        r2.set(rx2, ry2);
+                        r2.rotation = unit.rotation;
+                        r2.add();
+                    } catch(e) {}
+                }
+                Call.effect(Fx.shootBig, unit.x, unit.y, unit.rotation, Color.white);
+            } else {
+                unit.vel.add(Angles.trnsx(unit.rotation, 8), Angles.trnsy(unit.rotation, 8));
+                let healAmount = unit.maxHealth * 0.01;
+                unit.health = Math.min(unit.maxHealth, unit.health + healAmount);
+                Call.effect(Fx.sparkExplosion, unit.x, unit.y, unit.rotation, Color.white);
+                if (healEffect != null) Call.effect(healEffect, unit.x, unit.y, 0, Color.white);
+            }
         }
     }
 }
 
 function applyTransformLogic(unitEntity, uType, targetUnitName, isSUV) {
     return {
-        isGalileoJS: true,     
-        level: 0,              
-        maxLevel: 10,          
-        leadAbsorbed: 0,       
-        siliconAbsorbed: 0,    
-        
-        transformTimer: 0,     
-        transformCooldown: 0,  
-        coneShotCooldown: 0, 
-        hybridSkillCooldown: 0, 
-        doubleTapCooldown: 0,
-
-        firingDuration: 0,     
-        overdriveTimer: 0,    
-        autoPulseTimer: 0, 
-
-        flightAccelTimer: 0,
-        wasMoving: false,
-        gunMode: 0, 
-
-        lastTapTimeInternal: 0,
-
-        initUnitData(lvl, lead, silicon, cd) {
-            this.level = lvl;
-            this.leadAbsorbed = lead;
-            this.siliconAbsorbed = silicon;
-            this.transformCooldown = cd;
-        },
-
-        triggerDoubleTap() {
-            if (this.doubleTapCooldown > 0) return;
-            this.doubleTapCooldown = DOUBLE_TAP_COOLDOWN;
-
-            if (isSUV) {
-                let rocketType = Vars.content.getByName(ContentType.unit, "newex-vus-27-rocket");
-                if (rocketType == null) rocketType = Vars.content.getByName(ContentType.unit, "vus-27-rocket");
-
-                if (rocketType != null) {
-                    try {
-                        let sideOffset = 12;
-                        let rx1 = this.x + Angles.trnsx(this.rotation + 90, sideOffset);
-                        let ry1 = this.y + Angles.trnsy(this.rotation + 90, sideOffset);
-                        let r1 = rocketType.create(this.team);
-                        r1.set(rx1, ry1);
-                        r1.rotation = this.rotation;
-                        r1.add();
-
-                        let rx2 = this.x + Angles.trnsx(this.rotation - 90, sideOffset);
-                        let ry2 = this.y + Angles.trnsy(this.rotation - 90, sideOffset);
-                        let r2 = rocketType.create(this.team);
-                        r2.set(rx2, ry2);
-                        r2.rotation = this.rotation;
-                        r2.add();
-                    } catch(e) {
-                        Log.err("Lỗi tạo rocket: " + e);
-                    }
-                }
-                Call.effect(Fx.shootBig, this.x, this.y, this.rotation, Color.white);
-            } else {
-                this.vel.add(Angles.trnsx(this.rotation, 8), Angles.trnsy(this.rotation, 8));
-
-                let healAmount = this.maxHealth * 0.01;
-                this.health = Math.min(this.maxHealth, this.health + healAmount);
-
-                Call.effect(Fx.sparkExplosion, this.x, this.y, this.rotation, Color.white);
-                if (healEffect != null) {
-                    Call.effect(healEffect, this.x, this.y, 0, Color.white);
-                }
-            }
-        },
-
-        triggerTransform() {
-            if (this.transformCooldown <= 0 && this.transformTimer <= 0) {
-                if (isSUV && this.flightAccelTimer > 30) {
-                    fireSUVShotgun(this);
-                }
-                this.transformTimer = TRANSFORM_DELAY;
-                this.transformCooldown = TRANSFORM_COOLDOWN;
-            }
-        },
-
-        triggerPulseCone() {
-            if (this.coneShotCooldown <= 0) {
-                this.coneShotCooldown = CONE_SHOT_COOLDOWN;
-
-                if (pulseBurstEffect != null) {
-                    Call.effect(pulseBurstEffect, this.x, this.y, 0, Color.white);
-                }
-
-                if (pulseBulletType != null) {
-                    let bulletCount = 20;
-                    let spread = 12.0; 
-                    let baseAngle = this.rotation;
-
-                    for (let i = 0; i < bulletCount; i++) {
-                        let fireAngle = baseAngle + Mathf.range(spread / 2.0);
-                        pulseBulletType.create(this, this.team, this.x, this.y, fireAngle);
-                    }
-                }
-            }
-        },
-
-        triggerHybridSkill() {
-            if (this.hybridSkillCooldown <= 0) {
-                if (isSUV) {
-                    this.gunMode = this.gunMode === 0 ? 1 : 0;
-                    this.hybridSkillCooldown = HYBRID_SKILL_COOLDOWN;
-                } else {
-                    this.hybridSkillCooldown = HYBRID_SKILL_COOLDOWN;
-                    let healAmount = this.maxHealth * 0.01;
-                    this.health = Math.min(this.maxHealth, this.health + healAmount);
-
-                    if (healEffect != null) {
-                        Call.effect(healEffect, this.x, this.y, 0, Color.white);
-                    }
-                }
-            }
-        },
-
-        setCooldown(cd) {
-            this.transformCooldown = cd;
-        },
-
-        getCooldown() {
-            return this.transformCooldown;
-        },
-
         update() {
             this.super$update();
+            let data = getUnitData(this);
+            if (!data) return;
 
-            if (this.transformCooldown > 0) this.transformCooldown -= Time.delta;
-            if (this.coneShotCooldown > 0) this.coneShotCooldown -= Time.delta;
-            if (this.hybridSkillCooldown > 0) this.hybridSkillCooldown -= Time.delta;
-            if (this.doubleTapCooldown > 0) this.doubleTapCooldown -= Time.delta;
+            if (data.transformCooldown > 0) data.transformCooldown -= Time.delta;
+            if (data.coneShotCooldown > 0) data.coneShotCooldown -= Time.delta;
+            if (data.hybridSkillCooldown > 0) data.hybridSkillCooldown -= Time.delta;
+            if (data.doubleTapCooldown > 0) data.doubleTapCooldown -= Time.delta;
 
-            if (this.transformTimer > 0) {
-                this.transformTimer -= Time.delta;
+            if (data.transformTimer > 0) {
+                data.transformTimer -= Time.delta;
                 this.vel.set(0, 0);
 
-                if (this.transformTimer <= 0) {
-                    this.transformTimer = 0;
-                    transformToUnit(this, targetUnitName, this.transformCooldown);
+                if (data.transformTimer <= 0) {
+                    data.transformTimer = 0;
+                    if (!Vars.net.client()) {
+                        transformToUnit(this, targetUnitName, data.transformCooldown);
+                    }
                     return;
                 }
             }
 
             if (Vars.player != null && Vars.player.unit() == this) {
-                if (Core.input.keyTap(KeyCode.num1)) this.triggerTransform();
-                if (Core.input.keyTap(KeyCode.num2)) this.triggerPulseCone();
-                if (Core.input.keyTap(KeyCode.num3)) this.triggerHybridSkill();
+                if (Core.input.keyTap(KeyCode.num1)) sendSkillCommand("transform");
+                if (Core.input.keyTap(KeyCode.num2)) sendSkillCommand("pulse_cone");
+                if (Core.input.keyTap(KeyCode.num3)) sendSkillCommand("hybrid_skill");
 
                 if (Core.input.justTouched()) {
                     let now = Time.millis();
-                    if (now - this.lastTapTimeInternal < 300) {
-                        this.triggerDoubleTap();
+                    if (now - data.lastTapTimeInternal < 300) {
+                        sendSkillCommand("double_tap");
                     }
-                    this.lastTapTimeInternal = now;
+                    data.lastTapTimeInternal = now;
                 }
 
                 if (Vars.mobile) {
@@ -242,133 +241,137 @@ function applyTransformLogic(unitEntity, uType, targetUnitName, isSUV) {
                 }
             }
 
-            let currentRange = isSUV ? (this.gunMode === 1 ? 600 : 400) : 200;
-            let target = Units.closestTarget(this.team, this.x, this.y, currentRange, u => u.checkTarget(this.type.targetAir, this.type.targetGround));
+            if (!Vars.net.client()) {
+                let currentRange = isSUV ? (data.gunMode === 1 ? 600 : 400) : 200;
+                let target = Units.closestTarget(this.team, this.x, this.y, currentRange, u => u.checkTarget(this.type.targetAir, this.type.targetGround));
 
-            if (target != null) {
-                let targetAngle = Angles.angle(this.x, this.y, target.x, target.y);
-                this.rotation = Angles.moveToward(this.rotation, targetAngle, this.type.rotateSpeed * Time.delta);
+                if (target != null) {
+                    let targetAngle = Angles.angle(this.x, this.y, target.x, target.y);
+                    this.rotation = Angles.moveToward(this.rotation, targetAngle, this.type.rotateSpeed * Time.delta);
 
-                this.aim(target.x, target.y);
-                this.isShooting = true;
+                    this.aim(target.x, target.y);
+                    this.isShooting = true;
 
-                if (isSUV) {
-                    this.autoPulseTimer += Time.delta;
-                    if (this.gunMode === 0) {
-                        if (this.autoPulseTimer >= 30) { 
-                            this.autoPulseTimer = 0;
-                            if (pulseBulletType != null) {
-                                pulseBulletType.create(this, this.team, this.x, this.y, targetAngle);
+                    if (isSUV) {
+                        data.autoPulseTimer += Time.delta;
+                        if (data.gunMode === 0) {
+                            if (data.autoPulseTimer >= 30) { 
+                                data.autoPulseTimer = 0;
+                                if (pulseBulletType != null) {
+                                    Call.createBullet(pulseBulletType, this.team, this.x, this.y, targetAngle, pulseBulletType.damage, 1, 1);
+                                }
+                            }
+                        } else {
+                            if (data.autoPulseTimer >= 5) {
+                                data.autoPulseTimer = 0;
+                                if (rapid8mmBulletType != null) {
+                                    let spreadAngle = targetAngle + Mathf.range(3.5);
+                                    Call.createBullet(rapid8mmBulletType, this.team, this.x, this.y, spreadAngle, rapid8mmBulletType.damage, 1, 1);
+                                }
+                            }
+                        }
+                    }
+
+                    if (!isSUV && this.mounts != null && this.mounts.length > 0) {
+                        for (let i = 0; i < this.mounts.length; i++) {
+                            let mount = this.mounts[i];
+                            mount.shoot = true;
+                            mount.rotate = true;
+                            mount.aimX = target.x;
+                            mount.aimY = target.y;
+                        }
+                    }
+                } else {
+                    if (Vars.mobile && (moveX !== 0 || moveY !== 0)) {
+                        let moveAngle = Tmp.v1.set(moveX, moveY).angle();
+                        this.rotation = Angles.moveToward(this.rotation, moveAngle, this.type.rotateSpeed * Time.delta);
+                    }
+                    this.isShooting = false;
+                    data.autoPulseTimer = 0;
+                    if (this.mounts != null && this.mounts.length > 0) {
+                        for (let i = 0; i < this.mounts.length; i++) {
+                            this.mounts[i].shoot = false;
+                        }
+                    }
+                }
+
+                if (!isSUV) {
+                    if (this.isShooting) {
+                        if (data.overdriveTimer <= 0) {
+                            data.firingDuration += Time.delta;
+                            if (data.firingDuration >= 120) { 
+                                data.overdriveTimer = 60;    
+                                data.firingDuration = 0;
                             }
                         }
                     } else {
-                        if (this.autoPulseTimer >= 5) {
-                            this.autoPulseTimer = 0;
-                            if (rapid8mmBulletType != null) {
-                                let spreadAngle = targetAngle + Mathf.range(3.5);
-                                rapid8mmBulletType.create(this, this.team, this.x, this.y, spreadAngle);
+                        data.firingDuration = Math.max(0, data.firingDuration - Time.delta * 2);
+                    }
+
+                    if (data.overdriveTimer > 0) {
+                        data.overdriveTimer -= Time.delta;
+                        if (this.mounts != null && this.mounts.length > 0) {
+                            for (let i = 0; i < this.mounts.length; i++) {
+                                let mount = this.mounts[i];
+                                if (mount.reload > 0) {
+                                    mount.reload = Math.max(0, mount.reload - (Time.delta * 4.0));
+                                }
                             }
                         }
                     }
                 }
 
-                if (!isSUV && this.mounts != null && this.mounts.length > 0) {
-                    for (let i = 0; i < this.mounts.length; i++) {
-                        let mount = this.mounts[i];
-                        mount.shoot = true;
-                        mount.rotate = true;
-                        mount.aimX = target.x;
-                        mount.aimY = target.y;
-                    }
-                }
-            } else {
-                if (Vars.mobile && (moveX !== 0 || moveY !== 0)) {
-                    let moveAngle = Tmp.v1.set(moveX, moveY).angle();
-                    this.rotation = Angles.moveToward(this.rotation, moveAngle, this.type.rotateSpeed * Time.delta);
-                }
-                this.isShooting = false;
-                this.autoPulseTimer = 0;
-                if (this.mounts != null && this.mounts.length > 0) {
-                    for (let i = 0; i < this.mounts.length; i++) {
-                        this.mounts[i].shoot = false;
-                    }
-                }
-            }
-
-            if (!isSUV) {
-                if (this.isShooting) {
-                    if (this.overdriveTimer <= 0) {
-                        this.firingDuration += Time.delta;
-                        if (this.firingDuration >= 120) { 
-                            this.overdriveTimer = 60;    
-                            this.firingDuration = 0;
+                if (isSUV) {
+                    let isCurrentlyMoving = this.moving() || (this.vel != null && this.vel.len() > 0.2);
+                    if (isCurrentlyMoving) {
+                        data.flightAccelTimer = Math.min(180, data.flightAccelTimer + Time.delta);
+                        data.wasMoving = true;
+                    } else {
+                        if (data.wasMoving && data.flightAccelTimer > 30) {
+                            fireSUVShotgun(this);
                         }
-                    }
-                } else {
-                    this.firingDuration = Math.max(0, this.firingDuration - Time.delta * 2);
-                }
-
-                if (this.overdriveTimer > 0) {
-                    this.overdriveTimer -= Time.delta;
-                    if (this.mounts != null && this.mounts.length > 0) {
-                        for (let i = 0; i < this.mounts.length; i++) {
-                            let mount = this.mounts[i];
-                            if (mount.reload > 0) {
-                                mount.reload = Math.max(0, mount.reload - (Time.delta * 4.0));
-                            }
-                        }
+                        data.flightAccelTimer = 0;
+                        data.wasMoving = false;
                     }
                 }
-            }
 
-            if (isSUV) {
-                let isCurrentlyMoving = this.moving() || (this.vel != null && this.vel.len() > 0.2);
-                if (isCurrentlyMoving) {
-                    this.flightAccelTimer = Math.min(180, this.flightAccelTimer + Time.delta);
-                    this.wasMoving = true;
-                } else {
-                    if (this.wasMoving && this.flightAccelTimer > 30) {
-                        fireSUVShotgun(this);
+                let req = getSuv27UpgradeRequirements(data.level);
+                if (data.level < data.maxLevel && this.stack != null) {
+                    if (data.leadAbsorbed < req.leadNeeded && this.stack.item == req.leadItem && this.stack.amount > 0) {
+                        let consumeAmt = Math.min(2, this.stack.amount);
+                        this.stack.amount -= consumeAmt;
+                        data.leadAbsorbed += consumeAmt;
+                    } else if (data.siliconAbsorbed < req.siliconNeeded && this.stack.item == req.siliconItem && this.stack.amount > 0) {
+                        let consumeAmt = Math.min(2, this.stack.amount);
+                        this.stack.amount -= consumeAmt;
+                        data.siliconAbsorbed += consumeAmt;
                     }
-                    this.flightAccelTimer = 0;
-                    this.wasMoving = false;
-                }
-            }
 
-            let req = getSuv27UpgradeRequirements(this.level);
-            if (this.level < this.maxLevel && this.stack != null) {
-                if (this.leadAbsorbed < req.leadNeeded && this.stack.item == req.leadItem && this.stack.amount > 0) {
-                    let consumeAmt = Math.min(2, this.stack.amount);
-                    this.stack.amount -= consumeAmt;
-                    this.leadAbsorbed += consumeAmt;
-                } else if (this.siliconAbsorbed < req.siliconNeeded && this.stack.item == req.siliconItem && this.stack.amount > 0) {
-                    let consumeAmt = Math.min(2, this.stack.amount);
-                    this.stack.amount -= consumeAmt;
-                    this.siliconAbsorbed += consumeAmt;
-                }
-
-                if (this.leadAbsorbed >= req.leadNeeded && this.siliconAbsorbed >= req.siliconNeeded) {
-                    this.leadAbsorbed = 0;
-                    this.siliconAbsorbed = 0;
-                    this.level++;
+                    if (data.leadAbsorbed >= req.leadNeeded && data.siliconAbsorbed >= req.siliconNeeded) {
+                        data.leadAbsorbed = 0;
+                        data.siliconAbsorbed = 0;
+                        data.level++;
+                    }
                 }
             }
         },
 
         draw() {
             this.super$draw();
+            let data = getUnitData(this);
+            if (!data) return;
 
             if (Vars.player != null && Vars.player.unit() == this) {
-                let currentRange = isSUV ? (this.gunMode === 1 ? 600 : 400) : 200;
+                let currentRange = isSUV ? (data.gunMode === 1 ? 600 : 400) : 200;
                 Draw.z(Layer.power + 10);
-                Draw.color(this.gunMode === 1 ? Color.valueOf("f59e0b") : Color.valueOf("c084fc"), 0.45);
+                Draw.color(data.gunMode === 1 ? Color.valueOf("f59e0b") : Color.valueOf("c084fc"), 0.45);
                 Lines.stroke(2.0);
                 Lines.dashCircle(this.x, this.y, currentRange);
                 Draw.reset();
             }
 
-            if (this.transformTimer > 0) {
-                let progress = 1.0 - (this.transformTimer / TRANSFORM_DELAY);
+            if (data.transformTimer > 0) {
+                let progress = 1.0 - (data.transformTimer / TRANSFORM_DELAY);
                 let scale = Math.sin(progress * Math.PI);
                 let maxRadius = 26 * scale;
 
@@ -387,35 +390,34 @@ function applyTransformLogic(unitEntity, uType, targetUnitName, isSUV) {
         },
 
         maxHealth() {
-            let currentLevel = (this.level !== undefined && this.level !== null) ? this.level : 0;
+            let data = getUnitData(this);
+            let currentLevel = data ? data.level : 0;
             return uType.health * (1.0 + (currentLevel * 0.20));
         },
 
         speed() {
-            let currentLevel = (this.level !== undefined && this.level !== null) ? this.level : 0;
+            let data = getUnitData(this);
+            let currentLevel = data ? data.level : 0;
             let baseSpeed = uType.speed * (1.0 + (currentLevel * 0.08));
-            if (isSUV) {
-                let accelBonus = (this.flightAccelTimer / 180.0) * 3.0;
+            if (isSUV && data) {
+                let accelBonus = (data.flightAccelTimer / 180.0) * 3.0;
                 return baseSpeed * (1.0 + accelBonus);
             }
             return baseSpeed;
-        },
-
-        write(write) {
-            this.super$write(write);
-            write.b((this.level !== undefined && this.level !== null) ? this.level : 0);
-            write.b((this.gunMode !== undefined && this.gunMode !== null) ? this.gunMode : 0);
-            write.f((this.transformCooldown !== undefined && this.transformCooldown !== null) ? this.transformCooldown : 0);
-        },
-
-        read(read, revision) {
-            this.super$read(read, revision);
-            this.level = read.b();
-            this.gunMode = read.b();
-            this.transformCooldown = read.f();
         }
     };
 }
+
+Events.on(PlayerChatEvent, event => {
+    if (event.message != null && event.message.startsWith("/suv_action ")) {
+        let action = event.message.replace("/suv_action ", "").trim();
+        let player = event.player;
+
+        if (player != null && player.unit() != null) {
+            executeUnitAction(player.unit(), action);
+        }
+    }
+});
 
 Events.on(ClientLoadEvent, function() {
     pulseBurstEffect = new Effect(30, cons(e => {
@@ -597,16 +599,16 @@ Events.on(ClientLoadEvent, function() {
     skillContainer.margin(0, 150, 15, 0); 
 
     var btn1 = skillContainer.button("[1] TRANSFORM", Icon.refresh, Styles.defaultt, run(function() {
-        if (Vars.player != null && Vars.player.unit() != null && Vars.player.unit().triggerTransform) {
-            Vars.player.unit().triggerTransform();
-        }
+        sendSkillCommand("transform");
     })).size(120, 42).pad(2).color(Color.valueOf("c084fc")).get();
 
     btn1.update(run(function() {
         if (Vars.player != null && Vars.player.unit() != null) {
             var unit = Vars.player.unit();
-            if (unit.transformCooldown > 0) {
-                btn1.setText("[1] (" + (unit.transformCooldown / 60.0).toFixed(1) + "s)");
+            var data = getUnitData(unit);
+            var cd = data ? data.transformCooldown : 0;
+            if (cd > 0) {
+                btn1.setText("[1] (" + (cd / 60.0).toFixed(1) + "s)");
                 btn1.setDisabled(true);
             } else {
                 btn1.setText("[1] TRANSFORM");
@@ -616,16 +618,16 @@ Events.on(ClientLoadEvent, function() {
     }));
 
     var btn2 = skillContainer.button("[2] PULSE CONE", Icon.commandRally, Styles.defaultt, run(function() {
-        if (Vars.player != null && Vars.player.unit() != null && Vars.player.unit().triggerPulseCone) {
-            Vars.player.unit().triggerPulseCone();
-        }
+        sendSkillCommand("pulse_cone");
     })).size(120, 42).pad(2).color(Color.valueOf("8aa3f4")).get();
 
     btn2.update(run(function() {
         if (Vars.player != null && Vars.player.unit() != null) {
             var unit = Vars.player.unit();
-            if (unit.coneShotCooldown > 0) {
-                btn2.setText("[2] (" + (unit.coneShotCooldown / 60.0).toFixed(1) + "s)");
+            var data = getUnitData(unit);
+            var cd = data ? data.coneShotCooldown : 0;
+            if (cd > 0) {
+                btn2.setText("[2] (" + (cd / 60.0).toFixed(1) + "s)");
                 btn2.setDisabled(true);
             } else {
                 btn2.setText("[2] PULSE CONE");
@@ -635,25 +637,26 @@ Events.on(ClientLoadEvent, function() {
     }));
 
     var btn3 = skillContainer.button("[3] SKILL 3", Icon.up, Styles.defaultt, run(function() {
-        if (Vars.player != null && Vars.player.unit() != null && Vars.player.unit().triggerHybridSkill) {
-            Vars.player.unit().triggerHybridSkill();
-        }
+        sendSkillCommand("hybrid_skill");
     })).size(125, 42).pad(2).color(Color.valueOf("f59e0b")).get();
 
     btn3.update(run(function() {
         if (Vars.player != null && Vars.player.unit() != null) {
             var unit = Vars.player.unit();
+            var data = getUnitData(unit);
             var unitName = unit.type ? unit.type.name : "";
             var isSUVUnit = unitName.includes("suv-27") && !unitName.includes("vus-27");
+            var cd = data ? data.hybridSkillCooldown : 0;
+            var mode = data ? data.gunMode : 0;
 
-            if (unit.hybridSkillCooldown > 0) {
-                var secondsLeft = (unit.hybridSkillCooldown / 60.0).toFixed(1);
-                var modeText = isSUVUnit ? (unit.gunMode === 1 ? "8MM" : "PULSE") : "REPAIR";
+            if (cd > 0) {
+                var secondsLeft = (cd / 60.0).toFixed(1);
+                var modeText = isSUVUnit ? (mode === 1 ? "8MM" : "PULSE") : "REPAIR";
                 btn3.setText("[3] " + modeText + " (" + secondsLeft + "s)");
                 btn3.setDisabled(true);
             } else {
                 if (isSUVUnit) {
-                    btn3.setText(unit.gunMode === 1 ? "[3] GUN: 8MM" : "[3] GUN: PULSE");
+                    btn3.setText(mode === 1 ? "[3] GUN: 8MM" : "[3] GUN: PULSE");
                 } else {
                     btn3.setText("[3] REPAIR 1%");
                 }

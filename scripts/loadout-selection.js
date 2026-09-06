@@ -1,5 +1,6 @@
 (function() {
     const CURRENT_MOD_NAME = "newex";
+    const TAG_KEY = "newex-selected-turrets";
     
     const fallbackTurrets = [
         "nucleytor", "emperfum", "galaxvorram", "bayrowfyr", "dor",
@@ -60,37 +61,19 @@
         });
     }
 
-    // Hàm băm chuỗi JS an toàn không lo crash hashCode
-    function getStringHash(str) {
-        let hash = 0;
-        let s = String(str);
-        for (let i = 0; i < s.length; i++) {
-            let char = s.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash |= 0;
+    function getSyncedTurretsFromWorld() {
+        if (Vars.state.rules != null && Vars.state.rules.tags != null) {
+            let savedString = Vars.state.rules.tags.get(TAG_KEY);
+            if (savedString != null && String(savedString) !== "") {
+                return String(savedString).split(",");
+            }
         }
-        return Math.abs(hash);
-    }
-
-    // Tạo key lưu trữ an toàn dựa theo Map/Sector hiện tại
-    function getWorldSaveKey() {
-        if (Vars.state.map != null) {
-            let mapName = String(Vars.state.map.name());
-            return "newex-saved-turrets-" + getStringHash(mapName);
-        }
-        return "newex-saved-turrets-default";
-    }
-
-    function getSavedTurretsForCurrentWorld() {
-        let key = getWorldSaveKey();
-        let savedString = Core.settings.getString(key, "");
-        if (!savedString || savedString === "") return null;
-        return savedString.split(",");
+        return null;
     }
 
     function applyTurretVisibility(allowedNamesSeq) {
         turretList.each(block => {
-            if (allowedNamesSeq.contains(block.name)) {
+            if (allowedNamesSeq != null && allowedNamesSeq.contains(block.name)) {
                 block.buildVisibility = BuildVisibility.shown;
             } else {
                 block.buildVisibility = BuildVisibility.hidden;
@@ -108,7 +91,7 @@
         const contentTable = dialog.cont;
         contentTable.clear();
 
-        let titleLabel = contentTable.add("Vui lòng chọn đúng " + maxCount + " tháp pháo (Lựa chọn sẽ bị khóa cố định cho map này):").pad(8).get();
+        let titleLabel = contentTable.add("Vui lòng chọn đúng " + maxCount + " tháp pháo cho trận đấu này (Người chơi khác kết nối vào sẽ dùng chung lựa chọn này):").pad(8).get();
         titleLabel.setWrap(true);
         titleLabel.setAlignment(Align.center);
         contentTable.row();
@@ -131,6 +114,7 @@
                         selectedTurrets.add(block);
                     } else {
                         btn.setChecked(false);
+                        Vars.ui.showInfo("Chỉ được chọn tối đa " + maxCount + " tháp pháo!");
                     }
                 } else {
                     selectedTurrets.remove(block);
@@ -147,7 +131,7 @@
         scrollPane.setFadeScrollBars(false);
         contentTable.add(scrollPane).grow().row();
 
-        contentTable.button("Xác nhận", () => {
+        contentTable.button("Xác nhận & Đồng bộ", () => {
             if (selectedTurrets.size !== maxCount) {
                 Vars.ui.showInfo("Bạn phải chọn đúng " + maxCount + " tháp pháo!");
                 return;
@@ -160,9 +144,11 @@
                 allowedNames.add(block.name);
             });
 
-            Core.settings.put(getWorldSaveKey(), savedArray.join(","));
-            applyTurretVisibility(allowedNames);
+            if (Vars.state.rules != null && Vars.state.rules.tags != null) {
+                Vars.state.rules.tags.put(TAG_KEY, savedArray.join(","));
+            }
 
+            applyTurretVisibility(allowedNames);
             dialog.hide();
         }).size(180, 50).pad(10);
 
@@ -197,7 +183,7 @@
             Core.settings.put("newex-max-turrets", java.lang.Integer(newValue));
             
             if (newValue >= turretList.size) {
-                Vars.ui.showInfo("Đã lưu: Mở toàn bộ tháp pháo (Bỏ qua bảng chọn).");
+                Vars.ui.showInfo("Đã lưu: Mở toàn bộ tháp pháo.");
             } else {
                 Vars.ui.showInfo("Đã lưu số lượng tháp pháo cần chọn là: " + newValue);
             }
@@ -217,17 +203,6 @@
                 showConfigDialog();
             });
         } catch(e) {}
-
-        Core.app.post(() => {
-            if (Vars.ui.menuGroup != null) {
-                let table = new Table();
-                table.top().left();
-                table.button("Cài đặt Newex", Icon.settings, () => {
-                    showConfigDialog();
-                }).size(150, 45).pad(10);
-                Vars.ui.menuGroup.addChild(table);
-            }
-        });
     });
 
     Events.on(WorldLoadEvent, event => {
@@ -238,13 +213,20 @@
             return;
         }
 
-        let savedNames = getSavedTurretsForCurrentWorld();
-        if (savedNames != null && savedNames.length > 0) {
+        let syncedNames = getSyncedTurretsFromWorld();
+        if (syncedNames != null && syncedNames.length > 0) {
             let allowedNames = new Seq();
-            for (let i = 0; i < savedNames.length; i++) {
-                allowedNames.add(savedNames[i]);
+            for (let i = 0; i < syncedNames.length; i++) {
+                allowedNames.add(syncedNames[i]);
             }
             applyTurretVisibility(allowedNames);
+            return;
+        }
+
+        if (Vars.net.client()) {
+            turretList.each(block => {
+                block.buildVisibility = BuildVisibility.hidden;
+            });
             return;
         }
 

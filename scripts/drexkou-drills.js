@@ -6,6 +6,12 @@ Events.on(ContentInitEvent, () => {
     if (drexkouDrill != null) {
         drexkouDrill.configurable = true;
 
+        // Cấu hình kho chứa Item & Chất lưu trực tiếp trên Block
+        drexkouDrill.hasItems = true;
+        drexkouDrill.itemCapacity = 30;
+        drexkouDrill.hasLiquids = true;
+        drexkouDrill.liquidCapacity = 30;
+
         drexkouDrill.buildType = () => extend(Building, {
             targetTile: null,
             selectedItem: null,
@@ -15,6 +21,7 @@ Events.on(ContentInitEvent, () => {
             mineSpeed: 40,
             range: 200,
             cachedTiles: [],  
+            sallowyrTimer: 0, // Bộ đếm thời gian hiệu ứng sallowyr (frames)
 
             getTileDrop(t) {
                 if (t == null) return null;
@@ -32,32 +39,57 @@ Events.on(ContentInitEvent, () => {
                 return null;
             },
 
-            // Khôi phục lựa chọn item dựa vào tọa độ ô sau khi đặt/tải map
-            loadSelectedItem() {
-                let key = "drexkou-item-" + this.tileX() + "-" + this.tileY();
-                let itemId = Core.settings.getInt(key, -1);
+            // --- ĐỒNG BỘ MẠNG (NETWORKING CONFIG) ---
+            config() {
+                return this.selectedItem;
+            },
+
+            write(write) {
+                this.super$write(write);
+                write.s(this.selectedItem != null ? this.selectedItem.id : -1);
+                write.f(this.sallowyrTimer);
+            },
+
+            read(read, revision) {
+                this.super$read(read, revision);
+                let itemId = read.s();
                 if (itemId !== -1) {
                     this.selectedItem = Vars.content.item(itemId);
                 } else {
                     this.selectedItem = null;
                 }
+                this.sallowyrTimer = read.f();
             },
 
-            // Lưu lựa chọn item với ép kiểu sang Java Integer ép buộc
-            saveSelectedItem(item) {
-                this.selectedItem = item;
-                let key = "drexkou-item-" + this.tileX() + "-" + this.tileY();
-                if (item != null) {
-                    Core.settings.put(key, java.lang.Integer(item.id));
+            configured(builder, value) {
+                this.super$configured(builder, value);
+                if (value instanceof Item) {
+                    this.selectedItem = value;
                 } else {
-                    Core.settings.remove(key);
+                    this.selectedItem = null;
                 }
+                
+                this.releaseTarget();
+                this.findTarget();
+            },
+            // ----------------------------------------
+
+            // Chấp nhận cấp nước/cryofluid và item sallowyr
+            acceptLiquid(source, liquid) {
+                return this.block.hasLiquids && (liquid === Liquids.water || liquid === Liquids.cryofluid);
+            },
+
+            acceptItem(source, item) {
+                let sallowyrItem = Vars.content.item("newex-sallowyr") || Vars.content.item("sallowyr");
+                if (item === sallowyrItem) {
+                    return this.sallowyrTimer <= 0; // Chỉ nhận khi hiệu ứng cũ đã hết
+                }
+                return false;
             },
 
             placed() {
                 this.super$placed();
                 this.scanAndCacheTiles();
-                this.loadSelectedItem();
                 this.findTarget();
             },
 
@@ -66,16 +98,14 @@ Events.on(ContentInitEvent, () => {
                 Core.app.post(() => {
                     if (this.added) {
                         this.scanAndCacheTiles();
-                        this.loadSelectedItem();
                         this.findTarget();
                     }
                 });
             },
 
             onDestroy() {
-                let key = "drexkou-item-" + this.tileX() + "-" + this.tileY();
-                Core.settings.remove(key);
                 this.releaseTarget();
+                this.cachedTiles = [];
                 this.super$onDestroy();
             },
 
@@ -215,7 +245,8 @@ Events.on(ContentInitEvent, () => {
                     this.setTarget(null);
                 }
             },
- 
+
+            // --- BẢNG CẤU HÌNH VÀ NÚT THÔNG TIN (i) ---
             buildConfiguration(table) {
                 table.clearChildren();
 
@@ -227,17 +258,38 @@ Events.on(ContentInitEvent, () => {
                     }
                 }
 
-                let count = 0;
+                // Nút "i" - Xem Thông Tin
+                table.button(Icon.info, Styles.cleari, 40, () => {
+                    let dialog = new Dialog("[accent]Hướng Dẫn Sử Dụng Khối Khoan[ ]");
+                    dialog.cont.margin(15);
+                    
+                    let infoText = 
+                        "[cyan]● Chọn tài nguyên:[ ] Bấm vào các biểu tượng tài nguyên bên cạnh để bắt buộc máy tập trung khoan loại quặng đó. Nếu không chọn, máy sẽ tự động chọn quặng thiếu nhất trong Lõi.\n\n" +
+                        "[yellow]● Cơ chế Tăng Tốc độ Khoan:[ ]\n" +
+                        "  - [white]Cấp Nước (Water):[ ] Tăng [green]+50%[ ] tốc độ khai thác.\n" +
+                        "  - [white]Cấp Chất làm lạnh (Cryofluid):[ ] Tăng [green]+100%[ ] tốc độ khai thác.\n" +
+                        "  - [white]Hấp thụ Item Sallowyr:[ ] Khi nhận 1 [accent]Sallowyr[ ], khối sẽ hấp thụ và tăng [orange]+500%[ ] hiệu suất khai thác trong vòng [stat]10 giây[ ].\n\n" +
+                        "[lightgray]Lưu ý: Tối đa hóa hiệu quả bằng cách kết hợp cấp Chất lưu và Sallowyr cùng lúc![ ]";
+
+                    dialog.cont.add(infoText).width(380).wrap().get();
+                    
+                    // Tạo nút Đóng thủ công
+                    dialog.buttons.button("Đóng", () => {
+                        dialog.hide();
+                    }).size(140, 50);
+
+                    dialog.show();
+                }).size(44).pad(2);
+
+                let count = 1;
                 for (let i = 0; i < itemsInArea.size; i++) {
                     let item = itemsInArea.get(i);
                     
                     let btn = table.button(new TextureRegionDrawable(item.uiIcon), Styles.clearTogglei, 40, () => {
                         let nextItem = (this.selectedItem === item) ? null : item;
-                        this.saveSelectedItem(nextItem);
-                        this.setTarget(null);
-                        this.findTarget(); 
+                        this.configure(nextItem);
                         this.deselect();
-                    }).size(44).get();
+                    }).size(44).pad(2).get();
 
                     btn.setChecked(this.selectedItem === item);
 
@@ -247,42 +299,80 @@ Events.on(ContentInitEvent, () => {
             },
 
             updateTile() {
-                if (this.items.total() > 0) {
-                    this.dump();
+                // CHỈ XỬ LÝ LOGIC TRÊN HOST / SERVER
+                if (!Vars.net.client()) {
+                    let sallowyrItem = Vars.content.item("newex-sallowyr") || Vars.content.item("sallowyr");
+                    
+                    // 1. Kiểm tra và hấp thụ sallowyr nếu có trong kho
+                    if (sallowyrItem != null && this.items.has(sallowyrItem)) {
+                        this.items.remove(sallowyrItem, 1);
+                        this.sallowyrTimer = 600; // 10 giây (60fps * 10)
+                        Call.effect(Fx.upgradeCore, this.x, this.y, 0, Color.sky);
+                    }
+
+                    // 2. Tính toán hệ số Tăng Tốc (Boost Multiplier)
+                    let boostMultiplier = 1.0;
+
+                    // Nước: +50% | Cryofluid: +100%
+                    if (this.liquids.get(Liquids.cryofluid) > 0.01) {
+                        boostMultiplier += 1.0;
+                        this.liquids.remove(Liquids.cryofluid, 0.15 * Time.delta);
+                    } else if (this.liquids.get(Liquids.water) > 0.01) {
+                        boostMultiplier += 0.5;
+                        this.liquids.remove(Liquids.water, 0.2 * Time.delta);
+                    }
+
+                    // Sallowyr: +500% trong 10 giây
+                    if (this.sallowyrTimer > 0) {
+                        this.sallowyrTimer -= Time.delta;
+                        boostMultiplier += 5.0;
+
+                        if (Mathf.chance(0.1)) {
+                            Call.effect(Fx.reactorsmoke, this.x + Mathf.range(4), this.y + Mathf.range(4), 0, Color.sky);
+                        }
+                    }
+
+                    // 3. Xả Item ra các băng chuyền xung quanh
+                    if (this.items.total() > 0) {
+                        this.dump();
+                    }
+
+                    // 4. Tiến trình Khoan Quặng
+                    if (this.efficiency > 0) {
+                        if (!this.isValidTarget(this.targetTile)) {
+                            this.releaseTarget();
+                            this.findTarget();
+                        }
+
+                        if (this.targetTile != null) {
+                            let item = this.getTileDrop(this.targetTile);
+
+                            if (item != null && this.items.get(item) < this.block.itemCapacity) {
+                                let hardness = item.hardness > 0 ? item.hardness : 1;
+                                let hardnessPenalty = 1 / (1 + (hardness - 1) * 0.15);
+                                
+                                this.mineTimer += (8 / 60) * hardnessPenalty * this.efficiency * boostMultiplier;
+
+                                if (this.mineTimer >= 1.0) {
+                                    let amountToAdd = Math.floor(this.mineTimer);
+                                    this.items.add(item, amountToAdd);
+                                    this.mineTimer -= amountToAdd;
+
+                                    try {
+                                        Call.effect(Fx.mined, this.targetTile.worldx(), this.targetTile.worldy(), 0, item.color);
+                                    } catch(e) {}
+                                }
+                            }
+                        }
+                    }
                 }
 
-                if (this.efficiency <= 0) return;
-
-                if (!this.isValidTarget(this.targetTile)) {
-                    this.releaseTarget();
-                    this.findTarget();
-                }
-
+                // Xoay hướng công trình
                 if (this.targetTile != null) {
                     let tx = this.targetTile.worldx();
                     let ty = this.targetTile.worldy();
-
                     let targetAngle = Angles.angle(this.x, this.y, tx, ty);
                     this.rotation = Angles.moveToward(this.rotation, targetAngle, 5);
-
-                    let item = this.getTileDrop(this.targetTile);
-
-                    if (item != null && this.items.get(item) < this.block.itemCapacity) {
-                        let hardness = item.hardness > 0 ? item.hardness : 1;
-                        let hardnessPenalty = 1 / (1 + (hardness - 1) * 0.15);
-                        
-                        this.mineTimer += (8 / 60) * hardnessPenalty * this.efficiency;
-
-                        if (this.mineTimer >= 1.0) {
-                            let amountToAdd = Math.floor(this.mineTimer);
-                            this.items.add(item, amountToAdd);
-                            this.mineTimer -= amountToAdd;
-
-                            try {
-                                Fx.mined.at(tx, ty);
-                            } catch(e) {}
-                        }
-                    }
                 }
             },
 
@@ -303,15 +393,14 @@ Events.on(ContentInitEvent, () => {
                 }
 
                 let currentItem = this.targetTile != null ? this.getTileDrop(this.targetTile) : null;
-                let canMineCurrent = currentItem != null && this.items.get(currentItem) < this.block.itemCapacity;
 
-                if (this.efficiency > 0 && this.targetTile != null && canMineCurrent) {
+                if (this.efficiency > 0 && this.targetTile != null) {
                     let tx = this.targetTile.worldx();
                     let ty = this.targetTile.worldy();
 
                     Draw.z(Layer.power + 1);
 
-                    let laserColor = currentItem.color;
+                    let laserColor = currentItem != null ? currentItem.color : Pal.accent;
                     let basePulse = Mathf.absin(Time.time, 4, 0.2);
 
                     Draw.color(laserColor, 0.35 + basePulse);

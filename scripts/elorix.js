@@ -1,9 +1,8 @@
- 
 function findSafeDashTarget(unit, startX, startY, targetX, targetY) {
     let angle = Angles.angle(startX, startY, targetX, targetY);
     let maxDist = Mathf.dst(startX, startY, targetX, targetY);
     
-       let hitSizeRadius = (unit && unit.hitSize) ? unit.hitSize / 2 : 12;
+    let hitSizeRadius = (unit && unit.hitSize) ? unit.hitSize / 2 : 12;
     let safePadding = hitSizeRadius + 10; 
 
     let step = 4; 
@@ -13,15 +12,12 @@ function findSafeDashTarget(unit, startX, startY, targetX, targetY) {
         let nextX = startX + Angles.trnsx(angle, traveled + step);
         let nextY = startY + Angles.trnsy(angle, traveled + step);
 
- 
         let tile = Vars.world.tileWorld(nextX, nextY);
 
- 
         if (tile != null && (tile.solid() || !tile.passable())) {
-           
             let hitX = nextX;
             let hitY = nextY;
-    let safeX = hitX - Angles.trnsx(angle, safePadding);
+            let safeX = hitX - Angles.trnsx(angle, safePadding);
             let safeY = hitY - Angles.trnsy(angle, safePadding);
 
             return { x: safeX, y: safeY, hitWall: true };
@@ -30,7 +26,6 @@ function findSafeDashTarget(unit, startX, startY, targetX, targetY) {
         traveled += step;
     }
 
-    
     return { x: targetX, y: targetY, hitWall: false };
 }
 
@@ -107,28 +102,54 @@ const elorixBullets = [
     })
 ];
 
+// Bảng lưu trữ trạng thái Custom JS cho Elorix
+const elorixDataMap = {};
+
+function getElorixData(unit) {
+    if (!unit || unit.id === undefined) return null;
+    let id = unit.id;
+    if (!elorixDataMap[id]) {
+        elorixDataMap[id] = {
+            level: 0,
+            maxLevel: 10,
+            copperAbsorbed: 0,
+            titaniumAbsorbed: 0,
+            customReloadTimer: 0,
+            burstQueue: 0,
+            burstTimer: 0,
+            dashCooldown: 0,
+            maxCooldownRecord: 360,
+            dashDelayTimer: 0,
+            dashAngleToMove: 0,
+            dashTargetX: 0,
+            dashTargetY: 0,
+            thinArmorTimer: 0,
+            armorRecoil: 0
+        };
+    }
+    return elorixDataMap[id];
+}
+
 function fireShotgunBurst(unit, mount, customSound) {
-    let statMultiplier = 1.0 + (unit.level * 0.05);
+    let data = getElorixData(unit);
+    let statMultiplier = 1.0 + ((data ? data.level : 0) * 0.05);
     let wx = unit.x + Angles.trnsx(unit.rotation, mount.weapon.x, mount.weapon.y);
     let wy = unit.y + Angles.trnsy(unit.rotation, mount.weapon.x, mount.weapon.y);
     let baseAngle = unit.rotation + mount.rotation;
 
-    unit.armorRecoil = 6.0;
+    if (data) data.armorRecoil = 6.0;
 
     if (customSound != null) {
-        customSound.at(wx, wy);
+        Call.soundAt(customSound, wx, wy, 1, 1);
     }
 
     for (let i = 0; i < 35; i++) {
         let spread = (Math.random() - 0.5) * 12.0; 
         let randomIndex = Math.floor(Math.random() * elorixBullets.length);
         let selectedBullet = elorixBullets[randomIndex];
+        let fireAngle = baseAngle + spread;
         
-        let b = selectedBullet.create(unit, unit.team, wx, wy, baseAngle + spread);
-        if (b != null) {
-            b.damage = 15 * statMultiplier;
-            b.vel.scl(1 + (Math.random() - 0.5) * 0.2);
-        }
+        Call.createBullet(selectedBullet, unit.team, wx, wy, fireAngle, selectedBullet.damage * statMultiplier, 1 + (Math.random() - 0.5) * 0.2, 1);
     }
 }
 
@@ -162,18 +183,13 @@ let elorixWing2Region = null;
 let thinArmorRegion = null;
 
 Events.on(ClientLoadEvent, () => {
-    elorixWing1Region = Core.atlas.find("newex-elorix-wing1");
-    elorixWing2Region = Core.atlas.find("newex-elorix-wing2");
-    if(elorixWing1Region == null || !elorixWing1Region.found()){ elorixWing1Region = Core.atlas.find("elorix-wing1"); }
-    if(elorixWing2Region == null || !elorixWing2Region.found()){ elorixWing2Region = Core.atlas.find("elorix-wing2"); }
+    elorixWing1Region = Core.atlas.find("newex-elorix-wing1") || Core.atlas.find("elorix-wing1");
+    elorixWing2Region = Core.atlas.find("newex-elorix-wing2") || Core.atlas.find("elorix-wing2");
+    thinArmorRegion = Core.atlas.find("newex-thin-armor") || Core.atlas.find("thin-armor");
 
-    thinArmorRegion = Core.atlas.find("newex-thin-armor");
-    if(thinArmorRegion == null || !thinArmorRegion.found()){ thinArmorRegion = Core.atlas.find("thin-armor"); }
+    let elorixUnit = Vars.content.getByName(ContentType.unit, "newex-elorix") || Vars.content.getByName(ContentType.unit, "elorix");
 
-    let elorixUnit = Vars.content.getByName(ContentType.unit, "newex-elorix");
-    if(elorixUnit == null) elorixUnit = Vars.content.getByName(ContentType.unit, "elorix");
-
-    if(elorixUnit != null){
+    if (elorixUnit != null) {
         let minalSound = Vars.tree.loadSound("minal");
 
         let jsWeapon = extend(Weapon, "elorix-weapon", {
@@ -200,176 +216,155 @@ Events.on(ClientLoadEvent, () => {
 
         elorixUnit.constructor = () => {
             return extend(Packages.mindustry.gen.LegsUnit, {
-                isGalileoJS: true, 
-                level: 0, 
-                maxLevel: 10, 
-                copperAbsorbed: 0, 
-                titaniumAbsorbed: 0, 
-                
-                customReloadTimer: 0,
-                burstQueue: 0,
-                burstTimer: 0,
-                
-                dashCooldown: 0, 
-                maxCooldownRecord: 360,  
-                dashDelayTimer: 0,
-                dashAngleToMove: 0, 
-
-             
-                dashTargetX: 0,
-                dashTargetY: 0,
-
-                thinArmorTimer: 0,
-                armorRecoil: 0,
-
-                update(){
+                update() {
                     this.super$update(); 
+                    let data = getElorixData(this);
+                    if (!data) return;
 
-                
-                    if (Vars.player.unit() != this) { 
-                        let shootRange = 8.5 * 38; 
-                        let target = Units.closestTarget(this.team, this.x, this.y, shootRange, u => u.checkTarget(true, true), b => true);
+                    if (!Vars.net.client()) {
+                        // 1. Tự nhắm mục tiêu nếu không phải Player trực tiếp bấm
+                        if (Vars.player == null || Vars.player.unit() != this) { 
+                            let shootRange = 8.5 * 38; 
+                            let target = Units.closestTarget(this.team, this.x, this.y, shootRange, u => u.checkTarget(true, true), b => true);
 
-                        if (target != null) {
-                            let targetAngle = this.angleTo(target);
-                            this.rotation = Mathf.slerpDelta(this.rotation, targetAngle, 0.15);
-                            this.isShooting = true;
-                        } else {
-                            this.isShooting = false;
-                        }
-                    }
- 
-                    let speedMultiplier = 1.0 + (this.level * 0.05);
-                    if (this.customReloadTimer > 0) {
-                        this.customReloadTimer -= speedMultiplier * Time.delta;
-                    }
-
-                    if (this.isShooting && this.customReloadTimer <= 0 && this.burstQueue == 0) {
-                        this.burstQueue = 2;
-                        this.burstTimer = 0;
-                        this.customReloadTimer = jsWeapon.reload;
-                    }
-
-                    if (this.burstQueue > 0 && this.mounts != null && this.mounts.length > 0) {
-                        let m = this.mounts[0];
-                        if (m != null) {
-                            if (this.burstTimer <= 0) {
-                                fireShotgunBurst(this, m, minalSound);
-                                this.burstQueue--;
-                                this.burstTimer = 8;
+                            if (target != null) {
+                                let targetAngle = this.angleTo(target);
+                                this.rotation = Mathf.slerpDelta(this.rotation, targetAngle, 0.15);
+                                this.isShooting = true;
                             } else {
-                                this.burstTimer -= Time.delta;
+                                this.isShooting = false;
                             }
                         }
-                    }
 
-                    if (this.level > 0 && this.vel.len() > 0.01) {
-                        this.vel.scl(1.0 + (0.05 * Time.delta));
-                    }
-
-                    if(this.dashCooldown > 0) this.dashCooldown -= Time.delta;
-                    if(this.thinArmorTimer > 0) this.thinArmorTimer -= Time.delta;
-
-                    if(this.armorRecoil > 0) {
-                        this.armorRecoil = Mathf.lerpDelta(this.armorRecoil, 0, 0.15);
-                    }
-
-                  
-                    if(this.vel.len() > 0.05 && this.dashCooldown <= 0 && this.dashDelayTimer <= 0) {
-                        let dashDistance = 15 * 8; 
-                        let moveAngle = this.vel.angle();
-                        let tempTargetX = this.x + Angles.trnsx(moveAngle, dashDistance);
-                        let tempTargetY = this.y + Angles.trnsy(moveAngle, dashDistance);
-
-                
-                        let safePos = findSafeDashTarget(this, this.x, this.y, tempTargetX, tempTargetY);
-                        let actualDistance = Mathf.dst(this.x, this.y, safePos.x, safePos.y);
-
-                   
-                        if (actualDistance > (this.hitSize / 2) + 6) {
-                            this.dashDelayTimer = 42;  
-                            this.dashAngleToMove = moveAngle; 
-                            
-                        
-                            this.dashTargetX = safePos.x;
-                            this.dashTargetY = safePos.y;
-
-                            Fx.shieldApply.at(this.x, this.y, 0, Color.sky);
-
-                            let cooldownReduction = 1.0 - (this.level * 0.05);
-                            let baseCooldown = 360 * cooldownReduction; 
-                            this.maxCooldownRecord = baseCooldown;
-                            this.dashCooldown = baseCooldown;
+                        // 2. Xử lý thời gian nạp đạn shotgun
+                        let speedMultiplier = 1.0 + (data.level * 0.05);
+                        if (data.customReloadTimer > 0) {
+                            data.customReloadTimer -= speedMultiplier * Time.delta;
                         }
-                    }
 
-              
-                    if(this.dashDelayTimer > 0) {
-                        this.dashDelayTimer -= Time.delta;
+                        if (this.isShooting && data.customReloadTimer <= 0 && data.burstQueue == 0) {
+                            data.burstQueue = 2;
+                            data.burstTimer = 0;
+                            data.customReloadTimer = jsWeapon.reload;
+                        }
 
-                       
-                        this.vel.set(0, 0);
-
-                        if(this.dashDelayTimer <= 0) {
-                       
-                            this.set(this.dashTargetX, this.dashTargetY);
-                            Fx.spawnShockwave.at(this.x, this.y);
-
-                            try {
-                                const sta = require("sta");
-                                if (sta && sta.deot) {
-                                    this.apply(sta.deot, 300);
+                        if (data.burstQueue > 0 && this.mounts != null && this.mounts.length > 0) {
+                            let m = this.mounts[0];
+                            if (m != null) {
+                                if (data.burstTimer <= 0) {
+                                    fireShotgunBurst(this, m, minalSound);
+                                    data.burstQueue--;
+                                    data.burstTimer = 8;
+                                } else {
+                                    data.burstTimer -= Time.delta;
                                 }
-                            } catch(err) {}
-
-                            this.thinArmorTimer = 300;
-
-                            if (global.deotLastHealth) {
-                                global.deotLastHealth[this.id] = this.health;
                             }
                         }
-                    }
 
-             
-                    let req = getElorixUpgradeRequirements(this.level);
-                    if(this.level < this.maxLevel && this.stack != null){
-                        if(this.copperAbsorbed < req.copperNeeded && this.stack.item == req.copperItem && this.stack.amount > 0){
-                            let consumeAmt = Math.min(2, this.stack.amount); this.stack.amount -= consumeAmt; this.copperAbsorbed += consumeAmt;
+                        if (data.level > 0 && this.vel.len() > 0.01) {
+                            this.vel.scl(1.0 + (0.05 * Time.delta));
                         }
-                        else if(this.titaniumAbsorbed < req.titaniumNeeded && this.stack.item == req.titaniumItem && this.stack.amount > 0){
-                            let consumeAmt = Math.min(2, this.stack.amount); this.stack.amount -= consumeAmt; this.titaniumAbsorbed += consumeAmt;
+
+                        if (data.dashCooldown > 0) data.dashCooldown -= Time.delta;
+                        if (data.thinArmorTimer > 0) data.thinArmorTimer -= Time.delta;
+
+                        if (data.armorRecoil > 0) {
+                            data.armorRecoil = Mathf.lerpDelta(data.armorRecoil, 0, 0.15);
                         }
-                        
-                        if(this.copperAbsorbed >= req.copperNeeded && this.titaniumAbsorbed >= req.titaniumNeeded){
-                            this.copperAbsorbed = 0; this.titaniumAbsorbed = 0; 
-                            this.level++; 
-                            Fx.upgradeCore.at(this.x, this.y); Fx.shockwave.at(this.x, this.y);
+
+                        // 3. Tự kích hoạt lướt (dash) khi đang di chuyển
+                        if (this.vel.len() > 0.05 && data.dashCooldown <= 0 && data.dashDelayTimer <= 0) {
+                            let dashDistance = 15 * 8; 
+                            let moveAngle = this.vel.angle();
+                            let tempTargetX = this.x + Angles.trnsx(moveAngle, dashDistance);
+                            let tempTargetY = this.y + Angles.trnsy(moveAngle, dashDistance);
+
+                            let safePos = findSafeDashTarget(this, this.x, this.y, tempTargetX, tempTargetY);
+                            let actualDistance = Mathf.dst(this.x, this.y, safePos.x, safePos.y);
+
+                            if (actualDistance > (this.hitSize / 2) + 6) {
+                                data.dashDelayTimer = 42;  
+                                data.dashAngleToMove = moveAngle; 
+                                data.dashTargetX = safePos.x;
+                                data.dashTargetY = safePos.y;
+
+                                Call.effect(Fx.shieldApply, this.x, this.y, 0, Color.sky);
+
+                                let cooldownReduction = 1.0 - (data.level * 0.05);
+                                let baseCooldown = 360 * cooldownReduction; 
+                                data.maxCooldownRecord = baseCooldown;
+                                data.dashCooldown = baseCooldown;
+                            }
+                        }
+
+                        // 4. Thực thi hành động lướt sau độ trễ
+                        if (data.dashDelayTimer > 0) {
+                            data.dashDelayTimer -= Time.delta;
+                            this.vel.set(0, 0);
+
+                            if (data.dashDelayTimer <= 0) {
+                                this.set(data.dashTargetX, data.dashTargetY);
+                                Call.effect(Fx.spawnShockwave, this.x, this.y, 0, Color.white);
+
+                                try {
+                                    const sta = require("sta");
+                                    if (sta && sta.deot) {
+                                        this.apply(sta.deot, 300);
+                                    }
+                                } catch(err) {}
+
+                                data.thinArmorTimer = 300;
+
+                                if (global.deotLastHealth) {
+                                    global.deotLastHealth[this.id] = this.health;
+                                }
+                            }
+                        }
+
+                        // 5. Nâng cấp cấp độ bằng tài nguyên
+                        let req = getElorixUpgradeRequirements(data.level);
+                        if (data.level < data.maxLevel && this.stack != null) {
+                            if (data.copperAbsorbed < req.copperNeeded && this.stack.item == req.copperItem && this.stack.amount > 0) {
+                                let consumeAmt = Math.min(2, this.stack.amount); this.stack.amount -= consumeAmt; data.copperAbsorbed += consumeAmt;
+                            } else if (data.titaniumAbsorbed < req.titaniumNeeded && this.stack.item == req.titaniumItem && this.stack.amount > 0) {
+                                let consumeAmt = Math.min(2, this.stack.amount); this.stack.amount -= consumeAmt; data.titaniumAbsorbed += consumeAmt;
+                            }
+
+                            if (data.copperAbsorbed >= req.copperNeeded && data.titaniumAbsorbed >= req.titaniumNeeded) {
+                                data.copperAbsorbed = 0; data.titaniumAbsorbed = 0; 
+                                data.level++; 
+                                Call.effect(Fx.upgradeCore, this.x, this.y, 0, Color.white);
+                                Call.effect(Fx.shockwave, this.x, this.y, 0, Color.white);
+                            }
                         }
                     }
                 },
 
-                draw(){
+                draw() {
+                    let data = getElorixData(this);
+                    if (!data) return;
+
                     Draw.z(Layer.flyingUnit - 2.0); Lines.stroke(1.2);
-                    let totalStars = this.level + 1; let baseRadius = this.hitSize * 0.65;
-                    let speeds = getElorixStarSpeeds(this.id, this.level);
-                    
-                    for(let i = 0; i < totalStars; i++){
+                    let totalStars = data.level + 1; let baseRadius = this.hitSize * 0.65;
+                    let speeds = getElorixStarSpeeds(this.id, data.level);
+
+                    for (let i = 0; i < totalStars; i++) {
                         let colorPulse = (Math.sin(Time.time / 5 + i) + 1) / 2; Draw.color(Color.white.cpy().lerp(Color.blue, colorPulse));
                         let speed = speeds[i] ? speeds[i] : 2.0; let direction = (i % 2 === 0) ? 1 : -1;
                         let orbitAngle = (Time.time * speed * direction) + (i * (360 / totalStars));
                         drawElorixStar4C(this.x + Angles.trnsx(orbitAngle, baseRadius + (i * 2.0)), this.y + Angles.trnsy(orbitAngle, baseRadius + (i * 2.0)), 1.5, Time.time * (speed * 1.8) * direction);
                     }
-                    
+
                     let dashProgress = 0; let isRetracting = false;
-                    if(this.dashCooldown > 0){
-                        let activeFrames = this.maxCooldownRecord - this.dashCooldown;
-                        if(activeFrames < 40){ dashProgress = 1.0; } else { dashProgress = this.dashCooldown / this.maxCooldownRecord; isRetracting = true; }
+                    if (data.dashCooldown > 0) {
+                        let activeFrames = data.maxCooldownRecord - data.dashCooldown;
+                        if (activeFrames < 40) { dashProgress = 1.0; } else { dashProgress = data.dashCooldown / data.maxCooldownRecord; isRetracting = true; }
                     }
 
                     Draw.z(Layer.flyingUnit - 0.001); Draw.color();
                     let upwardY = 8 * dashProgress; let baseSideOffset = 14; let sideExpand = 10 * dashProgress;
                     let w1X = this.x, w1Y = this.y; let w2X = this.x, w2Y = this.y;
-                    if(elorixWing1Region != null && elorixWing2Region != null){
+                    if (elorixWing1Region != null && elorixWing2Region != null) {
                         w1X = this.x + Angles.trnsx(this.rotation + 90, baseSideOffset + sideExpand) + Angles.trnsx(this.rotation, upwardY);
                         w1Y = this.y + Angles.trnsy(this.rotation + 90, baseSideOffset + sideExpand) + Angles.trnsy(this.rotation, upwardY);
                         w2X = this.x + Angles.trnsx(this.rotation - 90, baseSideOffset + sideExpand) + Angles.trnsx(this.rotation, upwardY);
@@ -377,7 +372,7 @@ Events.on(ClientLoadEvent, () => {
                         Draw.rect(elorixWing1Region, w1X, w1Y, this.rotation); Draw.rect(elorixWing2Region, w2X, w2Y, this.rotation);
                     }
 
-                    if(isRetracting){
+                    if (isRetracting) {
                         Draw.z(Layer.flyingUnit - 0.002); let laserPulse = (Math.sin(Time.time / 1.5) + 1) / 2;
                         let laserOriginX = this.x + Angles.trnsx(this.rotation, -4); let laserOriginY = this.y + Angles.trnsy(this.rotation, -4);
                         let shortFactor = 0.45;
@@ -391,15 +386,14 @@ Events.on(ClientLoadEvent, () => {
                         Draw.color(Color.white); Fill.circle(laserOriginX, laserOriginY, ballRadius * 0.6); Draw.color();
                     }
 
-       
-                    if(this.thinArmorTimer > 0 && thinArmorRegion != null && thinArmorRegion.found()){
-                        let progress = 1.0 - (this.thinArmorTimer / 300.0);
-                        
+                    if (data.thinArmorTimer > 0 && thinArmorRegion != null && thinArmorRegion.found()) {
+                        let progress = 1.0 - (data.thinArmorTimer / 300.0);
+
                         let scale = 1.0;
-                        if(progress < 0.1) {
-                            scale = progress / 0.1; 
-                        } else if(progress > 0.9) {
-                            scale = (1.0 - progress) / 0.1; 
+                        if (progress < 0.1) {
+                            scale = progress / 0.1;
+                        } else if (progress > 0.9) {
+                            scale = (1.0 - progress) / 0.1;
                         }
 
                         let alpha = Math.min(scale, 1.0);
@@ -410,8 +404,8 @@ Events.on(ClientLoadEvent, () => {
                         let width = thinArmorRegion.width * Draw.scl * scale * 1.2;
                         let height = thinArmorRegion.height * Draw.scl * scale * 1.2;
 
-                        let drawX = this.x - Angles.trnsx(this.rotation, this.armorRecoil);
-                        let drawY = this.y - Angles.trnsy(this.rotation, this.armorRecoil);
+                        let drawX = this.x - Angles.trnsx(this.rotation, data.armorRecoil);
+                        let drawY = this.y - Angles.trnsy(this.rotation, data.armorRecoil);
 
                         Draw.rect(thinArmorRegion, drawX, drawY, width, height, this.rotation);
                         Draw.reset();

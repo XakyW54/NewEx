@@ -8,7 +8,8 @@ global.droneLauncherMap = global.droneLauncherMap || {};
 const reqMK2 = { copper: 2000, lead: 1500, silicon: 1000 };
 const reqMK2B = { copper: 2000, lead: 1500, titanium: 1000 };
 
-// Hàm hỗ trợ lấy Content Unit tiện lợi
+const isEn = () => Core.settings.get("locale", "").startsWith("en");
+
 function getUnitType(names) {
     for (let i = 0; i < names.length; i++) {
         let type = Vars.content.getByName(ContentType.unit, names[i]);
@@ -226,14 +227,16 @@ Events.on(ClientLoadEvent, cons(e => {
             table.clear();
             let tier = this.getTier();
             let buttonTable = new Table();
+            let english = isEn();
 
             if (tier == 0) {
                 buttonTable.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-                    let dialog = extend(BaseDialog, "Trung tâm nâng cấp Drone Launcher", {});
+                    let dialogTitle = english ? "Drone Launcher Upgrade Center" : "Trung tâm nâng cấp Drone Launcher";
+                    let dialog = extend(BaseDialog, dialogTitle, {});
 
                     let reqCell = dialog.cont.label(packProv(() => {
                         let core = this.team.core();
-                        if (core == null) return "[red]Không tìm thấy Lõi![]";
+                        if (core == null) return english ? "[red]Core not found![]" : "[red]Không tìm thấy Lõi![]";
                         let currentcopper = core.items.get(Items.copper);
                         let currentlead = core.items.get(Items.lead);
                         let currentsilicon = core.items.get(Items.silicon);
@@ -246,6 +249,18 @@ Events.on(ClientLoadEvent, cons(e => {
                         let copColor2 = currentcopper >= reqMK2B.copper ? "[green]" : "[red]";
                         let leaColor2 = currentlead >= reqMK2B.lead ? "[green]" : "[red]";
                         let titColor2 = currenttitanium >= reqMK2B.titanium ? "[green]" : "[red]";
+
+                        if(english){
+                            return "[yellow]CORE STORAGE REQUIREMENTS:[]\n" +
+                                   "[cyan]MK2 Branch (Quantity Focus):[]\n" +
+                                   " • Copper: " + copColor1 + currentcopper + "[] / " + reqMK2.copper + "\n" +
+                                   " • Lead: " + leaColor1 + currentlead + "[] / " + reqMK2.lead + "\n" +
+                                   " • Silicon: " + silColor1 + currentsilicon + "[] / " + reqMK2.silicon + "\n" +
+                                   "[purple]MK2B Branch (Empowerment Focus):[]\n" +
+                                   " • Copper: " + copColor2 + currentcopper + "[] / " + reqMK2B.copper + "\n" +
+                                   " • Lead: " + leaColor2 + currentlead + "[] / " + reqMK2B.lead + "\n" +
+                                   " • Titanium: " + titColor2 + currenttitanium + "[] / " + reqMK2B.titanium;
+                        }
 
                         return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
                                "[cyan]Nhánh MK2 (Chuyên Số Lượng):[]\n" +
@@ -264,14 +279,19 @@ Events.on(ClientLoadEvent, cons(e => {
 
                     let branchesTable = new Table();
 
-                    // Nhánh MK2
                     let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
-                    b1.add("[cyan]===(CẤU HÌNH MK2)===[]").row();
-                    let b1D = b1.add("Tăng cường lực lượng không quân:\n" +
-                                     " [white]• Tăng thêm [green]+2 Unit Drone Mk2[] (Tổng 6 Drones: 2 MK2 + 4 Thường/Sword).[]\n" +
-                                     " [white]• Tăng máu tháp pháo lên [green]1800 HP[].[]");
+                    b1.add(english ? "[cyan]===(MK2 CONFIGURATION)===[]" : "[cyan]===(CẤU HÌNH MK2)===[]").row();
+                    let b1Text = english ?
+                        "Enhance air force capabilities:\n" +
+                        " [white]• Adds [green]+2 Drone Mk2 Units[] (Total 6 Drones: 2 MK2 + 4 Normal/Sword).[]\n" +
+                        " [white]• Increases turret health to [green]1800 HP[].[]" :
+                        "Tăng cường lực lượng không quân:\n" +
+                        " [white]• Tăng thêm [green]+2 Unit Drone Mk2[] (Tổng 6 Drones: 2 MK2 + 4 Thường/Sword).[]\n" +
+                        " [white]• Tăng máu tháp pháo lên [green]1800 HP[].[]";
+
+                    let b1D = b1.add(b1Text);
                     b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
-                    b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
+                    b1.button(english ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => {
                         let core = this.team.core();
                         if (core != null && core.items.get(Items.copper) >= reqMK2.copper && core.items.get(Items.lead) >= reqMK2.lead && core.items.get(Items.silicon) >= reqMK2.silicon) {
                             core.items.remove(Items.copper, reqMK2.copper); 
@@ -283,20 +303,28 @@ Events.on(ClientLoadEvent, cons(e => {
                             this.setTier(1);
                             this.configure(java.lang.Integer.valueOf(1)); 
                             dialog.hide(); this.deselect();
-                        } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); }
+                        } else { Vars.ui.showInfo(english ? "[red]Not enough resources for MK2 branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                     })).size(180, 38);
 
-                    // Nhánh MK2B
                     let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
-                    b2.add("[purple]===(CẤU HÌNH MK2B)===[]").row();
-                    let b2D = b2.add("Đột phá công nghệ cường hóa toàn diện:\n" +
-                                     " [white]• Tăng [green]+100% Máu gốc[], [green]+100% Giáp[] cho Drone.[]\n" +
-                                     " [white]• Tăng [red]+100% Sát thương[], [sky]+100% Tầm bắn[] đạn/chém.[]\n" +
-                                     " [white]• Tăng [yellow]+20% Tốc độ bay[] cho Drone.[]\n" +
-                                     " [white]• Tăng [gold]+120% Phạm vi bắn[] cho Tháp Pháo.[]\n" +
-                                     " [white]• Gia tăng máu tháp pháo lên [green]2400 HP[].[]");
+                    b2.add(english ? "[purple]===(MK2B CONFIGURATION)===[]" : "[purple]===(CẤU HÌNH MK2B)===[]").row();
+                    let b2Text = english ?
+                        "Comprehensive enhancement tech breakthrough:\n" +
+                        " [white]• Adds [green]+100% Base Health[], [green]+100% Armor[] for Drones.[]\n" +
+                        " [white]• Adds [red]+100% Damage[], [sky]+100% Range[] for shots/slashes.[]\n" +
+                        " [white]• Adds [yellow]+20% Flight Speed[] for Drones.[]\n" +
+                        " [white]• Adds [gold]+120% Firing Range[] for Turret.[]\n" +
+                        " [white]• Increases turret health to [green]2400 HP[].[]" :
+                        "Đột phá công nghệ cường hóa toàn diện:\n" +
+                        " [white]• Tăng [green]+100% Máu gốc[], [green]+100% Giáp[] cho Drone.[]\n" +
+                        " [white]• Tăng [red]+100% Sát thương[], [sky]+100% Tầm bắn[] đạn/chém.[]\n" +
+                        " [white]• Tăng [yellow]+20% Tốc độ bay[] cho Drone.[]\n" +
+                        " [white]• Tăng [gold]+120% Phạm vi bắn[] cho Tháp Pháo.[]\n" +
+                        " [white]• Gia tăng máu tháp pháo lên [green]2400 HP[].[]";
+
+                    let b2D = b2.add(b2Text);
                     b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
-                    b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
+                    b2.button(english ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                         let core = this.team.core();
                         if (core != null && core.items.get(Items.copper) >= reqMK2B.copper && core.items.get(Items.lead) >= reqMK2B.lead && core.items.get(Items.titanium) >= reqMK2B.titanium) {
                             core.items.remove(Items.copper, reqMK2B.copper); 
@@ -308,7 +336,7 @@ Events.on(ClientLoadEvent, cons(e => {
                             this.setTier(2);
                             this.configure(java.lang.Integer.valueOf(2)); 
                             dialog.hide(); this.deselect();
-                        } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
+                        } else { Vars.ui.showInfo(english ? "[red]Not enough resources for MK2B branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
                     })).size(180, 38);
 
                     branchesTable.add(b1).width(340); branchesTable.row();
@@ -319,44 +347,62 @@ Events.on(ClientLoadEvent, cons(e => {
                     scroll.setScrollingDisabled(true, false);
                     dialog.cont.add(scroll).maxHeight(400);
                     dialog.addCloseButton(); dialog.show();
-                })).size(45, 40).tooltip("Nâng cấp mô-đun điều phối Drone");
+                })).size(45, 40).tooltip(english ? "Upgrade Drone dispatch module" : "Nâng cấp mô-đun điều phối Drone");
             } else {
                 buttonTable.button(Icon.lock, Styles.cleari, 40, packRun(() => {
-                    Vars.ui.showInfo("[scarlet]THÁP PHÁO ĐÃ ĐẠT CẤP ĐỘ TIẾN HÓA TỐI ĐA![]");
-                })).size(45, 40).tooltip("Đã đạt cấp tối đa");
+                    Vars.ui.showInfo(english ? "[scarlet]TURRET HAS REACHED MAXIMUM EVOLUTION LEVEL![]" : "[scarlet]THÁP PHÁO ĐÃ ĐẠT CẤP ĐỘ TIẾN HÓA TỐI ĐA![]");
+                })).size(45, 40).tooltip(english ? "Reached maximum level" : "Đã đạt cấp tối đa");
             }
 
             buttonTable.button(Icon.leftOpen, Styles.cleari, 40, packRun(() => {
                 this.recallAllDrones();
                 Fx.tapBlock.at(this.x, this.y);
-            })).size(45, 40).tooltip("Thu hồi toàn bộ Drone thuộc tháp pháo này");
+            })).size(45, 40).tooltip(english ? "Recall all Drones belonging to this turret" : "Thu hồi toàn bộ Drone thuộc tháp pháo này");
 
             buttonTable.button(Icon.info, Styles.cleari, 40, packRun(() => {
-                let title = " Thông tin Drone Launcher: ";
+                let title = english ? " Drone Launcher Info: " : " Thông tin Drone Launcher: ";
                 let descStr = "";
                 let currentTier = this.getTier();
 
                 if (currentTier == 0) {
-                    title += "[yellow](MK1 - Mặc định)[]";
-                    descStr = "[gold]⚡ TRẠNG THÁI NGUYÊN BẢN (MK1) ⚡[]\n" +
-                              "[lightgray]Máu pháo:[] [green]1200 HP[]\n" +
-                              "[lightgray]Số lượng Drone tối đa:[] [yellow]4 Units[]\n" +
-                              "[lightgray]Loại Drone:[] Combat / Sword / Cargo Drone (50% Sword)";
+                    title += english ? "[yellow](MK1 - Default)[]" : "[yellow](MK1 - Mặc định)[]";
+                    descStr = english ?
+                        "[gold]⚡ ORIGINAL STATUS (MK1) ⚡[]\n" +
+                        "[lightgray]Turret Health:[] [green]1200 HP[]\n" +
+                        "[lightgray]Max Drone Count:[] [yellow]4 Units[]\n" +
+                        "[lightgray]Drone Type:[] Combat / Sword / Cargo Drone (50% Sword)" :
+                        "[gold]⚡ TRẠNG THÁI NGUYÊN BẢN (MK1) ⚡[]\n" +
+                        "[lightgray]Máu pháo:[] [green]1200 HP[]\n" +
+                        "[lightgray]Số lượng Drone tối đa:[] [yellow]4 Units[]\n" +
+                        "[lightgray]Loại Drone:[] Combat / Sword / Cargo Drone (50% Sword)";
                 } else if (currentTier == 1) {
-                    title += "[cyan](MK2 - Số Lượng)[]";
-                    descStr = "[cyan]⚡ CẤU HÌNH TRIỆU HỒI MK2 ⚡[]\n" +
-                              "[lightgray]Máu pháo:[] [green]1800 HP[]\n" +
-                              "[lightgray]Số lượng Drone tối đa:[] [green]6 Units[]\n" +
-                              "[lightgray]Thành phần:[] [yellow]2 Cargo Drone Mk2[] + [white]4 Drone Thường/Sword[]";
+                    title += english ? "[cyan](MK2 - Quantity)[]" : "[cyan](MK2 - Số Lượng)[]";
+                    descStr = english ?
+                        "[cyan]⚡ MK2 SUMMON CONFIG ⚡[]\n" +
+                        "[lightgray]Turret Health:[] [green]1800 HP[]\n" +
+                        "[lightgray]Max Drone Count:[] [green]6 Units[]\n" +
+                        "[lightgray]Composition:[] [yellow]2 Cargo Drone Mk2[] + [white]4 Normal/Sword Drones[]" :
+                        "[cyan]⚡ CẤU HÌNH TRIỆU HỒI MK2 ⚡[]\n" +
+                        "[lightgray]Máu pháo:[] [green]1800 HP[]\n" +
+                        "[lightgray]Số lượng Drone tối đa:[] [green]6 Units[]\n" +
+                        "[lightgray]Thành phần:[] [yellow]2 Cargo Drone Mk2[] + [white]4 Drone Thường/Sword[]";
                 } else if (currentTier == 2) {
-                    title += "[purple](MK2B - Cường Hóa)[]";
-                    descStr = "[purple]⚡ CẤU HÌNH BIẾN THỂ MK2B ⚡[]\n" +
-                              "[lightgray]Máu pháo:[] [green]2400 HP[]\n" +
-                              "[lightgray]Phạm vi pháo:[] [gold]+120%[]\n" +
-                              "[lightgray]Số lượng Drone:[] [yellow]4 Units[]\n" +
-                              "[lightgray]Máu & Giáp Drone:[] [green]+100%[]\n" +
-                              "[lightgray]Tốc độ di chuyển:[] [yellow]+20%[]\n" +
-                              "[lightgray]Sát thương Lướt & Bắn:[] [red]+100%[]";
+                    title += english ? "[purple](MK2B - Enhancement)[]" : "[purple](MK2B - Cường Hóa)[]";
+                    descStr = english ?
+                        "[purple]⚡ MK2B VARIANT CONFIG ⚡[]\n" +
+                        "[lightgray]Turret Health:[] [green]2400 HP[]\n" +
+                        "[lightgray]Turret Range:[] [gold]+120%[]\n" +
+                        "[lightgray]Drone Count:[] [yellow]4 Units[]\n" +
+                        "[lightgray]Drone Health & Armor:[] [green]+100%[]\n" +
+                        "[lightgray]Movement Speed:[] [yellow]+20%[]\n" +
+                        "[lightgray]Dash & Shooting Damage:[] [red]+100%[]" :
+                        "[purple]⚡ CẤU HÌNH BIẾN THỂ MK2B ⚡[]\n" +
+                        "[lightgray]Máu pháo:[] [green]2400 HP[]\n" +
+                        "[lightgray]Phạm vi pháo:[] [gold]+120%[]\n" +
+                        "[lightgray]Số lượng Drone:[] [yellow]4 Units[]\n" +
+                        "[lightgray]Máu & Giáp Drone:[] [green]+100%[]\n" +
+                        "[lightgray]Tốc độ di chuyển:[] [yellow]+20%[]\n" +
+                        "[lightgray]Sát thương Lướt & Bắn:[] [red]+100%[]";
                 }
 
                 let dialog = extend(BaseDialog, title, {});
@@ -367,7 +413,7 @@ Events.on(ClientLoadEvent, cons(e => {
                 scroll.setScrollingDisabled(true, false);
                 dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); dialog.show();
-            })).size(45, 40).tooltip("Xem chi tiết thông số hệ thống");
+            })).size(45, 40).tooltip(english ? "View detailed system stats" : "Xem chi tiết thông số hệ thống");
 
             table.add(buttonTable);
         },

@@ -5,6 +5,18 @@ const packProv = (func) => new Prov({ get: func });
 const reqPerkA = { copper: 2000, lead: 2000, silicon: 2000 };
 const reqPerkB = { titanium: 1000, thorium: 1000, graphite: 1000 };
 
+ function isEn() {
+    let loc = "";
+    if (typeof Core !== "undefined" && Core.settings) {
+        loc = String(Core.settings.get("locale", "vi"));
+    }
+    return loc.startsWith("en");
+}
+
+function t(viText, enText) {
+    return isEn() ? enText : viText;
+}
+
  function drawSwordRegion(x, y, rot, scale) {
     let swordRegion = Core.atlas.find("newex-swordoder-sword");
     if (!swordRegion.found()) swordRegion = Core.atlas.find("swordoder-sword");
@@ -496,11 +508,11 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
         table.row();
 
         table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-            let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Swordoder", {});
+            let dialog = extend(BaseDialog, t("Trung tâm nâng cấp pháo Swordoder", "Swordoder Turret Upgrade Center"), {});
 
             let reqCell = dialog.cont.label(packProv(() => {
                 let core = this.team.core();
-                if (core == null) return "[red]Không tìm thấy Lõi Đội![]";
+                if (core == null) return t("[red]Không tìm thấy Lõi Đội![]", "[red]Team Core not found![]");
 
                 let cCop = core.items.get(Items.copper);
                 let cLea = core.items.get(Items.lead);
@@ -517,10 +529,17 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
                 let colTho = cTho >= reqPerkB.thorium ? "[green]" : "[red]";
                 let colGra = cGra >= reqPerkB.graphite ? "[green]" : "[red]";
 
-                return "[gold]YÊU CẦU TÀI NGUYÊN LÕI (CẤP MK1):[]\n" +
-                       "[yellow]★ ROLL PHÚC LỢI A:[] Đồng: " + colCop + cCop + "[]/2000 | Chì: " + colLea + cLea + "[]/2000 | Silicon: " + colSil + cSil + "[]/2000\n" +
-                       "[cyan]★ ROLL PHÚC LỢI B:[] Titan: " + colTit + cTit + "[]/1000 | Thorium: " + colTho + cTho + "[]/1000 | Than chì: " + colGra + cGra + "[]/1000\n" +
-                       "[gray](Tất cả cấp độ đều sở hữu Nội tại Tận diệt: Địch <= 1% máu sẽ nhận 999,999 sát thương)[]";
+                return t(
+                    "[gold]YÊU CẦU TÀI NGUYÊN LÕI (CẤP MK1):[]\n" +
+                    "[yellow]★ ROLL PHÚC LỢI A:[] Đồng: " + colCop + cCop + "[]/2000 | Chì: " + colLea + cLea + "[]/2000 | Silicon: " + colSil + cSil + "[]/2000\n" +
+                    "[cyan]★ ROLL PHÚC LỢI B:[] Titan: " + colTit + cTit + "[]/1000 | Thorium: " + colTho + cTho + "[]/1000 | Than chì: " + colGra + cGra + "[]/1000\n" +
+                    "[gray](Tất cả cấp độ đều sở hữu Nội tại Tận diệt: Địch <= 1% máu sẽ nhận 999,999 sát thương)[]",
+
+                    "[gold]CORE RESOURCE REQUIREMENTS (MK1 TIER):[]\n" +
+                    "[yellow]★ ROLL PERK A:[] Copper: " + colCop + cCop + "[]/2000 | Lead: " + colLea + cLea + "[]/2000 | Silicon: " + colSil + cSil + "[]/2000\n" +
+                    "[cyan]★ ROLL PERK B:[] Titanium: " + colTit + cTit + "[]/1000 | Thorium: " + colTho + cTho + "[]/1000 | Graphite: " + colGra + cGra + "[]/1000\n" +
+                    "[gray](All tiers feature Execute passive: Enemies <= 1% HP receive 999,999 damage)[]"
+                );
             }));
 
             reqCell.width(380).get().setWrap(true);
@@ -533,19 +552,26 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
             let boxA = new Table();
             boxA.background(Styles.black6);
             boxA.margin(12);
-            boxA.add("[yellow]★ ROLL PHÚC LỢI A (NGẪU NHIÊN) ★[]").row();
+            boxA.add(t("[yellow]★ ROLL PHÚC LỢI A (NGẪU NHIÊN) ★[]", "[yellow]★ ROLL PERK A (RANDOM) ★[]")).row();
 
             let perkA = this.getPerkA();
             if (perkA == 0) {
-                let txtADesc = boxA.add("Kích hoạt giao thức nâng cấp ngẫu nhiên nhận 1 trong 3 phúc lợi A:\n" +
-                                        " • [green]Phúc lợi 1A:[] +50% Sát thương (Đạn 45, Chém 28.5), Tầm bắn +50% (157.5px), Shotgun 15 viên.\n" +
-                                        " • [green]Phúc lợi 2A:[] +20% Sát thương (Đạn 36, Chém 22.8), Tầm bắn +20% (126px), Bắn 8 viên +10 Dmg lan.\n" +
-                                        " • [green]Phúc lợi 3A:[] +200% Sát thương (Đạn 90, Chém 57), Tầm bắn -30% (73.5px), Bắn liên tiếp 4 viên + Nạp nhanh (1s).");
+                let txtADesc = boxA.add(t(
+                    "Kích hoạt giao thức nâng cấp ngẫu nhiên nhận 1 trong 3 phúc lợi A:\n" +
+                    " • [green]Phúc lợi 1A:[] +50% Sát thương (Đạn 45, Chém 28.5), Tầm bắn +50% (157.5px), Shotgun 15 viên.\n" +
+                    " • [green]Phúc lợi 2A:[] +20% Sát thương (Đạn 36, Chém 22.8), Tầm bắn +20% (126px), Bắn 8 viên +10 Dmg lan.\n" +
+                    " • [green]Phúc lợi 3A:[] +200% Sát thương (Đạn 90, Chém 57), Tầm bắn -30% (73.5px), Bắn liên tiếp 4 viên + Nạp nhanh (1s).",
+
+                    "Activate upgrade protocol to randomly get 1 of 3 Perk A choices:\n" +
+                    " • [green]Perk 1A:[] +50% Damage (Bullet 45, Slash 28.5), Range +50% (157.5px), Shotgun 15 count.\n" +
+                    " • [green]Perk 2A:[] +20% Damage (Bullet 36, Slash 22.8), Range +20% (126px), Fires 8 bullets +10 Splash Dmg.\n" +
+                    " • [green]Perk 3A:[] +200% Damage (Bullet 90, Slash 57), Range -30% (73.5px), Burst 4 bullets + Fast reload (1s)."
+                ));
                 txtADesc.width(340).get().setWrap(true);
                 txtADesc.get().setAlignment(Align.left);
                 boxA.row();
 
-                boxA.button("[yellow]QUAY PHÚC LỢI A (2K Đồng/Chì/Silicon)[]", packRun(() => {
+                boxA.button(t("[yellow]QUAY PHÚC LỢI A (2K Đồng/Chì/Silicon)[]", "[yellow]ROLL PERK A (2K Cop/Lead/Sil)[]"), packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.copper) >= 2000 && core.items.get(Items.lead) >= 2000 && core.items.get(Items.silicon) >= 2000) {
                         core.items.remove(Items.copper, 2000);
@@ -558,18 +584,18 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
 
                         Fx.upgradeCore.at(this.x, this.y);
                         Effect.shake(4, 4, this.x, this.y);
-                        Vars.ui.showInfo("[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[yellow]PHÚC LỢI " + res + "A[]");
+                        Vars.ui.showInfo(t("[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[yellow]PHÚC LỢI " + res + "A[]", "[gold]YOU ROLLED:[]\n[yellow]PERK " + res + "A[]"));
                         dialog.hide();
                         this.deselect();
                     } else {
-                        Vars.ui.showInfo("[red]Không đủ tài nguyên roll Phúc lợi A![]");
+                        Vars.ui.showInfo(t("[red]Không đủ tài nguyên roll Phúc lợi A![]", "[red]Not enough resources to roll Perk A![]"));
                     }
                 })).size(280, 40);
             } else {
                 let txtA = "";
-                if (perkA == 1) txtA = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1A\n• Sát thương Đạn +50% (45) | Chém +50% (28.5)\n• Tầm bắn +50% (157.5px)\n• Bắn Shotgun 15 viên[]";
-                if (perkA == 2) txtA = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2A\n• Sát thương Đạn +20% (36) | Chém +20% (22.8)\n• Tầm bắn +20% (126px)\n• Bắn 8 viên + 10 Dmg lan[]";
-                if (perkA == 3) txtA = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3A\n• Sát thương Đạn +200% (90) | Chém +200% (57)\n• Tầm bắn -30% (73.5px)\n• Bắn liên tiếp 4 viên + Nạp đạn nhanh (1s)[]";
+                if (perkA == 1) txtA = t("[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1A\n• Sát thương Đạn +50% (45) | Chém +50% (28.5)\n• Tầm bắn +50% (157.5px)\n• Bắn Shotgun 15 viên[]", "[green]✔ ACTIVATED: PERK 1A\n• Bullet Dmg +50% (45) | Slash +50% (28.5)\n• Range +50% (157.5px)\n• Shotgun 15 Bullets[]");
+                if (perkA == 2) txtA = t("[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2A\n• Sát thương Đạn +20% (36) | Chém +20% (22.8)\n• Tầm bắn +20% (126px)\n• Bắn 8 viên + 10 Dmg lan[]", "[green]✔ ACTIVATED: PERK 2A\n• Bullet Dmg +20% (36) | Slash +20% (22.8)\n• Range +20% (126px)\n• Fires 8 Bullets + 10 Splash Dmg[]");
+                if (perkA == 3) txtA = t("[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3A\n• Sát thương Đạn +200% (90) | Chém +200% (57)\n• Tầm bắn -30% (73.5px)\n• Bắn liên tiếp 4 viên + Nạp đạn nhanh (1s)[]", "[green]✔ ACTIVATED: PERK 3A\n• Bullet Dmg +200% (90) | Slash +200% (57)\n• Range -30% (73.5px)\n• Burst 4 Bullets + Fast Reload (1s)[]");
 
                 let txtACell = boxA.add(txtA);
                 txtACell.width(340).get().setWrap(true);
@@ -582,19 +608,26 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
             let boxB = new Table();
             boxB.background(Styles.black6);
             boxB.margin(12);
-            boxB.add("[cyan]★ ROLL PHÚC LỢI B (NGẪU NHIÊN) ★[]").row();
+            boxB.add(t("[cyan]★ ROLL PHÚC LỢI B (NGẪU NHIÊN) ★[]", "[cyan]★ ROLL PERK B (RANDOM) ★[]")).row();
 
             let perkB = this.getPerkB();
             if (perkB == 0) {
-                let txtBDesc = boxB.add("Kích hoạt giao thức nâng cấp ngẫu nhiên nhận 1 trong 3 phúc lợi B:\n" +
-                                        " • [cyan]Phúc lợi 1B:[] Đổi hoàn toàn kiểu bắn sang 2 bên góc 30° (-30° trước, +30° sau 0.2s) + 15% Cơ hội bắn thêm 10 đạn phụ.\n" +
-                                        " • [cyan]Phúc lợi 2B:[] 50% Cơ hội hồi 100% máu khi bắn (Hồi dư xả 20 đạn phụ).\n" +
-                                        " • [cyan]Phúc lợi 3B:[] 30% Cơ hội tăng 120% Tốc độ bắn trong 15s khi trúng địch.");
+                let txtBDesc = boxB.add(t(
+                    "Kích hoạt giao thức nâng cấp ngẫu nhiên nhận 1 trong 3 phúc lợi B:\n" +
+                    " • [cyan]Phúc lợi 1B:[] Đổi hoàn toàn kiểu bắn sang 2 bên góc 30° (-30° trước, +30° sau 0.2s) + 15% Cơ hội bắn thêm 10 đạn phụ.\n" +
+                    " • [cyan]Phúc lợi 2B:[] 50% Cơ hội hồi 100% máu khi bắn (Hồi dư xả 20 đạn phụ).\n" +
+                    " • [cyan]Phúc lợi 3B:[] 30% Cơ hội tăng 120% Tốc độ bắn trong 15s khi trúng địch.",
+
+                    "Activate upgrade protocol to randomly get 1 of 3 Perk B choices:\n" +
+                    " • [cyan]Perk 1B:[] Switch pattern to dual 30° sides (-30° first, +30° after 0.2s) + 15% Chance to fire 10 sub-bullets.\n" +
+                    " • [cyan]Perk 2B:[] 50% Chance to heal 100% HP on fire (Overheal releases 20 sub-bullets).\n" +
+                    " • [cyan]Perk 3B:[] 30% Chance to gain +120% Fire Rate for 15s on hit."
+                ));
                 txtBDesc.width(340).get().setWrap(true);
                 txtBDesc.get().setAlignment(Align.left);
                 boxB.row();
 
-                boxB.button("[cyan]QUAY PHÚC LỢI B (1K Titan/Thorium/Graphite)[]", packRun(() => {
+                boxB.button(t("[cyan]QUAY PHÚC LỢI B (1K Titan/Thorium/Graphite)[]", "[cyan]ROLL PERK B (1K Tit/Tho/Graph)[]"), packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.titanium) >= 1000 && core.items.get(Items.thorium) >= 1000 && core.items.get(Items.graphite) >= 1000) {
                         core.items.remove(Items.titanium, 1000);
@@ -607,18 +640,18 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
 
                         Fx.upgradeCore.at(this.x, this.y);
                         Effect.shake(4, 4, this.x, this.y);
-                        Vars.ui.showInfo("[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[cyan]PHÚC LỢI " + res + "B[]");
+                        Vars.ui.showInfo(t("[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[cyan]PHÚC LỢI " + res + "B[]", "[gold]YOU ROLLED:[]\n[cyan]PERK " + res + "B[]"));
                         dialog.hide();
                         this.deselect();
                     } else {
-                        Vars.ui.showInfo("[red]Không đủ tài nguyên roll Phúc lợi B![]");
+                        Vars.ui.showInfo(t("[red]Không đủ tài nguyên roll Phúc lợi B![]", "[red]Not enough resources to roll Perk B![]"));
                     }
                 })).size(280, 40);
             } else {
                 let txtB = "";
-                if (perkB == 1) txtB = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1B\n• Đổi kiểu bắn sang 2 bên góc 30° (-30° -> 0.2s -> +30°)\n• Bắn nguyên chùm đạn của Phúc lợi A theo góc nghiêng\n• 15% Tỉ lệ bắn thêm 10 đạn phụ (Độ lệch 8°)[]";
-                if (perkB == 2) txtB = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2B\n• 50% Tỉ lệ hồi 100% máu khi bắn\n• Nếu vượt Max HP: Bắn thêm 20 đạn phụ (Độ lệch 4°)[]";
-                if (perkB == 3) txtB = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3B\n• 30% Tỉ lệ tăng 120% tốc độ bắn trong 15s khi trúng mục tiêu[]";
+                if (perkB == 1) txtB = t("[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1B\n• Đổi kiểu bắn sang 2 bên góc 30° (-30° -> 0.2s -> +30°)\n• Bắn nguyên chùm đạn của Phúc lợi A theo góc nghiêng\n• 15% Tỉ lệ bắn thêm 10 đạn phụ (Độ lệch 8°)[]", "[green]✔ ACTIVATED: PERK 1B\n• Switch pattern to dual 30° sides (-30° -> 0.2s -> +30°)\n• Fires full Perk A burst angled\n• 15% Chance to fire 10 extra sub-bullets (8° spread)[]");
+                if (perkB == 2) txtB = t("[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2B\n• 50% Tỉ lệ hồi 100% máu khi bắn\n• Nếu vượt Max HP: Bắn thêm 20 đạn phụ (Độ lệch 4°)[]", "[green]✔ ACTIVATED: PERK 2B\n• 50% Chance to heal 100% HP on fire\n• Overheal: Fires 20 extra sub-bullets (4° spread)[]");
+                if (perkB == 3) txtB = t("[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3B\n• 30% Tỉ lệ tăng 120% tốc độ bắn trong 15s khi trúng mục tiêu[]", "[green]✔ ACTIVATED: PERK 3B\n• 30% Chance to gain +120% Fire Rate for 15s on hit[]");
 
                 let txtBCell = boxB.add(txtB);
                 txtBCell.width(340).get().setWrap(true);
@@ -632,46 +665,78 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
             dialog.cont.add(scroll).maxHeight(420);
             dialog.addCloseButton();
             dialog.show();
-        })).size(50, 40).tooltip("Trung tâm nâng cấp pháo Swordoder");
+        })).size(50, 40).tooltip(t("Trung tâm nâng cấp pháo Swordoder", "Swordoder Turret Upgrade Center"));
 
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-            let title = " Thông số pháo Swordoder Mk1 ";
+            let title = t(" Thông số pháo Swordoder Mk1 ", " Swordoder Mk1 Stats ");
             
-            let descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN PHÁO SWORDODER (MK1) ⚡[]\n" +
-                          "• Máu: 3,600 | Tầm bắn: 105px (13.1 ô) | Sát thương gốc: 30.0 + 19 (Chém)\n" +
-                          "• [red]Nội tại Tận diệt: Mục tiêu bị giảm còn <= 1% máu lập tức chịu 999,999 sát thương kết liễu![]\n" +
-                          "• Cơ chế gốc: Bắn 1 viên đạn đơn. Khi đạn chạm/despawn tạo vệt chém gây 19 sát thương diện rộng.\n" +
-                          "• Nâng cấp: Nâng cấp trực tiếp chỉ số và kỹ năng qua hệ thống Phúc lợi A & B.";
+            let descStr = t(
+                "[gold]⚡ THÔNG SỐ CƠ BẢN PHÁO SWORDODER (MK1) ⚡[]\n" +
+                "• Máu: 3,600 | Tầm bắn: 105px (13.1 ô) | Sát thương gốc: 30.0 + 19 (Chém)\n" +
+                "• [red]Nội tại Tận diệt: Mục tiêu bị giảm còn <= 1% máu lập tức chịu 999,999 sát thương kết liễu![]\n" +
+                "• Cơ chế gốc: Bắn 1 viên đạn đơn. Khi đạn chạm/despawn tạo vệt chém gây 19 sát thương diện rộng.\n" +
+                "• Nâng cấp: Nâng cấp trực tiếp chỉ số và kỹ năng qua hệ thống Phúc lợi A & B.",
+
+                "[gold]⚡ SWORDODER TURRET BASIC STATS (MK1) ⚡[]\n" +
+                "• Health: 3,600 | Range: 105px (13.1 tiles) | Base Damage: 30.0 + 19 (Slash)\n" +
+                "• [red]Execute Passive: Target drops to <= 1% HP instantly receives 999,999 lethal damage![]\n" +
+                "• Base Mechanism: Fires 1 bullet. On hit/despawn creates a slash arc dealing 19 AoE damage.\n" +
+                "• Upgrades: Directly upgrade stats and skills via Perk A & B system."
+            );
 
             let perkA = this.getPerkA();
             let perkB = this.getPerkB();
 
             if (perkA > 0) {
-                descStr += "\n\n[yellow]★ ĐÃ KÍCH HOẠT PHÚC LỢI A ★[]";
+                descStr += t("\n\n[yellow]★ ĐÃ KÍCH HOẠT PHÚC LỢI A ★[]", "\n\n[yellow]★ PERK A ACTIVATED ★[]");
                 if (perkA == 1) {
-                    descStr += "\n[green]• Phúc lợi 1A: Sát thương Đạn +50% (45), Chém +50% (28.5), Tầm bắn +50% (157.5px), Shotgun 15 viên.[]";
+                    descStr += t(
+                        "\n[green]• Phúc lợi 1A: Sát thương Đạn +50% (45), Chém +50% (28.5), Tầm bắn +50% (157.5px), Shotgun 15 viên.[]",
+                        "\n[green]• Perk 1A: Bullet Dmg +50% (45), Slash +50% (28.5), Range +50% (157.5px), Shotgun 15 count.[]"
+                    );
                 }
                 if (perkA == 2) {
-                    descStr += "\n[green]• Phúc lợi 2A: Sát thương Đạn +20% (36), Chém +20% (22.8), Tầm bắn +20% (126px), Bắn 8 viên + 10 Dmg lan.[]";
+                    descStr += t(
+                        "\n[green]• Phúc lợi 2A: Sát thương Đạn +20% (36), Chém +20% (22.8), Tầm bắn +20% (126px), Bắn 8 viên + 10 Dmg lan.[]",
+                        "\n[green]• Perk 2A: Bullet Dmg +20% (36), Slash +20% (22.8), Range +20% (126px), Fires 8 bullets + 10 Splash Dmg.[]"
+                    );
                 }
                 if (perkA == 3) {
-                    descStr += "\n[green]• Phúc lợi 3A: Sát thương Đạn +200% (90), Chém +200% (57), Tầm bắn -30% (73.5px), Bắn liên tiếp 4 viên + Nạp nhanh (1s).[]";
+                    descStr += t(
+                        "\n[green]• Phúc lợi 3A: Sát thương Đạn +200% (90), Chém +200% (57), Tầm bắn -30% (73.5px), Bắn liên tiếp 4 viên + Nạp nhanh (1s).[]",
+                        "\n[green]• Perk 3A: Bullet Dmg +200% (90), Slash +200% (57), Range -30% (73.5px), Burst 4 bullets + Fast Reload (1s).[]"
+                    );
                 }
             }
 
             if (perkB > 0) {
-                descStr += "\n\n[cyan]★ ĐÃ KÍCH HOẠT PHÚC LỢI B ★[]";
+                descStr += t("\n\n[cyan]★ ĐÃ KÍCH HOẠT PHÚC LỢI B ★[]", "\n\n[cyan]★ PERK B ACTIVATED ★[]");
                 if (perkB == 1) {
-                    descStr += "\n[green]• Phúc lợi 1B: Đổi kiểu bắn sang 2 bên góc 30° (-30° bắn trước, +30° bắn sau 0.2s). Ghi đè kiểu bắn của Phúc lợi A![]\n" +
-                               "  [gray]Kỹ năng đặc biệt: 15% cơ hội bắn bổ sung loạt 10 đạn phụ phân tán khi trúng mục tiêu.[]";
+                    descStr += t(
+                        "\n[green]• Phúc lợi 1B: Đổi kiểu bắn sang 2 bên góc 30° (-30° bắn trước, +30° bắn sau 0.2s). Ghi đè kiểu bắn của Phúc lợi A![]\n" +
+                        "  [gray]Kỹ năng đặc biệt: 15% cơ hội bắn bổ sung loạt 10 đạn phụ phân tán khi trúng mục tiêu.[]",
+
+                        "\n[green]• Perk 1B: Switch pattern to dual 30° sides (-30° first, +30° after 0.2s). Overrides Perk A pattern![]\n" +
+                        "  [gray]Special Skill: 15% chance to trigger extra 10 sub-bullets spread fire on hit.[]"
+                    );
                 }
                 if (perkB == 2) {
-                    descStr += "\n[green]• Phúc lợi 2B: Giữ nguyên các chỉ số cơ bản.[]\n" +
-                               "  [gray]Kỹ năng đặc biệt: 50% cơ hội hồi 100% máu khi bắn. Nếu máu đã đầy, bắn xả thêm 20 đạn phụ.[]";
+                    descStr += t(
+                        "\n[green]• Phúc lợi 2B: Giữ nguyên các chỉ số cơ bản.[]\n" +
+                        "  [gray]Kỹ năng đặc biệt: 50% cơ hội hồi 100% máu khi bắn. Nếu máu đã đầy, bắn xả thêm 20 đạn phụ.[]",
+
+                        "\n[green]• Perk 2B: Keeps base stats unchanged.[]\n" +
+                        "  [gray]Special Skill: 50% chance to heal 100% HP when firing. Overheal releases 20 sub-bullets.[]"
+                    );
                 }
                 if (perkB == 3) {
-                    descStr += "\n[green]• Phúc lợi 3B: Tốc độ bắn buff +120% khi kích hoạt.[]\n" +
-                               "  [gray]Kỹ năng đặc biệt: 30% cơ hội tự kích hoạt buff siêu tốc độ bắn duy trì trong 15s mỗi khi bắn trúng địch.[]";
+                    descStr += t(
+                        "\n[green]• Phúc lợi 3B: Tốc độ bắn buff +120% khi kích hoạt.[]\n" +
+                        "  [gray]Kỹ năng đặc biệt: 30% cơ hội tự kích hoạt buff siêu tốc độ bắn duy trì trong 15s mỗi khi bắn trúng địch.[]",
+
+                        "\n[green]• Perk 3B: Fire rate buffed +120% when active.[]\n" +
+                        "  [gray]Special Skill: 30% chance to trigger super fire rate buff for 15s upon hitting target.[]"
+                    );
                 }
             }
 
@@ -686,7 +751,7 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
             dialog.cont.add(scroll).maxHeight(400);
             dialog.addCloseButton();
             dialog.show();
-        })).size(50, 40).tooltip("Xem thông số pháo Swordoder Mk1");
+        })).size(50, 40).tooltip(t("Xem thông số pháo Swordoder Mk1", "View Swordoder Mk1 Stats"));
     },
 
     write(write) {

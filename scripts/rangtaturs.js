@@ -3,8 +3,8 @@ const berserkTimeMax = 300;
 const chargeTimeMaxMK2 = 140;   
 const berserkTimeMaxMK2 = 360;  
 
-const reqRangtatursMK2 = { copper: 8000, lead: 7000, silicon: 0 };
-const reqRangtatursMK2B = { copper: 12000, lead: 9500, silicon: 5500 };
+ const reqRangtatursMK2 = { copper: 1600, lead: 1400, silicon: 0 };
+const reqRangtatursMK2B = { copper: 2400, lead: 1900, silicon: 1100 };
 
 const acidCorrosionEffect = new Effect(30, cons(e => {
     Draw.color(Color.valueOf("#a3e635"), Color.valueOf("#65a30d"), e.fin());
@@ -265,14 +265,15 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
     buildConfiguration(table) {
         table.clear(); table.row();
         let tier = this.evolutionTier;
+        let isEn = Core.settings.getString("locale").startsWith("en");
 
         if(tier == 0) {
             table.button(Icon.upOpen, Styles.cleari, 40, run(() => {
-                let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Rangtaturs", {});
+                let dialog = extend(BaseDialog, isEn ? "Rangtaturs Upgrade Center" : "Trung tâm nâng cấp pháo Rangtaturs", {});
                 
                 let reqCell = dialog.cont.label(prov(() => {
                     let core = this.team.core();
-                    if(!core) return "[red]Không tìm thấy Kho cốt lõi![]";
+                    if(!core) return isEn ? "[red]Core Vault not found![]" : "[red]Không tìm thấy Kho cốt lõi![]";
                     
                     let currentCopper = core.items.get(Items.copper);
                     let currentLead = core.items.get(Items.lead);
@@ -285,14 +286,25 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                     let ledColor2 = currentLead >= reqRangtatursMK2B.lead ? "[green]" : "[red]";
                     let silColor2 = currentSilicon >= reqRangtatursMK2B.silicon ? "[green]" : "[red]";
 
-                    return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
-                           "[cyan]Nhánh MK2:[]\n" +
-                           " • Đồng: " + copColor1 + currentCopper + "[] / " + reqRangtatursMK2.copper + "\n" +
-                           " • Chì: " + ledColor1 + currentLead + "[] / " + reqRangtatursMK2.lead + "\n" +
-                           "[purple]Nhánh MK2B:[]\n" +
-                           " • Đồng: " + copColor2 + currentCopper + "[] / " + reqRangtatursMK2B.copper + "\n" +
-                           " • Chì: " + ledColor2 + currentLead + "[] / " + reqRangtatursMK2B.lead + "\n" +
-                           " • Silic: " + silColor2 + currentSilicon + "[] / " + reqRangtatursMK2B.silicon;
+                    if(isEn){
+                        return "[yellow]CORE VAULT REQUIREMENTS:[]\n" +
+                               "[cyan]MK2 Branch:[]\n" +
+                               " • Copper: " + copColor1 + currentCopper + "[] / " + reqRangtatursMK2.copper + "\n" +
+                               " • Lead: " + ledColor1 + currentLead + "[] / " + reqRangtatursMK2.lead + "\n" +
+                               "[purple]MK2B Branch:[]\n" +
+                               " • Copper: " + copColor2 + currentCopper + "[] / " + reqRangtatursMK2B.copper + "\n" +
+                               " • Lead: " + ledColor2 + currentLead + "[] / " + reqRangtatursMK2B.lead + "\n" +
+                               " • Silicon: " + silColor2 + currentSilicon + "[] / " + reqRangtatursMK2B.silicon;
+                    } else {
+                        return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
+                               "[cyan]Nhánh MK2:[]\n" +
+                               " • Đồng: " + copColor1 + currentCopper + "[] / " + reqRangtatursMK2.copper + "\n" +
+                               " • Chì: " + ledColor1 + currentLead + "[] / " + reqRangtatursMK2.lead + "\n" +
+                               "[purple]Nhánh MK2B:[]\n" +
+                               " • Đồng: " + copColor2 + currentCopper + "[] / " + reqRangtatursMK2B.copper + "\n" +
+                               " • Chì: " + ledColor2 + currentLead + "[] / " + reqRangtatursMK2B.lead + "\n" +
+                               " • Silic: " + silColor2 + currentSilicon + "[] / " + reqRangtatursMK2B.silicon;
+                    }
                 }));
                 
                 reqCell.width(360).get().setWrap(true);
@@ -303,14 +315,21 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
 
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                 b1.add("[cyan]===(MK2)===[]").row();
-                let b1D = b1.add("Cấu hình tăng cường mật độ mảnh hỏa lực:\n" +
-                                 " [white]• Mưa đạn trạng thái: Đẩy mạnh lên [green]39 viên đạn mảnh[].[]\n" +
-                                 " [white]• Siêu Laser tích tụ: Thời gian sạc rút ngắn còn [yellow]2.33 giây (140 tick)[] [lime](Giảm -22.2%)[].[]\n" +
-                                 " [white]• Laze kích nổ: Sát thương đột biến nhân tiến đạt mức [red]310% hỏa lực[] cơ bản.[]\n" +
-                                 " [white]• Chu kỳ Cuồng nộ: Kéo dài thời gian bộc phá lên [orange]6.0 giây[] [lime](+20%)[], đẩy tốc bắn thường lên [red]250%[].[]");
+                let b1Text = isEn ?
+                    "Firepower Density Boost Configuration:\n" +
+                    " [white]• Status Volley: Increases to [green]39 shrapnel bullets[].[]\n" +
+                    " [white]• Super Laser Charge: Charge time reduced to [yellow]2.33s (140 ticks)[] [lime](-22.2%) [].[]\n" +
+                    " [white]• Laser Detonation: Exponential damage spikes to [red]310%[] base firepower.[]\n" +
+                    " [white]• Berserk Cycle: Duration extended to [orange]6.0s[] [lime](+20%)[], boosting standard fire rate to [red]250%[].[]" :
+                    "Cấu hình tăng cường mật độ mảnh hỏa lực:\n" +
+                    " [white]• Mưa đạn trạng thái: Đẩy mạnh lên [green]39 viên đạn mảnh[].[]\n" +
+                    " [white]• Siêu Laser tích tụ: Thời gian sạc rút ngắn còn [yellow]2.33 giây (140 tick)[] [lime](Giảm -22.2%)[].[]\n" +
+                    " [white]• Laze kích nổ: Sát thương đột biến nhân tiến đạt mức [red]310% hỏa lực[] cơ bản.[]\n" +
+                    " [white]• Chu kỳ Cuồng nộ: Kéo dài thời gian bộc phá lên [orange]6.0 giây[] [lime](+20%)[], đẩy tốc bắn thường lên [red]250%[].[]";
+                let b1D = b1.add(b1Text);
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left);
                 b1.row();
-                b1.button("[green]KÍCH HOẠT MK2[]", run(() => {
+                b1.button(isEn ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", run(() => {
                     let core = this.team.core();
                     if(core && core.items.get(Items.copper) >= reqRangtatursMK2.copper && core.items.get(Items.lead) >= reqRangtatursMK2.lead){
                         core.items.remove(Items.copper, reqRangtatursMK2.copper);
@@ -319,20 +338,27 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                         Fx.upgradeCore.at(this.x, this.y);
                         dialog.hide(); this.deselect();
                     } else {
-                        Vars.ui.showInfo("[red]Không đủ tài nguyên nâng cấp cho nhánh MK2![]");
+                        Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2 branch![]" : "[red]Không đủ tài nguyên nâng cấp cho nhánh MK2![]");
                     }
                 })).size(180, 38);
 
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                 b2.add("[purple]===(MK2B)===[]").row();
-                let b2D = b2.add("Cấu hình tối thượng hủy diệt bão đạn diện rộng:\n" +
-                                 " [white]• Siêu bão hỗn hợp: Loạt bắn shotgun tăng số lượng mảnh lên [green]50 viên đạn[].[]\n" +
-                                 " [white]• Chu kỳ nén ép xung: Khóa cố định thời gian năng lượng hồi loạt bắn thường còn [yellow]1.16 giây (70 tick)[].[]\n" +
-                                 " [white]• Tuyệt chiêu Xả Bão (Burst): Bắn đủ 6 phát giải phóng bão đơn cực cực đại [orange]100 viên đạn nén[].[]\n" +
-                                 " [white]• Quá tải nhiệt: Hệ thống rơi vào trạng thái làm mát cưỡng bức, ngắt nòng trong [purple]3.0 giây (180 tick)[].[]");
+                let b2Text = isEn ?
+                    "Ultimate Area Storm Destruction Configuration:\n" +
+                    " [white]• Hybrid Superstorm: Shotgun burst pellet count increased to [green]50 bullets[].[]\n" +
+                    " [white]• Overclock Cycle: Fixed standard reload time to [yellow]1.16s (70 ticks)[].[]\n" +
+                    " [white]• Burst Mode: Fire 6 shots to unleash a massive unipolar storm of [orange]100 compressed bullets[].[]\n" +
+                    " [white]• Thermal Overload: Forced cooling system locks barrels for [purple]3.0s (180 ticks)[].[]" :
+                    "Cấu hình tối thượng hủy diệt bão đạn diện rộng:\n" +
+                    " [white]• Siêu bão hỗn hợp: Loạt bắn shotgun tăng số lượng mảnh lên [green]50 viên đạn[].[]\n" +
+                    " [white]• Chu kỳ nén ép xung: Khóa cố định thời gian năng lượng hồi loạt bắn thường còn [yellow]1.16 giây (70 tick)[].[]\n" +
+                    " [white]• Tuyệt chiêu Xả Bão (Burst): Bắn đủ 6 phát giải phóng bão đơn cực cực đại [orange]100 viên đạn nén[].[]\n" +
+                    " [white]• Quá tải nhiệt: Hệ thống rơi vào trạng thái làm mát cưỡng bức, ngắt nòng trong [purple]3.0 giây (180 tick)[].[]";
+                let b2D = b2.add(b2Text);
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left);
                 b2.row();
-                b2.button("[orange]KÍCH HOẠT MK2B[]", run(() => {
+                b2.button(isEn ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", run(() => {
                     let core = this.team.core();
                     if(core && core.items.get(Items.copper) >= reqRangtatursMK2B.copper && core.items.get(Items.lead) >= reqRangtatursMK2B.lead && core.items.get(Items.silicon) >= reqRangtatursMK2B.silicon){
                         core.items.remove(Items.copper, reqRangtatursMK2B.copper);
@@ -342,7 +368,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                         Fx.bigShockwave.at(this.x, this.y);
                         dialog.hide(); this.deselect();
                     } else {
-                        Vars.ui.showInfo("[red]Không đủ tài nguyên nâng cấp cho nhánh MK2B![]");
+                        Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2B branch![]" : "[red]Không đủ tài nguyên nâng cấp cho nhánh MK2B![]");
                     }
                 })).size(180, 38);
 
@@ -354,21 +380,31 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                 scroll.setScrollingDisabled(true, false);
                 dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); dialog.show();
-            })).size(50, 40).tooltip("Nâng cấp tháp pháo Rangtaturs");
+            })).size(50, 40).tooltip(isEn ? "Upgrade Rangtaturs Turret" : "Nâng cấp tháp pháo Rangtaturs");
         } else {
             table.button(Icon.lock, Styles.cleari, 40, run(() => {
-                Vars.ui.showInfo("[scarlet]HỆ THỐNG RANGTATURS ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]");
-            })).size(50, 40).tooltip("Đã đạt cấp tối đa");
+                Vars.ui.showInfo(isEn ? "[scarlet]RANGTATURS SYSTEM HAS REACHED MAXIMUM EVOLUTION TIER![]" : "[scarlet]HỆ THỐNG RANGTATURS ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]");
+            })).size(50, 40).tooltip(isEn ? "Max level reached" : "Đã đạt cấp tối đa");
         }
 
         table.button(Icon.info, Styles.cleari, 40, run(() => {
-            let title = " Thông số pháo Rangtaturs: ";
+            let title = isEn ? " Rangtaturs Turret Stats: " : " Thông số pháo Rangtaturs: ";
             let descStr = "";
             let currentTier = this.evolutionTier;
 
             if (currentTier == 0) {
                 title += "[yellow](MK1)[]";
-                descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
+                descStr = isEn ?
+                          "[gold]⚡ BASE STATS (MK1) ⚡[]\n" +
+                          "[lightgray]Turret HP:[] [green]" + this.health + "[]\n" +
+                          "📐 Block Size:[] [white]" + this.block.size + "x" + this.block.size + "[]\n" +
+                          "Effective Range:[] [orange]" + this.block.range + " pixels[]\n" +
+                          "Target Type:[] [yellow]Ground targets only[]\n\n" +
+                          "[sky]⚡ FIREPOWER & MECHANICS:[]\n" +
+                          "• [lightgray]Standard Shotgun:[] Fires a spread of [green]29 shrapnel bullets[] applying random status effects from a 7-debuff pool.\n" +
+                          "• [lightgray]Charge Cycle:[] Continuous standard fire for [yellow]3.0s (180 ticks)[] activates Grand Laser Beam dealing [gold]280%[] exponential damage.\n" +
+                          "• [lightgray]Berserk Protocol:[] Firing 3 Laser shots overcharges the core for [orange]5.0s (300 ticks)[], granting [green]+150%[] reload speed." :
+                          "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
                           "[lightgray]Máu tháp pháo:[] [green]" + this.health + "[]\n" +
                           "📐 Kích thước khối:[] [white]" + this.block.size + "x" + this.block.size + "[]\n" +
                           "Tầm bắn hiệu dụng:[] [orange]" + this.block.range + " pixel[]\n" +
@@ -379,7 +415,16 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                           "• [lightgray]Mạch Cuồng nộ (Berserk):[] Tích đủ 3 phát Laze đưa lõi pháo vào trạng thái quá tải trong [orange]5.0 giây (300 tick)[], tăng tốc độ hồi đạn bắn thường lên [green]+150%[].";
             } else if (currentTier == 1) {
                 title += "[cyan](MK2)[]";
-                descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
+                descStr = isEn ?
+                          "[cyan]⚡ BASE STATS (MK2) ⚡[]\n" +
+                          "[lightgray]Turret HP:[] [green]" + this.health + "[]\n" +
+                          "📐 Block Size:[] [white]" + this.block.size + "x" + this.block.size + "[]\n" +
+                          "Effective Range:[] [orange]" + this.block.range + " pixels[]\n\n" +
+                          "[lime]⚡ FIREPOWER & MECHANICS:[]\n" +
+                          "• [lightgray]Status Barrage:[] Shotgun pellet count increased to [green]39 bullets[].\n" +
+                          "• [lightgray]Short-Circuit Charge:[] Laser charge time reduced to [yellow]2.33s (140 ticks) [lime](-22.2%)[], Laser core damage boosted to [red]310%[].[]\n" +
+                          "• [lightgray]Super Berserk:[] Overcharge duration increased to [orange]6.0s (360 ticks) [lime](+20%)[], driving normal reload speed up to [red]250%[].":
+                          "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
                           "[lightgray]Máu tháp pháo:[] [green]" + this.health + "[]\n" +
                           "📐 Kích thước khối:[] [white]" + this.block.size + "x" + this.block.size + "[]\n" +
                           "Tầm bắn hiệu dụng:[] [orange]" + this.block.range + " pixel[]\n\n" +
@@ -389,7 +434,17 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                           "• [lightgray]Chu kỳ Siêu cuồng nộ:[] Thời gian bộc phá tăng lên [orange]6.0 giây (360 tick) [lime](+20%)[], ép tốc độ xả đạn bắn thường lên mức cực đại [red]250%[].";
             } else if (currentTier == 2) {
                 title += "[purple](MK2B)[]";
-                descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
+                descStr = isEn ?
+                          "[purple]⚡ BASE STATS (MK2B) ⚡[]\n" +
+                          "[lightgray]Turret HP:[] [green]" + this.health + "[]\n" +
+                          "📐 Block Size:[] [white]" + this.block.size + "x" + this.block.size + "[]\n" +
+                          "Effective Range:[] [orange]" + this.block.range + " pixels[]\n\n" +
+                          "[purple]🔥 🔥 GRAVITY STATUS SUPERSTORM MECHANICS:[]\n" +
+                          "• Removes old point-charging and Berserk gauge mechanisms completely.\n" +
+                          "• [lightgray]Hybrid Shotgun Storm:[] Fires a compressed Laser beam accompanied by a heavy density shotgun spray of up to [green]50 bullets[].\n" +
+                          "• [lightgray]Overclock Cycle:[] Locks normal reload intervals strictly to [yellow]1.16s (70 ticks)[].[]\n" +
+                          "• [lightgray]Burst Mode:[] Accumulates 6 shots to automatically unleash a hyper storm of [red]100 hybrid bullets[], followed by a forced cooling lockdown for [white]3.0s (180 ticks)[].":
+                          "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
                           "[lightgray]Máu tháp pháo:[] [green]" + this.health + "[]\n" +
                           "📐 Kích thước khối:[] [white]" + this.block.size + "x" + this.block.size + "[]\n" +
                           "Tầm bắn hiệu dụng:[] [orange]" + this.block.range + " pixel[]\n\n" +
@@ -408,7 +463,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
             scroll.setScrollingDisabled(true, false);
             dialog.cont.add(scroll).maxHeight(400);
             dialog.addCloseButton(); dialog.show();
-        })).size(50, 40).tooltip("Xem thông số chi tiết hệ thống");
+        })).size(50, 40).tooltip(isEn ? "View Detailed System Stats" : "Xem thông số chi tiết hệ thống");
     },
 
     updateTile(){

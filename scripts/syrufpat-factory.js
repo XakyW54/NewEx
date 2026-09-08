@@ -1,7 +1,6 @@
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 
- 
 const expandCircleFx = new Effect(25, cons(e => {
     let radius = 25 * e.fin(); 
     Draw.color(e.color);
@@ -40,6 +39,8 @@ const COLOR_PLAST     = Color.valueOf("cbd97f");
 
 const CRAFT_TIME = 1.0 * 60;
 
+const isEn = () => Core.settings.getString("locale").startsWith("en");
+
 Events.on(ContentInitEvent, () => {
     const syrufpatFactory = Vars.content.getByName(ContentType.block, "newex-syrufpat-factory");
 
@@ -59,9 +60,9 @@ Events.on(ContentInitEvent, () => {
                 new Prov({ 
                     get: function(){ 
                         let timeLeft = e.getOverheatTimeLeft();
-                        if (e.overheatTimer <= 0) return "TRẠNG THÁI: AN TOÀN";
-                        if (e.isOverItemLimit()) return "[scarlet]KHO ĐẦY, NỔ TRONG: " + timeLeft + "s[]";
-                        return "CẢNH BÁO NỔ: " + timeLeft + "s"; 
+                        if (e.overheatTimer <= 0) return isEn() ? "STATUS: SAFE" : "TRẠNG THÁI: AN TOÀN";
+                        if (e.isOverItemLimit()) return isEn() ? "[scarlet]FULL STORAGE, EXPLODE IN: " + timeLeft + "s[]" : "[scarlet]KHO ĐẦY, NỔ TRONG: " + timeLeft + "s[]";
+                        return (isEn() ? "EXPLOSION WARNING: " : "CẢNH BÁO NỔ: ") + timeLeft + "s"; 
                     } 
                 }),
                 new Prov({ 
@@ -90,9 +91,9 @@ Events.on(ContentInitEvent, () => {
             this.overheatTimer = 0;
             this.hasStartedBefore = false;
             
-             this.productionStage = 0;
+            this.productionStage = 0;
 
-             this.dumpGraphiteLeft = 0;
+            this.dumpGraphiteLeft = 0;
             this.dumpSiliconLeft = 0;
             this.dumpPlastaniumLeft = 0;
 
@@ -203,7 +204,7 @@ Events.on(ContentInitEvent, () => {
             let hasEnoughCryo = this.liquids.get(Liquids.cryofluid) >= requiredCryoPerTick;
             let overLimit = this.isOverItemLimit();
 
-             if (this.hasStartedBefore) {
+            if (this.hasStartedBefore) {
                 if (overLimit || (!hasEnoughCryo && this.efficiency > 0)) {
                     this.overheatTimer += Time.delta;
 
@@ -218,7 +219,7 @@ Events.on(ContentInitEvent, () => {
                 }
             }
 
-             let currentSelection = this.getOutputSelection();
+            let currentSelection = this.getOutputSelection();
             
             if (currentSelection == 0) {
                 if (this.items.get(Items.graphite) > 0) this.dump(Items.graphite);
@@ -255,10 +256,9 @@ Events.on(ContentInitEvent, () => {
 
             if (this.efficiency <= 0) return;
 
- 
             this.craftTimer += Time.delta;
 
-             if (this.productionStage == 0) {
+            if (this.productionStage == 0) {
                 if (this.items.get(Items.coal) >= 10 && this.items.get(Items.sand) >= 10 && this.items.get(Items.titanium) >= 10) {
                     if (this.craftTimer >= CRAFT_TIME) {
                         this.items.remove(Items.coal, 10);
@@ -274,7 +274,7 @@ Events.on(ContentInitEvent, () => {
                 return;
             }
 
-             if (this.productionStage == 1) {
+            if (this.productionStage == 1) {
                 if (this.items.get(Items.coal) >= 10 && this.items.get(Items.sand) >= 10 && this.items.get(Items.titanium) >= 10) {
                     if (this.craftTimer >= CRAFT_TIME) {
                         this.items.remove(Items.coal, 10);
@@ -290,7 +290,6 @@ Events.on(ContentInitEvent, () => {
                 return;
             }
 
- 
             if (this.productionStage == 2) {
                 if (this.items.get(Items.coal) >= 10 && this.items.get(Items.sand) >= 10 && this.items.get(Items.titanium) >= 10) {
                     if (this.craftTimer >= CRAFT_TIME) {
@@ -307,7 +306,6 @@ Events.on(ContentInitEvent, () => {
                 return;
             }
 
- 
             if (this.productionStage == 3) {
                 if (this.liquids.get(Liquids.oil) >= 10 && this.items.get(Items.coal) >= 10 && this.items.get(Items.sand) >= 10 && this.items.get(Items.titanium) >= 10) {
                     if (this.craftTimer >= CRAFT_TIME) {
@@ -333,7 +331,7 @@ Events.on(ContentInitEvent, () => {
             table.clear();
 
             table.button(Icon.settings, Styles.cleari, 40, packRun(() => {
-                let dialog = extend(BaseDialog, "Trung tâm Tùy chọn Đầu ra", {});
+                let dialog = extend(BaseDialog, isEn() ? "Output Selection Center" : "Trung tâm Tùy chọn Đầu ra", {});
                 let optTable = new Table();
 
                 const createOptBtn = (name, index) => {
@@ -347,11 +345,11 @@ Events.on(ContentInitEvent, () => {
                     btn.row();
                 };
 
-                optTable.add("[yellow]CHỌN SẢN PHẨM ĐẨY RA BĂNG CHUYỀN:[]").padBottom(10).row();
-                createOptBtn("Than chì (Graphite)", 0);
+                optTable.add(isEn() ? "[yellow]SELECT CONVEYOR OUTPUT ITEM:[]" : "[yellow]CHỌN SẢN PHẨM ĐẨY RA BĂNG CHUYỀN:[]").padBottom(10).row();
+                createOptBtn(isEn() ? "Graphite" : "Than chì (Graphite)", 0);
                 createOptBtn("Silicon", 1);
-                createOptBtn("Nhựa (Plastanium)", 2);
-                createOptBtn("Xả toàn bộ sản phẩm (Tiêu thụ Thorium)", 3);
+                createOptBtn(isEn() ? "Plastanium" : "Nhựa (Plastanium)", 2);
+                createOptBtn(isEn() ? "Dump All (Consumes Thorium)" : "Xả toàn bộ sản phẩm (Tiêu thụ Thorium)", 3);
 
                 let scroll = new ScrollPane(optTable);
                 scroll.setScrollingDisabled(true, false);
@@ -361,8 +359,23 @@ Events.on(ContentInitEvent, () => {
             })).size(50, 40);
 
             table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-                let title = " Thông số Nhà máy Syrufpat ";
-                let descStr = "[gold]⚡ QUY TRÌNH SẢN XUẤT TUẦN TỰ (1s/GIAI ĐOẠN) ⚡[]\n\n" +
+                let title = isEn() ? " Syrufpat Factory Specs " : " Thông số Nhà máy Syrufpat ";
+                let descStr = isEn() ? 
+                              "[gold]⚡ SEQUENTIAL PRODUCTION PROCESS (1s/STAGE) ⚡[]\n\n" +
+                              "[cyan]• Stage 1 (Graphite):[] 10 Coal + 10 Sand + 10 Titanium ➔ [green]100 Graphite[] (1s)\n" +
+                              "[cyan]• Stage 2 (Silicon):[] 10 Coal + 10 Sand + 10 Titanium ➔ [green]100 Silicon[] (1s)\n" +
+                              "[cyan]• Stage 3 (Oil):[] 10 Coal + 10 Sand + 10 Titanium ➔ [green]100 Oil[] (1s)\n" +
+                              "[cyan]• Stage 4 (Plastanium):[] 10 Oil + 10 Coal + 10 Sand + 10 Titanium ➔ [green]100 Plastanium[] (1s)\n\n" +
+                              "[lightgray]* Continuous loop Stage 1 ➔ 2 ➔ 3 ➔ 4 ➔ 1 regardless of output dumping.[]\n\n" +
+                              "[gold]⚡ OUTPUT BYPASS OPTION ⚡[]\n" +
+                              "• Each [accent]1 Thorium[] loaded allows simultaneous dumping of [green]1 Graphite, 1 Silicon, 1 Plastanium[].\n" +
+                              "• Dumping stops immediately when Thorium is depleted.\n\n" +
+                              "[scarlet]⚠ APOCALYPTIC EXPLOSION MECHANIC ⚠[]\n" +
+                              "• Requires [cyan]500 Cryofluid/s[] for cooling.\n" +
+                              "• 60s explosion countdown if storage [red]exceeds 1100 items[] or lacks Cryofluid.\n" +
+                              "• [red]EXPLOSION: INSTANTLY DESTROYS ALL Units and Blocks[] within a 100-tile radius!"
+                              :
+                              "[gold]⚡ QUY TRÌNH SẢN XUẤT TUẦN TỰ (1s/GIAI ĐOẠN) ⚡[]\n\n" +
                               "[cyan]• Lớp 1 (Than chì):[] 10 Coal + 10 Sand + 10 Titanium ➔ [green]100 Graphite[] (1s)\n" +
                               "[cyan]• Lớp 2 (Silicon):[] 10 Coal + 10 Sand + 10 Titanium ➔ [green]100 Silicon[] (1s)\n" +
                               "[cyan]• Lớp 3 (Dầu mỏ):[] 10 Coal + 10 Sand + 10 Titanium ➔ [green]100 Oil[] (1s)\n" +

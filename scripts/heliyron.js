@@ -1,10 +1,14 @@
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
- 
+
+function isVN() {
+    let loc = Core.settings.getString("locale", "en");
+    return loc.startsWith("vi");
+}
+
 const shootSoundBlaster = Vars.tree.loadSound("loudly-blaster-shot-1");
 
- 
 function getModRegion(spriteName) {
     if (Core.atlas.has(spriteName)) return Core.atlas.find(spriteName);
     if (Core.atlas.has("newex-" + spriteName)) return Core.atlas.find("newex-" + spriteName);
@@ -12,10 +16,9 @@ function getModRegion(spriteName) {
     return Core.atlas.find("clear");
 }
 
- 
 const reqMK2 = { copper: 8000, lead: 4000, titanium: 0 };
 const reqMK2B = { copper: 8000, lead: 4000, titanium: 2000 };
- 
+
 const heliyronParticleEffect = new Effect(18, e => {
     Draw.color(e.color);
     let angles = [0, 90, 180, 270];
@@ -27,7 +30,6 @@ const heliyronParticleEffect = new Effect(18, e => {
     }
 });
 
- 
 const heliyronMK1Bullet = extend(BasicBulletType, {
     speed: 17, damage: 150, width: 7, height: 38, lifetime: 33,
     frontColor: Color.valueOf("#e0f7fa"), backColor: Color.valueOf("#d47c00"),
@@ -74,7 +76,6 @@ const heliyronMK2BBullet = extend(BasicBulletType, {
     }
 });
 
- 
 const heliyronSubBullet = extend(BasicBulletType, {
     speed: 15, damage: 120, width: 5, height: 26, lifetime: 50,
     frontColor: Color.valueOf("#e0f7fa"), backColor: Color.valueOf("#ff9800"),
@@ -85,7 +86,6 @@ const heliyronSubBullet = extend(BasicBulletType, {
     trailInterval: 3
 });
 
- 
 const heliyronSubBullet2 = extend(BasicBulletType, {
     speed: 16, damage: 120, width: 5, height: 26, lifetime: 50,
     frontColor: Color.valueOf("#ffffff"), backColor: Color.valueOf("#00e5ff"),
@@ -96,13 +96,11 @@ const heliyronSubBullet2 = extend(BasicBulletType, {
     trailInterval: 3
 });
 
- 
 let heliyron = extend(ItemTurret, "heliyron", {
     squareSprite: false,
 
     load(){
         this.super$load();
- 
         this.bodyRegion = getModRegion("heliyron-body") || getModRegion("heliyron");
         this.c1Region = getModRegion("heliyron-c1");
         this.c2Region = getModRegion("heliyron-c2");
@@ -126,7 +124,6 @@ heliyron.config(java.lang.Integer, packCons2((tile, value) => {
     }
 }));
 
- 
 heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
     tierState: 0,
     customRecoil: 0.0,
@@ -169,15 +166,12 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
     updateTile(){
         this.super$updateTile();
 
- 
         this.customRecoil = Mathf.approach(this.customRecoil, 0.0, 0.08 * Time.delta);
 
- 
         let missingHpRatio = Math.max(0, 1 - (this.health / this.maxHealth));
         let targetScale = 0.3 + (missingHpRatio * 0.7);
         this.coreScaleVisual = Mathf.approach(this.coreScaleVisual, targetScale, 0.05 * Time.delta);
 
- 
         let tier = this.getTier();
         if(tier == 2 && (this.health / this.maxHealth) < 0.50){
             if(this.isShooting && this.hasAmmo()){
@@ -196,25 +190,20 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
 
         let dmgMultiplier = this.getDamageMultiplier();
         
- 
         if (shootSoundBlaster) shootSoundBlaster.at(this.x, this.y, Mathf.random(0.9, 1.1));
 
- 
         let b = bullet.create(this, this.team, this.x, this.y, this.rotation);
         if(b != null){
             b.damage = bullet.damage * dmgMultiplier;
         }
 
-   
         if(Mathf.chance(0.4)){
             let rad = this.rotation * Mathf.degRad;
             let cos = Math.cos(rad);
             let sin = Math.sin(rad);
 
- 
             let subDamage = (bullet.damage * 0.8) * dmgMultiplier;
 
- 
             let sideOffsets1 = [-2.0, 2.0];
             for(let i = 0; i < sideOffsets1.length; i++){
                 let side = sideOffsets1[i];
@@ -234,7 +223,6 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
                 if(sb != null) sb.damage = subDamage;
             }
 
- 
             let sideOffsets10 = [-10.0, 10.0];
             let angleOffsets10 = [-25.0, 25.0];
             for(let i = 0; i < sideOffsets10.length; i++){
@@ -258,11 +246,10 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
 
             Fx.shootBig.at(this.x, this.y, this.rotation);
 
-                    this.useAmmo();
+            this.useAmmo();
         }
     },
 
- 
     draw() {
         this.super$draw();
 
@@ -271,14 +258,12 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
         let cos = Math.cos(rad);
         let sin = Math.sin(rad);
 
- 
         if (heliyron.bodyRegion != null && heliyron.bodyRegion.found()) {
             Draw.rect(heliyron.bodyRegion, this.x, this.y, rot);
         }
  
         let recoilDist = this.customRecoil * 5.0;
 
- 
         let c1X = this.x + (-sin * recoilDist) - (cos * recoilDist);
         let c1Y = this.y + (cos * recoilDist) - (sin * recoilDist);
  
@@ -292,7 +277,6 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
             Draw.rect(heliyron.c2Region, c2X, c2Y, rot);
         }
 
- 
         if (heliyron.efcoreRegion != null && heliyron.efcoreRegion.found()) {
             Draw.z(Layer.turret + 0.01);
             let coreWidth = heliyron.efcoreRegion.width * Draw.scl * this.coreScaleVisual;
@@ -309,13 +293,13 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
         table.clear(); table.row();
         let tier = this.getTier();
 
- 
         if(tier == 0) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-                let dialog = extend(BaseDialog, "Trung tâm Nâng cấp Heliyron", {});
+                let dialogTitle = isVN() ? "Trung tâm Nâng cấp Heliyron" : "Heliyron Upgrade Center";
+                let dialog = extend(BaseDialog, dialogTitle, {});
                 let reqCell = dialog.cont.label(packProv(() => {
                     let core = this.team.core();
-                    if(core == null) return "[red]Không tìm thấy Lõi Đội![]";
+                    if(core == null) return isVN() ? "[red]Không tìm thấy Lõi Đội![]" : "[red]No Team Core Found![]";
                     let currentcopper = core.items.get(Items.copper);
                     let currentlead = core.items.get(Items.lead);
                     let currenttitanium = core.items.get(Items.titanium);
@@ -326,9 +310,15 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
                     let leaColor2 = currentlead >= reqMK2B.lead ? "[green]" : "[red]";
                     let titColor2 = currenttitanium >= reqMK2B.titanium ? "[green]" : "[red]";
                     
-                    return "[yellow]YÊU CẦU TÀI NGUYÊN NÂNG CẤP:[]\n" +
-                           "[cyan]Nhánh MK2:[] " + copColor1 + "Đồng " + currentcopper + "/" + reqMK2.copper + "[] | " + leaColor1 + "Chì " + currentlead + "/" + reqMK2.lead + "[]\n" +
-                           "[purple]Nhánh MK2B:[] " + copColor2 + "Đồng " + currentcopper + "/" + reqMK2B.copper + "[] | " + leaColor2 + "Chì " + currentlead + "/" + reqMK2B.lead + "[] | " + titColor2 + "Titan " + currenttitanium + "/" + reqMK2B.titanium + "[]";
+                    if (isVN()) {
+                        return "[yellow]YÊU CẦU TÀI NGUYÊN NÂNG CẤP:[]\n" +
+                               "[cyan]Nhánh MK2:[] " + copColor1 + "Đồng " + currentcopper + "/" + reqMK2.copper + "[] | " + leaColor1 + "Chì " + currentlead + "/" + reqMK2.lead + "[]\n" +
+                               "[purple]Nhánh MK2B:[] " + copColor2 + "Đồng " + currentcopper + "/" + reqMK2B.copper + "[] | " + leaColor2 + "Chì " + currentlead + "/" + reqMK2B.lead + "[] | " + titColor2 + "Titan " + currenttitanium + "/" + reqMK2B.titanium + "[]";
+                    } else {
+                        return "[yellow]UPGRADE RESOURCE REQUIREMENTS:[]\n" +
+                               "[cyan]MK2 Branch:[] " + copColor1 + "Copper " + currentcopper + "/" + reqMK2.copper + "[] | " + leaColor1 + "Lead " + currentlead + "/" + reqMK2.lead + "[]\n" +
+                               "[purple]MK2B Branch:[] " + copColor2 + "Copper " + currentcopper + "/" + reqMK2B.copper + "[] | " + leaColor2 + "Lead " + currentlead + "/" + reqMK2B.lead + "[] | " + titColor2 + "Titanium " + currenttitanium + "/" + reqMK2B.titanium + "[]";
+                    }
                 }));
                 
                 reqCell.width(360).get().setWrap(true);
@@ -337,44 +327,64 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
 
                 let branchesTable = new Table();
 
- 
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
-                b1.add("[cyan]===(CẤU HÌNH MK2)===[]").row();
-                let b1D = b1.add(
+                let b1Title = isVN() ? "[cyan]===(CẤU HÌNH MK2)===[]" : "[cyan]===(MK2 CONFIG)===[]";
+                b1.add(b1Title).row();
+
+                let b1Desc = isVN() ?
                     " [white]• Máu: [green]+50%[] (lên 2,175 HP)\n" +
                     " [white]• Sát thương gốc: [lightgray]150[]\n" +
                     " [white]• Phạm vi bắn: [orange]+3.6%[] (lên 570 px)\n" +
                     " [white]• Nội tại: [yellow]+50% Sát thương[] với mỗi [red]10% HP mất[]\n" +
                     " [white]• Cơ chế: Mất [red]1% HP[] khi trúng địch | 40% cơ hội bắn thêm 8 đạn phụ (4 thẳng 80% SD, 4 chéo 80% SD tầm xa)"
-                );
+                    :
+                    " [white]• Health: [green]+50%[] (up to 2,175 HP)\n" +
+                    " [white]• Base Damage: [lightgray]150[]\n" +
+                    " [white]• Range: [orange]+3.6%[] (up to 570 px)\n" +
+                    " [white]• Passive: [yellow]+50% Damage[] per [red]10% missing HP[]\n" +
+                    " [white]• Mechanism: Lose [red]1% HP[] on hit | 40% chance for 8 extra bullets (4 straight 80% DMG, 4 diagonal long-range)";
+
+                let b1D = b1.add(b1Desc);
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
-                b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
+                
+                let b1BtnText = isVN() ? "[green]KÍCH HOẠT MK2[]" : "[green]ACTIVATE MK2[]";
+                b1.button(b1BtnText, packRun(() => {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.copper) >= reqMK2.copper && core.items.get(Items.lead) >= reqMK2.lead){
                         core.items.remove(Items.copper, reqMK2.copper); core.items.remove(Items.lead, reqMK2.lead);
                         Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
                         this.configure(java.lang.Integer(1)); dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho MK2![]"); }
+                    } else { Vars.ui.showInfo(isVN() ? "[red]Không đủ tài nguyên cho MK2![]" : "[red]Not enough resources for MK2![]"); }
                 })).size(180, 38);
 
- 
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
-                b2.add("[purple]===(CẤU HÌNH MK2B)===[]").row();
-                let b2D = b2.add(
+                let b2Title = isVN() ? "[purple]===(CẤU HÌNH MK2B)===[]" : "[purple]===(MK2B CONFIG)===[]";
+                b2.add(b2Title).row();
+
+                let b2Desc = isVN() ?
                     " [white]• Máu: [green]+80%[] (lên 2,610 HP)\n" +
                     " [white]• Sát thương gốc: [lightgray]150[] (Đạn tự dẫn đường 12%)\n" +
                     " [white]• Phạm vi bắn: [orange]+1.8%[] (lên 560 px)\n" +
                     " [white]• Nội tại Cuồng Bạo: Khi Máu [red]< 50% HP[] -> [yellow]+200% Tốc bắn (x3)[]\n" +
                     " [white]• Cơ chế: Mất [red]1% HP[] khi trúng địch | 40% cơ hội bắn thêm 8 đạn phụ (4 thẳng 80% SD, 4 chéo 80% SD tầm xa)"
-                );
+                    :
+                    " [white]• Health: [green]+80%[] (up to 2,610 HP)\n" +
+                    " [white]• Base Damage: [lightgray]150[] (12% Homing)\n" +
+                    " [white]• Range: [orange]+1.8%[] (up to 560 px)\n" +
+                    " [white]• Berserk Passive: When HP [red]< 50%[] -> [yellow]+200% Fire Rate (x3)[]\n" +
+                    " [white]• Mechanism: Lose [red]1% HP[] on hit | 40% chance for 8 extra bullets (4 straight 80% DMG, 4 diagonal long-range)";
+
+                let b2D = b2.add(b2Desc);
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
-                b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
+
+                let b2BtnText = isVN() ? "[orange]KÍCH HOẠT MK2B[]" : "[orange]ACTIVATE MK2B[]";
+                b2.button(b2BtnText, packRun(() => {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.copper) >= reqMK2B.copper && core.items.get(Items.lead) >= reqMK2B.lead && core.items.get(Items.titanium) >= reqMK2B.titanium){
                         core.items.remove(Items.copper, reqMK2B.copper); core.items.remove(Items.lead, reqMK2B.lead); core.items.remove(Items.titanium, reqMK2B.titanium);
                         Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
                         this.configure(java.lang.Integer(2)); dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho MK2B![]"); }
+                    } else { Vars.ui.showInfo(isVN() ? "[red]Không đủ tài nguyên cho MK2B![]" : "[red]Not enough resources for MK2B![]"); }
                 })).size(180, 38);
 
                 branchesTable.add(b1).width(340); branchesTable.row();
@@ -385,56 +395,92 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
                 scroll.setScrollingDisabled(true, false);
                 dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); dialog.show();
-            })).size(50, 40).tooltip("Nâng cấp pháo Heliyron");
+            })).size(50, 40).tooltip(isVN() ? "Nâng cấp pháo Heliyron" : "Upgrade Heliyron turret");
         } else {
             table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
-                Vars.ui.showInfo("[scarlet]PHÁO HELIYRON ĐÃ ĐẠT CẤP TỐI ĐA TRONG NHÁNH![]");
-            })).size(50, 40).tooltip("Đã đạt cấp tối đa");
+                Vars.ui.showInfo(isVN() ? "[scarlet]PHÁO HELIYRON ĐÃ ĐẠT CẤP TỐI ĐA TRONG NHÁNH![]" : "[scarlet]HELIYRON HAS REACHED MAXIMUM TIER![]");
+            })).size(50, 40).tooltip(isVN() ? "Đã đạt cấp tối đa" : "Max tier reached");
         }
 
- 
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
             let currentTier = this.getTier();
-            let title = " Thông số Heliyron: ";
+            let title = isVN() ? " Thông số Heliyron: " : " Heliyron Stats: ";
             let descStr = "";
 
             if (currentTier == 0) {
                 title += "[yellow](MK1)[]";
-                descStr = "[gold]⚡ THÔNG SỐ HELIYRON MK1 ⚡[]\n" +
-                          "[lightgray]Máu tối đa:[] [green]1,450 HP[]\n" +
-                          "[lightgray]Sát thương gốc:[] [orange]150[]\n" +
-                          "[lightgray]Phạm vi bắn:[] [orange]550 px[]\n\n" +
-                          "[yellow]CƠ CHẾ BẮN & NỘI TẠI:[]\n" +
-                          "• Mất [red]10% HP[] -> [yellow]+20% Sát thương[] cho mọi đạn.\n" +
-                          "• Tự tổn hại: Mất [red]1% HP[] hiện tại mỗi khi bắn trúng mục tiêu.\n" +
-                          "• Đạn phụ: [cyan]40% cơ hội[] kích hoạt 8 đạn phụ có sát thương bằng [yellow]80%[] đạn gốc:\n" +
-                          "   - [orange]4 viên bắn thẳng:[] Phạm vi đuổi ngắn.\n" +
-                          "   - [cyan]4 viên bắn chéo:[] Phạm vi truy đuổi rộng (tầm xa).";
+                descStr = isVN() ?
+                    "[gold]⚡ THÔNG SỐ HELIYRON MK1 ⚡[]\n" +
+                    "[lightgray]Máu tối đa:[] [green]1,450 HP[]\n" +
+                    "[lightgray]Sát thương gốc:[] [orange]150[]\n" +
+                    "[lightgray]Phạm vi bắn:[] [orange]550 px[]\n\n" +
+                    "[yellow]CƠ CHẾ BẮN & NỘI TẠI:[]\n" +
+                    "• Mất [red]10% HP[] -> [yellow]+20% Sát thương[] cho mọi đạn.\n" +
+                    "• Tự tổn hại: Mất [red]1% HP[] hiện tại mỗi khi bắn trúng mục tiêu.\n" +
+                    "• Đạn phụ: [cyan]40% cơ hội[] kích hoạt 8 đạn phụ có sát thương bằng [yellow]80%[] đạn gốc:\n" +
+                    "   - [orange]4 viên bắn thẳng:[] Phạm vi đuổi ngắn.\n" +
+                    "   - [cyan]4 viên bắn chéo:[] Phạm vi truy đuổi rộng (tầm xa)."
+                    :
+                    "[gold]⚡ HELIYRON MK1 STATS ⚡[]\n" +
+                    "[lightgray]Max Health:[] [green]1,450 HP[]\n" +
+                    "[lightgray]Base Damage:[] [orange]150[]\n" +
+                    "[lightgray]Range:[] [orange]550 px[]\n\n" +
+                    "[yellow]MECHANICS & PASSIVE:[]\n" +
+                    "• Lost [red]10% HP[] -> [yellow]+20% Damage[] for all bullets.\n" +
+                    "• Self-damage: Lose [red]1% current HP[] whenever hitting a target.\n" +
+                    "• Sub-bullets: [cyan]40% chance[] to fire 8 sub-bullets dealing [yellow]80%[] base damage:\n" +
+                    "   - [orange]4 straight bullets:[] Short homing range.\n" +
+                    "   - [cyan]4 diagonal bullets:[] Long homing range.";
             } else if (currentTier == 1) {
                 title += "[cyan](MK2)[]";
-                descStr = "[cyan]⚡ THÔNG SỐ HELIYRON MK2 ⚡[]\n" +
-                          "[lightgray]Máu tối đa:[] [green]2,175 HP[] [lime](+50%)[]\n" +
-                          "[lightgray]Sát thương gốc:[] [orange]150[]\n" +
-                          "[lightgray]Phạm vi bắn:[] [orange]570 px[] [lime](+3.6%)[]\n\n" +
-                          "[yellow]CƠ CHẾ BẮN & NỘI TẠI:[]\n" +
-                          "• Mất [red]10% HP[] -> [yellow]+50% Sát thương[] cho mọi đạn!\n" +
-                          "• Tự tổn hại: Mất [red]1% HP[] hiện tại mỗi khi bắn trúng mục tiêu.\n" +
-                          "• Đạn phụ: [cyan]40% cơ hội[] kích hoạt 8 đạn phụ có sát thương bằng [yellow]80%[] đạn gốc:\n" +
-                          "   - [orange]4 viên bắn thẳng:[] Phạm vi đuổi ngắn.\n" +
-                          "   - [cyan]4 viên bắn chéo:[] Phạm vi truy đuổi rộng (tầm xa).";
+                descStr = isVN() ?
+                    "[cyan]⚡ THÔNG SỐ HELIYRON MK2 ⚡[]\n" +
+                    "[lightgray]Máu tối đa:[] [green]2,175 HP[] [lime](+50%)[]\n" +
+                    "[lightgray]Sát thương gốc:[] [orange]150[]\n" +
+                    "[lightgray]Phạm vi bắn:[] [orange]570 px[] [lime](+3.6%)[]\n\n" +
+                    "[yellow]CƠ CHẾ BẮN & NỘI TẠI:[]\n" +
+                    "• Mất [red]10% HP[] -> [yellow]+50% Sát thương[] cho mọi đạn!\n" +
+                    "• Tự tổn hại: Mất [red]1% HP[] hiện tại mỗi khi bắn trúng mục tiêu.\n" +
+                    "• Đạn phụ: [cyan]40% cơ hội[] kích hoạt 8 đạn phụ có sát thương bằng [yellow]80%[] đạn gốc:\n" +
+                    "   - [orange]4 viên bắn thẳng:[] Phạm vi đuổi ngắn.\n" +
+                    "   - [cyan]4 viên bắn chéo:[] Phạm vi truy đuổi rộng (tầm xa)."
+                    :
+                    "[cyan]⚡ HELIYRON MK2 STATS ⚡[]\n" +
+                    "[lightgray]Max Health:[] [green]2,175 HP[] [lime](+50%)[]\n" +
+                    "[lightgray]Base Damage:[] [orange]150[]\n" +
+                    "[lightgray]Range:[] [orange]570 px[] [lime](+3.6%)[]\n\n" +
+                    "[yellow]MECHANICS & PASSIVE:[]\n" +
+                    "• Lost [red]10% HP[] -> [yellow]+50% Damage[] for all bullets!\n" +
+                    "• Self-damage: Lose [red]1% current HP[] whenever hitting a target.\n" +
+                    "• Sub-bullets: [cyan]40% chance[] to fire 8 sub-bullets dealing [yellow]80%[] base damage:\n" +
+                    "   - [orange]4 straight bullets:[] Short homing range.\n" +
+                    "   - [cyan]4 diagonal bullets:[] Long homing range.";
             } else if (currentTier == 2) {
                 title += "[purple](MK2B)[]";
-                descStr = "[purple]⚡ THÔNG SỐ HELIYRON MK2B ⚡[]\n" +
-                          "[lightgray]Máu tối đa:[] [green]2,610 HP[] [lime](+80%)[]\n" +
-                          "[lightgray]Sát thương gốc:[] [orange]150[] [cyan](Đạn tự dẫn đường 12%)[]\n" +
-                          "[lightgray]Phạm vi bắn:[] [orange]560 px[] [lime](+1.8%)[]\n\n" +
-                          "[yellow]CƠ CHẾ BẮN & NỘI TẠI:[]\n" +
-                          "• Mất [red]10% HP[] -> [yellow]+20% Sát thương[] cho mọi đạn.\n" +
-                          "• [orange]Nội tại Cuồng Bạo:[] Khi Máu [red]< 50% HP[] -> [yellow]+200% Tốc bắn (x3)[]!\n" +
-                          "• Tự tổn hại: Mất [red]1% HP[] hiện tại mỗi khi bắn trúng mục tiêu.\n" +
-                          "• Đạn phụ: [cyan]40% cơ hội[] kích hoạt 8 đạn phụ có sát thương bằng [yellow]80%[] đạn gốc:\n" +
-                          "   - [orange]4 viên bắn thẳng:[] Phạm vi đuổi ngắn.\n" +
-                          "   - [cyan]4 viên bắn chéo:[] Phạm vi truy đuổi rộng (tầm xa).";
+                descStr = isVN() ?
+                    "[purple]⚡ THÔNG SỐ HELIYRON MK2B ⚡[]\n" +
+                    "[lightgray]Máu tối đa:[] [green]2,610 HP[] [lime](+80%)[]\n" +
+                    "[lightgray]Sát thương gốc:[] [orange]150[] [cyan](Đạn tự dẫn đường 12%)[]\n" +
+                    "[lightgray]Phạm vi bắn:[] [orange]560 px[] [lime](+1.8%)[]\n\n" +
+                    "[yellow]CƠ CHẾ BẮN & NỘI TẠI:[]\n" +
+                    "• Mất [red]10% HP[] -> [yellow]+20% Sát thương[] cho mọi đạn.\n" +
+                    "• [orange]Nội tại Cuồng Bạo:[] Khi Máu [red]< 50% HP[] -> [yellow]+200% Tốc bắn (x3)[]!\n" +
+                    "• Tự tổn hại: Mất [red]1% HP[] hiện tại mỗi khi bắn trúng mục tiêu.\n" +
+                    "• Đạn phụ: [cyan]40% cơ hội[] kích hoạt 8 đạn phụ có sát thương bằng [yellow]80%[] đạn gốc:\n" +
+                    "   - [orange]4 viên bắn thẳng:[] Phạm vi đuổi ngắn.\n" +
+                    "   - [cyan]4 viên bắn chéo:[] Phạm vi truy đuổi rộng (tầm xa)."
+                    :
+                    "[purple]⚡ HELIYRON MK2B STATS ⚡[]\n" +
+                    "[lightgray]Max Health:[] [green]2,610 HP[] [lime](+80%)[]\n" +
+                    "[lightgray]Base Damage:[] [orange]150[] [cyan](12% Homing)[]\n" +
+                    "[lightgray]Range:[] [orange]560 px[] [lime](+1.8%)[]\n\n" +
+                    "[yellow]MECHANICS & PASSIVE:[]\n" +
+                    "• Lost [red]10% HP[] -> [yellow]+20% Damage[] for all bullets.\n" +
+                    "• [orange]Berserk Passive:[] When HP [red]< 50%[] -> [yellow]+200% Fire Rate (x3)[]!\n" +
+                    "• Self-damage: Lose [red]1% current HP[] whenever hitting a target.\n" +
+                    "• Sub-bullets: [cyan]40% chance[] to fire 8 sub-bullets dealing [yellow]80%[] base damage:\n" +
+                    "   - [orange]4 straight bullets:[] Short homing range.\n" +
+                    "   - [cyan]4 diagonal bullets:[] Long homing range.";
             }
 
             let dialog = extend(BaseDialog, title, {});
@@ -445,7 +491,7 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
             scroll.setScrollingDisabled(true, false);
             dialog.cont.add(scroll).maxHeight(400);
             dialog.addCloseButton(); dialog.show();
-        })).size(50, 40).tooltip("Xem thông số pháo Heliyron");
+        })).size(50, 40).tooltip(isVN() ? "Xem thông số pháo Heliyron" : "View Heliyron stats");
     },
 
     config() { return java.lang.Integer(this.getTier()); },

@@ -1,21 +1,22 @@
-/* EMPERFUM TURRET SYSTEM - VECTOR STAR EFFECT, PURPLE-WHITE THEME & PLAYER CONTROL SUPPORT */
-
+ 
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
-// Yêu cầu tài nguyên nâng cấp
-const reqMK2 = { surgeAlloy: 500, plastanium: 1200, copper: 9000 };
+ function isVN() {
+    let loc = Core.settings.getString("locale", "en");
+    return loc.startsWith("vi");
+}
+
+ const reqMK2 = { surgeAlloy: 500, plastanium: 1200, copper: 9000 };
 const reqMK2B = { thorium: 1900, titanium: 2400, silicon: 3100 };
 
-// Bảng màu Tím - Trắng
-const C_PURPLE_LIGHT = Color.valueOf("#e9d5ff");
+ const C_PURPLE_LIGHT = Color.valueOf("#e9d5ff");
 const C_PURPLE_MAIN  = Color.valueOf("#c084fc");
 const C_PURPLE_DARK  = Color.valueOf("#9333ea");
 const C_WHITE        = Color.valueOf("#ffffff");
 
-// Hàm tự tìm sprite cho nòng pháo
-function findTexture(name) {
+ function findTexture(name) {
     let candidates = [
         "newex-" + name,
         name,
@@ -31,24 +32,23 @@ function findTexture(name) {
 
 let barrel1Region, barrel2Region;
 
-// Hàm vẽ Ngôi sao 4 cánh nhọn (4-Point Flare Star)
-function draw4PointStar(x, y, size, rotation, mainColor, coreColor) {
+ function draw4PointStar(x, y, size, rotation, mainColor, coreColor) {
     let rotRad = rotation * Mathf.degRad;
     let cosA = Math.cos(rotRad);
     let sinA = Math.sin(rotRad);
 
-    let innerR = size * 0.18; // Độ thắt của eo ngôi sao
-    let outerR = size;        // Độ dài 4 đỉnh nhọn
+    let innerR = size * 0.18;  
+    let outerR = size;        
 
     let points = [
-        0, outerR,           // Đỉnh trên
-        innerR, innerR,      // Eo trên-phải
-        outerR, 0,           // Đỉnh phải
-        innerR, -innerR,     // Eo dưới-phải
-        0, -outerR,          // Đỉnh dưới
-        -innerR, -innerR,    // Eo dưới-trái
-        -outerR, 0,          // Đỉnh trái
-        -innerR, innerR      // Eo trên-trái
+        0, outerR,           
+        innerR, innerR,      
+        outerR, 0,           
+        innerR, -innerR,      
+        0, -outerR,          
+        -innerR, -innerR,    
+        -outerR, 0,          
+        -innerR, innerR      
     ];
 
     let transformed = new Array(16);
@@ -59,15 +59,13 @@ function draw4PointStar(x, y, size, rotation, mainColor, coreColor) {
         transformed[i * 2 + 1] = y + (px * sinA + py * cosA);
     }
 
-    // Vẽ lớp viền/nền ngôi sao
-    Draw.color(mainColor);
+     Draw.color(mainColor);
     for (let i = 0; i < 8; i++) {
         let next = (i + 1) % 8;
         Fill.tri(x, y, transformed[i * 2], transformed[i * 2 + 1], transformed[next * 2], transformed[next * 2 + 1]);
     }
 
-    // Vẽ lõi màu phản quang
-    if (coreColor) {
+     if (coreColor) {
         Draw.color(coreColor);
         let innerSize = size * 0.55;
         let outerR2 = innerSize;
@@ -87,8 +85,7 @@ function draw4PointStar(x, y, size, rotation, mainColor, coreColor) {
     Draw.reset();
 }
 
-// Hàm vẽ vòng năng lượng
-function drawWindRing(cx, cy, radiusX, radiusY, angle, strokeWidth, color){
+ function drawWindRing(cx, cy, radiusX, radiusY, angle, strokeWidth, color){
     Draw.color(color); 
     Lines.stroke(strokeWidth);
     let steps = 12; let lastX = 0, lastY = 0;
@@ -151,10 +148,8 @@ const starDespawnEffect = new Effect(25, e => {
     draw4PointStar(e.x, e.y, starSize, rot, mainColor, C_WHITE);
 });
 
-/* ================= LOẠI ĐẠN (BULLET TYPES) ================= */
-
-// ĐẠN NGÔI SAO TRUY ĐUỔI CUỐI CÙNG (Gây 1000 Dmg, Tốc bay cực cao, Tàng hình khi bay, Tồn tại 10 tick, Xuyên 999)
-const emperfumStarBullet = extend(BasicBulletType, {
+ 
+ const emperfumStarBullet = extend(BasicBulletType, {
     speed: 35,
     drag: 0.0,
     damage: 1000,
@@ -170,12 +165,10 @@ const emperfumStarBullet = extend(BasicBulletType, {
     hitEffect: starDespawnEffect,
     despawnEffect: starDespawnEffect,
 
-    // Tàng hình hoàn toàn trong suốt quá trình bay (Không vẽ hình ảnh)
-    draw(b){}
+     draw(b){}
 });
 
-// Hàm hỗ trợ spawn 1 viên đạn ngôi sao cuối cùng
-function spawnFinalStarBullets(b) {
+ function spawnFinalStarBullets(b) {
     clusterFlashEffect.at(b.x, b.y);
     let ownerEntity = b.owner || b;
     let angle = b.rotation() + Mathf.range(15);
@@ -591,7 +584,8 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
 
         if(tier == 0) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-                let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Emperfum", {});
+                let dialogTitle = isVN() ? "Trung tâm nâng cấp pháo Emperfum" : "Emperfum Upgrade Center";
+                let dialog = extend(BaseDialog, dialogTitle, {});
                 
                 let reqTable = new Table();
                 reqTable.background(Styles.black6);
@@ -604,7 +598,7 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
                 reqTable.update(packRun(() => {
                     let core = this.team.core();
                     if(core == null) {
-                        reqCell.setText("[red]⚠️ KHÔNG THẤY LÕI ĐỘI![]");
+                        reqCell.setText(isVN() ? "[red]⚠️ KHÔNG THẤY LÕI ĐỘI![]" : "[red]⚠️ NO TEAM CORE FOUND![]");
                         return;
                     }
                     
@@ -624,17 +618,31 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
                     let titCol2 = cTit >= reqMK2B.titanium ? "[lime]" : "[scarlet]";
                     let silCol2 = cSil >= reqMK2B.silicon ? "[lime]" : "[scarlet]";
 
-                    reqCell.setText(
-                        "[gold]📦 KHO TÀI NGUYÊN LÕI CẦN THIẾT:[]\n\n" +
-                        "[#c084fc]🔹 Nhánh MK2 (Xuyên Phá / Đánh Đất):[]\n" +
-                        " • Hợp kim Surge: " + surCol1 + cSurge + "[] / " + reqMK2.surgeAlloy + "\n" +
-                        " • Nhựa Plastanium: " + plaCol1 + cPla + "[] / " + reqMK2.plastanium + "\n" +
-                        " • Đồng (Copper): " + copCol1 + cCop + "[] / " + reqMK2.copper + "\n\n" +
-                        "[#e9d5ff]🔸 Nhánh MK2B (Tầm Nhiệt / Phòng Không):[]\n" +
-                        " • Thorium: " + thoCol2 + cTho + "[] / " + reqMK2B.thorium + "\n" +
-                        " • Titan: " + titCol2 + cTit + "[] / " + reqMK2B.titanium + "\n" +
-                        " • Silicon: " + silCol2 + cSil + "[] / " + reqMK2B.silicon
-                    );
+                    if (isVN()) {
+                        reqCell.setText(
+                            "[gold]📦 KHO TÀI NGUYÊN LÕI CẦN THIẾT:[]\n\n" +
+                            "[#c084fc]🔹 Nhánh MK2 (Xuyên Phá / Đánh Đất):[]\n" +
+                            " • Hợp kim Surge: " + surCol1 + cSurge + "[] / " + reqMK2.surgeAlloy + "\n" +
+                            " • Nhựa Plastanium: " + plaCol1 + cPla + "[] / " + reqMK2.plastanium + "\n" +
+                            " • Đồng (Copper): " + copCol1 + cCop + "[] / " + reqMK2.copper + "\n\n" +
+                            "[#e9d5ff]🔸 Nhánh MK2B (Tầm Nhiệt / Phòng Không):[]\n" +
+                            " • Thorium: " + thoCol2 + cTho + "[] / " + reqMK2B.thorium + "\n" +
+                            " • Titan: " + titCol2 + cTit + "[] / " + reqMK2B.titanium + "\n" +
+                            " • Silicon: " + silCol2 + cSil + "[] / " + reqMK2B.silicon
+                        );
+                    } else {
+                        reqCell.setText(
+                            "[gold]📦 REQUIRED CORE RESOURCES:[]\n\n" +
+                            "[#c084fc]🔹 MK2 Branch (Piercing / Anti-Ground):[]\n" +
+                            " • Surge Alloy: " + surCol1 + cSurge + "[] / " + reqMK2.surgeAlloy + "\n" +
+                            " • Plastanium: " + plaCol1 + cPla + "[] / " + reqMK2.plastanium + "\n" +
+                            " • Copper: " + copCol1 + cCop + "[] / " + reqMK2.copper + "\n\n" +
+                            "[#e9d5ff]🔸 MK2B Branch (Homing / Anti-Air):[]\n" +
+                            " • Thorium: " + thoCol2 + cTho + "[] / " + reqMK2B.thorium + "\n" +
+                            " • Titanium: " + titCol2 + cTit + "[] / " + reqMK2B.titanium + "\n" +
+                            " • Silicon: " + silCol2 + cSil + "[] / " + reqMK2B.silicon
+                        );
+                    }
                 }));
 
                 dialog.cont.add(reqTable).width(340).padBottom(10).row();
@@ -642,18 +650,28 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
                 let branchesTable = new Table();
 
                 let b1 = new Table(); b1.background(Styles.black8); b1.margin(10);
-                b1.add("[#c084fc]⚡ [BOLD]CẤU HÌNH MK2 - GIA TỐC XUYÊN PHÁ[] ⚡").center().row();
+                let b1Title = isVN() ? "[#c084fc]⚡ [BOLD]CẤU HÌNH MK2 - GIA TỐC XUYÊN PHÁ[] ⚡" : "[#c084fc]⚡ [BOLD]MK2 CONFIG - PIERCING ACCELERATION[] ⚡";
+                b1.add(b1Title).center().row();
                 b1.add().height(6).row();
-                let b1D = b1.add(
+                let b1Desc = isVN() ? 
                     "[lightgray]Tối ưu hóa rãnh nòng từ tính tím, gia tăng hỏa lực càn quét mặt đất:\n" +
                     "• [white]Máu tháp pháo: [green]1,885 HP[] [lime](+30%)[]\n" +
                     "• [white]Tầm bắn: [orange]420 pixel[]\n" +
                     "• [white]Sát thương: [yellow]500 thô + 750 nổ diện rộng[]\n" +
                     "• [white]Đặc tính: [gold]Xuyên qua 15 mục tiêu[], phân tách đạn chùm 2 tầng càn quét công trình/kẻ địch."
-                ).width(300).get();
+                    :
+                    "[lightgray]Optimized purple magnetic barrel grooves, increasing ground sweeping firepower:\n" +
+                    "• [white]Turret Health: [green]1,885 HP[] [lime](+30%)[]\n" +
+                    "• [white]Range: [orange]420 pixels[]\n" +
+                    "• [white]Damage: [yellow]500 raw + 750 splash[]\n" +
+                    "• [white]Features: [gold]Pierces up to 15 targets[], splits into 2-tier cluster bullets.";
+
+                let b1D = b1.add(b1Desc).width(300).get();
                 b1D.setWrap(true); b1D.setAlignment(Align.left); b1.row();
                 b1.add().height(8).row();
-                b1.button("[#c084fc]KÍCH HOẠT MK2[]", packRun(() => {
+
+                let b1BtnText = isVN() ? "[#c084fc]KÍCH HOẠT MK2[]" : "[#c084fc]ACTIVATE MK2[]";
+                b1.button(b1BtnText, packRun(() => {
                     let core = this.team.core();
                     if(core != null && 
                        core.items.get(Items.surgeAlloy) >= reqMK2.surgeAlloy && 
@@ -671,23 +689,34 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
                         dialog.hide(); 
                         this.deselect();
                     } else { 
-                        Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); 
+                        Vars.ui.showInfo(isVN() ? "[red]Không đủ tài nguyên cho nhánh MK2![]" : "[red]Not enough resources for MK2![]"); 
                     }
                 })).size(200, 40).center();
 
                 let b2 = new Table(); b2.background(Styles.black8); b2.margin(10);
-                b2.add("[#e9d5ff]🔥 [BOLD]CẤU HÌNH MK2B - XUNG KÍCH TẦM NHIỆT[] 🔥").center().row();
+                let b2Title = isVN() ? "[#e9d5ff]🔥 [BOLD]CẤU HÌNH MK2B - XUNG KÍCH TẦM NHIỆT[] 🔥" : "[#e9d5ff]🔥 [BOLD]MK2B CONFIG - HOMING IMPULSE[] 🔥";
+                b2.add(b2Title).center().row();
                 b2.add().height(6).row();
-                let b2D = b2.add(
+
+                let b2Desc = isVN() ?
                     "[lightgray]Chuyển đổi sang hệ thống phòng không tầm xa chuyên dụng:\n" +
                     "• [white]Máu tháp pháo: [green]2,610 HP[] [lime](+80%)[]\n" +
                     "• [white]Tầm bắn: [orange]380 pixel[]\n" +
                     "• [white]Sát thương: [red]1,175 thô + 1,762 nổ diện rộng[]\n" +
                     "• [white]Đặc tính: [#e9d5ff]Tự động bẻ lái khóa mục tiêu bay[], đạn nổ tỏa ra mảnh đạn ngôi sao tím truy đuổi."
-                ).width(300).get();
+                    :
+                    "[lightgray]Converted into a specialized long-range anti-air system:\n" +
+                    "• [white]Turret Health: [green]2,610 HP[] [lime](+80%)[]\n" +
+                    "• [white]Range: [orange]380 pixels[]\n" +
+                    "• [white]Damage: [red]1,175 raw + 1,762 splash[]\n" +
+                    "• [white]Features: [#e9d5ff]Homing onto flying targets[], bursts into purple star shrapnel.";
+
+                let b2D = b2.add(b2Desc).width(300).get();
                 b2D.setWrap(true); b2D.setAlignment(Align.left); b2.row();
                 b2.add().height(8).row();
-                b2.button("[#e9d5ff]KÍCH HOẠT MK2B[]", packRun(() => {
+
+                let b2BtnText = isVN() ? "[#e9d5ff]KÍCH HOẠT MK2B[]" : "[#e9d5ff]ACTIVATE MK2B[]";
+                b2.button(b2BtnText, packRun(() => {
                     let core = this.team.core();
                     if(core != null && 
                        core.items.get(Items.thorium) >= reqMK2B.thorium && 
@@ -705,7 +734,7 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
                         dialog.hide(); 
                         this.deselect();
                     } else { 
-                        Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]"); 
+                        Vars.ui.showInfo(isVN() ? "[red]Không đủ tài nguyên cho nhánh MK2B![]" : "[red]Not enough resources for MK2B![]"); 
                     }
                 })).size(200, 40).center();
 
@@ -717,47 +746,74 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
                 dialog.cont.add(scroll).width(340).maxHeight(320);
                 dialog.addCloseButton(); 
                 dialog.show();
-            })).size(50, 40).tooltip("Nâng cấp hệ thống Emperfum");
+            })).size(50, 40).tooltip(isVN() ? "Nâng cấp hệ thống Emperfum" : "Upgrade Emperfum system");
         } else {
             table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
-                Vars.ui.showInfo("[scarlet]HỆ THỐNG EMPERFUM ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]");
-            })).size(50, 40).tooltip("Đã đạt cấp tối đa");
+                Vars.ui.showInfo(isVN() ? "[scarlet]HỆ THỐNG EMPERFUM ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]" : "[scarlet]EMPERFUM HAS REACHED MAX EVOLUTION TIER![]");
+            })).size(50, 40).tooltip(isVN() ? "Đã đạt cấp tối đa" : "Max tier reached");
         }
 
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-            let title = " Thông số pháo Emperfum: ";
+            let title = isVN() ? " Thông số pháo Emperfum: " : " Emperfum Turret Stats: ";
             let descStr = "";
             let currentTier = this.getTier();
 
             if (currentTier == 0) {
                 title += "[yellow](MK1)[]";
-                descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1 - CƠ BẢN) ⚡[]\n\n" +
-                          "• [lightgray]Máu pháo:[] [green]1,450 HP[]\n" +
-                          "• [lightgray]Tầm bắn:[] [orange]380 pixel[]\n" +
-                          "• [lightgray]Mục tiêu:[] Đất & Khai hỏa Pyro\n" +
-                          "• [lightgray]Sát thương:[] [yellow]500 thô[] + đạn chùm phân tách\n" +
-                          "• [lightgray]Khả năng xuyên:[] [white]15 mục tiêu[]\n\n" +
-                          "[#c084fc]💡 Mô tả: Pháo càn quét diện rộng giai đoạn đầu. Bắn đạn chính tích tụ vòng năng lượng oval tím-trắng, khi chạm mục tiêu sẽ giải phóng đạn ngôi sao tím bộc phá.[]";
+                descStr = isVN() ?
+                    "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1 - CƠ BẢN) ⚡[]\n\n" +
+                    "• [lightgray]Máu pháo:[] [green]1,450 HP[]\n" +
+                    "• [lightgray]Tầm bắn:[] [orange]380 pixel[]\n" +
+                    "• [lightgray]Mục tiêu:[] Đất & Khai hỏa Pyro\n" +
+                    "• [lightgray]Sát thương:[] [yellow]500 thô[] + đạn chùm phân tách\n" +
+                    "• [lightgray]Khả năng xuyên:[] [white]15 mục tiêu[]\n\n" +
+                    "[#c084fc]💡 Mô tả: Pháo càn quét diện rộng giai đoạn đầu. Bắn đạn chính tích tụ vòng năng lượng oval tím-trắng, khi chạm mục tiêu sẽ giải phóng đạn ngôi sao tím bộc phá.[]"
+                    :
+                    "[gold]⚡ BASIC STATS (MK1 - BASE) ⚡[]\n\n" +
+                    "• [lightgray]Health:[] [green]1,450 HP[]\n" +
+                    "• [lightgray]Range:[] [orange]380 pixels[]\n" +
+                    "• [lightgray]Target:[] Ground & Pyratite Ammo\n" +
+                    "• [lightgray]Damage:[] [yellow]500 raw[] + cluster splits\n" +
+                    "• [lightgray]Piercing:[] [white]15 targets[]\n\n" +
+                    "[#c084fc]💡 Description: Early-game area sweep turret. Fires main shells charging purple-white oval energy rings, releasing star shrapnel on impact.[]";
             } 
             else if (currentTier == 1) {
                 title += "[#c084fc](MK2)[]";
-                descStr = "[#c084fc]⚡ THÔNG SỐ CẤU HÌNH (MK2 - XUYÊN PHÁ) ⚡[]\n\n" +
-                          "• [lightgray]Máu pháo:[] [green]1,885 HP [lime](+30%)[]\n" +
-                          "• [lightgray]Tầm bắn:[] [orange]420 pixel[]\n" +
-                          "• [lightgray]Mục tiêu:[] Chuyên Đánh Đất\n" +
-                          "• [lightgray]Sát thương:[] [yellow]500 thô + 750 nổ diện rộng[]\n" +
-                          "• [lightgray]Khả năng xuyên:[] [yellow]15 mục tiêu[]\n\n" +
-                          "[lime]💡 Mô tả: Tăng cường kết cấu nòng từ tính tím thẫm. Đạn chính bay nhanh hơn, xuyên qua toàn bộ đội hình địch và kích hoạt chuỗi nổ bộc phá liên hoàn.[]";
+                descStr = isVN() ?
+                    "[#c084fc]⚡ THÔNG SỐ CẤU HÌNH (MK2 - XUYÊN PHÁ) ⚡[]\n\n" +
+                    "• [lightgray]Máu pháo:[] [green]1,885 HP [lime](+30%)[]\n" +
+                    "• [lightgray]Tầm bắn:[] [orange]420 pixel[]\n" +
+                    "• [lightgray]Mục tiêu:[] Chuyên Đánh Đất\n" +
+                    "• [lightgray]Sát thương:[] [yellow]500 thô + 750 nổ diện rộng[]\n" +
+                    "• [lightgray]Khả năng xuyên:[] [yellow]15 mục tiêu[]\n\n" +
+                    "[lime]💡 Mô tả: Tăng cường kết cấu nòng từ tính tím thẫm. Đạn chính bay nhanh hơn, xuyên qua toàn bộ đội hình địch và kích hoạt chuỗi nổ bộc phá liên hoàn.[]"
+                    :
+                    "[#c084fc]⚡ CONFIG STATS (MK2 - PIERCING) ⚡[]\n\n" +
+                    "• [lightgray]Health:[] [green]1,885 HP [lime](+30%)[]\n" +
+                    "• [lightgray]Range:[] [orange]420 pixels[]\n" +
+                    "• [lightgray]Target:[] Ground specialized\n" +
+                    "• [lightgray]Damage:[] [yellow]500 raw + 750 splash[]\n" +
+                    "• [lightgray]Piercing:[] [yellow]15 targets[]\n\n" +
+                    "[lime]💡 Description: Reinforced magnetic barrel structure. Main shots travel faster, pierce through enemy lines, and trigger cluster explosions.[]";
             } 
             else if (currentTier == 2) {
                 title += "[#e9d5ff](MK2B)[]";
-                descStr = "[#e9d5ff]⚡ THÔNG SỐ CẤU HÌNH (MK2B - TRUY ĐUỔI TẦM NHIỆT) ⚡[]\n\n" +
-                          "• [lightgray]Máu pháo:[] [green]2,610 HP [lime](+80%)[]\n" +
-                          "• [lightgray]Tầm bắn:[] [orange]380 pixel[]\n" +
-                          "• [lightgray]Mục tiêu:[] Chuyên Phòng Không (Bay)\n" +
-                          "• [lightgray]Sát thương:[] [red]1,175 thô + 1,762 nổ diện rộng[]\n" +
-                          "• [lightgray]Khả năng bẻ lái:[] [#e9d5ff]Truy đuổi tầm nhiệt 200px[]\n\n" +
-                          "[#c084fc]🔥 Mô tả: Chuyển đổi toàn bộ mạch năng lượng sang sắc tím xung kích. Tự động bẻ lái đuổi theo các đơn vị không quân địch, phát nổ thành mảnh đạn ngôi sao 4 cánh tím-trắng.[]";
+                descStr = isVN() ?
+                    "[#e9d5ff]⚡ THÔNG SỐ CẤU HÌNH (MK2B - TRUY ĐUỔI TẦM NHIỆT) ⚡[]\n\n" +
+                    "• [lightgray]Máu pháo:[] [green]2,610 HP [lime](+80%)[]\n" +
+                    "• [lightgray]Tầm bắn:[] [orange]380 pixel[]\n" +
+                    "• [lightgray]Mục tiêu:[] Chuyên Phòng Không (Bay)\n" +
+                    "• [lightgray]Sát thương:[] [red]1,175 thô + 1,762 nổ diện rộng[]\n" +
+                    "• [lightgray]Khả năng bẻ lái:[] [#e9d5ff]Truy đuổi tầm nhiệt 200px[]\n\n" +
+                    "[#c084fc]🔥 Mô tả: Chuyển đổi toàn bộ mạch năng lượng sang sắc tím xung kích. Tự động bẻ lái đuổi theo các đơn vị không quân địch, phát nổ thành mảnh đạn ngôi sao 4 cánh tím-trắng.[]"
+                    :
+                    "[#e9d5ff]⚡ CONFIG STATS (MK2B - HOMING IMPULSE) ⚡[]\n\n" +
+                    "• [lightgray]Health:[] [green]2,610 HP [lime](+80%)[]\n" +
+                    "• [lightgray]Range:[] [orange]380 pixels[]\n" +
+                    "• [lightgray]Target:[] Anti-Air specialized\n" +
+                    "• [lightgray]Damage:[] [red]1,175 raw + 1,762 splash[]\n" +
+                    "• [lightgray]Homing:[] [#e9d5ff]200px homing radius[]\n\n" +
+                    "[#c084fc]🔥 Description: Converts energy grid to impulse shockwaves. Automatically home in on aerial targets, bursting into 4-point purple-white flare star fragments.[]";
             }
 
             let dialog = extend(BaseDialog, title, {});
@@ -774,7 +830,7 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
             dialog.cont.add(scroll).width(340).maxHeight(360);
             dialog.addCloseButton(); 
             dialog.show();
-        })).size(50, 40).tooltip("Xem thông số chi tiết hệ thống");
+        })).size(50, 40).tooltip(isVN() ? "Xem thông số chi tiết hệ thống" : "View system details");
     },
 
     config() { return java.lang.Integer(this.getTier()); },

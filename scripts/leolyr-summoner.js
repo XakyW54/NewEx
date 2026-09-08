@@ -1,10 +1,12 @@
- 
-
 const packCons = (func) => new Cons({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
- 
+function isEn() {
+    let loc = Core.settings.get("locale", "");
+    return loc && loc.startsWith("en");
+}
+
 function draw3DRotatedEllipseWave(centerX, centerY, radiusX, radiusY, rotationDeg) {
     let points = 24;
     let rotationRad = rotationDeg * Mathf.degRad;
@@ -30,7 +32,7 @@ function draw3DRotatedEllipseWave(centerX, centerY, radiusX, radiusY, rotationDe
         lastY = nextY;
     }
 }
- 
+
 const orbitalLockOnEffect = new Effect(40, packCons((e) => {
     let progress = e.data; 
     
@@ -65,7 +67,7 @@ const orbitalLockOnEffect = new Effect(40, packCons((e) => {
     
     Draw.reset();
 }));
- 
+
 const satelliteImpactEffect = new Effect(60, packCons((e) => {
     Draw.z(Layer.effect + 3);
     
@@ -113,7 +115,7 @@ const satelliteImpactEffect = new Effect(60, packCons((e) => {
     
     Draw.reset();
 }));
- 
+
 Events.on(ClientLoadEvent, () => {
     let leolyrSummoner = Vars.content.getByName(ContentType.block, "newex-leolyr-spawner");
     if(leolyrSummoner == null){
@@ -136,7 +138,7 @@ Events.on(ClientLoadEvent, () => {
             acceptItem(source, item){
                 return this.items.get(item) < this.block.itemCapacity;
             },
- 
+
             getRequirements(){
                 if (this.selectedUnit.includes("elorix")) {
                     return { copper: 4000, silicon: 500 };
@@ -151,24 +153,24 @@ Events.on(ClientLoadEvent, () => {
                 table.clear();
                 if(this.summoning) return;
                 table.row();
- 
+
                 table.button(Icon.ok, Styles.cleari, 40, packRun(() => {
                     let core = this.team.core();
                     if(core == null) {
-                        Vars.ui.showInfo("[scarlet]Không tìm thấy nhà chính (Core)![]");
+                        Vars.ui.showInfo(isEn() ? "[scarlet]Core not found![]" : "[scarlet]Không tìm thấy nhà chính (Core)![]");
                         return;
                     }
 
                     let req = this.getRequirements();
- 
+
                     if(!core.items.has(Items.copper, req.copper) || !core.items.has(Items.silicon, req.silicon)){
-                        Vars.ui.showInfo(
-                            "[scarlet]Không đủ tài nguyên trong Lõi![]\n" +
-                            "Cần có: [accent]" + req.copper + " Copper[] và [accent]" + req.silicon + " Silicon[] trong Core."
-                        );
+                        let msg = isEn() ?
+                            "[scarlet]Not enough resources in Core![]\nRequired: [accent]" + req.copper + " Copper[] and [accent]" + req.silicon + " Silicon[] in Core." :
+                            "[scarlet]Không đủ tài nguyên trong Lõi![]\nCần có: [accent]" + req.copper + " Copper[] và [accent]" + req.silicon + " Silicon[] trong Core.";
+                        Vars.ui.showInfo(msg);
                         return;
                     }
- 
+
                     core.items.remove(Items.copper, req.copper);
                     core.items.remove(Items.silicon, req.silicon);
 
@@ -177,26 +179,35 @@ Events.on(ClientLoadEvent, () => {
                     
                     Fx.shieldApply.at(this.x, this.y, 0, Color.valueOf("c084fc"));
                     this.deselect(); 
-                })).size(50, 40).tooltip("Triệu hồi thủ công (Rút tài nguyên từ Lõi Core & Chờ 5s)");
- 
+                })).size(50, 40).tooltip(isEn() ? "Manual Summon (Consume Core resources & Wait 5s)" : "Triệu hồi thủ công (Rút tài nguyên từ Lõi Core & Chờ 5s)");
+
                 table.button(Icon.add, Styles.cleari, 40, packRun(() => {
-                    let dialog = extend(BaseDialog, "Hệ Thống Kén Triệu Hồi", {});
-                    dialog.cont.add("[yellow]DANH SÁCH ĐƠN VỊ CÓ THỂ TRIỆU HỒI:[]").row();
+                    let dialogTitle = isEn() ? "Summoning Cocoon System" : "Hệ Thống Kén Triệu Hồi";
+                    let dialog = extend(BaseDialog, dialogTitle, {});
+                    
+                    let headerText = isEn() ? "[yellow]AVAILABLE UNITS FOR SUMMONING:[]" : "[yellow]DANH SÁCH ĐƠN VỊ CÓ THỂ TRIỆU HỒI:[]";
+                    dialog.cont.add(headerText).row();
                     dialog.cont.add().height(10).row();
 
                     let infoCard = new Table();
                     infoCard.background(Styles.black6);
                     infoCard.margin(10);
                     
- 
-                    infoCard.button("[orange]⚡ CHỌN TRIỆU HỒI: ELORIX UNIT[]", packRun(() => {
+                    let btnElorix = isEn() ? "[orange]⚡ SELECT SUMMON: ELORIX UNIT[]" : "[orange]⚡ CHỌN TRIỆU HỒI: ELORIX UNIT[]";
+                    infoCard.button(btnElorix, packRun(() => {
                         this.selectedUnit = "newex-elorix";
-                        Vars.ui.showInfo("[orange]Đã cài đặt mục tiêu: Elorix[]");
+                        Vars.ui.showInfo(isEn() ? "[orange]Target set: Elorix[]" : "[orange]Đã cài đặt mục tiêu: Elorix[]");
                         dialog.hide();
                     })).size(300, 42).row();
                     infoCard.add().height(6).row();
 
-                    let elorixDescStr = "[gold]📊 DỮ LIỆU PHÂN TÍCH THỰC THỂ ELORIX:[]\n" +
+                    let elorixDescStr = isEn() ?
+                        "[gold]📊 ELORIX ANALYSIS DATA:[]\n" +
+                        "• [accent]Summon Cost:[] [white]4000 Copper[] + [white]500 Silicon[]\n" +
+                        "• [accent]Leveling:[] Automatically absorbs Copper & Titanium from inventory to upgrade (Max Lv10).\n" +
+                        "• [pink]Shotgun Firepower:[] Fires multi-elemental spread shots for high area damage.\n" +
+                        "• [sky]Dash & Shield:[] Double tap to dash through obstacles, gaining [Thin Armor] for 5s." :
+                        "[gold]📊 DỮ LIỆU PHÂN TÍCH THỰC THỂ ELORIX:[]\n" +
                         "• [accent]Chi phí triệu hồi:[] [white]4000 Copper[] + [white]500 Silicon[]\n" +
                         "• [accent]Tăng tiến cấp độ:[] Tự động hút Copper & Titanium từ kho cá nhân để nâng cấp (Max Lv10).\n" +
                         "• [pink]Hỏa lực Shotgun:[] Bắn chùm đạn đa nguyên tố xả diện rộng cực mạnh.\n" +
@@ -207,15 +218,22 @@ Events.on(ClientLoadEvent, () => {
                     elorixDesc.get().setAlignment(Align.left);
 
                     infoCard.add().height(16).row();
- 
-                    infoCard.button("[cyan]🤖 CHỌN TRIỆU HỒI: LEOLYR UNIT[]", packRun(() => {
+
+                    let btnLeolyr = isEn() ? "[cyan]🤖 SELECT SUMMON: LEOLYR UNIT[]" : "[cyan]🤖 CHỌN TRIỆU HỒI: LEOLYR UNIT[]";
+                    infoCard.button(btnLeolyr, packRun(() => {
                         this.selectedUnit = "newex-leolyr";
-                        Vars.ui.showInfo("[cyan]Đã cài đặt mục tiêu: Leolyr[]");
+                        Vars.ui.showInfo(isEn() ? "[cyan]Target set: Leolyr[]" : "[cyan]Đã cài đặt mục tiêu: Leolyr[]");
                         dialog.hide();
                     })).size(300, 42).row();
                     infoCard.add().height(6).row();
 
-                    let leolyrDescStr = "[gold]📊 DỮ LIỆU PHÂN TÍCH THỰC THỂ LEOLYR:[]\n" +
+                    let leolyrDescStr = isEn() ?
+                        "[gold]📊 LEOLYR ANALYSIS DATA:[]\n" +
+                        "• [accent]Summon Cost:[] [white]2000 Copper[] + [white]300 Silicon[]\n" +
+                        "• [accent]Evolution System:[] Absorbs Copper and Silicon from inventory (Max Lv10).\n" +
+                        "• [pink]Dual Weapon:[] Alternating fire, increasing attack speed with level.\n" +
+                        "• [sky]Dash & Shield Core:[] Dashing deploys a static shield core lasting 10 seconds." :
+                        "[gold]📊 DỮ LIỆU PHÂN TÍCH THỰC THỂ LEOLYR:[]\n" +
                         "• [accent]Chi phí triệu hồi:[] [white]2000 Copper[] + [white]300 Silicon[]\n" +
                         "• [accent]Hệ thống Tiến hóa:[] Hấp thụ Đồng và Silicon trực tiếp từ kho đồ (Tối đa Cấp 10).\n" +
                         "• [pink]Vũ khí kép:[] Bắn luân phiên, tăng tiến tốc độ xả đạn theo level.\n" +
@@ -226,15 +244,22 @@ Events.on(ClientLoadEvent, () => {
                     leolyrDesc.get().setAlignment(Align.left);
 
                     infoCard.add().height(16).row();
- 
-                    infoCard.button("[purple]👾 CHỌN TRIỆU HỒI: VUS-27 UNIT[]", packRun(() => {
+
+                    let btnVus = isEn() ? "[purple]👾 SELECT SUMMON: VUS-27 UNIT[]" : "[purple]👾 CHỌN TRIỆU HỒI: VUS-27 UNIT[]";
+                    infoCard.button(btnVus, packRun(() => {
                         this.selectedUnit = "newex-vus-27";
-                        Vars.ui.showInfo("[purple]Đã cài đặt mục tiêu: VUS-27[]");
+                        Vars.ui.showInfo(isEn() ? "[purple]Target set: VUS-27[]" : "[purple]Đã cài đặt mục tiêu: VUS-27[]");
                         dialog.hide();
                     })).size(300, 42).row();
                     infoCard.add().height(6).row();
 
-                    let vusDescStr = "[gold]📊 DỮ LIỆU PHÂN TÍCH THỰC THỂ VUS-27:[]\n" +
+                    let vusDescStr = isEn() ?
+                        "[gold]📊 VUS-27 ANALYSIS DATA:[]\n" +
+                        "• [accent]Summon Cost:[] [white]3500 Copper[] + [white]600 Silicon[]\n" +
+                        "• [accent]Transformation:[] Double Tap to switch between VUS-27 and SUV-27.\n" +
+                        "• [pink]VUS-27 Firepower:[] Laser Cannon (160 Dmg, 240 range) & Overdrive buffing fire rate by 1500%.\n" +
+                        "• [sky]SUV-27 Mechanics:[] Accelerates over time (+200% Speed), stopping fires a 20-degree shotgun spread." :
+                        "[gold]📊 DỮ LIỆU PHÂN TÍCH THỰC THỂ VUS-27:[]\n" +
                         "• [accent]Chi phí triệu hồi:[] [white]3500 Copper[] + [white]600 Silicon[]\n" +
                         "• [accent]Khả năng Biến hình:[] Nhấp đúp (Double Tap) để chuyển đổi qua lại giữa VUS-27 và SUV-27.\n" +
                         "• [pink]Hỏa lực VUS-27:[] Pháo Laser (160 Dmg, 240 dài) & Overdrive buff 1500% tốc bắn.\n" +
@@ -251,17 +276,15 @@ Events.on(ClientLoadEvent, () => {
                     
                     dialog.addCloseButton();
                     dialog.show();
-                })).size(50, 40).tooltip("Chọn đơn vị triệu hồi & Xem phân tích thông số");
+                })).size(50, 40).tooltip(isEn() ? "Select unit & View stats" : "Chọn đơn vị triệu hồi & Xem phân tích thông số");
             },
 
             updateTile(){
                 this.super$updateTile();
 
-    
                 if(!this.summoning){
                     let req = this.getRequirements();
                     if(this.items.has(Items.copper, req.copper) && this.items.has(Items.silicon, req.silicon)){
- 
                         this.items.remove(Items.copper, req.copper);
                         this.items.remove(Items.silicon, req.silicon);
 
@@ -270,7 +293,7 @@ Events.on(ClientLoadEvent, () => {
                         Fx.shieldApply.at(this.x, this.y, 0, Color.valueOf("c084fc"));
                     }
                 }
- 
+
                 if(this.summoning){
                     this.summonTimer -= Time.delta;
                     let progressRatio = Math.max(0.0, this.summonTimer / 300.0);

@@ -1,7 +1,6 @@
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 
-// Effect vòng tròn mở rộng khi hoàn thành mẻ sản xuất
 const expandCircleFx = new Effect(25, cons(e => {
     let radius = 25 * e.fin(); 
     Draw.color(e.color);
@@ -9,7 +8,6 @@ const expandCircleFx = new Effect(25, cons(e => {
     Lines.circle(e.x, e.y, radius);
 }));
 
-// Effect nổ siêu cấp (bán kính 1600 ô)
 const doubleSuperExplosionFx = new Effect(80, cons(e => {
     let maxRadius = 1600; 
     let innerRadius = maxRadius * e.fin(); 
@@ -38,7 +36,9 @@ const COLOR_SURGE  = Color.valueOf("f3e979");
 const COLOR_EMERALIFT = Color.valueOf("38e250");
 const COLOR_REDSTONE  = Color.valueOf("ff3b3b");
 
-const BASE_CRAFT_TIME = 185; // Craft time cơ bản theo json
+const BASE_CRAFT_TIME = 185; 
+
+const isEn = () => Core.settings.getString("locale").startsWith("en");
 
 Events.on(ContentInitEvent, () => {
     const flasallowFactory = Vars.content.getByName(ContentType.block, "newex-flasallow-factory");
@@ -53,20 +53,18 @@ Events.on(ContentInitEvent, () => {
         flasallowFactory.liquidCapacity = 500;
     }
 
-    // Lấy các Content tham chiếu
     const emeraliftWall = Vars.content.getByName(ContentType.block, "newex-emeralift-wall");
     const redstoneWall  = Vars.content.getByName(ContentType.block, "newex-redstone-wall");
     const itemNewexObs  = Vars.content.getByName(ContentType.item, "newex-obs");
     const itemNewexSallowyr = Vars.content.getByName(ContentType.item, "newex-sallowyr");
 
-    // Khai báo Bar đếm ngược đúng chuẩn Engine Mindustry
     flasallowFactory.setBars();
     flasallowFactory.addBar("obs_status", e => new Bar(
         prov(() => {
             if (e.obsTimer > 0) {
-                return "[scarlet]NỔ DO OBS TRONG: " + Math.ceil(e.obsTimer / 60) + "s[]";
+                return isEn() ? "[scarlet]EXPLODE DUE TO OBS IN: " + Math.ceil(e.obsTimer / 60) + "s[]" : "[scarlet]NỔ DO OBS TRONG: " + Math.ceil(e.obsTimer / 60) + "s[]";
             }
-            return "TRẠNG THÁI: AN TOÀN";
+            return isEn() ? "STATUS: SAFE" : "TRẠNG THÁI: AN TOÀN";
         }),
         prov(() => e.obsTimer > 0 ? Color.red : Color.green),
         floatp(() => e.obsTimer > 0 ? (e.obsTimer / (5.0 * 60.0 * 60.0)) : 1.0)
@@ -92,7 +90,6 @@ Events.on(ContentInitEvent, () => {
             this.hasEmeraliftNearby = false;
             this.hasRedstoneNearby = false;
             
-            // Theo dõi số lượng tường buff đang kết nối
             this.lastEmeraliftCount = 0;
             this.lastRedstoneCount = 0;
 
@@ -101,7 +98,6 @@ Events.on(ContentInitEvent, () => {
 
         setBuffEnabled(enabled) {
             this._buffEnabled = enabled;
-            // Reset số lượng lưu trữ khi tắt nhận buff
             if (!enabled) {
                 this.lastEmeraliftCount = 0;
                 this.lastRedstoneCount = 0;
@@ -134,7 +130,6 @@ Events.on(ContentInitEvent, () => {
         },
 
         checkNearbyWalls() {
-            // Nếu tắt buff thì bỏ qua kiểm tra
             if (!this._buffEnabled) {
                 this.hasEmeraliftNearby = false;
                 this.hasRedstoneNearby = false;
@@ -167,13 +162,11 @@ Events.on(ContentInitEvent, () => {
                 }
             }
 
-            // KIỂM TRA TỰ ĐỘNG NỔ: Nếu lượng tường buff hiện tại ít hơn lượng tường buff đã nhận trước đó -> NỔ!
             if ((currentEmeralift < this.lastEmeraliftCount) || (currentRedstone < this.lastRedstoneCount)) {
                 this.triggerDoubleSuperExplosion();
                 return;
             }
 
-            // Cập nhật số lượng tường hiện tại
             this.lastEmeraliftCount = currentEmeralift;
             this.lastRedstoneCount = currentRedstone;
             this.hasEmeraliftNearby = currentEmeralift > 0;
@@ -279,15 +272,13 @@ Events.on(ContentInitEvent, () => {
         updateTile() {
             if (this.liquids == null || this.items == null) return;
 
-            // Kiểm tra trạng thái khối tường buff mỗi 10 ticks để phản hồi nổ tức thì
             if (this.timer.get(0, 10)) {
                 this.checkNearbyWalls();
             }
 
-            // Xử lý tiêu thụ OBS và sinh Sallowyr mỗi 1 giây (60 ticks)
             if (itemNewexObs != null && this.items.get(itemNewexObs) > 0) {
                 if (this.obsTimer <= 0) {
-                    this.obsTimer = 5 * 60 * 60; // 5 phút đếm ngược nổ
+                    this.obsTimer = 5 * 60 * 60; 
                 }
 
                 this.sallowyrCounter += Time.delta;
@@ -304,7 +295,6 @@ Events.on(ContentInitEvent, () => {
                 this.sallowyrCounter = 0;
             }
 
-            // Xử lý đếm ngược nổ do OBS
             let isObsActive = this.obsTimer > 0;
             if (isObsActive) {
                 this.obsTimer -= Time.delta;
@@ -315,7 +305,6 @@ Events.on(ContentInitEvent, () => {
                 }
             }
 
-            // Tự động đẩy sản phẩm ra ngoài
             if (this.items.get(Items.phaseFabric) > 0) this.dump(Items.phaseFabric);
             if (this.items.get(Items.surgeAlloy) > 0) this.dump(Items.surgeAlloy);
             if (this.items.get(Items.plastanium) > 0) this.dump(Items.plastanium);
@@ -374,8 +363,24 @@ Events.on(ContentInitEvent, () => {
             }).size(50, 40);
 
             table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-                let title = " Thông số Nhà máy Flasallow Factory ";
-                let descStr = "[gold]⚡ NGUYÊN LIỆU TIÊU THỤ & ĐẦU RA ⚡[]\n\n" +
+                let title = isEn() ? " Flasallow Factory Specs " : " Thông số Nhà máy Flasallow Factory ";
+                let descStr = isEn() ?
+                              "[gold]⚡ CONSUMPTION & OUTPUT ⚡[]\n\n" +
+                              "• [cyan]Recipe/batch:[] 50 Copper + 50 Lead + 50 Titanium + 50 Silicon + 50 Thorium + 150 Oil\n" +
+                              "• [green]Base yield:[] 100 Phase Fabric + 100 Surge Alloy + 100 Plastanium\n\n" +
+                              "[gold]⚡ NEARBY BUFF FEATURE ⚡[]\n" +
+                              "• Press [yellow]Gear Button[] to [lime]Enable[] or [red]Disable[] Buff Detection & Range display.\n" +
+                              "• Placed next to [green]Emeralift Wall[] ➔ Produces [lime]x5 Plastanium[] (500/batch)\n" +
+                              "• Placed next to [red]Redstone Wall[] ➔ Produces [yellow]x5 Surge Alloy[] (500/batch)\n" +
+                              "• [scarlet]⚠ WARNING:[] If connected buff wall is missing/destroyed while BUFF IS ON ➔ [red]INSTANT SUPEREXPLOSION![] (Disable buff mode before removing walls).\n\n" +
+                              "[scarlet]⚡ NEWEX-OBS OVERLOAD ⚡[]\n" +
+                              "• Consumes [accent]1 newex-obs/s[] to produce [cyan]1 newex-sallowyr[]\n" +
+                              "  - Speeds up production by [yellow]1500%[] (x16 speed)\n" +
+                              "  - [red]Triggers 5-min countdown (300s). Explodes when timer reaches 0![]\n\n" +
+                              "[scarlet]⚠ EXPLOSION RADIUS ⚠[]\n" +
+                              "• [red]EXPLOSION RADIUS: 1600 TILES![] Obliterates all surrounding Units & Blocks!"
+                              :
+                              "[gold]⚡ NGUYÊN LIỆU TIÊU THỤ & ĐẦU RA ⚡[]\n\n" +
                               "• [cyan]Nguyên liệu/mẻ:[] 50 Đồng + 50 Chì + 50 Titanium + 50 Silicon + 50 Thorium + 150 Dầu mỏ\n" +
                               "• [green]Sản lượng cơ sở:[] 100 Sợi lượng tử + 100 Hợp kim + 100 Nhựa\n\n" +
                               "[gold]⚡ TÍNH NĂNG NHẬN BUFF LÂN CẬN ⚡[]\n" +

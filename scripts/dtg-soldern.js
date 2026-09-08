@@ -65,16 +65,16 @@ const dtgSprayHitEffectMk2 = createDtgHitEffect(14, 1, 30);
 const dtgSprayHitEffectMk2b = createDtgHitEffect(14, 2, 23);
  
 
-const reqMK2 = {
-    titanium: 4000,
-    silicon: 4000,
+ const reqMK2 = {
+    titanium: 400,
+    silicon: 400,
     plastanium: 0
 };
 
 const reqMK2B = {
-    titanium: 8800,
-    silicon: 6400,
-    plastanium: 4200
+    titanium: 880,
+    silicon: 640,
+    plastanium: 420
 };
 
 const maxShieldRadius = 48;    
@@ -285,14 +285,15 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
     buildConfiguration(table){
         table.clear(); table.row();
         let tier = this.getTier();
+        let isEn = Core.settings.getString("locale").startsWith("en");
 
         if(tier == 0) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-                let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo DTG Soldern", {});
+                let dialog = extend(BaseDialog, isEn ? "DTG Soldern Upgrade Center" : "Trung tâm nâng cấp pháo DTG Soldern", {});
                 
                 let reqCell = dialog.cont.label(packProv(() => {
                     let core = this.team.core();
-                    if(core == null) return "[red]Không tìm thấy Lõi Đội![]";
+                    if(core == null) return isEn ? "[red]Team Core not found![]" : "[red]Không tìm thấy Lõi Đội![]";
                     
                     let currentTitanium = core.items.get(Items.titanium);
                     let currentSilicon = core.items.get(Items.silicon);
@@ -305,14 +306,25 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                     let silColor2 = currentSilicon >= reqMK2B.silicon ? "[green]" : "[red]";
                     let plaColor2 = currentPlastanium >= reqMK2B.plastanium ? "[green]" : "[red]";
                     
-                    return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
-                           "[cyan]Nhánh MK2:[]\n" + 
-                           " • Titan: " + titColor1 + currentTitanium + "[] / " + reqMK2.titanium + "\n" +
-                           " • Silicon: " + silColor1 + currentSilicon + "[] / " + reqMK2.silicon + "\n" +
-                           "[purple]Nhánh MK2B:[]\n" + 
-                           " • Titan: " + titColor2 + currentTitanium + "[] / " + reqMK2B.titanium + "\n" +
-                           " • Silicon: " + silColor2 + currentSilicon + "[] / " + reqMK2B.silicon + "\n" +
-                           " • Nhựa: " + plaColor2 + currentPlastanium + "[] / " + reqMK2B.plastanium;
+                    if(isEn) {
+                        return "[yellow]CORE VAULT REQUIREMENTS:[]\n" +
+                               "[cyan]MK2 Branch:[]\n" + 
+                               " • Titanium: " + titColor1 + currentTitanium + "[] / " + reqMK2.titanium + "\n" +
+                               " • Silicon: " + silColor1 + currentSilicon + "[] / " + reqMK2.silicon + "\n" +
+                               "[purple]MK2B Branch:[]\n" + 
+                               " • Titanium: " + titColor2 + currentTitanium + "[] / " + reqMK2B.titanium + "\n" +
+                               " • Silicon: " + silColor2 + currentSilicon + "[] / " + reqMK2B.silicon + "\n" +
+                               " • Plastanium: " + plaColor2 + currentPlastanium + "[] / " + reqMK2B.plastanium;
+                    } else {
+                        return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
+                               "[cyan]Nhánh MK2:[]\n" + 
+                               " • Titan: " + titColor1 + currentTitanium + "[] / " + reqMK2.titanium + "\n" +
+                               " • Silicon: " + silColor1 + currentSilicon + "[] / " + reqMK2.silicon + "\n" +
+                               "[purple]Nhánh MK2B:[]\n" + 
+                               " • Titan: " + titColor2 + currentTitanium + "[] / " + reqMK2B.titanium + "\n" +
+                               " • Silicon: " + silColor2 + currentSilicon + "[] / " + reqMK2B.silicon + "\n" +
+                               " • Nhựa: " + plaColor2 + currentPlastanium + "[] / " + reqMK2B.plastanium;
+                    }
                 }));
                 
                 reqCell.width(360).get().setWrap(true);
@@ -323,39 +335,56 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
 
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                 b1.add("[cyan]===(MK2)===[]").row();
-                let b1D = b1.add("Cải tiến năng lực hỏa lực và năng lượng xung kích:\n" +
-                                 " [white]• Kết cấu HP pháo tăng mạnh lên [green]2860 HP[] (+30%).[]\n" + 
-                                 " [white]• Lõi khiên mở rộng, gia tăng độ bền màng chắn lên [cyan]6500[].[]\n" +
-                                 " [white]• Tầm bắn tầm xa mở rộng vượt trội đạt [green]468 pixel[] (+30%).[]\n" +
-                                 " [white]• Đạn tầm xa nâng cấp lên dạng MK2 (Vận tốc: 10.4, Sát thương: 56).[]\n" +
-                                 " [white]• Cận chiến: Giữ nguyên cự ly áp sát 100, cường hóa đạn rải lên [yellow]30.6[].[]\n" +
-                                 " [white]• Cơ chế đặc biệt: Cho phép sạc đầy lại màng khiên tức thời khi mục tiêu lọt vào tầm gần lần đầu.[]");
+                let b1Text = isEn ?
+                    "Firepower Enhancement & Pulse Energy Upgrades:\n" +
+                    " [white]• Structure HP greatly increased to [green]2860 HP[] (+30%).[]\n" + 
+                    " [white]• Shield core expanded, boosting matrix durability to [cyan]6500[].[]\n" +
+                    " [white]• Long-range targeting drastically expanded to [green]468 pixels[] (+30%).[]\n" +
+                    " [white]• Ranged ammo upgraded to MK2 variant (Speed: 10.4, Damage: 56).[]\n" +
+                    " [white]• Close Combat: Retains 100 range, boosts shotgun damage to [yellow]30.6[].[]\n" +
+                    " [white]• Special: Instantly recharges shield when target enters close-range for the first time.[]" :
+                    "Cải tiến năng lực hỏa lực và năng lượng xung kích:\n" +
+                    " [white]• Kết cấu HP pháo tăng mạnh lên [green]2860 HP[] (+30%).[]\n" + 
+                    " [white]• Lõi khiên mở rộng, gia tăng độ bền màng chắn lên [cyan]6500[].[]\n" +
+                    " [white]• Tầm bắn tầm xa mở rộng vượt trội đạt [green]468 pixel[] (+30%).[]\n" +
+                    " [white]• Đạn tầm xa nâng cấp lên dạng MK2 (Vận tốc: 10.4, Sát thương: 56).[]\n" +
+                    " [white]• Cận chiến: Giữ nguyên cự ly áp sát 100, cường hóa đạn rải lên [yellow]30.6[].[]\n" +
+                    " [white]• Cơ chế đặc biệt: Cho phép sạc đầy lại màng khiên tức thời khi mục tiêu lọt vào tầm gần lần đầu.[]";
+                let b1D = b1.add(b1Text);
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
-                b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
+                b1.button(isEn ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.titanium) >= reqMK2.titanium && core.items.get(Items.silicon) >= reqMK2.silicon){
                         core.items.remove(Items.titanium, reqMK2.titanium); core.items.remove(Items.silicon, reqMK2.silicon);
                         Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
                         this.configure(java.lang.Integer(1)); dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); }
+                    } else { Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2 branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                 })).size(180, 38);
 
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                 b2.add("[purple]===(MK2B)===[]").row();
-                let b2D = b2.add("Chuyển đổi toàn diện sang dạng Trọng Pháo Laser bạo nén:\n" +
-                                 " [white]• Kết cấu khung vững chắc nâng HP pháo lên mức siêu cấp [green]4400 HP[] (+100%).[]\n" +
-                                 " [white]• Lõi nén lá chắn hấp thụ đạt mốc tối đa [cyan]12000[] độ bền.[]\n" +
-                                 " [white]• Tầm bắn tầm xa thu hẹp còn [red]252 pixel[], bù lại chuyển sang dạng [orange]Chùm tia Laser xuyên phá[] tầm trung cực đại [red]122 sát thương[].[]\n" +
-                                 " [white]• Cận chiến: Tầm quét kích hoạt shotgun mở rộng lên [yellow]145 pixel[].[]\n" +
-                                 " [white]• Giải phóng hỏa lực shotgun hỗn hợp: Phóng đồng thời [scarlet]14 đạn rải đỏ[] kèm [orange]6 tia đạn tỏa diện rộng[] quét sạch vật cản xung quanh.[]");
+                let b2Text = isEn ?
+                    "Complete Conversion to Compressed Heavy Laser Variant:\n" +
+                    " [white]• Reinforced frame boosts turret HP to ultra tier [green]4400 HP[] (+100%).[]\n" +
+                    " [white]• Shield matrix capacity maxes out at [cyan]12000[] health points.[]\n" +
+                    " [white]• Ranged attack distance reduced to [red]252 pixels[], but converts to [orange]Piercing Laser Beams[] with [red]122 heavy damage[].[]\n" +
+                    " [white]• Close Combat: Shotgun trigger threshold expanded to [yellow]145 pixels[].[]\n" +
+                    " [white]• Hybrid Shotgun Fire: Simultaneously launches [scarlet]14 red pellets[] and [orange]6 wide-spread spread beams[] to clear enemies.[]" :
+                    "Chuyển đổi toàn diện sang dạng Trọng Pháo Laser bạo nén:\n" +
+                    " [white]• Kết cấu khung vững chắc nâng HP pháo lên mức siêu cấp [green]4400 HP[] (+100%).[]\n" +
+                    " [white]• Lõi nén lá chắn hấp thụ đạt mốc tối đa [cyan]12000[] độ bền.[]\n" +
+                    " [white]• Tầm bắn tầm xa thu hẹp còn [red]252 pixel[], bù lại chuyển sang dạng [orange]Chùm tia Laser xuyên phá[] tầm trung cực đại [red]122 sát thương[].[]\n" +
+                    " [white]• Cận chiến: Tầm quét kích hoạt shotgun mở rộng lên [yellow]145 pixel[].[]\n" +
+                    " [white]• Giải phóng hỏa lực shotgun hỗn hợp: Phóng đồng thời [scarlet]14 đạn rải đỏ[] kèm [orange]6 tia đạn tỏa diện rộng[] quét sạch vật cản xung quanh.[]";
+                let b2D = b2.add(b2Text);
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
-                b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
+                b2.button(isEn ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.titanium) >= reqMK2B.titanium && core.items.get(Items.silicon) >= reqMK2B.silicon && core.items.get(Items.plastanium) >= reqMK2B.plastanium){
                         core.items.remove(Items.titanium, reqMK2B.titanium); core.items.remove(Items.silicon, reqMK2B.silicon); core.items.remove(Items.plastanium, reqMK2B.plastanium);
                         Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
                         this.configure(java.lang.Integer(2)); dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
+                    } else { Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2B branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
                 })).size(180, 38);
 
                 branchesTable.add(b1).width(340); branchesTable.row();
@@ -366,21 +395,34 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                 scroll.setScrollingDisabled(true, false);
                 dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); dialog.show();
-            })).size(50, 40).tooltip("Tiến hóa tháp pháo DTG Soldern");
+            })).size(50, 40).tooltip(isEn ? "Evolve DTG Soldern Turret" : "Tiến hóa tháp pháo DTG Soldern");
         } else {
             table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
-                Vars.ui.showInfo(this.getTier() == 1 ? "[cyan]HỆ THỐNG ĐANG HOẠT ĐỘNG Ở CẤU HÌNH TIÊU CHUẨN MK2![]" : "[purple]HỆ THỐNG ĐANG HOẠT ĐỘNG Ở BIẾN THỂ TRỌNG LỰC LASER MK2B![]");
-            })).size(50, 40).tooltip("Hệ thống đã khóa nhánh tiến hóa");
+                if(isEn){
+                    Vars.ui.showInfo(this.getTier() == 1 ? "[cyan]SYSTEM IS RUNNING ON MK2 STANDARD CONFIGURATION![]" : "[purple]SYSTEM IS RUNNING ON MK2B HEAVY GRAVITY LASER VARIANT![]");
+                } else {
+                    Vars.ui.showInfo(this.getTier() == 1 ? "[cyan]HỆ THỐNG ĐANG HOẠT ĐỘNG Ở CẤU HÌNH TIÊU CHUẨN MK2![]" : "[purple]HỆ THỐNG ĐANG HOẠT ĐỘNG Ở BIẾN THỂ TRỌNG LỰC LASER MK2B![]");
+                }
+            })).size(50, 40).tooltip(isEn ? "Evolution branch locked" : "Hệ thống đã khóa nhánh tiến hóa");
         }
 
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-            let title = " Thông số pháo DTG Soldern: ";
+            let title = isEn ? " DTG Soldern Stats: " : " Thông số pháo DTG Soldern: ";
             let descStr = "";
             let currentTier = this.getTier();
 
             if (currentTier == 0) {
                 title += "[yellow](MK1)[]";
-                descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
+                descStr = isEn ?
+                          "[gold]⚡ BASE STATS (MK1) ⚡[]\n" +
+                          "• [lightgray]Turret Health:[] [green]2200 HP[]\n" +
+                          "• [lightgray]Shield Health:[] [cyan]" + shieldHealthMK1 + "[]\n" +
+                          "• [lightgray]Effective Range:[] [orange]" + this.range() + " pixels[]\n" +
+                          "• [lightgray]Ranged Damage:[] [yellow]63.0[] (Bullet Speed: 7)\n\n" +
+                          "[sky]⚡ UTILITY MECHANICS:[]\n" +
+                          "• [lightgray]Energy Shield:[] Automatically deploys a 120° shield blocking incoming projectiles in aiming direction.\n" +
+                          "• [lightgray]Close Combat Mode (Shotgun):[] Deploys mechanical claws when enemies step within [yellow]100 pixels[]. Fires a burst of 14 pellets (Damage: 21) across 10 rapid magazines." :
+                          "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
                           "• [lightgray]Máu tháp pháo:[] [green]2200 HP[]\n" +
                           "• [lightgray]Độ bền lá chắn:[] [cyan]" + shieldHealthMK1 + "[]\n" +
                           "• [lightgray]Tầm bắn hiệu dụng:[] [orange]" + this.range() + " pixel[]\n" +
@@ -391,7 +433,16 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
             } 
             else if (currentTier == 1) {
                 title += "[cyan](MK2)[]";
-                descStr = "[cyan]⚡ THÔNG SỐ CẤU HÌNH NÂNG CẤP (MK2) ⚡[]\n" +
+                descStr = isEn ?
+                          "[cyan]⚡ UPGRADED CONFIGURATION STATS (MK2) ⚡[]\n" +
+                          "• [lightgray]Turret Health:[] [green]2860 HP [yellow](+30%)[]\n" +
+                          "• [lightgray]Shield Health:[] [cyan]" + shieldHealthMK2 + "[]\n" +
+                          "• [lightgray]Effective Range:[] [orange]" + this.range() + " pixels [yellow](+30%)[]\n" +
+                          "• [lightgray]Ranged Damage:[] [yellow]56.0[] (Velocity boosted: 10.4)\n\n" +
+                          "[lime]⚡ ADDITIONAL UTILITY MECHANICS:[]\n" +
+                          "• [lightgray]Instant Shield Recharge:[] Shield instantly recharges to full capacity when an enemy enters close-range for the first time.\n" +
+                          "• [lightgray]Enhanced Shotgun:[] Significantly increases pellet shotgun damage to [yellow]30.6[]." :
+                          "[cyan]⚡ THÔNG SỐ CẤU HÌNH NÂNG CẤP (MK2) ⚡[]\n" +
                           "• [lightgray]Máu tháp pháo:[] [green]2860 HP [yellow](+30%)[]\n" +
                           "• [lightgray]Độ bền lá chắn:[] [cyan]" + shieldHealthMK2 + "[]\n" +
                           "• [lightgray]Tầm bắn hiệu dụng:[] [orange]" + this.range() + " pixel [yellow](+30%)[]\n" +
@@ -402,7 +453,16 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
             } 
             else if (currentTier == 2) {
                 title += "[purple](MK2B)[]";
-                descStr = "[purple]⚡ THÔNG SỐ BIẾN THỂ TRỌNG LỰC (MK2B) ⚡[]\n" +
+                descStr = isEn ?
+                          "[purple]⚡ HEAVY GRAVITY VARIANT STATS (MK2B) ⚡[]\n" +
+                          "• [lightgray]Turret Health:[] [green]4400 HP [yellow](+100%)[]\n" +
+                          "• [lightgray]Shield Health:[] [cyan]" + shieldHealthMK3 + "[]\n" +
+                          "• [lightgray]Effective Range:[] [orange]" + this.range() + " pixels [coral](Reduced)[]\n" +
+                          "• [lightgray]Ranged Mode:[] Replaced with [orange]Destructive Laser Beam[] dealing [red]122 direct damage[].\n\n" +
+                          "[purple]🔥 ULTIMATE CLOSE-RANGE POWER:[]\n" +
+                          "• [lightgray]Expanded Shotgun Range:[] Threshold expanded to [yellow]145 pixels[].\n" +
+                          "• [lightgray]Hybrid Firepower:[] Fires a combined combo of [scarlet]14 red pellets[] (Damage: 23) and [sharp]6 angled spread beams (12°)[] (Damage: 23) to obliterate nearby targets instantly." :
+                          "[purple]⚡ THÔNG SỐ BIẾN THỂ TRỌNG LỰC (MK2B) ⚡[]\n" +
                           "• [lightgray]Máu tháp pháo:[] [green]4400 HP [yellow](+100%)[]\n" +
                           "• [lightgray]Độ bền lá chắn:[] [cyan]" + shieldHealthMK3 + "[]\n" +
                           "• [lightgray]Tầm bắn hiệu dụng:[] [orange]" + this.range() + " pixel [coral](Thu hẹp)[]\n" +
@@ -420,7 +480,7 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
             scroll.setScrollingDisabled(true, false);
             dialog.cont.add(scroll).maxHeight(400);
             dialog.addCloseButton(); dialog.show();
-        })).size(50, 40).tooltip("Xem chi tiết thông số trạng thái");
+        })).size(50, 40).tooltip(isEn ? "View Detailed System Stats" : "Xem chi tiết thông số trạng thái");
     },
 
     config() { return java.lang.Integer(this.getTier()); },

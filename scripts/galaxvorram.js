@@ -1,6 +1,10 @@
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 
+function isEnglish() {
+    return Core.settings.getString("locale").startsWith("en");
+}
+
 function findContent(type, name) {
     let found = Vars.content.getByName(type, name);
     if (!found) found = Vars.content.getByName(type, "newex-" + name);
@@ -15,8 +19,10 @@ const pinfyrStackMap = new ObjectMap();
 
 const AMMO_DATA = [
     {
-        name: "1. Đạn Tiêu Chuẩn Galax",
-        desc: "Sát thương gốc: [accent]5600 Dmg (100%)[]\nYêu cầu: Thorium x2 + 20 Điện/s (+500 Điện khi bắn)",
+        name_vi: "1. Đạn Tiêu Chuẩn Galax",
+        name_en: "1. Galax Standard Ammo",
+        desc_vi: "Sát thương gốc: [accent]5600 Dmg (100%)[]\nYêu cầu: Thorium x2 + 20 Điện/s (+500 Điện khi bắn)",
+        desc_en: "Base Damage: [accent]5600 Dmg (100%)[]\nRequirement: Thorium x2 + 20 Power/s (+500 Power on shot)",
         val: 0,
         dmgMult: 1.0,
         reqThorium: 2,
@@ -27,8 +33,10 @@ const AMMO_DATA = [
         reqAmount: 2
     },
     {
-        name: "2. Đạn Chi Phí Thấp",
-        desc: "Sát thương: [accent]4480 Dmg (80%)[]\nYêu cầu: Thorium x2 + Silicon x2 | +400 Điện khi bắn",
+        name_vi: "2. Đạn Chi Phí Thấp",
+        name_en: "2. Low Cost Ammo",
+        desc_vi: "Sát thương: [accent]4480 Dmg (80%)[]\nYêu cầu: Thorium x2 + Silicon x2 | +400 Điện khi bắn",
+        desc_en: "Damage: [accent]4480 Dmg (80%)[]\nRequirement: Thorium x2 + Silicon x2 | +400 Power on shot",
         val: 1,
         dmgMult: 0.8,
         reqThorium: 2,
@@ -39,8 +47,10 @@ const AMMO_DATA = [
         reqAmount: 2
     },
     {
-        name: "3. Đạn Hạt Nhân Diện RỘNG",
-        desc: "Sát thương: [accent]10080 Dmg (180%)[]\nYêu cầu: Thorium x4 + Surge Alloy x4 | +900 Điện khi bắn",
+        name_vi: "3. Đạn Hạt Nhân Diện RỘNG",
+        name_en: "3. Wide Area Nuclear Ammo",
+        desc_vi: "Sát thương: [accent]10080 Dmg (180%)[]\nYêu cầu: Thorium x4 + Surge Alloy x4 | +900 Điện khi bắn",
+        desc_en: "Damage: [accent]10080 Dmg (180%)[]\nRequirement: Thorium x4 + Surge Alloy x4 | +900 Power on shot",
         val: 2,
         dmgMult: 1.8,
         reqThorium: 4,
@@ -51,8 +61,10 @@ const AMMO_DATA = [
         reqAmount: 4
     },
     {
-        name: "4. Đạn Xung Độc Điện Từ",
-        desc: "Sát thương: [accent]6720 Dmg (120%)[]\nYêu cầu: Thorium x2 + Phase Fabric x2 | +600 Điện khi bắn",
+        name_vi: "4. Đạn Xung Độc Điện Từ",
+        name_en: "4. EMP Ammo",
+        desc_vi: "Sát thương: [accent]6720 Dmg (120%)[]\nYêu cầu: Thorium x2 + Phase Fabric x2 | +600 Điện khi bắn",
+        desc_en: "Damage: [accent]6720 Dmg (120%)[]\nRequirement: Thorium x2 + Phase Fabric x2 | +600 Power on shot",
         val: 3,
         dmgMult: 1.2,
         reqThorium: 2,
@@ -63,8 +75,10 @@ const AMMO_DATA = [
         reqAmount: 2
     },
     {
-        name: "5. Siêu Đạn Obs Khai Diệt",
-        desc: "Sát thương: [accent]28000 Dmg (500%)[]\nYêu cầu: Thorium x1000 + Obs x1200 | +1200 Điện khi bắn\n[lightgray]Tạo 5-14 nổ phụ lần lượt xung quanh. Tone màu Trắng-Đen.[]",
+        name_vi: "5. Siêu Đạn Obs Khai Diệt",
+        name_en: "5. Annihilation Super Obs Ammo",
+        desc_vi: "Sát thương: [accent]28000 Dmg (500%)[]\nYêu cầu: Thorium x1000 + Obs x1200 | +1200 Điện khi bắn\n[lightgray]Tạo 5-14 nổ phụ lần lượt xung quanh. Tone màu Trắng-Đen.[]",
+        desc_en: "Damage: [accent]28000 Dmg (500%)[]\nRequirement: Thorium x1000 + Obs x1200 | +1200 Power on shot\n[lightgray]Triggers 5-14 sub-explosions sequentially. Black-White tone.[]",
         val: 4,
         dmgMult: 5.0,
         reqThorium: 1000,
@@ -649,13 +663,13 @@ galaxvorram.buildType = () => extend(PowerTurret.PowerTurretBuild, galaxvorram, 
         this.super$drawSelect();
         let adjacentRadius = (this.block.size * 8) + 8.0;
 
-           Draw.z(Layer.power + 1);
+        Draw.z(Layer.power + 1);
         Draw.color(Color.valueOf("#fb7185"));
         Lines.stroke(1.0);
         Lines.dashCircle(this.x, this.y, 21 * 8);
         Draw.reset();
 
-           Units.nearbyBuildings(this.x, this.y, adjacentRadius, cons(b => {
+        Units.nearbyBuildings(this.x, this.y, adjacentRadius, cons(b => {
             if (b != null && b !== this && b.block === this.block && b.team === this.team) {
                 let dstX = Math.abs(this.x - b.x);
                 let dstY = Math.abs(this.y - b.y);
@@ -677,7 +691,7 @@ galaxvorram.buildType = () => extend(PowerTurret.PowerTurretBuild, galaxvorram, 
             }
         }));
 
-           let redstoneList = this.getCornerBuildings("redstone", 0);
+        let redstoneList = this.getCornerBuildings("redstone", 0);
         redstoneList.each(b => {
             Draw.z(Layer.power + 1);
             Draw.color(Color.valueOf("#ef4444"));
@@ -691,7 +705,7 @@ galaxvorram.buildType = () => extend(PowerTurret.PowerTurretBuild, galaxvorram, 
             Draw.reset();
         });
 
-          let pinfyrList = this.getCornerBuildings("pinfyr", 0);
+        let pinfyrList = this.getCornerBuildings("pinfyr", 0);
         pinfyrList.each(b => {
             let pCap = b.block.powerCapacity || 4000;
             let currentP = b.power != null ? (b.power.status * pCap) : 0;
@@ -916,29 +930,35 @@ galaxvorram.buildType = () => extend(PowerTurret.PowerTurretBuild, galaxvorram, 
         table.row();
 
         table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-            let dialog = new BaseDialog("Hệ Thống Lựa Chọn Loại Đạn - Galaxvorram");
+            let dialogTitle = isEnglish() ? "Ammo Selection System - Galaxvorram" : "Hệ Thống Lựa Chọn Loại Đạn - Galaxvorram";
+            let dialog = new BaseDialog(dialogTitle);
 
             let mainTable = new Table();
             mainTable.background(Styles.black6);
             mainTable.margin(12);
 
-            mainTable.add("[gold]★ BẢNG ĐIỀU CHỈNH CHẾ ĐỘ ĐẠN GALAXVORRAM ★[]").row();
+            let headerText = isEnglish() ? "[gold]★ GALAXVORRAM AMMO CONFIGURATION PANEL ★[]" : "[gold]★ BẢNG ĐIỀU CHỈNH CHẾ ĐỘ ĐẠN GALAXVORRAM ★[]";
+            mainTable.add(headerText).row();
             mainTable.add().height(10).row();
 
             AMMO_DATA.forEach(ammo => {
                 let isSelected = (this.getAmmoTypeIndex() === ammo.val);
-                let btnText = (isSelected ? "[green]✔ " : "[white]") + ammo.name;
+                let ammoName = isEnglish() ? ammo.name_en : ammo.name_vi;
+                let ammoDesc = isEnglish() ? ammo.desc_en : ammo.desc_vi;
+
+                let btnText = (isSelected ? "[green]✔ " : "[white]") + ammoName;
 
                 mainTable.button(btnText, packRun(() => {
                     this.setAmmoTypeIndex(ammo.val);
                     this.configure(java.lang.Integer.valueOf(ammo.val));
                     Fx.upgradeCore.at(this.x, this.y);
-                    Vars.ui.showInfo("[gold]Đã cài đặt loại đạn:[]\n" + ammo.name);
+                    let infoText = isEnglish() ? "[gold]Ammo type installed:[]\n" : "[gold]Đã cài đặt loại đạn:[]\n";
+                    Vars.ui.showInfo(infoText + ammoName);
                     dialog.hide();
                     this.deselect();
                 })).size(340, 42).row();
 
-                let descCell = mainTable.add(ammo.desc).width(320);
+                let descCell = mainTable.add(ammoDesc).width(320);
                 descCell.get().setWrap(true);
                 descCell.get().setAlignment(Align.left);
                 mainTable.add().height(12).row();
@@ -949,7 +969,7 @@ galaxvorram.buildType = () => extend(PowerTurret.PowerTurretBuild, galaxvorram, 
             dialog.cont.add(scroll).maxHeight(420);
             dialog.addCloseButton();
             dialog.show();
-        })).size(50, 40).tooltip("Chọn loại đạn bắn cho pháo Galaxvorram");
+        })).size(50, 40).tooltip(isEnglish() ? "Select ammo type for Galaxvorram" : "Chọn loại đạn bắn cho pháo Galaxvorram");
 
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
             let redstoneCount = this.getCornerBlockCount("redstone", 0);
@@ -963,14 +983,38 @@ galaxvorram.buildType = () => extend(PowerTurret.PowerTurretBuild, galaxvorram, 
                 let pCap = b.block.powerCapacity || 4000;
                 let currentP = b.power != null ? Math.floor(b.power.status * pCap) : 0;
                 let statusColor = currentP >= 1000 ? "[green]" : "[scarlet]";
-                pinfyrInfoStr += "\n  └ Khối Pinfyr #" + (i + 1) + ": " + statusColor + currentP + " / " + pCap + " Điện[] (Cần ≥ 1,000)";
+                if (isEnglish()) {
+                    pinfyrInfoStr += "\n  └ Pinfyr Block #" + (i + 1) + ": " + statusColor + currentP + " / " + pCap + " Power[] (Req ≥ 1,000)";
+                } else {
+                    pinfyrInfoStr += "\n  └ Khối Pinfyr #" + (i + 1) + ": " + statusColor + currentP + " / " + pCap + " Điện[] (Cần ≥ 1,000)";
+                }
             });
 
-            let dialog = new BaseDialog("Thông số pháo Galaxvorram");
+            let dialogTitle = isEnglish() ? "Galaxvorram Cannon Stats" : "Thông số pháo Galaxvorram";
+            let dialog = new BaseDialog(dialogTitle);
             let infoTable = new Table();
             infoTable.margin(10);
 
-            let descStr = "[gold]⚡ THÔNG SỐ VŨ KHÍ GALAXVORRAM ⚡[]\n" +
+            let descStr = "";
+            if (isEnglish()) {
+                descStr = "[gold]⚡ GALAXVORRAM WEAPON STATS ⚡[]\n" +
+                          "• Health: 4,500\n" +
+                          "• Base Range: 1,400px\n" +
+                          "• Ammo Capacity: 2,000\n" +
+                          "• Base Damage: [accent]5600 Dmg[]\n\n" +
+                          "[scarlet]━━━━ REALTIME BUFF STATUS ━━━━[]\n\n" +
+                          "[red]● Redstone-Wall Blocks:[] " + redstoneCount + " blocks in connection range\n" +
+                          "  └ Extra Range: [green]+" + (redstoneCount * 800) + "px[]\n" +
+                          "  └ Current Total Range: [accent]" + totalRange + "px[]\n\n" +
+                          "[pink]● Pinfyr Blocks:[] " + pinfyrList.size + " blocks within 21 tiles\n" +
+                          "  └ READY Blocks (≥1k Power): [accent]" + pinfyrActiveCount + "/" + pinfyrList.size + "[]" +
+                          (pinfyrList.size > 0 ? pinfyrInfoStr : "") + "\n" +
+                          "  └ Power Cost: [yellow]1,000 Power / 1 shot / 1 block[]\n" +
+                          "  └ Sub-beam Damage: [accent]2002 Dmg[] (Armor Piercing + 100% Armor Shred)\n" +
+                          "  └ Beam Length: [lightgray]Auto-extends to target (Ignores Cores)[]\n" +
+                          "  └ Stacking Effect: [pink]Unlimited Stacks[]";
+            } else {
+                descStr = "[gold]⚡ THÔNG SỐ VŨ KHÍ GALAXVORRAM ⚡[]\n" +
                           "• Máu: 4,500\n" +
                           "• Tầm ngắm gốc: 1,400px\n" +
                           "• Sức chứa kho đạn: 2,000\n" +
@@ -986,6 +1030,7 @@ galaxvorram.buildType = () => extend(PowerTurret.PowerTurretBuild, galaxvorram, 
                           "  └ Sát thương tia phụ: [accent]2002 Dmg[] (Xuyên giáp + Trừ 100% Giáp)\n" +
                           "  └ Chiều dài tia: [lightgray]Tự động kéo dài tới vị trí mục tiêu (Không bắn Lõi)[]\n" +
                           "  └ Hiệu ứng cộng dồn: [pink]Không giới hạn tầng[]";
+            }
 
             let cell = infoTable.add(descStr).width(380);
             cell.get().setWrap(true);
@@ -996,7 +1041,7 @@ galaxvorram.buildType = () => extend(PowerTurret.PowerTurretBuild, galaxvorram, 
             dialog.cont.add(scroll).maxHeight(420);
             dialog.addCloseButton();
             dialog.show();
-        })).size(50, 40).tooltip("Xem thông số pháo & trạng thái Buff");
+        })).size(50, 40).tooltip(isEnglish() ? "View Stats & Buff Status" : "Xem thông số pháo & trạng thái Buff");
     },
 
     write(write) {

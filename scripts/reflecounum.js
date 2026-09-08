@@ -1,18 +1,23 @@
- const packRun = (fn) => new java.lang.Runnable({ run: fn });
+const packRun = (fn) => new java.lang.Runnable({ run: fn });
 const packProv = (fn) => new Packages.arc.func.Prov({ get: fn });
 const packCons2 = (fn) => new Cons2({ get: fn });
 const packBoolf = (fn) => new Packages.arc.func.Boolf({ get: fn });
 const packFloatp = (fn) => new Packages.arc.func.Floatp({ get: fn });
 const packFunc = (fn) => new Packages.arc.func.Func({ get: fn });
 
- const reqMK2 = { titanium: 400, silicon: 300, thorium: 200 };
+ const isEn = () => {
+    let loc = Core.settings ? Core.settings.get("locale", "") : "";
+    return loc.startsWith("en");
+};
+
+const reqMK2 = { titanium: 400, silicon: 300, thorium: 200 };
 const reqMK2B = { titanium: 600, silicon: 500, plastanium: 350, surgeAlloy: 150 };
 const reqSpecial = { copper: 4000, lead: 4000, silicon: 4000 };
 
- const reflectorColor = Color.valueOf("#d000ff");
+const reflectorColor = Color.valueOf("#d000ff");
 const reflectorGlow = Color.valueOf("#00f0ff");
 
- const perk4Bullet = extend(BasicBulletType, {
+const perk4Bullet = extend(BasicBulletType, {
     speed: 8,
     damage: 30,
     lifetime: 180,
@@ -38,7 +43,7 @@ const perk6Bullet = extend(BasicBulletType, {
     backColor: Color.white
 });
 
- const reflectEffect = new Effect(15, e => {
+const reflectEffect = new Effect(15, e => {
     Draw.color(reflectorGlow, reflectorColor, e.fout());
     Lines.stroke(e.fout() * 2.5);
     Lines.poly(e.x, e.y, 6, e.fin() * 12);
@@ -51,7 +56,7 @@ const shockwaveFx = new Effect(30, e => {
     Draw.reset();
 });
 
- const reflecounum = extend(Turret, "reflecounum", {
+const reflecounum = extend(Turret, "reflecounum", {
     size: 3,
     health: 2400,
     hasPower: true,
@@ -64,7 +69,7 @@ const shockwaveFx = new Effect(30, e => {
     }
 });
 
- reflecounum.config(java.lang.Integer, packCons2((tile, value) => {
+reflecounum.config(java.lang.Integer, packCons2((tile, value) => {
     if (tile != null) {
         let val = Number(value);
         if (val >= 10) {
@@ -99,7 +104,7 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
         this._shieldHp = this._maxShieldHp;
     },
 
-     getMaxShieldHp() {
+    getMaxShieldHp() {
         if (this._maxShieldHp === undefined || isNaN(this._maxShieldHp) || this._maxShieldHp <= 0) {
             this.updateMaxShield();
         }
@@ -227,7 +232,7 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
         let perk = this.getPerkTier();
         let currentRadius = this.getShieldRadius();
 
-         if (perk === 1) {
+        if (perk === 1) {
             this._perk1Timer += Time.delta;
             if (this._perk1Timer >= 30) {
                 this._perk1Timer = 0;
@@ -240,7 +245,7 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
             }
         }
 
-         if (perk === 2) {
+        if (perk === 2) {
             this._perk2Timer += Time.delta;
             if (this._perk2Timer >= 60) {
                 this._perk2Timer = 0;
@@ -295,7 +300,7 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
             }
         }
 
-         if (perk === 5) {
+        if (perk === 5) {
             this._perk5Timer += Time.delta;
             if (this._perk5Timer >= 300) {
                 this._perk5Timer = 0;
@@ -315,7 +320,7 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
             }
         }
 
-         if (!this.isShieldBroken() && Groups.bullet != null && Groups.bullet.size() > 0) {
+        if (!this.isShieldBroken() && Groups.bullet != null && Groups.bullet.size() > 0) {
             try {
                 Groups.bullet.intersect(this.x - currentRadius, this.y - currentRadius, currentRadius * 2, currentRadius * 2, cons(b => {
                     if (this.isShieldBroken()) return;
@@ -331,7 +336,7 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
 
                         if (this.isShieldBroken()) return;
 
-                         if (perk === 3 && (this._absorbedDamage || 0) >= 1000) {
+                        if (perk === 3 && (this._absorbedDamage || 0) >= 1000) {
                             shockwaveFx.at(this.x, this.y);
                             Units.nearbyEnemies(this.team, this.x, this.y, 200, cons(enemy => {
                                 if (enemy != null && enemy.isValid()) enemy.damage(100);
@@ -344,7 +349,7 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
                             }));
                         }
 
-                         if (perk === 6) {
+                        if (perk === 6) {
                             this._perk6Absorbed = (this._perk6Absorbed || 0) + absorbed;
                             if (this._perk6Absorbed >= 100 && this._orbitingBullets.length < 8) {
                                 this._orbitingBullets.push(true);
@@ -366,11 +371,11 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
                             }
                         }
 
-                         if ((this._absorbedDamage || 0) >= 1000) {
+                        if ((this._absorbedDamage || 0) >= 1000) {
                             this._absorbedDamage -= 1000;
                         }
 
-                         if (Mathf.chance(this.getReflectingChance())) {
+                        if (Mathf.chance(this.getReflectingChance())) {
                             let oldX = b.x;
                             let oldY = b.y;
                             let oldRot = b.rotation();
@@ -395,11 +400,11 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
                     }
                 }));
             } catch (err) {
-             }
+            }
         }
     },
 
-     draw() {
+    draw() {
         this.super$draw();
 
         let currentRadius = this.getShieldRadius();
@@ -460,11 +465,12 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
         let tier = this.getTier();
 
         table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-            let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Reflecounum", {});
+            let dialogTitle = isEn() ? "Reflecounum Turret Upgrade Center" : "Trung tâm nâng cấp pháo Reflecounum";
+            let dialog = extend(BaseDialog, dialogTitle, {});
             
             let reqCell = dialog.cont.label(packProv(() => {
                 let core = this.team.core();
-                if (core == null) return "[red]Không tìm thấy Lõi Đội![]";
+                if (core == null) return isEn() ? "[red]Team Core Not Found![]" : "[red]Không tìm thấy Lõi Đội![]";
 
                 let currentCopper = core.items.get(Items.copper);
                 let currentLead = core.items.get(Items.lead);
@@ -487,6 +493,13 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
                 let plaColor2 = currentPlastanium >= reqMK2B.plastanium ? "[green]" : "[red]";
                 let surColor2 = currentSurge >= reqMK2B.surgeAlloy ? "[green]" : "[red]";
 
+                if (isEn()) {
+                    return "[gold]CORE RESOURCE REQUIREMENTS:[]\n" +
+                           "[orange]★ SPECIAL PERK:[] Copper: " + copCol + currentCopper + "[]/4000 | Lead: " + leaCol + currentLead + "[]/4000 | Silicon: " + silColSp + currentSilicon + "[]/4000\n" +
+                           "[cyan]MK2 Branch:[] Titanium: " + titColor1 + currentTitanium + "[]/" + reqMK2.titanium + " | Silicon: " + silColor1 + currentSilicon + "[]/" + reqMK2.silicon + " | Thorium: " + thoColor1 + currentThorium + "[]/" + reqMK2.thorium + "\n" +
+                           "[purple]MK2B Branch:[] Titanium: " + titColor2 + currentTitanium + "[]/" + reqMK2B.titanium + " | Silicon: " + silColor2 + currentSilicon + "[]/" + reqMK2B.silicon + " | Plastanium: " + plaColor2 + currentPlastanium + "[]/" + reqMK2B.plastanium + " | Surge: " + surColor2 + currentSurge + "[]/" + reqMK2B.surgeAlloy;
+                }
+
                 return "[gold]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
                        "[orange]★ PHÚC LỢI ĐẶC BIỆT:[] Đồng: " + copCol + currentCopper + "[]/4000 | Chì: " + leaCol + currentLead + "[]/4000 | Silicon: " + silColSp + currentSilicon + "[]/4000\n" +
                        "[cyan]Nhánh MK2:[] Titan: " + titColor1 + currentTitanium + "[]/" + reqMK2.titanium + " | Silicon: " + silColor1 + currentSilicon + "[]/" + reqMK2.silicon + " | Thorium: " + thoColor1 + currentThorium + "[]/" + reqMK2.thorium + "\n" +
@@ -502,23 +515,34 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
             let spBox = new Table(); 
             spBox.background(Styles.black6); 
             spBox.margin(12);
-            spBox.add("[gold]★ PHÚC LỢI NÂNG CẤP ĐẶC BIỆT (NGẪU NHIÊN) ★[]").row();
+            spBox.add(isEn() ? "[gold]★ SPECIAL UPGRADE PERKS (RANDOM) ★[]" : "[gold]★ PHÚC LỢI NÂNG CẤP ĐẶC BIỆT (NGẪU NHIÊN) ★[]").row();
 
             let currentPerk = this.getPerkTier();
 
             if (currentPerk == 0) {
-                let spD = spBox.add("Kích hoạt giao thức nâng cấp ngẫu nhiên nhận 1 trong 6 phúc lợi vĩnh viễn:\n" +
-                                     " • [yellow]Phúc lợi 1 (~19.6%):[] Bán kính khiên +150%, HP khiên +50%, Hồi 10% HP/0.5s cho Unit trong 200px.\n" +
-                                     " • [orange]Phúc lợi 2 (~29.4%):[] Bán kính khiên +50%, HP khiên +90%, Tự động xây lại tường & pháo bị nổ trong 350px (mỗi 5s).\n" +
-                                     " • [cyan]Phúc lợi 3 (~19.6%):[] Bán kính khiên +30%, HP khiên +30%, Tích 1000 Dmg nổ sóng âm 100 Dmg (200px) & hồi 100 HP cho đồng minh.\n" +
-                                     " • [purple]Phúc lợi 4 (~29.4%):[] Bán kính khiên +100%, HP khiên +100%, Đạn phản có Truy đuổi & Xuyên thấu 4.\n" +
-                                     " • [green]Phúc lợi 5 (1% SIÊU HIẾM):[] Bán kính khiên +200%, HP khiên +300%, Hồi 10% HP/5s trong 500px, Chia sẻ 50% Dmg từ đồng minh vào khiên.\n" +
-                                     " • [red]Phúc lợi 6 (1% SIÊU HIẾM):[] Bán kính khiên +200%, HP khiên +300%, Tích 100 Dmg đẻ 1 đạn năng lượng quanh pháo, Đủ 1000 Dmg bắn 8 đạn xé gió mục tiêu HP cao nhất!");
+                let spDText = isEn() ?
+                    "Activate random protocol to obtain 1 of 6 permanent perks:\n" +
+                    " • [yellow]Perk 1 (~19.6%):[] Shield radius +150%, Shield HP +50%, Heal 10% HP/0.5s for Units within 200px.\n" +
+                    " • [orange]Perk 2 (~29.4%):[] Shield radius +50%, Shield HP +90%, Auto rebuild walls & turrets within 350px (every 5s).\n" +
+                    " • [cyan]Perk 3 (~19.6%):[] Shield radius +30%, Shield HP +30%, Store 1000 Dmg to release 100 Dmg shockwave (200px) & heal allies 100 HP.\n" +
+                    " • [purple]Perk 4 (~29.4%):[] Shield radius +100%, Shield HP +100%, Reflected bullets gain Homing & Pierce 4.\n" +
+                    " • [green]Perk 5 (1% ULTRA RARE):[] Shield radius +200%, Shield HP +300%, Heal 10% HP/5s within 500px, Share 50% ally damage to shield.\n" +
+                    " • [red]Perk 6 (1% ULTRA RARE):[] Shield radius +200%, Shield HP +300%, Store 100 Dmg to spawn orbiting energy, 1000 Dmg fires 8 piercing bullets at highest HP target!" :
+                    "Kích hoạt giao thức nâng cấp ngẫu nhiên nhận 1 trong 6 phúc lợi vĩnh viễn:\n" +
+                    " • [yellow]Phúc lợi 1 (~19.6%):[] Bán kính khiên +150%, HP khiên +50%, Hồi 10% HP/0.5s cho Unit trong 200px.\n" +
+                    " • [orange]Phúc lợi 2 (~29.4%):[] Bán kính khiên +50%, HP khiên +90%, Tự động xây lại tường & pháo bị nổ trong 350px (mỗi 5s).\n" +
+                    " • [cyan]Phúc lợi 3 (~19.6%):[] Bán kính khiên +30%, HP khiên +30%, Tích 1000 Dmg nổ sóng âm 100 Dmg (200px) & hồi 100 HP cho đồng minh.\n" +
+                    " • [purple]Phúc lợi 4 (~29.4%):[] Bán kính khiên +100%, HP khiên +100%, Đạn phản có Truy đuổi & Xuyên thấu 4.\n" +
+                    " • [green]Phúc lợi 5 (1% SIÊU HIẾM):[] Bán kính khiên +200%, HP khiên +300%, Hồi 10% HP/5s trong 500px, Chia sẻ 50% Dmg từ đồng minh vào khiên.\n" +
+                    " • [red]Phúc lợi 6 (1% SIÊU HIẾM):[] Bán kính khiên +200%, HP khiên +300%, Tích 100 Dmg đẻ 1 đạn năng lượng quanh pháo, Đủ 1000 Dmg bắn 8 đạn xé gió mục tiêu HP cao nhất!";
+
+                let spD = spBox.add(spDText);
                 spD.width(360).get().setWrap(true); 
                 spD.get().setAlignment(Align.left); 
                 spBox.row();
 
-                spBox.button("[gold]QUAY PHÚC LỢI (4K Đồng/Chì/Silicon)[]", packRun(() => {
+                let rollBtnText = isEn() ? "[gold]ROLL PERK (4K Copper/Lead/Silicon)[]" : "[gold]QUAY PHÚC LỢI (4K Đồng/Chì/Silicon)[]";
+                spBox.button(rollBtnText, packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.copper) >= 4000 && core.items.get(Items.lead) >= 4000 && core.items.get(Items.silicon) >= 4000) {
                         core.items.remove(Items.copper, 4000); 
@@ -549,29 +573,47 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
                         Effect.shake(6, 6, this.x, this.y);
 
                         let perkName = "";
-                        if (resultPerk == 1) perkName = "[yellow]PHÚC LỢI 1[]";
-                        else if (resultPerk == 2) perkName = "[orange]PHÚC LỢI 2[]";
-                        else if (resultPerk == 3) perkName = "[cyan]PHÚC LỢI 3[]";
-                        else if (resultPerk == 4) perkName = "[purple]PHÚC LỢI 4[]";
-                        else if (resultPerk == 5) perkName = "[green]★ PHÚC LỢI 5 (1% SIÊU HIẾM) ★[]";
-                        else perkName = "[red]★ PHÚC LỢI 6 (1% SIÊU HIẾM) ★[]";
-
-                        Vars.ui.showInfo("[gold]BẠN ĐÃ TRÚNG:[]\n" + perkName);
+                        if (isEn()) {
+                            if (resultPerk == 1) perkName = "[yellow]PERK 1[]";
+                            else if (resultPerk == 2) perkName = "[orange]PERK 2[]";
+                            else if (resultPerk == 3) perkName = "[cyan]PERK 3[]";
+                            else if (resultPerk == 4) perkName = "[purple]PERK 4[]";
+                            else if (resultPerk == 5) perkName = "[green]★ PERK 5 (1% ULTRA RARE) ★[]";
+                            else perkName = "[red]★ PERK 6 (1% ULTRA RARE) ★[]";
+                            Vars.ui.showInfo("[gold]YOU OBTAINED:[]\n" + perkName);
+                        } else {
+                            if (resultPerk == 1) perkName = "[yellow]PHÚC LỢI 1[]";
+                            else if (resultPerk == 2) perkName = "[orange]PHÚC LỢI 2[]";
+                            else if (resultPerk == 3) perkName = "[cyan]PHÚC LỢI 3[]";
+                            else if (resultPerk == 4) perkName = "[purple]PHÚC LỢI 4[]";
+                            else if (resultPerk == 5) perkName = "[green]★ PHÚC LỢI 5 (1% SIÊU HIẾM) ★[]";
+                            else perkName = "[red]★ PHÚC LỢI 6 (1% SIÊU HIẾM) ★[]";
+                            Vars.ui.showInfo("[gold]BẠN ĐÃ TRÚNG:[]\n" + perkName);
+                        }
 
                         dialog.hide(); 
                         this.deselect();
                     } else { 
-                        Vars.ui.showInfo("[red]Không đủ tài nguyên cho Phúc Lợi Đặc Biệt![]"); 
+                        Vars.ui.showInfo(isEn() ? "[red]Not enough resources for Special Perk![]" : "[red]Không đủ tài nguyên cho Phúc Lợi Đặc Biệt![]"); 
                     }
                 })).size(300, 40);
             } else {
                 let perkText = "";
-                if (currentPerk == 1) perkText = "[yellow]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1\n• Bán kính khiên +150%\n• Độ bền khiên +50%\n• Hồi 10% HP/0.5s cho Unit đồng minh trong 200px[]";
-                if (currentPerk == 2) perkText = "[orange]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2\n• Bán kính khiên +50%\n• Độ bền khiên +90%\n• Tự động xây lại tường & pháo bị hủy hoàn toàn trong 350px (mỗi 5s)[]";
-                if (currentPerk == 3) perkText = "[cyan]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3\n• Bán kính khiên +30%\n• Độ bền khiên +30%\n• Tích 1000 Dmg nổ sóng âm 100 Dmg (200px) & hồi 100 HP cho đồng minh[]";
-                if (currentPerk == 4) perkText = "[purple]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 4\n• Bán kính khiên +100%\n• Độ bền khiên +100%\n• Đạn phản ngược có Truy đuổi & Xuyên thấu 4[]";
-                if (currentPerk == 5) perkText = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 5 (1% SIÊU HIẾM)\n• Bán kính khiên +200%\n• Độ bền khiên +300%\n• Hồi 10% HP/5s cho Unit & Công trình trong 500px\n• Chia sẻ 50% Dmg nhận vào từ đồng minh trong 250px[]";
-                if (currentPerk == 6) perkText = "[red]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 6 (1% SIÊU HIẾM)\n• Bán kính khiên +200%\n• Độ bền khiên +300%\n• Đủ 1000 Dmg hấp thụ bắn 8 đạn năng lượng xé gió (Xuyên 20, Splash Dmg 20px) vào mục tiêu HP cao nhất![]";
+                if (isEn()) {
+                    if (currentPerk == 1) perkText = "[yellow]✔ ACTIVATED: PERK 1\n• Shield radius +150%\n• Shield HP +50%\n• Heal 10% HP/0.5s for ally Units in 200px[]";
+                    if (currentPerk == 2) perkText = "[orange]✔ ACTIVATED: PERK 2\n• Shield radius +50%\n• Shield HP +90%\n• Auto rebuild destroyed walls & turrets in 350px (every 5s)[]";
+                    if (currentPerk == 3) perkText = "[cyan]✔ ACTIVATED: PERK 3\n• Shield radius +30%\n• Shield HP +30%\n• Store 1000 Dmg to release 100 Dmg shockwave (200px) & heal allies 100 HP[]";
+                    if (currentPerk == 4) perkText = "[purple]✔ ACTIVATED: PERK 4\n• Shield radius +100%\n• Shield HP +100%\n• Reflected bullets gain Homing & Pierce 4[]";
+                    if (currentPerk == 5) perkText = "[green]✔ ACTIVATED: PERK 5 (1% ULTRA RARE)\n• Shield radius +200%\n• Shield HP +300%\n• Heal 10% HP/5s for Units & Structures in 500px\n• Share 50% ally damage taken in 250px[]";
+                    if (currentPerk == 6) perkText = "[red]✔ ACTIVATED: PERK 6 (1% ULTRA RARE)\n• Shield radius +200%\n• Shield HP +300%\n• Store 1000 Dmg to fire 8 piercing energy bullets (Pierce 20, Splash Dmg 20px) at highest HP target![]";
+                } else {
+                    if (currentPerk == 1) perkText = "[yellow]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1\n• Bán kính khiên +150%\n• Độ bền khiên +50%\n• Hồi 10% HP/0.5s cho Unit đồng minh trong 200px[]";
+                    if (currentPerk == 2) perkText = "[orange]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2\n• Bán kính khiên +50%\n• Độ bền khiên +90%\n• Tự động xây lại tường & pháo bị hủy hoàn toàn trong 350px (mỗi 5s)[]";
+                    if (currentPerk == 3) perkText = "[cyan]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3\n• Bán kính khiên +30%\n• Độ bền khiên +30%\n• Tích 1000 Dmg nổ sóng âm 100 Dmg (200px) & hồi 100 HP cho đồng minh[]";
+                    if (currentPerk == 4) perkText = "[purple]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 4\n• Bán kính khiên +100%\n• Độ bền khiên +100%\n• Đạn phản ngược có Truy đuổi & Xuyên thấu 4[]";
+                    if (currentPerk == 5) perkText = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 5 (1% SIÊU HIẾM)\n• Bán kính khiên +200%\n• Độ bền khiên +300%\n• Hồi 10% HP/5s cho Unit & Công trình trong 500px\n• Chia sẻ 50% Dmg nhận vào từ đồng minh trong 250px[]";
+                    if (currentPerk == 6) perkText = "[red]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 6 (1% SIÊU HIẾM)\n• Bán kính khiên +200%\n• Độ bền khiên +300%\n• Đủ 1000 Dmg hấp thụ bắn 8 đạn năng lượng xé gió (Xuyên 20, Splash Dmg 20px) vào mục tiêu HP cao nhất![]";
+                }
 
                 let spD = spBox.add(perkText);
                 spD.width(360).get().setWrap(true); 
@@ -584,13 +626,23 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
 
             if (tier == 0) {
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
-                b1.add("[cyan]===(MK2 - TRỐNG THỦ KHIÊN)===[]").row();
-                let b1D = b1.add("[white]• Hấp thụ sát thương khiên: [green]80%[] (+30%)\n" +
-                                 "• Độ bền khiên gốc: [green]7,500 HP[] (+50%)\n" +
-                                 "• Tỷ lệ phản ngược đạn: [yellow]75%[] (+15%)\n" +
-                                 "• Thời gian hồi khi khiên vỡ: [white]5.0 giây[]");
+                b1.add(isEn() ? "[cyan]===(MK2 - SHIELD DEFENDER)===[]" : "[cyan]===(MK2 - TRỐNG THỦ KHIÊN)===[]").row();
+                
+                let b1DText = isEn() ?
+                    "[white]• Shield Dmg Absorb: [green]80%[] (+30%)\n" +
+                    "• Base Shield HP: [green]7,500 HP[] (+50%)\n" +
+                    "• Reflection Chance: [yellow]75%[] (+15%)\n" +
+                    "• Shield Cooldown: [white]5.0 seconds[]" :
+                    "[white]• Hấp thụ sát thương khiên: [green]80%[] (+30%)\n" +
+                    "• Độ bền khiên gốc: [green]7,500 HP[] (+50%)\n" +
+                    "• Tỷ lệ phản ngược đạn: [yellow]75%[] (+15%)\n" +
+                    "• Thời gian hồi khi khiên vỡ: [white]5.0 giây[]";
+                
+                let b1D = b1.add(b1DText);
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
-                b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
+                
+                let b1Btn = isEn() ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]";
+                b1.button(b1Btn, packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.titanium) >= reqMK2.titanium && core.items.get(Items.silicon) >= reqMK2.silicon && core.items.get(Items.thorium) >= reqMK2.thorium) {
                         core.items.remove(Items.titanium, reqMK2.titanium); 
@@ -601,17 +653,27 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
                         this.setTier(1);
                         this.configure(1);
                         dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); }
+                    } else { Vars.ui.showInfo(isEn() ? "[red]Not enough resources for MK2 branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                 })).size(180, 38);
 
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
-                b2.add("[purple]===(MK2B - PHẢN XẠ TUYỆT ĐỐI)===[]").row();
-                let b2D = b2.add("[white]• Hấp thụ sát thương khiên: [red]40%[] (-10%)\n" +
-                                 "• Độ bền khiên gốc: [green]15,000 HP[] (+200%)\n" +
-                                 "• Tỷ lệ phản ngược đạn: [gold]100% TUYỆT ĐỐI[]\n" +
-                                 "• Thời gian hồi khi khiên vỡ: [green]2.0 giây[] (Siêu tốc)");
+                b2.add(isEn() ? "[purple]===(MK2B - ABSOLUTE REFLECTION)===[]" : "[purple]===(MK2B - PHẢN XẠ TUYỆT ĐỐI)===[]").row();
+                
+                let b2DText = isEn() ?
+                    "[white]• Shield Dmg Absorb: [red]40%[] (-10%)\n" +
+                    "• Base Shield HP: [green]15,000 HP[] (+200%)\n" +
+                    "• Reflection Chance: [gold]100% ABSOLUTE[]\n" +
+                    "• Shield Cooldown: [green]2.0 seconds[] (Super Fast)" :
+                    "[white]• Hấp thụ sát thương khiên: [red]40%[] (-10%)\n" +
+                    "• Độ bền khiên gốc: [green]15,000 HP[] (+200%)\n" +
+                    "• Tỷ lệ phản ngược đạn: [gold]100% TUYỆT ĐỐI[]\n" +
+                    "• Thời gian hồi khi khiên vỡ: [green]2.0 giây[] (Siêu tốc)";
+
+                let b2D = b2.add(b2DText);
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
-                b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
+                
+                let b2Btn = isEn() ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]";
+                b2.button(b2Btn, packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.titanium) >= reqMK2B.titanium && core.items.get(Items.silicon) >= reqMK2B.silicon && core.items.get(Items.plastanium) >= reqMK2B.plastanium && core.items.get(Items.surgeAlloy) >= reqMK2B.surgeAlloy) {
                         core.items.remove(Items.titanium, reqMK2B.titanium); 
@@ -623,14 +685,19 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
                         this.setTier(2);
                         this.configure(2);
                         dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
+                    } else { Vars.ui.showInfo(isEn() ? "[red]Not enough resources for MK2B branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
                 })).size(180, 38);
 
                 branchesTable.add(b1).width(340); branchesTable.row();
                 branchesTable.add().height(12).row();
                 branchesTable.add(b2).width(340);
             } else {
-                let statusLabel = (tier == 1) ? "[cyan]ĐÃ NÂNG CẤP THÀNH PHÁO MK2[]" : "[purple]ĐÃ NÂNG CẤP THÀNH PHÁO MK2B[]";
+                let statusLabel = "";
+                if (isEn()) {
+                    statusLabel = (tier == 1) ? "[cyan]UPGRADED TO MK2 TURRET[]" : "[purple]UPGRADED TO MK2B TURRET[]";
+                } else {
+                    statusLabel = (tier == 1) ? "[cyan]ĐÃ NÂNG CẤP THÀNH PHÁO MK2[]" : "[purple]ĐÃ NÂNG CẤP THÀNH PHÁO MK2B[]";
+                }
                 branchesTable.add(statusLabel).row();
             }
 
@@ -638,26 +705,43 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
             scroll.setScrollingDisabled(true, false);
             dialog.cont.add(scroll).maxHeight(420);
             dialog.addCloseButton(); dialog.show();
-        })).size(50, 40).tooltip("Nâng cấp hệ thống Reflecounum");
+        })).size(50, 40).tooltip(packProv(() => isEn() ? "Upgrade Reflecounum System" : "Nâng cấp hệ thống Reflecounum"));
 
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-            let title = " Thông số pháo Reflecounum ";
+            let title = isEn() ? " Reflecounum Turret Stats " : " Thông số pháo Reflecounum ";
             let descStr = "";
             let currentTier = this.getTier();
 
-            if (currentTier == 0) descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n• Độ bền khiên: 5,000 HP | Tỷ lệ hấp thụ: 50%\n• Tỷ lệ phản đạn: 60% | Tái nạp khi vỡ: 5.0s";
-            else if (currentTier == 1) descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n• Độ bền khiên: 7,500 HP | Tỷ lệ hấp thụ: 80%\n• Tỷ lệ phản đạn: 75% | Tái nạp khi vỡ: 5.0s";
-            else if (currentTier == 2) descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n• Độ bền khiên: 15,000 HP | Tỷ lệ hấp thụ: 40%\n• Tỷ lệ phản đạn: 100% TUYỆT ĐỐI | Tái nạp khi vỡ: 2.0s";
+            if (isEn()) {
+                if (currentTier == 0) descStr = "[gold]⚡ BASE STATS (MK1) ⚡[]\n• Shield HP: 5,000 HP | Absorb Rate: 50%\n• Reflect Chance: 60% | Recharge Cooldown: 5.0s";
+                else if (currentTier == 1) descStr = "[cyan]⚡ BASE STATS (MK2) ⚡[]\n• Shield HP: 7,500 HP | Absorb Rate: 80%\n• Reflect Chance: 75% | Recharge Cooldown: 5.0s";
+                else if (currentTier == 2) descStr = "[purple]⚡ BASE STATS (MK2B) ⚡[]\n• Shield HP: 15,000 HP | Absorb Rate: 40%\n• Reflect Chance: 100% ABSOLUTE | Recharge Cooldown: 2.0s";
 
-            let perk = this.getPerkTier();
-            if (perk > 0) {
-                descStr += "\n\n[gold]★ ĐÃ KÍCH HOẠT PHÚC LỢI ĐẶC BIỆT ★[]";
-                if (perk == 1) descStr += "\n[yellow]• Phúc lợi 1: Bán kính khiên +150%, HP khiên +50%, Hồi 10% HP/0.5s cho Unit trong 200px.[]";
-                if (perk == 2) descStr += "\n[orange]• Phúc lợi 2: Bán kính khiên +50%, HP khiên +90%, Tự động xây lại tường & pháo bị hủy hoàn toàn trong 350px (mỗi 5s).[]";
-                if (perk == 3) descStr += "\n[cyan]• Phúc lợi 3: Bán kính khiên +30%, HP khiên +30%, Tích 1000 Dmg nổ sóng âm 100 Dmg & hồi 100 HP cho đồng minh.[]";
-                if (perk == 4) descStr += "\n[purple]• Phúc lợi 4: Bán kính khiên +100%, HP khiên +100%, Đạn phản ngược có Truy đuổi & Xuyên 4.[]";
-                if (perk == 5) descStr += "\n[green]• Phúc lợi 5 (1%): Bán kính khiên +200%, HP khiên +300%, Hồi 10% HP/5s trong 500px, Chia sẻ 50% Dmg từ đồng minh vào khiên.[]";
-                if (perk == 6) descStr += "\n[red]• Phúc lợi 6 (1%): Bán kính khiên +200%, HP khiên +300%, Tích 1000 Dmg bắn 8 đạn xé gió mục tiêu HP cao nhất.[]";
+                let perk = this.getPerkTier();
+                if (perk > 0) {
+                    descStr += "\n\n[gold]★ ACTIVATED SPECIAL PERK ★[]";
+                    if (perk == 1) descStr += "\n[yellow]• Perk 1: Shield radius +150%, Shield HP +50%, Heal 10% HP/0.5s for Units in 200px.[]";
+                    if (perk == 2) descStr += "\n[orange]• Perk 2: Shield radius +50%, Shield HP +90%, Auto rebuild walls & turrets in 350px (every 5s).[]";
+                    if (perk == 3) descStr += "\n[cyan]• Perk 3: Shield radius +30%, Shield HP +30%, Store 1000 Dmg shockwave 100 Dmg & heal 100 HP to allies.[]";
+                    if (perk == 4) descStr += "\n[purple]• Perk 4: Shield radius +100%, Shield HP +100%, Reflected bullets gain Homing & Pierce 4.[]";
+                    if (perk == 5) descStr += "\n[green]• Perk 5 (1%): Shield radius +200%, Shield HP +300%, Heal 10% HP/5s in 500px, Share 50% ally Dmg to shield.[]";
+                    if (perk == 6) descStr += "\n[red]• Perk 6 (1%): Shield radius +200%, Shield HP +300%, Store 1000 Dmg to fire 8 piercing bullets at highest HP target.[]";
+                }
+            } else {
+                if (currentTier == 0) descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n• Độ bền khiên: 5,000 HP | Tỷ lệ hấp thụ: 50%\n• Tỷ lệ phản đạn: 60% | Tái nạp khi vỡ: 5.0s";
+                else if (currentTier == 1) descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n• Độ bền khiên: 7,500 HP | Tỷ lệ hấp thụ: 80%\n• Tỷ lệ phản đạn: 75% | Tái nạp khi vỡ: 5.0s";
+                else if (currentTier == 2) descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n• Độ bền khiên: 15,000 HP | Tỷ lệ hấp thụ: 40%\n• Tỷ lệ phản đạn: 100% TUYỆT ĐỐI | Tái nạp khi vỡ: 2.0s";
+
+                let perk = this.getPerkTier();
+                if (perk > 0) {
+                    descStr += "\n\n[gold]★ ĐÃ KÍCH HOẠT PHÚC LỢI ĐẶC BIỆT ★[]";
+                    if (perk == 1) descStr += "\n[yellow]• Phúc lợi 1: Bán kính khiên +150%, HP khiên +50%, Hồi 10% HP/0.5s cho Unit trong 200px.[]";
+                    if (perk == 2) descStr += "\n[orange]• Phúc lợi 2: Bán kính khiên +50%, HP khiên +90%, Tự động xây lại tường & pháo bị hủy hoàn toàn trong 350px (mỗi 5s).[]";
+                    if (perk == 3) descStr += "\n[cyan]• Phúc lợi 3: Bán kính khiên +30%, HP khiên +30%, Tích 1000 Dmg nổ sóng âm 100 Dmg & hồi 100 HP cho đồng minh.[]";
+                    if (perk == 4) descStr += "\n[purple]• Phúc lợi 4: Bán kính khiên +100%, HP khiên +100%, Đạn phản ngược có Truy đuổi & Xuyên 4.[]";
+                    if (perk == 5) descStr += "\n[green]• Phúc lợi 5 (1%): Bán kính khiên +200%, HP khiên +300%, Hồi 10% HP/5s trong 500px, Chia sẻ 50% Dmg từ đồng minh vào khiên.[]";
+                    if (perk == 6) descStr += "\n[red]• Phúc lợi 6 (1%): Bán kính khiên +200%, HP khiên +300%, Tích 1000 Dmg bắn 8 đạn xé gió mục tiêu HP cao nhất.[]";
+                }
             }
 
             let dialog = extend(BaseDialog, title, {});
@@ -668,7 +752,7 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
             scroll.setScrollingDisabled(true, false);
             dialog.cont.add(scroll).maxHeight(400);
             dialog.addCloseButton(); dialog.show();
-        })).size(50, 40).tooltip("Xem thông số chi tiết pháo");
+        })).size(50, 40).tooltip(packProv(() => isEn() ? "View Detailed Turret Stats" : "Xem thông số chi tiết pháo"));
     },
 
     write(write) {
@@ -697,22 +781,25 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
     }
 });
 
- reflecounum.addBar("shield", packFunc(e => {
+reflecounum.addBar("shield", packFunc(e => {
     return new Bar(
-         packProv(() => {
-            if (!e) return "Khiên: 0 / 0";
-            if (typeof e.isShieldBroken === "function" && e.isShieldBroken()) return "Khiên: [ĐÃ VỠ]";
+        packProv(() => {
+            let labelText = isEn() ? "Shield: " : "Khiên: ";
+            let brokenText = isEn() ? "Shield: [BROKEN]" : "Khiên: [ĐÃ VỠ]";
+
+            if (!e) return labelText + "0 / 0";
+            if (e.isShieldBroken()) return brokenText;
             
-            let cur = (typeof e.getShieldHp === "function") ? Math.floor(e.getShieldHp()) : 0;
-            let max = (typeof e.getMaxShieldHp === "function") ? Math.floor(e.getMaxShieldHp()) : 5000;
+            let cur = Math.floor(e.getShieldHp());
+            let max = Math.floor(e.getMaxShieldHp());
             
-            return "Khiên: " + cur + " / " + max;
+            return labelText + cur + " / " + max;
         }),
-         packProv(() => (e && typeof e.isShieldBroken === "function" && e.isShieldBroken()) ? Color.gray : reflectorColor),
-         packFloatp(() => {
-            if (!e || (typeof e.isShieldBroken === "function" && e.isShieldBroken())) return 0.0;
-            let cur = (typeof e.getShieldHp === "function") ? e.getShieldHp() : 0;
-            let max = (typeof e.getMaxShieldHp === "function") ? e.getMaxShieldHp() : 5000;
+        packProv(() => (e && e.isShieldBroken()) ? Color.gray : reflectorColor),
+        packFloatp(() => {
+            if (!e || e.isShieldBroken()) return 0.0;
+            let cur = e.getShieldHp();
+            let max = e.getMaxShieldHp();
             if (max <= 0) return 0.0;
             
             return Math.max(0.0, Math.min(1.0, cur / max));
@@ -720,7 +807,7 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
     );
 }));
 
- Events.on(UnitDamageEvent, cons(e => {
+Events.on(UnitDamageEvent, cons(e => {
     let unit = e.unit;
     if (unit == null || !unit.isValid()) return;
 

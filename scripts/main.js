@@ -142,7 +142,17 @@ require("vela");
 require("flare");
 require("nova");
 require("atrax");
-
+require("mace");
+require("fortress");
+require("scepter");
+require("reign");
+require("horizon");
+require("zenith");
+require("antumbra");
+require("eclipse-buff");
+require("pulsar-lightning");
+require("quasar");
+require("corvus");
 
 
 
@@ -157,11 +167,10 @@ Events.on(ClientLoadEvent, e => {
 
   if (!zorynex) return;
 
-  // --- TẠO VÀNH ĐAI ĐÁ THIÊN THẠCH BAO QUANH ZORYNEX (CHUẨN HÌNH MẪU) ---
-  const asteroidRing = new Planet("zorynex-asteroids", zorynex, 0.001, 0);
+   const asteroidRing = new Planet("zorynex-asteroids", zorynex, 0.001, 0);
   
-  asteroidRing.orbitRadius = 0;          // Căn trực tiếp tâm vành đai vào giữa Zorynex
-  asteroidRing.orbitTime = 1200;         // Tốc độ xoay vành đai
+  asteroidRing.orbitRadius = 0;          
+  asteroidRing.orbitTime = 1200;        
   asteroidRing.rotateTime = 600;
   asteroidRing.camRadius = 0.8;
   asteroidRing.drawOrbit = false;
@@ -170,29 +179,26 @@ Events.on(ClientLoadEvent, e => {
   asteroidRing.accessible = false;
   asteroidRing.alwaysUnlocked = false;
 
-  // Thuật toán trải rộng các hòn đá thành vành đai tròn bao quanh Zorynex
-  asteroidRing.mesh = extend(GenericMesh, {
+   asteroidRing.mesh = extend(GenericMesh, {
       build() {
           let builder = new MeshBuilder();
-          let count = 120; // Số lượng hòn đá rải quanh vành đai
+          let count = 120; 
           let rand = new Rand(1337);
 
-          let c1 = Color.valueOf("707070"); // Màu đá xám vừa
-          let c2 = Color.valueOf("4a4a4a"); // Màu xám tối
-          let c3 = Color.valueOf("8e8e8e"); // Màu xám sáng
+          let c1 = Color.valueOf("707070"); 
+          let c2 = Color.valueOf("4a4a4a"); 
+          let c3 = Color.valueOf("8e8e8e"); 
 
           for (let i = 0; i < count; i++) {
-              // Phân bố góc 360 độ xung quanh hành tinh
-              let angle = rand.random(360.0) * Mathf.degRad;
-              let radius = 2.2 + rand.range(0.6); // Độ rộng vành đai từ 1.6 đến 2.8
-              let elevation = rand.range(0.3);    // Độ dày vành đai 3D
+               let angle = rand.random(360.0) * Mathf.degRad;
+              let radius = 2.2 + rand.range(0.6); 
+              let elevation = rand.range(0.3);   
 
               let cx = Math.cos(angle) * radius;
               let cy = elevation;
               let cz = Math.sin(angle) * radius;
 
-              // Ghép 3-5 khối hộp nhỏ để tạo hình hòn đá méo mó tự nhiên
-              let subBlocks = rand.random(3, 5);
+               let subBlocks = rand.random(3, 5);
               let baseSize = rand.random(0.08, 0.18);
 
               for (let j = 0; j < subBlocks; j++) {

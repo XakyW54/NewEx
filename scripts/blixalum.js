@@ -3,7 +3,12 @@ const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
- 
+function isVietnamese() {
+    let loc = Core.settings.get("locale", "en");
+    if (!loc) loc = Core.settings.get("language", "en");
+    return loc != null && loc.toString().toLowerCase().startsWith("vi");
+}
+
 const chargeSound = Vars.tree.loadSound("plasma-charge");
 const shootSound = Vars.tree.loadSound("plasma-shot-3");
 
@@ -154,26 +159,39 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
         table.clear(); 
         table.row();
         let tier = this.getTier();
+        let vi = isVietnamese();
 
         if (tier == 0) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-                let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo", {});
+                let dialogTitle = vi ? "Trung tâm nâng cấp pháo" : "Turret Upgrade Center";
+                let dialog = extend(BaseDialog, dialogTitle, {});
                 
                 let reqCell = dialog.cont.label(packProv(() => {
                     let core = this.team.core();
-                    if (core == null) return "[red]Không tìm thấy Lõi Đội![]";
+                    if (core == null) return vi ? "[red]Không tìm thấy Lõi Đội![]" : "[red]Team Core not found![]";
                     let inv = core.items;
                     
                     let c = inv.get(Items.copper), l = inv.get(Items.lead), t = inv.get(Items.titanium);
                     
-                    return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
-                           "[cyan]Nhánh Cấu Hình MK2[]\n" +
-                           " • Đồng: " + (c >= reqBlixalumMK2.copper ? "[green]" : "[red]") + c + "[] / " + reqBlixalumMK2.copper + "\n" +
-                           " • Chì: " + (l >= reqBlixalumMK2.lead ? "[green]" : "[red]") + l + "[] / " + reqBlixalumMK2.lead + "\n" +
-                           "[purple]Nhánh Biến Thể MK2B[]\n" +
-                           " • Đồng: " + (c >= reqBlixalumMK2B.copper ? "[green]" : "[red]") + c + "[] / " + reqBlixalumMK2B.copper + "\n" +
-                           " • Chì: " + (l >= reqBlixalumMK2B.lead ? "[green]" : "[red]") + l + "[] / " + reqBlixalumMK2B.lead + "\n" +
-                           " • Titan: " + (t >= reqBlixalumMK2B.titanium ? "[green]" : "[red]") + t + "[] / " + reqBlixalumMK2B.titanium;
+                    if(vi) {
+                        return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
+                               "[cyan]Nhánh Cấu Hình MK2[]\n" +
+                               " • Đồng: " + (c >= reqBlixalumMK2.copper ? "[green]" : "[red]") + c + "[] / " + reqBlixalumMK2.copper + "\n" +
+                               " • Chì: " + (l >= reqBlixalumMK2.lead ? "[green]" : "[red]") + l + "[] / " + reqBlixalumMK2.lead + "\n" +
+                               "[purple]Nhánh Biến Thể MK2B[]\n" +
+                               " • Đồng: " + (c >= reqBlixalumMK2B.copper ? "[green]" : "[red]") + c + "[] / " + reqBlixalumMK2B.copper + "\n" +
+                               " • Chì: " + (l >= reqBlixalumMK2B.lead ? "[green]" : "[red]") + l + "[] / " + reqBlixalumMK2B.lead + "\n" +
+                               " • Titan: " + (t >= reqBlixalumMK2B.titanium ? "[green]" : "[red]") + t + "[] / " + reqBlixalumMK2B.titanium;
+                    } else {
+                        return "[yellow]CORE VAULT RESOURCE REQUIREMENTS:[]\n" +
+                               "[cyan]MK2 Configuration Path[]\n" +
+                               " • Copper: " + (c >= reqBlixalumMK2.copper ? "[green]" : "[red]") + c + "[] / " + reqBlixalumMK2.copper + "\n" +
+                               " • Lead: " + (l >= reqBlixalumMK2.lead ? "[green]" : "[red]") + l + "[] / " + reqBlixalumMK2.lead + "\n" +
+                               "[purple]MK2B Variant Path[]\n" +
+                               " • Copper: " + (c >= reqBlixalumMK2B.copper ? "[green]" : "[red]") + c + "[] / " + reqBlixalumMK2B.copper + "\n" +
+                               " • Lead: " + (l >= reqBlixalumMK2B.lead ? "[green]" : "[red]") + l + "[] / " + reqBlixalumMK2B.lead + "\n" +
+                               " • Titanium: " + (t >= reqBlixalumMK2B.titanium ? "[green]" : "[red]") + t + "[] / " + reqBlixalumMK2B.titanium;
+                    }
                 }));
                 
                 reqCell.width(360).get().setWrap(true);
@@ -187,14 +205,21 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                 b1.background(Styles.black6); 
                 b1.margin(12);
                 b1.add("[cyan]===(MK2)===[]").row();
-                let b1D = b1.add("[white]• Tầm bắn: [green]+30%[] (340 px)\n" +
-                                 "• Tốc độ bắn tối đa: [green]+200%[]\n" +
-                                 "• Bán kính nổ lan: [green]+25%[] (80 px)\n\n" +
-                                 "[lightgray]Kỹ năng đặc biệt: Tần Tốc Thông Minh — Tự động quét từ trường xung quanh và gia tăng tốc độ hỏa lực đột biến theo mật độ kẻ địch trong tầm bắn.[]");
+                let b1Text = vi ? "[white]• Tầm bắn: [green]+30%[] (340 px)\n" +
+                                   "• Tốc độ bắn tối đa: [green]+200%[]\n" +
+                                   "• Bán kính nổ lan: [green]+25%[] (80 px)\n\n" +
+                                   "[lightgray]Kỹ năng đặc biệt: Tần Tốc Thông Minh — Tự động quét từ trường xung quanh và gia tăng tốc độ hỏa lực đột biến theo mật độ kẻ địch trong tầm bắn.[]"
+                                : "[white]• Range: [green]+30%[] (340 px)\n" +
+                                   "• Max Fire Rate: [green]+200%[]\n" +
+                                   "• Splash Damage Radius: [green]+25%[] (80 px)\n\n" +
+                                   "[lightgray]Special Skill: Smart Speed Frequency — Automatically scans surrounding magnetic fields and surges firing speed according to enemy density within range.[]";
+                let b1D = b1.add(b1Text);
                 b1D.width(340).get().setWrap(true); 
                 b1D.get().setAlignment(Align.left); 
                 b1.row();
-                b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
+                
+                let b1BtnText = vi ? "[green]KÍCH HOẠT MK2[]" : "[green]ACTIVATE MK2[]";
+                b1.button(b1BtnText, packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.copper) >= reqBlixalumMK2.copper && core.items.get(Items.lead) >= reqBlixalumMK2.lead) {
                         core.items.remove(Items.copper, reqBlixalumMK2.copper); 
@@ -206,7 +231,7 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                         dialog.hide(); 
                         this.deselect();
                     } else { 
-                        Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); 
+                        Vars.ui.showInfo(vi ? "[red]Không đủ tài nguyên cho nhánh MK2![]" : "[red]Not enough resources for MK2 path![]"); 
                     }
                 })).size(180, 38);
 
@@ -214,14 +239,21 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                 b2.background(Styles.black6); 
                 b2.margin(12);
                 b2.add("[purple]===(MK2B)===[]").row();
-                let b2D = b2.add("[white]• sát thương gốc: [green]+20%[] (300 DMG)\n" +
-                                 "• Bán kính nổ lan: [red]-25%[] (48 px)\n" +
-                                 "• Tốc độ bắn tối đa: [red]-20%[]\n\n" +
-                                 "[lightgray]Kỹ năng đặc biệt: Bảo Táp Laser — Tích tụ ma trận lõi năng lượng và tự động kích hoạt phóng 4 tia Laser hội tụ thiêu rụi mục tiêu mỗi 5 giây.[]");
+                let b2Text = vi ? "[white]• sát thương gốc: [green]+20%[] (300 DMG)\n" +
+                                   "• Bán kính nổ lan: [red]-25%[] (48 px)\n" +
+                                   "• Tốc độ bắn tối đa: [red]-20%[]\n\n" +
+                                   "[lightgray]Kỹ năng đặc biệt: Bảo Táp Laser — Tích tụ ma trận lõi năng lượng và tự động kích hoạt phóng 4 tia Laser hội tụ thiêu rụi mục tiêu mỗi 5 giây.[]"
+                                : "[white]• Base Damage: [green]+20%[] (300 DMG)\n" +
+                                   "• Splash Damage Radius: [red]-25%[] (48 px)\n" +
+                                   "• Max Fire Rate: [red]-20%[]\n\n" +
+                                   "[lightgray]Special Skill: Laser Tempest — Charges core energy matrix and automatically fires 4 focused Laser beams to incinerate targets every 5 seconds.[]";
+                let b2D = b2.add(b2Text);
                 b2D.width(340).get().setWrap(true); 
                 b2D.get().setAlignment(Align.left); 
                 b2.row();
-                b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
+                
+                let b2BtnText = vi ? "[orange]KÍCH HOẠT MK2B[]" : "[orange]ACTIVATE MK2B[]";
+                b2.button(b2BtnText, packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.copper) >= reqBlixalumMK2B.copper && core.items.get(Items.lead) >= reqBlixalumMK2B.lead && core.items.get(Items.titanium) >= reqBlixalumMK2B.titanium) {
                         core.items.remove(Items.copper, reqBlixalumMK2B.copper); 
@@ -234,7 +266,7 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                         dialog.hide(); 
                         this.deselect();
                     } else { 
-                        Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]"); 
+                        Vars.ui.showInfo(vi ? "[red]Không đủ tài nguyên cho nhánh MK2B![]" : "[red]Not enough resources for MK2B path![]"); 
                     }
                 })).size(180, 38);
 
@@ -248,48 +280,72 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                 dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); 
                 dialog.show();
-            })).size(50, 40).tooltip("Nâng cấp tháp pháo lên");
+            })).size(50, 40).tooltip(vi ? "Nâng cấp tháp pháo lên" : "Upgrade turret");
         } else {
             table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
-                Vars.ui.showInfo("[scarlet]Nâng cấp tháp pháo đã đạt giới hạn![]");
-            })).size(50, 40).tooltip("Nâng cấp tháp pháo");
+                Vars.ui.showInfo(vi ? "[scarlet]Nâng cấp tháp pháo đã đạt giới hạn![]" : "[scarlet]Turret upgrade reached max tier![]");
+            })).size(50, 40).tooltip(vi ? "Nâng cấp tháp pháo" : "Upgrade turret");
         }
 
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
             let currentTier = this.getTier();
-            let title = " Thông số pháo \"Blixalum\": ";
+            let title = vi ? " Thông số pháo \"Blixalum\": " : " Turret Specs \"Blixalum\": ";
             let descStr = "";
 
             if (currentTier == 0) {
                 title += "[yellow](MK1)[]";
-                descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                          "[lightgray]Máu cấu trúc:[] [green]3,500 HP[]\n" +
-                          "[lightgray]Tầm bắn hiệu dụng:[] [orange]260 pixel[]\n" +
-                          "[lightgray]sát thương gốc:[] [white]250 DMG / phát bắn[]\n" +
-                          "[lightgray]Sát thương nổ lan:[] [white]875 DMG (64 px)[]\n\n" +
-                          "[cyan]⚡ CƠ CHẾ KỸ NĂNG ĐẶC BIỆT:[]\n" +
-                          "• Tích Năng Lượng Từ Trường: Cần 2 giây nạp sạc trước khi xả đạn xung kích.\n" +
-                          "• Tốc hỏa thích ứng: Tự động tăng +10% tốc độ bắn với mỗi kẻ địch xuất hiện trong tầm bắn (tối đa +100%).";
+                descStr = vi ? "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
+                               "[lightgray]Máu cấu trúc:[] [green]3,500 HP[]\n" +
+                               "[lightgray]Tầm bắn hiệu dụng:[] [orange]260 pixel[]\n" +
+                               "[lightgray]sát thương gốc:[] [white]250 DMG / phát bắn[]\n" +
+                               "[lightgray]Sát thương nổ lan:[] [white]875 DMG (64 px)[]\n\n" +
+                               "[cyan]⚡ CƠ CHẾ KỸ NĂNG ĐẶC BIỆT:[]\n" +
+                               "• Tích Năng Lượng Từ Trường: Cần 2 giây nạp sạc trước khi xả đạn xung kích.\n" +
+                               "• Tốc hỏa thích ứng: Tự động tăng +10% tốc độ bắn với mỗi kẻ địch xuất hiện trong tầm bắn (tối đa +100%)."
+                             : "[gold]⚡ BASE SPECS (MK1) ⚡[]\n" +
+                               "[lightgray]Structure Health:[] [green]3,500 HP[]\n" +
+                               "[lightgray]Effective Range:[] [orange]260 pixels[]\n" +
+                               "[lightgray]Base Damage:[] [white]250 DMG / shot[]\n" +
+                               "[lightgray]Splash Damage:[] [white]875 DMG (64 px)[]\n\n" +
+                               "[cyan]⚡ SPECIAL SKILL MECHANICS:[]\n" +
+                               "• Magnetic Energy Charge: Requires 2s charging time before releasing shockwave bullets.\n" +
+                               "• Adaptive Fire Rate: Automatically increases +10% fire rate per enemy within range (max +100%).";
             } else if (currentTier == 1) {
-                title += "[cyan]THÔNG SỐ NÂNG CẤP MK2[]";
-                descStr = "[cyan]⚡ THÔNG SỐ NÂNG CẤP MK2 ⚡[]\n" +
-                          "[lightgray]Máu cấu trúc:[] [green]3,500 HP[]\n" +
-                          "[lightgray]Tầm bắn hiệu dụng:[] [orange]340 pixel (+30%)[]\n" +
-                          "[lightgray]sát thương gốc:[] [white]250 DMG / phát bắn[]\n" +
-                          "[lightgray]Sát thương nổ lan:[] [white]875 DMG (80 px) (+25%)[]\n\n" +
-                          "[cyan]⚡ CƠ CHẾ KỸ NĂNG ĐẶC BIỆT:[]\n" +
-                          "• Mở Rộng Tần Tốc Thông Minh: Cải tiến lõi từ trường tối ưu tần suất quét tự động.\n" +
-                          "• Tốc hỏa đột biến: Tăng +10% tốc độ bắn cho mỗi kẻ địch trong tầm bắn (tối đa +300%).";
+                title += vi ? "[cyan]THÔNG SỐ NÂNG CẤP MK2[]" : "[cyan]UPGRADE SPECS MK2[]";
+                descStr = vi ? "[cyan]⚡ THÔNG SỐ NÂNG CẤP MK2 ⚡[]\n" +
+                               "[lightgray]Máu cấu trúc:[] [green]3,500 HP[]\n" +
+                               "[lightgray]Tầm bắn hiệu dụng:[] [orange]340 pixel (+30%)[]\n" +
+                               "[lightgray]sát thương gốc:[] [white]250 DMG / phát bắn[]\n" +
+                               "[lightgray]Sát thương nổ lan:[] [white]875 DMG (80 px) (+25%)[]\n\n" +
+                               "[cyan]⚡ CƠ CHẾ KỸ NĂNG ĐẶC BIỆT:[]\n" +
+                               "• Mở Rộng Tần Tốc Thông Minh: Cải tiến lõi từ trường tối ưu tần suất quét tự động.\n" +
+                               "• Tốc hỏa đột biến: Tăng +10% tốc độ bắn cho mỗi kẻ địch trong tầm bắn (tối đa +300%)."
+                             : "[cyan]⚡ UPGRADE SPECS MK2 ⚡[]\n" +
+                               "[lightgray]Structure Health:[] [green]3,500 HP[]\n" +
+                               "[lightgray]Effective Range:[] [orange]340 pixels (+30%)[]\n" +
+                               "[lightgray]Base Damage:[] [white]250 DMG / shot[]\n" +
+                               "[lightgray]Splash Damage:[] [white]875 DMG (80 px) (+25%)[]\n\n" +
+                               "[cyan]⚡ SPECIAL SKILL MECHANICS:[]\n" +
+                               "• Smart Frequency Expansion: Enhanced magnetic core optimizing auto-scan frequency.\n" +
+                               "• Fire Rate Surge: Increases +10% fire rate per enemy in range (max +300%).";
             } else if (currentTier == 2) {
-                title += "[purple]THÔNG SỐ NÂNG CẤP MK2B[]";
-                descStr = "[purple]⚡ THÔNG SỐ NÂNG CẤP MK2B ⚡[]\n" +
-                          "[lightgray]Máu cấu trúc:[] [green]3,500 HP[]\n" +
-                          "[lightgray]Tầm bắn hiệu dụng:[] [red]260 pixel[]\n" +
-                          "[lightgray]sát thương gốc:[] [white]300 DMG / phát bắn (+20%)[]\n" +
-                          "[lightgray]Sát thương nổ lan:[] [white]150 DMG (48 px) (-25%)[]\n\n" +
-                          "[purple]🔥 CƠ CHẾ KỸ NĂNG ĐẶC BIỆT:[]\n" +
-                          "• Bảo Táp Laser Đột Phá: Hợp nhất ma trận lõi năng lượng laser phá hủy cơ động.\n" +
-                          "• Xung kích phụ: Mỗi 5 giây nạp sạc sẽ tự động bắn 4 tia Laser (150 DMG/tia) dội thẳng vào mục tiêu.";
+                title += vi ? "[purple]THÔNG SỐ NÂNG CẤP MK2B[]" : "[purple]UPGRADE SPECS MK2B[]";
+                descStr = vi ? "[purple]⚡ THÔNG SỐ NÂNG CẤP MK2B ⚡[]\n" +
+                               "[lightgray]Máu cấu trúc:[] [green]3,500 HP[]\n" +
+                               "[lightgray]Tầm bắn hiệu dụng:[] [red]260 pixel[]\n" +
+                               "[lightgray]sát thương gốc:[] [white]300 DMG / phát bắn (+20%)[]\n" +
+                               "[lightgray]Sát thương nổ lan:[] [white]150 DMG (48 px) (-25%)[]\n\n" +
+                               "[purple]🔥 CƠ CHẾ KỸ NĂNG ĐẶC BIỆT:[]\n" +
+                               "• Bảo Táp Laser Đột Phá: Hợp nhất ma trận lõi năng lượng laser phá hủy cơ động.\n" +
+                               "• Xung kích phụ: Mỗi 5 giây nạp sạc sẽ tự động bắn 4 tia Laser (150 DMG/tia) dội thẳng vào mục tiêu."
+                             : "[purple]⚡ UPGRADE SPECS MK2B ⚡[]\n" +
+                               "[lightgray]Structure Health:[] [green]3,500 HP[]\n" +
+                               "[lightgray]Effective Range:[] [red]260 pixels[]\n" +
+                               "[lightgray]Base Damage:[] [white]300 DMG / shot (+20%)[]\n" +
+                               "[lightgray]Splash Damage:[] [white]150 DMG (48 px) (-25%)[]\n\n" +
+                               "[purple]🔥 SPECIAL SKILL MECHANICS:[]\n" +
+                               "• Laser Tempest Breakthrough: Merges mobile laser core matrix for heavy fire.\n" +
+                               "• Auxiliary Impulse: Every 5s charge automatically fires 4 Laser beams (150 DMG/beam) directly into targets.";
             }
 
             let dialog = extend(BaseDialog, title, {});
@@ -302,7 +358,7 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
             dialog.cont.add(scroll).maxHeight(400);
             dialog.addCloseButton(); 
             dialog.show();
-        })).size(50, 40).tooltip("Trung tâm nâng cấp pháo");
+        })).size(50, 40).tooltip(vi ? "Trung tâm nâng cấp pháo" : "Turret Upgrade Center");
     },
 
     config() { return java.lang.Integer(this.getTier()); },
@@ -334,7 +390,6 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                 if (this.reloadCounter > 0) this.reloadCounter = 0; 
                 this.chargeTimer += Time.delta * this.efficiency;
 
- 
                 this.chargeSoundTimer += Time.delta;
                 if (this.chargeSoundTimer >= 30 && chargeSound != null) {
                     this.chargeSoundTimer = 0;
@@ -371,7 +426,7 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
         }
     },
 
-shoot(type) {
+    shoot(type) {
         if (!this.isCharged) return;
         let tier = this.getTier();
         let selectedBullet = (tier == 1) ? blixalumMK2Bullet : ((tier == 2) ? blixalumMK2BBullet : blixalumMK1Bullet);
@@ -387,7 +442,6 @@ shoot(type) {
 
         this.customRecoil = 1.0;
 
- 
         this.useAmmo();
     },
 

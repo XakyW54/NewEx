@@ -1,4 +1,3 @@
- 
 const laserAimColor = Color.valueOf("#ff8888"); 
 const secondaryLaserAimColor = Color.valueOf("#ffaa00"); 
 const bulletColor = Color.valueOf("#00ffff");   
@@ -32,10 +31,18 @@ const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
-const reqMK2 = { titanium: 4000, silicon: 4000, plastanium: 0 };
-const reqMK2B = { titanium: 8800, silicon: 6400, plastanium: 4200 };
+ const reqMK2 = { titanium: 400, silicon: 400, plastanium: 0 };
+const reqMK2B = { titanium: 880, silicon: 640, plastanium: 420 };
 
- 
+function isEnglish() {
+    try {
+        let loc = Core.settings.get("locale", "default");
+        if (loc && loc.startsWith("en")) return true;
+        if (Vars.ui && Vars.ui.getLanguage && Vars.ui.getLanguage().startsWith("en")) return true;
+    } catch(e) {}
+    return false;
+}
+
 function drawExpandingBarrels(build) {
     if (build.animRecoil === undefined) build.animRecoil = 0;
     build.animRecoil = Mathf.lerpDelta(build.animRecoil, 0, 0.08);
@@ -198,14 +205,16 @@ function makeBuildSetup(initialTier) {
         buildConfiguration(table) {
             table.clear(); table.row();
             let tier = this.getTier();
+            let en = isEnglish();
 
             if(tier == 1) {
                 table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-                    let dialog = extend(BaseDialog, "Trung tâm nâng cấp tháp pháo Holyder", {});
+                    let dialogTitle = en ? "Holyder Turret Upgrade Center" : "Trung tâm nâng cấp tháp pháo Holyder";
+                    let dialog = extend(BaseDialog, dialogTitle, {});
                     
                     let reqCell = dialog.cont.label(packProv(() => {
                         let core = this.team.core();
-                        if(core == null) return "[red]Không tìm thấy Lõi Đội![]";
+                        if(core == null) return en ? "[red]Team Core Not Found![]" : "[red]Không tìm thấy Lõi Đội![]";
                         let currenttitanium = core.items.get(Items.titanium);
                         let currentsilicon = core.items.get(Items.silicon);
                         let currentplastanium = core.items.get(Items.plastanium);
@@ -217,14 +226,25 @@ function makeBuildSetup(initialTier) {
                         let silColor2 = currentsilicon >= reqMK2B.silicon ? "[green]" : "[red]";
                         let plaColor2 = currentplastanium >= reqMK2B.plastanium ? "[green]" : "[red]";
                         
-                        return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
-                               "[cyan]Nhánh MK2:[]\n" +
-                               " • Titan: " + titColor1 + currenttitanium + "[] / " + reqMK2.titanium + "\n" +
-                               " • Silicon: " + silColor1 + currentsilicon + "[] / " + reqMK2.silicon + "\n" +
-                               "[purple]Nhánh MK2B:[]\n" +
-                               " • Titan: " + titColor2 + currenttitanium + "[] / " + reqMK2B.titanium + "\n" +
-                               " • Silicon: " + silColor2 + currentsilicon + "[] / " + reqMK2B.silicon + "\n" +
-                               " • Nhựa: " + plaColor2 + currentplastanium + "[] / " + reqMK2B.plastanium;
+                        if (en) {
+                            return "[yellow]CORE STORAGE REQUIREMENTS:[]\n" +
+                                   "[cyan]MK2 Branch:[]\n" +
+                                   " • Titanium: " + titColor1 + currenttitanium + "[] / " + reqMK2.titanium + "\n" +
+                                   " • Silicon: " + silColor1 + currentsilicon + "[] / " + reqMK2.silicon + "\n" +
+                                   "[purple]MK2B Branch:[]\n" +
+                                   " • Titanium: " + titColor2 + currenttitanium + "[] / " + reqMK2B.titanium + "\n" +
+                                   " • Silicon: " + silColor2 + currentsilicon + "[] / " + reqMK2B.silicon + "\n" +
+                                   " • Plastanium: " + plaColor2 + currentplastanium + "[] / " + reqMK2B.plastanium;
+                        } else {
+                            return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
+                                   "[cyan]Nhánh MK2:[]\n" +
+                                   " • Titan: " + titColor1 + currenttitanium + "[] / " + reqMK2.titanium + "\n" +
+                                   " • Silicon: " + silColor1 + currentsilicon + "[] / " + reqMK2.silicon + "\n" +
+                                   "[purple]Nhánh MK2B:[]\n" +
+                                   " • Titan: " + titColor2 + currenttitanium + "[] / " + reqMK2B.titanium + "\n" +
+                                   " • Silicon: " + silColor2 + currentsilicon + "[] / " + reqMK2B.silicon + "\n" +
+                                   " • Nhựa: " + plaColor2 + currentplastanium + "[] / " + reqMK2B.plastanium;
+                        }
                     }));
                     
                     reqCell.width(360).get().setWrap(true);
@@ -233,40 +253,50 @@ function makeBuildSetup(initialTier) {
 
                     let branchesTable = new Table();
 
-           
                     let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                     b1.add("[cyan]===(MK2)===[]").row();
-                    let b1D = b1.add("Mô-đun cấu hình hỏa lực tiêu chuẩn mở rộng:\n" +
-                                     " [white]• Giới hạn tích lũy điểm xung kích cực đại tăng vọt [yellow]+200%[].[]\n" +
-                                     " [white]• Kích hoạt nòng hỏa lực phụ tự động bắn hỗ trợ ngẫu nhiên [orange]50% sát thương đạn chính[].[]\n" +
-                                     " [white]• Tăng [green]+28% Máu[] và tăng [green]+6.25% Tầm bắn[].");
+                    let b1Text = en ?
+                        "Expanded standard firepower module:\n" +
+                        " [white]• Max impulse charge limit increased by [yellow]+200%[].[]\n" +
+                        " [white]• Activates auxiliary barrel firing support dealing [orange]50% main bullet damage[].[]\n" +
+                        " [white]• Increases Health by [green]+28%[] and Range by [green]+6.25%[]." :
+                        "Mô-đun cấu hình hỏa lực tiêu chuẩn mở rộng:\n" +
+                        " [white]• Giới hạn tích lũy điểm xung kích cực đại tăng vọt [yellow]+200%[].[]\n" +
+                        " [white]• Kích hoạt nòng hỏa lực phụ tự động bắn hỗ trợ ngẫu nhiên [orange]50% sát thương đạn chính[].[]\n" +
+                        " [white]• Tăng [green]+28% Máu[] và tăng [green]+6.25% Tầm bắn[].";
+                    let b1D = b1.add(b1Text);
                     b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
-                    b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
+                    b1.button(en ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => {
                         let core = this.team.core();
                         if(core != null && core.items.get(Items.titanium) >= reqMK2.titanium && core.items.get(Items.silicon) >= reqMK2.silicon){
                             core.items.remove(Items.titanium, reqMK2.titanium); core.items.remove(Items.silicon, reqMK2.silicon);
                             Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
                             this.configure(java.lang.Integer(2)); 
                             dialog.hide(); this.deselect();
-                        } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); }
+                        } else { Vars.ui.showInfo(en ? "[red]Not enough resources for MK2 branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                     })).size(180, 38);
 
-   
                     let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                     b2.add("[purple]===(MK2B)===[]").row();
-                    let b2D = b2.add("Cấu hình mạch xung kích bến thế trọng pháo giáp:\n" +
-                                     " [white]• Giới hạn sạc điểm giảm xuống mốc [yellow]50%[] hỗ trợ xả đạn thần tốc cực hạn.[]\n" +
-                                     " [white]• Đặc tính Quá Tải: Khi khiên vỡ, tốc độ sạc và chu kỳ hồi nạp đạn [red]tăng đột biến +500%[].[]\n" +
-                                     " [white]• Tăng [green]+60% Máu[] hệ thống và tăng [green]+12.5% Tầm bắn[], nhưng giảm sức bền của lõi khiên.");
+                    let b2Text = en ?
+                        "Armored heavy impulse circuit configuration:\n" +
+                        " [white]• Charge threshold reduced to [yellow]50%[] for ultra-fast firing cycles.[]\n" +
+                        " [white]• Overload Trait: When shield breaks, charge rate and reload cycle increase by [red]+500%[].[]\n" +
+                        " [white]• Increases System Health by [green]+60%[] and Range by [green]+12.5%[], but reduces shield core durability." :
+                        "Cấu hình mạch xung kích bến thế trọng pháo giáp:\n" +
+                        " [white]• Giới hạn sạc điểm giảm xuống mốc [yellow]50%[] hỗ trợ xả đạn thần tốc cực hạn.[]\n" +
+                        " [white]• Đặc tính Quá Tải: Khi khiên vỡ, tốc độ sạc và chu kỳ hồi nạp đạn [red]tăng đột biến +500%[].[]\n" +
+                        " [white]• Tăng [green]+60% Máu[] hệ thống và tăng [green]+12.5% Tầm bắn[], nhưng giảm sức bền của lõi khiên.";
+                    let b2D = b2.add(b2Text);
                     b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
-                    b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
+                    b2.button(en ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                         let core = this.team.core();
                         if(core != null && core.items.get(Items.titanium) >= reqMK2B.titanium && core.items.get(Items.silicon) >= reqMK2B.silicon && core.items.get(Items.plastanium) >= reqMK2B.plastanium){
                             core.items.remove(Items.titanium, reqMK2B.titanium); core.items.remove(Items.silicon, reqMK2B.silicon); core.items.remove(Items.plastanium, reqMK2B.plastanium);
                             Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
                             this.configure(java.lang.Integer(3)); 
                             dialog.hide(); this.deselect();
-                        } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
+                        } else { Vars.ui.showInfo(en ? "[red]Not enough resources for MK2B branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
                     })).size(180, 38);
 
                     branchesTable.add(b1).width(340); branchesTable.row();
@@ -277,49 +307,73 @@ function makeBuildSetup(initialTier) {
                     scroll.setScrollingDisabled(true, false);
                     dialog.cont.add(scroll).maxHeight(400);
                     dialog.addCloseButton(); dialog.show();
-                })).size(50, 40).tooltip("Nâng cấp tháp pháo Holyder");
+                })).size(50, 40).tooltip(en ? "Upgrade Holyder turret" : "Nâng cấp tháp pháo Holyder");
             } else {
                 table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
-                    Vars.ui.showInfo("[scarlet]HỆ THỐNG ĐÃ ĐẠT GIỚI HẠN TIẾN HÓA CỦA NHÁNH ĐÃ CHỌN![]");
-                })).size(50, 40).tooltip("Đã đạt cấp tối đa");
+                    Vars.ui.showInfo(en ? "[scarlet]SYSTEM HAS REACHED MAX EVOLUTION FOR THIS BRANCH![]" : "[scarlet]HỆ THỐNG ĐÃ ĐẠT GIỚI HẠN TIẾN HÓA CỦA NHÁNH ĐÃ CHỌN![]");
+                })).size(50, 40).tooltip(en ? "Reached max tier" : "Đã đạt cấp tối đa");
             }
 
-        
             table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-                let title = " Thông số pháo Holyder: ";
+                let title = en ? " Holyder Turret Stats: " : " Thông số pháo Holyder: ";
                 let descStr = "";
                 let currentTier = this.getTier();
 
                 if (currentTier == 1) {
                     title += "[yellow](MK1)[]";
-                    descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                              "[lightgray]Máu tháp pháo:[] [green]2,500 HP (Quy cách 3x3)[]\n" +
-                              "Sát thương thô:[] [purple]380 / viên[] (Sát thương tăng theo tỷ lệ sạc hỏa lực)\n" +
-                              "Tầm bắn hiệu dụng:[] [orange]320 pixel[] | [lightgray]Mục tiêu:[] Mặt đất\n\n" +
-                              "[sky]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH & KHIÊN:[]\n" +
-                              "• [lightgray]Định vị mục tiêu:[] Sử dụng tia laser đỏ để khóa cứng vị trí trước khi tích sạc.\n" +
-                              "• [lightgray]Trường khiên năng lượng:[] Tự động kích hoạt khiên hấp thụ [teal]9,000 HP[]. Khi vỡ cần [yellow]10.0 giây[] để tái khởi động lõi khiên.";
+                    descStr = en ?
+                        "[gold]⚡ BASIC STATS (MK1) ⚡[]\n" +
+                        "[lightgray]Turret Health:[] [green]2,500 HP (3x3 Size)[]\n" +
+                        "Raw Damage:[] [purple]380 / shot[] (Damage scales with charge ratio)\n" +
+                        "Effective Range:[] [orange]320 pixels[] | [lightgray]Target:[] Ground\n\n" +
+                        "[sky]⚡ THERMAL CIRCUIT & SHIELD MECHANICS:[]\n" +
+                        "• [lightgray]Targeting:[] Uses red laser beam to lock position before charging.\n" +
+                        "• [lightgray]Energy Shield:[] Automatically activates shield absorbing [teal]9,000 HP[]. Requires [yellow]10.0 seconds[] to restart core when broken." :
+                        "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
+                        "[lightgray]Máu tháp pháo:[] [green]2,500 HP (Quy cách 3x3)[]\n" +
+                        "Sát thương thô:[] [purple]380 / viên[] (Sát thương tăng theo tỷ lệ sạc hỏa lực)\n" +
+                        "Tầm bắn hiệu dụng:[] [orange]320 pixel[] | [lightgray]Mục tiêu:[] Mặt đất\n\n" +
+                        "[sky]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH & KHIÊN:[]\n" +
+                        "• [lightgray]Định vị mục tiêu:[] Sử dụng tia laser đỏ để khóa cứng vị trí trước khi tích sạc.\n" +
+                        "• [lightgray]Trường khiên năng lượng:[] Tự động kích hoạt khiên hấp thụ [teal]9,000 HP[]. Khi vỡ cần [yellow]10.0 giây[] để tái khởi động lõi khiên.";
                 } 
                 else if (currentTier == 2) {
                     title += "[cyan](MK2)[]";
-                    descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
-                              "[lightgray]Máu tháp pháo:[] [green]3,200 HP [lime](+28%)[]\n" +
-                              "Sát thương chính:[] [purple]380[] + [orange]50% sát thương từ nòng phụ[]\n" +
-                              "Tầm bắn hiệu dụng:[] [orange]340 pixel [lime](+6.25%)[]\n\n" +
-                              "[lime]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH & KHIÊN:[]\n" +
-                              "• [lightgray]Xung kích cực đại:[] Giới hạn tích lũy điểm xung sạc nâng cao chạm mốc [yellow]200%[].\n" +
-                              "• [lightgray]Đa mục tiêu:[] Kích hoạt thêm nòng phụ gia tốc, tự động xả đạn hỗ trợ vào 1 mục tiêu phụ lân cận.\n" +
-                              "• [lightgray]Trường khiên năng lượng:[] Duy trì hệ thống lõi khiên bảo vệ vững chắc [teal]9,000 HP[].";
+                    descStr = en ?
+                        "[cyan]⚡ BASIC STATS (MK2) ⚡[]\n" +
+                        "[lightgray]Turret Health:[] [green]3,200 HP [lime](+28%)[]\n" +
+                        "Primary Damage:[] [purple]380[] + [orange]50% secondary barrel damage[]\n" +
+                        "Effective Range:[] [orange]340 pixels [lime](+6.25%)[]\n\n" +
+                        "[lime]⚡ THERMAL CIRCUIT & SHIELD MECHANICS:[]\n" +
+                        "• [lightgray]Max Impulse:[] Enhanced charge accumulation limit reaches [yellow]200%[].\n" +
+                        "• [lightgray]Multi-Target:[] Activates secondary accelerated barrel, firing support rounds at a secondary target.\n" +
+                        "• [lightgray]Energy Shield:[] Maintains strong core shield protecting [teal]9,000 HP[]." :
+                        "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
+                        "[lightgray]Máu tháp pháo:[] [green]3,200 HP [lime](+28%)[]\n" +
+                        "Sát thương chính:[] [purple]380[] + [orange]50% sát thương từ nòng phụ[]\n" +
+                        "Tầm bắn hiệu dụng:[] [orange]340 pixel [lime](+6.25%)[]\n\n" +
+                        "[lime]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH & KHIÊN:[]\n" +
+                        "• [lightgray]Xung kích cực đại:[] Giới hạn tích lũy điểm xung sạc nâng cao chạm mốc [yellow]200%[].\n" +
+                        "• [lightgray]Đa mục tiêu:[] Kích hoạt thêm nòng phụ gia tốc, tự động xả đạn hỗ trợ vào 1 mục tiêu phụ lân cận.\n" +
+                        "• [lightgray]Trường khiên năng lượng:[] Duy trì hệ thống lõi khiên bảo vệ vững chắc [teal]9,000 HP[].";
                 } 
                 else if (currentTier == 3) {
                     title += "[purple](MK2B)[]";
-                    descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
-                              "[lightgray]Máu siêu gia cố:[] [green]4,000 HP [lime](+60%)[]\n" +
-                              "Sát thương xung kích:[] [pink]Tối đa theo tiến trình nạp sạc[]\n" +
-                              "Tầm bắn hiệu dụng:[] [orange]360 pixel [lime](+12.5%)[]\n\n" +
-                              "[purple]🔥 CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH & KHIÊN:[]\n" +
-                              "• [lightgray]Xả đạn thần tốc:[] Giới hạn sạc điểm giảm xuống mốc [yellow]50%[] hỗ trợ chu kỳ xả đạn cực nhanh.\n" +
-                              "• [lightgray]Mạch Quá Tải (Overloaded):[] Lõi khiên năng lượng chủ động giảm tải chỉ còn [purple]1,000 HP[] (Hồi khiên sau 12 giây vỡ). Khi khiên vỡ, tốc độ sạc và chu kỳ nạp bắn tăng mạnh [red]+500%[] (Gấp 5 lần bình thường).";
+                    descStr = en ?
+                        "[purple]⚡ BASIC STATS (MK2B) ⚡[]\n" +
+                        "[lightgray]Reinforced Health:[] [green]4,000 HP [lime](+60%)[]\n" +
+                        "Impulse Damage:[] [pink]Max scaled by charge progress[]\n" +
+                        "Effective Range:[] [orange]360 pixels [lime](+12.5%)[]\n\n" +
+                        "[purple]🔥 THERMAL CIRCUIT & SHIELD MECHANICS:[]\n" +
+                        "• [lightgray]Rapid Fire:[] Charge threshold reduced to [yellow]50%[] for fast fire cycles.\n" +
+                        "• [lightgray]Overloaded Circuit:[] Energy shield core reduced to [purple]1,000 HP[] (Recovers 12s after break). When broken, charge speed and firing cycle boost by [red]+500%[] (5x speed)." :
+                        "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
+                        "[lightgray]Máu siêu gia cố:[] [green]4,000 HP [lime](+60%)[]\n" +
+                        "Sát thương xung kích:[] [pink]Tối đa theo tiến trình nạp sạc[]\n" +
+                        "Tầm bắn hiệu dụng:[] [orange]360 pixel [lime](+12.5%)[]\n\n" +
+                        "[purple]🔥 CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH & KHIÊN:[]\n" +
+                        "• [lightgray]Xả đạn thần tốc:[] Giới hạn sạc điểm giảm xuống mốc [yellow]50%[] hỗ trợ chu kỳ xả đạn cực nhanh.\n" +
+                        "• [lightgray]Mạch Quá Tải (Overloaded):[] Lõi khiên năng lượng chủ động giảm tải chỉ còn [purple]1,000 HP[] (Hồi khiên sau 12 giây vỡ). Khi khiên vỡ, tốc độ sạc và chu kỳ nạp bắn tăng mạnh [red]+500%[] (Gấp 5 lần bình thường).";
                 }
 
                 let dialog = extend(BaseDialog, title, {});
@@ -330,7 +384,7 @@ function makeBuildSetup(initialTier) {
                 scroll.setScrollingDisabled(true, false);
                 dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); dialog.show();
-            })).size(50, 40).tooltip("Xem thông số chi tiết hệ thống");
+            })).size(50, 40).tooltip(en ? "View detailed system stats" : "Xem thông số chi tiết hệ thống");
         },
 
         updateTile() {
@@ -485,6 +539,7 @@ function makeBuildSetup(initialTier) {
         draw() {
             this.super$draw();
             let tier = this.getTier();
+            let en = isEnglish();
             
             if (this.target != null && !this.target.dead && this.laserCharge > 0 && !this.isNewTargetLocking) {
                 let currentTarget = this.target;
@@ -535,7 +590,7 @@ function makeBuildSetup(initialTier) {
 
                 if (this.isShieldBroken) {
                     let timeLeft = Math.ceil((this.maxRegenCooldown - this.regenTimer) / 60);
-                    let textShield = "[scarlet]OVERLOADED (5x ATK):[] " + timeLeft + "s";
+                    let textShield = en ? "[scarlet]OVERLOADED (5x ATK):[] " + timeLeft + "s" : "[scarlet]OVERLOADED (5x ATK):[] " + timeLeft + "s";
                     font.draw(textShield, this.x, this.y - 20, Align.center);
                     
                     let progress = this.regenTimer / this.maxRegenCooldown;

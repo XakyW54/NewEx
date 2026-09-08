@@ -1,19 +1,24 @@
 print("FLAZERD - MK2B MILESTONE SUB-LASER SYSTEM LOADED");
 
+function isVietnamese() {
+    let loc = Core.settings.get("locale", "en");
+    if (!loc) loc = Core.settings.get("language", "en");
+    return loc != null && loc.toString().toLowerCase().startsWith("vi");
+}
+
 const deadZone = 40; 
 const laserColor = Color.valueOf("bf7fff"); 
 const particleColor = Color.valueOf("e8bfff"); 
 const greenLaserColor = Color.valueOf("33ff55"); 
 
-const reqMK2 = { copper: 4000, graphite: 4000 };
-const reqMK3 = { lead: 4500, silicon: 5700 };
+const reqMK2 = { copper: 400, graphite: 400 };
+const reqMK3 = { lead: 450, silicon: 570 };
 
 const turretTierMap = new ObjectMap();         
 const turretChargeMap = new ObjectMap();       
 const turretMilestoneMap = new ObjectMap();    
 const turretCountdownMap = new ObjectMap();
 
- 
 const subTargetsMap = new ObjectMap(); 
 
 const packCons2 = (func) => new Cons2({ get: func });
@@ -106,11 +111,9 @@ const flazerdLaserBullet = extend(BulletType, {
         if(tier == 2) baseDamage = 33 * 3.5; 
         else if(tier == 3) baseDamage = 33 * 6.0; 
 
- 
         let damageBonusPercent = currentPoints * 0.02; 
         let currentTickDamage = baseDamage * (1 + damageBonusPercent);
 
- 
         let mainTarget = null;
         if(b.data.mainTargetId != -1){
             let potential = Groups.unit.getByID(b.data.mainTargetId);
@@ -131,7 +134,6 @@ const flazerdLaserBullet = extend(BulletType, {
 
             mainTarget.damage(currentTickDamage / 60);
 
- 
             if(currentPoints >= 200){
                 if(countdown == -1){
                     turretCountdownMap.put(turretId, 300); 
@@ -157,7 +159,6 @@ const flazerdLaserBullet = extend(BulletType, {
                 turretChargeMap.put(turretId, currentPoints);
             }
 
- 
             if(tier == 3) {
                 subTargetsList.clear();  
 
@@ -238,7 +239,6 @@ const flazerdLaserBullet = extend(BulletType, {
         let damageBonusPercent = currentPoints * 0.02; 
         let thicknessScale = 1.0 + (damageBonusPercent * 0.5); 
 
- 
         Draw.color(laserColor); Lines.stroke(3.6 * thicknessScale); Lines.line(startX, startY, endX, endY);
         Draw.color(Color.white); Lines.stroke(1.2 * thicknessScale); Lines.line(startX, startY, endX, endY);
 
@@ -360,7 +360,6 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
 
     placed(){
         this.super$placed();
- 
         this.wingsOffset = 0;
     },
 
@@ -429,14 +428,16 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
         let turretId = this.id;
         if(!turretTierMap.containsKey(turretId)) turretTierMap.put(turretId, 1);
         let tier = turretTierMap.get(turretId);
+        let vi = isVietnamese();
 
         if(tier == 1) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-                let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Flazerd", {});
+                let dialogTitle = vi ? "Trung tâm nâng cấp pháo Flazerd" : "Flazerd Turret Upgrade Center";
+                let dialog = extend(BaseDialog, dialogTitle, {});
                 
                 let reqCell = dialog.cont.label(packProv(() => {
                     let core = this.team.core();
-                    if(core == null) return "[red]Không tìm thấy Lõi Đội![]";
+                    if(core == null) return vi ? "[red]Không tìm thấy Lõi Đội![]" : "[red]Team Core not found![]";
                     let currentcopper = core.items.get(Items.copper);
                     let currentgraphite = core.items.get(Items.graphite);
                     let currentlead = core.items.get(Items.lead);
@@ -448,13 +449,23 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
                     let leaColor = currentlead >= reqMK3.lead ? "[green]" : "[red]";
                     let silColor = currentsilicon >= reqMK3.silicon ? "[green]" : "[red]";
                     
-                    return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
-                           "[cyan]Nhánh MK2:[]\n" +
-                           " • Đồng: " + copColor + currentcopper + "[] / " + reqMK2.copper + "\n" +
-                           " • Graphite: " + graColor + currentgraphite + "[] / " + reqMK2.graphite + "\n" +
-                           "[purple]Nhánh MK2B:[]\n" +
-                           " • Chì: " + leaColor + currentlead + "[] / " + reqMK3.lead + "\n" +
-                           " • Silicon: " + silColor + currentsilicon + "[] / " + reqMK3.silicon;
+                    if(vi) {
+                        return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
+                               "[cyan]Nhánh MK2:[]\n" +
+                               " • Đồng: " + copColor + currentcopper + "[] / " + reqMK2.copper + "\n" +
+                               " • Graphite: " + graColor + currentgraphite + "[] / " + reqMK2.graphite + "\n" +
+                               "[purple]Nhánh MK2B:[]\n" +
+                               " • Chì: " + leaColor + currentlead + "[] / " + reqMK3.lead + "\n" +
+                               " • Silicon: " + silColor + currentsilicon + "[] / " + reqMK3.silicon;
+                    } else {
+                        return "[yellow]CORE VAULT RESOURCE REQUIREMENTS:[]\n" +
+                               "[cyan]MK2 Path:[]\n" +
+                               " • Copper: " + copColor + currentcopper + "[] / " + reqMK2.copper + "\n" +
+                               " • Graphite: " + graColor + currentgraphite + "[] / " + reqMK2.graphite + "\n" +
+                               "[purple]MK2B Path:[]\n" +
+                               " • Lead: " + leaColor + currentlead + "[] / " + reqMK3.lead + "\n" +
+                               " • Silicon: " + silColor + currentsilicon + "[] / " + reqMK3.silicon;
+                    }
                 }));
                 
                 reqCell.width(360).get().setWrap(true);
@@ -463,40 +474,58 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
 
                 let branchesTable = new Table();
 
- 
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                 b1.add("[cyan]===(MK2)===[]").row();
-                let b1D = b1.add("Mô-đun mạch xung hỏa lực bứt tốc:\n" +
-                                 " [white]• Tốc độ sạc tụ gia tốc vượt bậc đạt ngưỡng [yellow]150%[].[]\n" +
-                                 " [white]• Tăng tiến [red]+2% Sát thương[] tổng ứng với mỗi 1% năng lượng sạc.[]\n" +
-                                 " [white]• Gia cố [green]+3,500 Máu[] và mở rộng tầm phát xạ lên [green]340 pixel[].[]\n" +
-                                 " [white]• Kích hoạt cặp laze sóng uốn cong đối xứng dọc trục chính.");
+                let b1Text = vi ? "Mô-đun mạch xung hỏa lực bứt tốc:\n" +
+                                   " [white]• Tốc độ sạc tụ gia tốc vượt bậc đạt ngưỡng [yellow]150%[].[]\n" +
+                                   " [white]• Tăng tiến [red]+2% Sát thương[] tổng ứng với mỗi 1% năng lượng sạc.[]\n" +
+                                   " [white]• Gia cố [green]+3,500 Máu[] và mở rộng tầm phát xạ lên [green]340 pixel[].[]\n" +
+                                   " [white]• Kích hoạt cặp laze sóng uốn cong đối xứng dọc trục chính."
+                                : "Accelerated Pulse Fire Circuit Module:\n" +
+                                   " [white]• Capacitor charging speed boosted up to [yellow]150%[].[]\n" +
+                                   " [white]• Gains [red]+2% Total Damage[] per 1% stored charge.[]\n" +
+                                   " [white]• Reinforced to [green]+3,500 Health[] and range expanded to [green]340 pixels[].[]\n" +
+                                   " [white]• Activates dual curved sine-wave sub-lasers along the main axis.";
+                let b1D = b1.add(b1Text);
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
-                b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
+                
+                let b1BtnText = vi ? "[green]KÍCH HOẠT MK2[]" : "[green]ACTIVATE MK2[]";
+                b1.button(b1BtnText, packRun(() => {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.copper) >= reqMK2.copper && core.items.get(Items.graphite) >= reqMK2.graphite){
                         core.items.remove(Items.copper, reqMK2.copper); core.items.remove(Items.graphite, reqMK2.graphite);
                         Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
                         this.configure(new java.lang.Integer(2)); dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfoToast("[red]Không đủ tài nguyên cho nhánh MK2![]", 2); }
+                    } else { 
+                        Vars.ui.showInfoToast(vi ? "[red]Không đủ tài nguyên cho nhánh MK2![]" : "[red]Not enough resources for MK2 path![]", 2); 
+                    }
                 })).size(180, 38);
 
- 
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                 b2.add("[purple]===(MK2B)===[]").row();
-                let b2D = b2.add("Lõi hội tụ đa chùm phổ hủy diệt tầng cao:\n" +
-                                 " [white]• Siêu gia cố Máu đạt mốc cực đại [green]4,200 Máu[] (Tầm bắn [orange]320 pixel[]).[]\n" +
-                                 " [white]• Tự động kích hoạt phóng thêm các tia laze phụ khi điểm sạc vượt các mốc [yellow]20 -> 200[].[]\n" +
-                                 " [white]• Mở rộng tối đa lên tới 10 chùm tia quang phổ phân rã mục tiêu xung quanh.[]\n" +
-                                 " [white]• Mỗi tia phụ gây lượng sát thương bằng [red]chính xác 50%[] của tia laze chính.");
+                let b2Text = vi ? "Lõi hội tụ đa chùm phổ hủy diệt tầng cao:\n" +
+                                   " [white]• Siêu gia cố Máu đạt mốc cực đại [green]4,200 Máu[] (Tầm bắn [orange]320 pixel[]).[]\n" +
+                                   " [white]• Tự động kích hoạt phóng thêm các tia laze phụ khi điểm sạc vượt các mốc [yellow]20 -> 200[].[]\n" +
+                                   " [white]• Mở rộng tối đa lên tới 10 chùm tia quang phổ phân rã mục tiêu xung quanh.[]\n" +
+                                   " [white]• Mỗi tia phụ gây lượng sát thương bằng [red]chính xác 50%[] của tia laze chính."
+                                : "High-tier Spectrum Multi-beam Focus Core:\n" +
+                                   " [white]• Super-reinforced Health reaching maximum [green]4,200 HP[] (Range [orange]320 pixels[]).[]\n" +
+                                   " [white]• Automatically fires sub-lasers as charge surpasses thresholds [yellow]20 -> 200[].[]\n" +
+                                   " [white]• Expands up to 10 spectral beams disintegrating nearby enemies.[]\n" +
+                                   " [white]• Each sub-laser deals [red]exactly 50%[] DMG of the main laser.";
+                let b2D = b2.add(b2Text);
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
-                b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
+                
+                let b2BtnText = vi ? "[orange]KÍCH HOẠT MK2B[]" : "[orange]ACTIVATE MK2B[]";
+                b2.button(b2BtnText, packRun(() => {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.lead) >= reqMK3.lead && core.items.get(Items.silicon) >= reqMK3.silicon){
                         core.items.remove(Items.lead, reqMK3.lead); core.items.remove(Items.silicon, reqMK3.silicon);
                         Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
                         this.configure(new java.lang.Integer(3)); dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfoToast("[red]Không đủ tài nguyên cho nhánh MK2B![]", 2); }
+                    } else { 
+                        Vars.ui.showInfoToast(vi ? "[red]Không đủ tài nguyên cho nhánh MK2B![]" : "[red]Not enough resources for MK2B path![]", 2); 
+                    }
                 })).size(180, 38);
 
                 branchesTable.add(b1).width(340); branchesTable.row();
@@ -507,51 +536,76 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
                 scroll.setScrollingDisabled(true, false);
                 dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); dialog.show();
-            })).size(50, 40).tooltip("Tiến hóa pháo Flazerd");
+            })).size(50, 40).tooltip(vi ? "Tiến hóa pháo Flazerd" : "Evolve Flazerd turret");
         } else {
             table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
-                Vars.ui.showInfo("[scarlet]HỆ THỐNG FLAZERD ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]");
-            })).size(50, 40).tooltip("Đã đạt cấp tối đa");
+                Vars.ui.showInfo(vi ? "[scarlet]HỆ THỐNG FLAZERD ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]" : "[scarlet]FLAZERD SYSTEM HAS REACHED MAXIMUM EVOLUTION LIMIT![]");
+            })).size(50, 40).tooltip(vi ? "Đã đạt cấp tối đa" : "Max level reached");
         }
 
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-            let title = " Thông số pháo Flazerd: ";
+            let title = vi ? " Thông số pháo Flazerd: " : " Flazerd Turret Specs: ";
             let descStr = "";
             let currentTier = turretTierMap.containsKey(this.id) ? turretTierMap.get(this.id) : 1;
 
             if (currentTier == 1) {
                 title += "[yellow](MK1)[]";
-                descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]2,300[]\n" +
-                          "Tầm bắn hiệu dụng:[] [orange]320 pixel[]\n" +
-                          "Sát thương liên tục:[] [white]33.00 hỏa lực/s[]\n\n" +
-                          "[sky]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
-                          "• [lightgray]Phát xạ mục tiêu:[] Phóng chùm tia laze đơn liên tục bám khóa chặt kẻ địch mặt đất.\n" +
-                          "• [lightgray]Màn hình Holyder:[] Giao diện kỹ thuật số hiển thị thời gian thực số % sạc tụ lõi tâm.\n" +
-                          "• [lightgray]Tích tụ năng lượng:[] Giới hạn sạc mở rộng lên [yellow]200%[] giúp tăng tiến dần sát thương tổng.";
+                descStr = vi ? "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
+                               "[lightgray]Máu tháp pháo:[] [green]2,300[]\n" +
+                               "Tầm bắn hiệu dụng:[] [orange]320 pixel[]\n" +
+                               "Sát thương liên tục:[] [white]33.00 hỏa lực/s[]\n\n" +
+                               "[sky]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
+                               "• [lightgray]Phát xạ mục tiêu:[] Phóng chùm tia laze đơn liên tục bám khóa chặt kẻ địch mặt đất.\n" +
+                               "• [lightgray]Màn hình Holyder:[] Giao diện kỹ thuật số hiển thị thời gian thực số % sạc tụ lõi tâm.\n" +
+                               "• [lightgray]Tích tụ năng lượng:[] Giới hạn sạc mở rộng lên [yellow]200%[] giúp tăng tiến dần sát thương tổng."
+                             : "[gold]⚡ BASE SPECS (MK1) ⚡[]\n" +
+                               "[lightgray]Turret Health:[] [green]2,300[]\n" +
+                               "Effective Range:[] [orange]320 pixels[]\n" +
+                               "Continuous Damage:[] [white]33.00 DPS[]\n\n" +
+                               "[sky]⚡ THERMAL CIRCUIT MECHANICS:[]\n" +
+                               "• [lightgray]Target Emission:[] Fires a continuous single laser beam locking onto ground targets.\n" +
+                               "• [lightgray]Holyder Display:[] Digital UI displaying real-time core charge %.\n" +
+                               "• [lightgray]Energy Accumulation:[] Charge limit expanded up to [yellow]200%[] to continuously scale total damage.";
             } 
             else if (currentTier == 2) {
                 title += "[cyan](MK2)[]";
-                descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]3,500 [lime](+52%)[]\n" +
-                          "Tầm bắn hiệu dụng:[] [orange]340 pixel [lime](+6.25%)[]\n" +
-                          "Sát thương cơ bản:[] [white]115.50 hỏa lực/s[]\n\n" +
-                          "[lime]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
-                          "• [lightgray]Mạch hỏa tốc:[] Tốc độ sạc tụ năng lượng gia tốc vượt bậc đạt ngưỡng đỉnh [yellow]150%[].\n" +
-                          "• [lightgray]Xung lực hỏa lực:[] Cứ mỗi 1% điểm sạc tích lũy cộng trực tiếp [red]+2% sát thương[] tổng.\n" +
-                          "• [lightgray]Laser Helix:[] Kích hoạt thêm 2 tia sóng phụ uốn lượn hình sin bám dọc đối xứng hai bên trục chính.\n" +
-                          "• [lightgray]Xả quá tải an toàn:[] Tự động đếm ngược và reset điểm về 0 sau khi duy trì đỉnh năng lượng.";
+                descStr = vi ? "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
+                               "[lightgray]Máu tháp pháo:[] [green]3,500 [lime](+52%)[]\n" +
+                               "Tầm bắn hiệu dụng:[] [orange]340 pixel [lime](+6.25%)[]\n" +
+                               "Sát thương cơ bản:[] [white]115.50 hỏa lực/s[]\n\n" +
+                               "[lime]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
+                               "• [lightgray]Mạch hỏa tốc:[] Tốc độ sạc tụ năng lượng gia tốc vượt bậc đạt ngưỡng đỉnh [yellow]150%[].\n" +
+                               "• [lightgray]Xung lực hỏa lực:[] Cứ mỗi 1% điểm sạc tích lũy cộng trực tiếp [red]+2% sát thương[] tổng.\n" +
+                               "• [lightgray]Laser Helix:[] Kích hoạt thêm 2 tia sóng phụ uốn lượn hình sin bám dọc đối xứng hai bên trục chính.\n" +
+                               "• [lightgray]Xả quá tải an toàn:[] Tự động đếm ngược và reset điểm về 0 sau khi duy trì đỉnh năng lượng."
+                             : "[cyan]⚡ BASE SPECS (MK2) ⚡[]\n" +
+                               "[lightgray]Turret Health:[] [green]3,500 [lime](+52%)[]\n" +
+                               "Effective Range:[] [orange]340 pixels [lime](+6.25%)[]\n" +
+                               "Base Damage:[] [white]115.50 DPS[]\n\n" +
+                               "[lime]⚡ THERMAL CIRCUIT MECHANICS:[]\n" +
+                               "• [lightgray]Rapid Fire Circuit:[] Capacitor charging speed greatly accelerated up to [yellow]150%[].\n" +
+                               "• [lightgray]Firepower Impulse:[] Adds [red]+2% total damage[] directly per 1% stored charge.\n" +
+                               "• [lightgray]Laser Helix:[] Activates 2 sub-wave lasers curving symmetrically along the main axis.\n" +
+                               "• [lightgray]Safe Overload Discharge:[] Automatically counts down and resets charge to 0 after holding max energy.";
             } 
             else if (currentTier == 3) {
                 title += "[purple](MK2B)[]";
-                descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]4,200 [lime](+82.6%)[]\n" +
-                          "Tầm bắn hiệu dụng:[] [orange]320 pixel[]\n" +
-                          "Sát thương cơ bản:[] [white]198.00 hỏa lực/s[]\n\n" +
-                          "[purple]🔥 CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
-                          "• [lightgray]Phân chùm đa mốc:[] Tách thêm tia laze phụ xanh lá bắn phá mục tiêu xung quanh khi điểm sạc vượt qua các mốc [yellow]20, 40, 60, 80, 100, 120, 140, 160, 180, 200[].\n" +
-                          "• [lightgray]Hỏa lực rẽ nhánh:[] Mỗi tia phụ rẽ nhánh tự động gây sát thương bằng [red]chính xác 50%[] hỏa lực tia chính.\n" +
-                          "• [lightgray]Xả tụ thông minh:[] Tự động thiết lập lại điểm năng lượng về 0 sau chu kỳ bắn để chuẩn bị cho loạt xung năng mới.";
+                descStr = vi ? "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
+                               "[lightgray]Máu tháp pháo:[] [green]4,200 [lime](+82.6%)[]\n" +
+                               "Tầm bắn hiệu dụng:[] [orange]320 pixel[]\n" +
+                               "Sát thương cơ bản:[] [white]198.00 hỏa lực/s[]\n\n" +
+                               "[purple]🔥 CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
+                               "• [lightgray]Phân chùm đa mốc:[] Tách thêm tia laze phụ xanh lá bắn phá mục tiêu xung quanh khi điểm sạc vượt qua các mốc [yellow]20, 40, 60, 80, 100, 120, 140, 160, 180, 200[].\n" +
+                               "• [lightgray]Hỏa lực rẽ nhánh:[] Mỗi tia phụ rẽ nhánh tự động gây sát thương bằng [red]chính xác 50%[] hỏa lực tia chính.\n" +
+                               "• [lightgray]Xả tụ thông minh:[] Tự động thiết lập lại điểm năng lượng về 0 sau chu kỳ bắn để chuẩn bị cho loạt xung năng mới."
+                             : "[purple]⚡ BASE SPECS (MK2B) ⚡[]\n" +
+                               "[lightgray]Turret Health:[] [green]4,200 [lime](+82.6%)[]\n" +
+                               "Effective Range:[] [orange]320 pixels[]\n" +
+                               "Base Damage:[] [white]198.00 DPS[]\n\n" +
+                               "[purple]🔥 THERMAL CIRCUIT MECHANICS:[]\n" +
+                               "• [lightgray]Milestone Multi-beam:[] Splits extra green sub-lasers hitting nearby enemies when charge crosses [yellow]20, 40, 60, 80, 100, 120, 140, 160, 180, 200[].\n" +
+                               "• [lightgray]Branched Firepower:[] Each sub-laser automatically deals [red]exactly 50%[] damage of the primary beam.\n" +
+                               "• [lightgray]Smart Discharge:[] Resets energy charge to 0 after cycle completion to prepare for the next power burst.";
             }
 
             let dialog = extend(BaseDialog, title, {});
@@ -562,7 +616,7 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
             scroll.setScrollingDisabled(true, false);
             dialog.cont.add(scroll).maxHeight(400);
             dialog.addCloseButton(); dialog.show();
-        })).size(50, 40).tooltip("Xem thông số chi tiết hệ thống");
+        })).size(50, 40).tooltip(vi ? "Xem thông số chi tiết hệ thống" : "View system detailed specs");
     },
 
     findTarget(){

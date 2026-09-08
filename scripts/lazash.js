@@ -5,6 +5,18 @@ const packProv = (func) => new Prov({ get: func });
 const reqPerkA = { copper: 2000, lead: 2000, silicon: 2000 };
 const reqPerkB = { titanium: 1000, thorium: 1000, graphite: 1000 };
 
+ function isEn() {
+    let loc = "";
+    if (typeof Core !== "undefined" && Core.settings) {
+        loc = String(Core.settings.get("locale", "vi"));
+    }
+    return loc.startsWith("en");
+}
+
+function t(viText, enText) {
+    return isEn() ? enText : viText;
+}
+
 const vChainLinkFx = new Effect(15, cons(e => {
     Draw.z(Layer.effect + 0.05);
     let fout = e.fout();
@@ -451,11 +463,11 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
         table.row();
 
         table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-            let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Lazash", {});
+            let dialog = extend(BaseDialog, t("Trung tâm nâng cấp pháo Lazash", "Lazash Turret Upgrade Center"), {});
 
             let reqCell = dialog.cont.label(packProv(() => {
                 let core = this.team.core();
-                if (core == null) return "[red]Không tìm thấy Lõi Đội![]";
+                if (core == null) return t("[red]Không tìm thấy Lõi Đội![]", "[red]Team Core not found![]");
 
                 let cCop = core.items.get(Items.copper);
                 let cLea = core.items.get(Items.lead);
@@ -472,9 +484,15 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
                 let colTho = cTho >= reqPerkB.thorium ? "[green]" : "[red]";
                 let colGra = cGra >= reqPerkB.graphite ? "[green]" : "[red]";
 
-                return "[gold]YÊU CẦU TÀI NGUYÊN LÕI:[]\n" +
-                       "[yellow]★ ROLL PHÚC LỢI A:[] Đồng: " + colCop + cCop + "[]/2000 | Chì: " + colLea + cLea + "[]/2000 | Silicon: " + colSil + cSil + "[]/2000\n" +
-                       "[cyan]★ ROLL PHÚC LỢI B:[] Titan: " + colTit + cTit + "[]/1000 | Thorium: " + colTho + cTho + "[]/1000 | Than chì: " + colGra + cGra + "[]/1000\n";
+                return t(
+                    "[gold]YÊU CẦU TÀI NGUYÊN LÕI:[]\n" +
+                    "[yellow]★ ROLL PHÚC LỢI A:[] Đồng: " + colCop + cCop + "[]/2000 | Chì: " + colLea + cLea + "[]/2000 | Silicon: " + colSil + cSil + "[]/2000\n" +
+                    "[cyan]★ ROLL PHÚC LỢI B:[] Titan: " + colTit + cTit + "[]/1000 | Thorium: " + colTho + cTho + "[]/1000 | Than chì: " + colGra + cGra + "[]/1000\n",
+
+                    "[gold]CORE RESOURCE REQUIREMENTS:[]\n" +
+                    "[yellow]★ ROLL PERK A:[] Copper: " + colCop + cCop + "[]/2000 | Lead: " + colLea + cLea + "[]/2000 | Silicon: " + colSil + cSil + "[]/2000\n" +
+                    "[cyan]★ ROLL PERK B:[] Titanium: " + colTit + cTit + "[]/1000 | Thorium: " + colTho + cTho + "[]/1000 | Graphite: " + colGra + cGra + "[]/1000\n"
+                );
             }));
 
             reqCell.width(380).get().setWrap(true);
@@ -487,19 +505,26 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
             let boxA = new Table();
             boxA.background(Styles.black6);
             boxA.margin(12);
-            boxA.add("[yellow]★ ROLL PHÚC LỢI A (NGẪU NHIÊN) ★[]").row();
+            boxA.add(t("[yellow]★ ROLL PHÚC LỢI A (NGẪU NHIÊN) ★[]", "[yellow]★ ROLL PERK A (RANDOM) ★[]")).row();
 
             let perkA = this.getPerkA();
             if (perkA == 0) {
-                let txtADesc = boxA.add("Kích hoạt giao thức nâng cấp ngẫu nhiên nhận 1 trong 3 phúc lợi A (Tỉ lệ 50% mỗi Option):\n" +
-                                        " • [green]Phúc lợi 1A:[] Ưu tiên bắn các công trình máu giấy, tăng 50% dmg gốc.\n" +
-                                        " • [green]Phúc lợi 2A:[] Tăng 12% phạm vi bắn, 8% dmg gốc và dmg phụ, ưu tiên bắn các công trình có máu trâu.\n" +
-                                        " • [green]Phúc lợi 3A:[] Ưu tiên bắn base địch, tăng tốc độ bắn.");
+                let txtADesc = boxA.add(t(
+                    "Kích hoạt giao thức nâng cấp ngẫu nhiên nhận 1 trong 3 phúc lợi A (Tỉ lệ 50% mỗi Option):\n" +
+                    " • [green]Phúc lợi 1A:[] Ưu tiên bắn các công trình máu giấy, tăng 50% dmg gốc.\n" +
+                    " • [green]Phúc lợi 2A:[] Tăng 12% phạm vi bắn, 8% dmg gốc và dmg phụ, ưu tiên bắn các công trình có máu trâu.\n" +
+                    " • [green]Phúc lợi 3A:[] Ưu tiên bắn base địch, tăng tốc độ bắn.",
+
+                    "Activate upgrade protocol to randomly get 1 of 3 Perk A choices (50% chance per Option):\n" +
+                    " • [green]Perk 1A:[] Prioritizes low-HP structures, +50% base dmg.\n" +
+                    " • [green]Perk 2A:[] Range +12%, +8% base & sub Dmg, prioritizes high-HP structures.\n" +
+                    " • [green]Perk 3A:[] Prioritizes enemy core/base, increases fire rate."
+                ));
                 txtADesc.width(340).get().setWrap(true);
                 txtADesc.get().setAlignment(Align.left);
                 boxA.row();
 
-                boxA.button("[yellow]QUAY PHÚC LỢI A (2K Đồng/Chì/Silicon)[]", packRun(() => {
+                boxA.button(t("[yellow]QUAY PHÚC LỢI A (2K Đồng/Chì/Silicon)[]", "[yellow]ROLL PERK A (2K Cop/Lead/Sil)[]"), packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.copper) >= 2000 && core.items.get(Items.lead) >= 2000 && core.items.get(Items.silicon) >= 2000) {
                         core.items.remove(Items.copper, 2000);
@@ -523,18 +548,18 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
 
                         Fx.upgradeCore.at(this.x, this.y);
                         Effect.shake(4, 4, this.x, this.y);
-                        Vars.ui.showInfo("[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[yellow]PHÚC LỢI " + res + "A[]");
+                        Vars.ui.showInfo(t("[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[yellow]PHÚC LỢI " + res + "A[]", "[gold]YOU ROLLED:[]\n[yellow]PERK " + res + "A[]"));
                         dialog.hide();
                         this.deselect();
                     } else {
-                        Vars.ui.showInfo("[red]Không đủ tài nguyên roll Phúc lợi A![]");
+                        Vars.ui.showInfo(t("[red]Không đủ tài nguyên roll Phúc lợi A![]", "[red]Not enough resources to roll Perk A![]"));
                     }
                 })).size(280, 40);
             } else {
                 let txtA = "";
-                if (perkA == 1) txtA = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1A\n• Ưu tiên bắn công trình máu giấy\n• Sát thương gốc +50%[]";
-                if (perkA == 2) txtA = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2A\n• Ưu tiên bắn công trình máu trâu\n• Tầm bắn +12%\n• Sát thương gốc & phụ +8%[]";
-                if (perkA == 3) txtA = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3A\n• Ưu tiên bắn Base/Lõi địch\n• Tăng 50% tốc độ bắn[]";
+                if (perkA == 1) txtA = t("[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1A\n• Ưu tiên bắn công trình máu giấy\n• Sát thương gốc +50%[]", "[green]✔ ACTIVATED: PERK 1A\n• Targets low-HP structures\n• Base Damage +50%[]");
+                if (perkA == 2) txtA = t("[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2A\n• Ưu tiên bắn công trình máu trâu\n• Tầm bắn +12%\n• Sát thương gốc & phụ +8%[]", "[green]✔ ACTIVATED: PERK 2A\n• Targets high-HP structures\n• Range +12%\n• Base & Sub Damage +8%[]");
+                if (perkA == 3) txtA = t("[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3A\n• Ưu tiên bắn Base/Lõi địch\n• Tăng 50% tốc độ bắn[]", "[green]✔ ACTIVATED: PERK 3A\n• Targets enemy Core/Base\n• Fire rate +50%[]");
 
                 let txtACell = boxA.add(txtA);
                 txtACell.width(340).get().setWrap(true);
@@ -547,19 +572,26 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
             let boxB = new Table();
             boxB.background(Styles.black6);
             boxB.margin(12);
-            boxB.add("[cyan]★ ROLL PHÚC LỢI B (NGẪU NHIÊN) ★[]").row();
+            boxB.add(t("[cyan]★ ROLL PHÚC LỢI B (NGẪU NHIÊN) ★[]", "[cyan]★ ROLL PERK B (RANDOM) ★[]")).row();
 
             let perkB = this.getPerkB();
             if (perkB == 0) {
-                let txtBDesc = boxB.add("Kích hoạt giao thức nâng cấp ngẫu nhiên nhận 1 trong 3 phúc lợi B:\n" +
-                                        " • [cyan]Phúc lợi 1B:[] Giảm 30% thời gian bắn vSlashHitFx, +50% Sát thương.\n" +
-                                        " • [cyan]Phúc lợi 2B:[] Bắn đủ 5 tia vSlashHitFx -> Tự động xả loạn 100 viên cầu năng lượng (độ lệch 8°).\n" +
-                                        " • [cyan]Phúc lợi 3B:[] Kích thước diện rộng vSlashHitFx +150%, +200% Sát thương, Giảm 50% tốc độ bắn.");
+                let txtBDesc = boxB.add(t(
+                    "Kích hoạt giao thức nâng cấp ngẫu nhiên nhận 1 trong 3 phúc lợi B:\n" +
+                    " • [cyan]Phúc lợi 1B:[] Giảm 30% thời gian bắn vSlashHitFx, +50% Sát thương.\n" +
+                    " • [cyan]Phúc lợi 2B:[] Bắn đủ 5 tia vSlashHitFx -> Tự động xả loạn 100 viên cầu năng lượng (độ lệch 8°).\n" +
+                    " • [cyan]Phúc lợi 3B:[] Kích thước diện rộng vSlashHitFx +150%, +200% Sát thương, Giảm 50% tốc độ bắn.",
+
+                    "Activate upgrade protocol to randomly get 1 of 3 Perk B choices:\n" +
+                    " • [cyan]Perk 1B:[] Reduces slash attack delay by 30%, +50% Damage.\n" +
+                    " • [cyan]Perk 2B:[] After 5 slashes -> Automatically unleashes 100 energy orbs (8° spread).\n" +
+                    " • [cyan]Perk 3B:[] Slash width +150%, +200% Damage, Fire Rate -50%."
+                ));
                 txtBDesc.width(340).get().setWrap(true);
                 txtBDesc.get().setAlignment(Align.left);
                 boxB.row();
 
-                boxB.button("[cyan]QUAY PHÚC LỢI B (1K Titan/Thorium/Graphite)[]", packRun(() => {
+                boxB.button(t("[cyan]QUAY PHÚC LỢI B (1K Titan/Thorium/Graphite)[]", "[cyan]ROLL PERK B (1K Tit/Tho/Graph)[]"), packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.titanium) >= 1000 && core.items.get(Items.thorium) >= 1000 && core.items.get(Items.graphite) >= 1000) {
                         core.items.remove(Items.titanium, 1000);
@@ -572,18 +604,18 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
 
                         Fx.upgradeCore.at(this.x, this.y);
                         Effect.shake(4, 4, this.x, this.y);
-                        Vars.ui.showInfo("[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[cyan]PHÚC LỢI " + res + "B[]");
+                        Vars.ui.showInfo(t("[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[cyan]PHÚC LỢI " + res + "B[]", "[gold]YOU ROLLED:[]\n[cyan]PERK " + res + "B[]"));
                         dialog.hide();
                         this.deselect();
                     } else {
-                        Vars.ui.showInfo("[red]Không đủ tài nguyên roll Phúc lợi B![]");
+                        Vars.ui.showInfo(t("[red]Không đủ tài nguyên roll Phúc lợi B![]", "[red]Not enough resources to roll Perk B![]"));
                     }
                 })).size(280, 40);
             } else {
                 let txtB = "";
-                if (perkB == 1) txtB = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1B\n• Giảm 30% thời gian bắn nhát chém\n• Sát thương vSlashHitFx +50%[]";
-                if (perkB == 2) txtB = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2B\n• Bắn đủ 5 nhát chém -> Bắn loạn 100 viên cầu năng lượng[]";
-                if (perkB == 3) txtB = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3B\n• Kích thước diện rộng vSlashHitFx +150%\n• Sát thương vSlashHitFx +200%\n• Tốc độ bắn -50%[]";
+                if (perkB == 1) txtB = t("[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1B\n• Giảm 30% thời gian bắn nhát chém\n• Sát thương vSlashHitFx +50%[]", "[green]✔ ACTIVATED: PERK 1B\n• Slash delay reduced by 30%\n• Slash Damage +50%[]");
+                if (perkB == 2) txtB = t("[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2B\n• Bắn đủ 5 nhát chém -> Bắn loạn 100 viên cầu năng lượng[]", "[green]✔ ACTIVATED: PERK 2B\n• After 5 slashes -> Fires 100 energy orbs burst[]");
+                if (perkB == 3) txtB = t("[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3B\n• Kích thước diện rộng vSlashHitFx +150%\n• Sát thương vSlashHitFx +200%\n• Tốc độ bắn -50%[]", "[green]✔ ACTIVATED: PERK 3B\n• Slash AoE size +150%\n• Slash Damage +200%\n• Fire Rate -50%[]");
 
                 let txtBCell = boxB.add(txtB);
                 txtBCell.width(340).get().setWrap(true);
@@ -597,15 +629,23 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
             dialog.cont.add(scroll).maxHeight(420);
             dialog.addCloseButton();
             dialog.show();
-        })).size(50, 40).tooltip("Trung tâm nâng cấp pháo Lazash");
+        })).size(50, 40).tooltip(t("Trung tâm nâng cấp pháo Lazash", "Lazash Turret Upgrade Center"));
 
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-            let title = " Thông số pháo Lazash ";
-            let descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN PHÁO LAZASH ⚡[]\n" +
-                          "• Máu: 3,600 | Tầm bắn mặc định: 1100px\n" +
-                          "• Mục tiêu: Chỉ bắn Công Trình phe địch\n" +
-                          "• Sát thương vSlashHitFx: 49.0 | Sát thương Laser Vanilla: 10.0 (0.2s/lần)\n" +
-                          "• [cyan]Cơ chế liên kết:[] Xây các pháo kề sát vách 4 hướng. Khi player nhảy vào điều khiển 1 pháo, toàn bộ pháo liên kết sẽ ngưng tự bắn, tự động xoay và chỉ xả đạn đồng loạt khi player bấm nút bắn!";
+            let title = t(" Thông số pháo Lazash ", " Lazash Turret Stats ");
+            let descStr = t(
+                "[gold]⚡ THÔNG SỐ CƠ BẢN PHÁO LAZASH ⚡[]\n" +
+                "• Máu: 3,600 | Tầm bắn mặc định: 1100px\n" +
+                "• Mục tiêu: Chỉ bắn Công Trình phe địch\n" +
+                "• Sát thương vSlashHitFx: 49.0 | Sát thương Laser Vanilla: 10.0 (0.2s/lần)\n" +
+                "• [cyan]Cơ chế liên kết:[] Xây các pháo kề sát vách 4 hướng. Khi player nhảy vào điều khiển 1 pháo, toàn bộ pháo liên kết sẽ ngưng tự bắn, tự động xoay và chỉ xả đạn đồng loạt khi player bấm nút bắn!",
+
+                "[gold]⚡ LAZASH TURRET BASIC STATS ⚡[]\n" +
+                "• Health: 3,600 | Default Range: 1100px\n" +
+                "• Target: Enemy Structures Only\n" +
+                "• Slash Damage: 49.0 | Vanilla Laser Damage: 10.0 (0.2s tick)\n" +
+                "• [cyan]Link Mechanism:[] Place turrets adjacent in 4 directions. When a player manually controls 1 turret, all linked turrets stop auto-firing, rotate automatically, and sync fire when player shoots!"
+            );
 
             let dialog = extend(BaseDialog, title, {});
             let infoTable = new Table();
@@ -618,7 +658,7 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
             dialog.cont.add(scroll).maxHeight(400);
             dialog.addCloseButton();
             dialog.show();
-        })).size(50, 40).tooltip("Xem thông số pháo Lazash");
+        })).size(50, 40).tooltip(t("Xem thông số pháo Lazash", "View Lazash Turret Stats"));
     },
 
     write(write) {

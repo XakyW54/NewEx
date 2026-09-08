@@ -5,8 +5,19 @@ const packProv = (func) => new Prov({ get: func });
 const reqPerkA = { copper: 2000, lead: 2000, silicon: 2000 };
 const reqPerkB = { titanium: 1000, thorium: 1000, graphite: 1000 };
 
-// Hiệu ứng trúng đích / biến mất của đạn
-const smokeHitFx = new Effect(30, cons(e => {
+ function isEn() {
+    let loc = "";
+    if (typeof Core !== "undefined" && Core.settings) {
+        loc = String(Core.settings.get("locale", "vi"));
+    }
+    return loc.startsWith("en");
+}
+
+function t(viText, enText) {
+    return isEn() ? enText : viText;
+}
+
+ const smokeHitFx = new Effect(30, cons(e => {
     Draw.z(Layer.effect + 0.01);
     let alpha = 1.0 - e.fin();
     Draw.color(Color.gray, Color.darkGray, e.fin());
@@ -24,10 +35,8 @@ const smokeHitFx = new Effect(30, cons(e => {
     Draw.reset();
 }));
 
-// Hiệu ứng vạch kẻ (lines) phun ra ngẫu nhiên từ nòng pháo
-const shootMuzzleFx = new Effect(12, cons(e => {
-    // Tắt effect nếu game đang bị Pause
-    if (Vars.state.isPaused()) return;
+ const shootMuzzleFx = new Effect(12, cons(e => {
+     if (Vars.state.isPaused()) return;
 
     Draw.z(Layer.effect);
     Draw.color(Color.valueOf("#ffcc44"), Color.valueOf("#ff5500"), e.fin());
@@ -35,8 +44,7 @@ const shootMuzzleFx = new Effect(12, cons(e => {
     let stroke = (1.0 - e.fin()) * 1.8;
     Lines.stroke(stroke);
 
-    // Vẽ 5 vạch kẻ (lines) phun ra ngẫu nhiên theo góc bắn của pháo
-    for (let i = 0; i < 5; i++) {
+     for (let i = 0; i < 5; i++) {
         let angle = e.rotation + Mathf.randomSeedRange(e.id + i, 16);
         let lenStart = Mathf.randomSeed(e.id * 2 + i, 2, 6) + e.fin() * 6;
         let lenEnd = lenStart + Mathf.randomSeed(e.id * 3 + i, 4, 10) * (1.0 - e.fin() * 0.5);
@@ -91,7 +99,7 @@ const therdum = extend(ItemTurret, "therdum", {
 therdum.health = 3600;
 therdum.range = 105;
 therdum.reload = 120;
-therdum.shootOffset = 12.0; // Khoảng cách vị trí nòng súng (pixels)
+therdum.shootOffset = 12.0; 
 
 therdum.config(java.lang.Integer, packCons2((tile, value) => {
     if (tile != null) {
@@ -150,8 +158,7 @@ therdum.buildType = () => extend(ItemTurret.ItemTurretBuild, therdum, {
         let spawnX = this.x + Angles.trnsx(this.rotation, offset);
         let spawnY = this.y + Angles.trnsy(this.rotation, offset);
 
-        // Vị trí effect lùi về hướng tâm pháo thêm 4 pixel (tổng offset - 6.0)
-        let fxX = this.x + Angles.trnsx(this.rotation, offset - 4.0);
+         let fxX = this.x + Angles.trnsx(this.rotation, offset - 4.0);
         let fxY = this.y + Angles.trnsy(this.rotation, offset - 4.0);
         shootMuzzleFx.at(fxX, fxY, this.rotation);
 
@@ -184,8 +191,7 @@ therdum.buildType = () => extend(ItemTurret.ItemTurretBuild, therdum, {
         let spawnX = this.x + Angles.trnsx(this.rotation, offset);
         let spawnY = this.y + Angles.trnsy(this.rotation, offset);
 
-        // Vị trí effect lùi về hướng tâm pháo thêm 4 pixel (tổng offset - 6.0)
-        let fxX = this.x + Angles.trnsx(this.rotation, offset - 6.0);
+         let fxX = this.x + Angles.trnsx(this.rotation, offset - 6.0);
         let fxY = this.y + Angles.trnsy(this.rotation, offset - 6.0);
         shootMuzzleFx.at(fxX, fxY, this.rotation);
 
@@ -245,11 +251,11 @@ therdum.buildType = () => extend(ItemTurret.ItemTurretBuild, therdum, {
         table.row();
 
         table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-            let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Therdum", {});
+            let dialog = extend(BaseDialog, t("Trung tâm nâng cấp pháo Therdum", "Therdum Turret Upgrade Center"), {});
 
             let reqCell = dialog.cont.label(packProv(() => {
                 let core = this.team.core();
-                if (core == null) return "[red]Không tìm thấy Lõi Đội![]";
+                if (core == null) return t("[red]Không tìm thấy Lõi Đội![]", "[red]Team Core not found![]");
 
                 let cCop = core.items.get(Items.copper);
                 let cLea = core.items.get(Items.lead);
@@ -266,10 +272,17 @@ therdum.buildType = () => extend(ItemTurret.ItemTurretBuild, therdum, {
                 let colTho = cTho >= reqPerkB.thorium ? "[green]" : "[red]";
                 let colGra = cGra >= reqPerkB.graphite ? "[green]" : "[red]";
 
-                return "[gold]YÊU CẦU TÀI NGUYÊN LÕI (CẤP MK1):[]\n" +
-                       "[yellow]★ ROLL PHÚC LỢI A:[] Đồng: " + colCop + cCop + "[]/2000 | Chì: " + colLea + cLea + "[]/2000 | Silicon: " + colSil + cSil + "[]/2000\n" +
-                       "[cyan]★ ROLL PHÚC LỢI B:[] Titan: " + colTit + cTit + "[]/1000 | Thorium: " + colTho + cTho + "[]/1000 | Than chì: " + colGra + cGra + "[]/1000\n" +
-                       "[gray](Pháo Therdum Mk1 nâng cấp trực tiếp qua hệ thống Phúc lợi)[]";
+                return t(
+                    "[gold]YÊU CẦU TÀI NGUYÊN LÕI (CẤP MK1):[]\n" +
+                    "[yellow]★ ROLL PHÚC LỢI A:[] Đồng: " + colCop + cCop + "[]/2000 | Chì: " + colLea + cLea + "[]/2000 | Silicon: " + colSil + cSil + "[]/2000\n" +
+                    "[cyan]★ ROLL PHÚC LỢI B:[] Titan: " + colTit + cTit + "[]/1000 | Thorium: " + colTho + cTho + "[]/1000 | Than chì: " + colGra + cGra + "[]/1000\n" +
+                    "[gray](Pháo Therdum Mk1 nâng cấp trực tiếp qua hệ thống Phúc lợi)[]",
+
+                    "[gold]CORE RESOURCE REQUIREMENTS (MK1 TIER):[]\n" +
+                    "[yellow]★ ROLL PERK A:[] Copper: " + colCop + cCop + "[]/2000 | Lead: " + colLea + cLea + "[]/2000 | Silicon: " + colSil + cSil + "[]/2000\n" +
+                    "[cyan]★ ROLL PERK B:[] Titanium: " + colTit + cTit + "[]/1000 | Thorium: " + colTho + cTho + "[]/1000 | Graphite: " + colGra + cGra + "[]/1000\n" +
+                    "[gray](Therdum Mk1 upgrades directly via Perk system)[]"
+                );
             }));
 
             reqCell.width(380).get().setWrap(true);
@@ -282,19 +295,26 @@ therdum.buildType = () => extend(ItemTurret.ItemTurretBuild, therdum, {
             let boxA = new Table();
             boxA.background(Styles.black6);
             boxA.margin(12);
-            boxA.add("[yellow]★ ROLL PHÚC LỢI A (NGẪU NHIÊN) ★[]").row();
+            boxA.add(t("[yellow]★ ROLL PHÚC LỢI A (NGẪU NHIÊN) ★[]", "[yellow]★ ROLL PERK A (RANDOM) ★[]")).row();
 
             let perkA = this.getPerkA();
             if (perkA == 0) {
-                let txtADesc = boxA.add("Kích hoạt giao thức nâng cấp ngẫu nhiên nhận 1 trong 3 phúc lợi A:\n" +
-                                        " • [green]Phúc lợi 1A:[] +50% Sát thương, Tầm bắn +50% (157.5px), +10 Viên đạn.\n" +
-                                        " • [green]Phúc lợi 2A:[] +20% Sát thương, Tầm bắn +20% (126px), +10 Dmg lan (10px).\n" +
-                                        " • [green]Phúc lợi 3A:[] +200% Sát thương, Tầm bắn -30% (73.5px), Nạp đạn nhanh (2s -> 1s).");
+                let txtADesc = boxA.add(t(
+                    "Kích hoạt giao thức nâng cấp ngẫu nhiên nhận 1 trong 3 phúc lợi A:\n" +
+                    " • [green]Phúc lợi 1A:[] +50% Sát thương, Tầm bắn +50% (157.5px), +10 Viên đạn.\n" +
+                    " • [green]Phúc lợi 2A:[] +20% Sát thương, Tầm bắn +20% (126px), +10 Dmg lan (10px).\n" +
+                    " • [green]Phúc lợi 3A:[] +200% Sát thương, Tầm bắn -30% (73.5px), Nạp đạn nhanh (2s -> 1s).",
+
+                    "Activate upgrade protocol to randomly get 1 of 3 Perk A choices:\n" +
+                    " • [green]Perk 1A:[] +50% Damage, Range +50% (157.5px), +10 Bullets.\n" +
+                    " • [green]Perk 2A:[] +20% Damage, Range +20% (126px), +10 Splash Dmg (10px).\n" +
+                    " • [green]Perk 3A:[] +200% Damage, Range -30% (73.5px), Fast Reload (2s -> 1s)."
+                ));
                 txtADesc.width(340).get().setWrap(true);
                 txtADesc.get().setAlignment(Align.left);
                 boxA.row();
 
-                boxA.button("[yellow]QUAY PHÚC LỢI A (2K Đồng/Chì/Silicon)[]", packRun(() => {
+                boxA.button(t("[yellow]QUAY PHÚC LỢI A (2K Đồng/Chì/Silicon)[]", "[yellow]ROLL PERK A (2K Cop/Lead/Sil)[]"), packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.copper) >= 2000 && core.items.get(Items.lead) >= 2000 && core.items.get(Items.silicon) >= 2000) {
                         core.items.remove(Items.copper, 2000);
@@ -307,18 +327,18 @@ therdum.buildType = () => extend(ItemTurret.ItemTurretBuild, therdum, {
 
                         Fx.upgradeCore.at(this.x, this.y);
                         Effect.shake(4, 4, this.x, this.y);
-                        Vars.ui.showInfo("[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[yellow]PHÚC LỢI " + res + "A[]");
+                        Vars.ui.showInfo(t("[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[yellow]PHÚC LỢI " + res + "A[]", "[gold]YOU ROLLED:[]\n[yellow]PERK " + res + "A[]"));
                         dialog.hide();
                         this.deselect();
                     } else {
-                        Vars.ui.showInfo("[red]Không đủ tài nguyên roll Phúc lợi A![]");
+                        Vars.ui.showInfo(t("[red]Không đủ tài nguyên roll Phúc lợi A![]", "[red]Not enough resources to roll Perk A![]"));
                     }
                 })).size(280, 40);
             } else {
                 let txtA = "";
-                if (perkA == 1) txtA = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1A\n• Sát thương +50% (45)\n• Tầm bắn +50% (157.5px)\n• Số đạn +10 (50 viên)[]";
-                if (perkA == 2) txtA = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2A\n• Sát thương +20% (36)\n• Tầm bắn +20% (126px)\n• Gây thêm 10 Dmg lan (Phạm vi 10px)[]";
-                if (perkA == 3) txtA = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3A\n• Sát thương +200% (90)\n• Tầm bắn -30% (73.5px)\n• Tốc độ nạp đạn tăng 100% (2s -> 1s)[]";
+                if (perkA == 1) txtA = t("[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1A\n• Sát thương +50% (45)\n• Tầm bắn +50% (157.5px)\n• Số đạn +10 (50 viên)[]", "[green]✔ ACTIVATED: PERK 1A\n• Damage +50% (45)\n• Range +50% (157.5px)\n• Bullets +10 (50 count)[]");
+                if (perkA == 2) txtA = t("[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2A\n• Sát thương +20% (36)\n• Tầm bắn +20% (126px)\n• Gây thêm 10 Dmg lan (Phạm vi 10px)[]", "[green]✔ ACTIVATED: PERK 2A\n• Damage +20% (36)\n• Range +20% (126px)\n• +10 Splash Dmg (10px Radius)[]");
+                if (perkA == 3) txtA = t("[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3A\n• Sát thương +200% (90)\n• Tầm bắn -30% (73.5px)\n• Tốc độ nạp đạn tăng 100% (2s -> 1s)[]", "[green]✔ ACTIVATED: PERK 3A\n• Damage +200% (90)\n• Range -30% (73.5px)\n• Reload Speed +100% (2s -> 1s)[]");
 
                 let txtACell = boxA.add(txtA);
                 txtACell.width(340).get().setWrap(true);
@@ -331,19 +351,26 @@ therdum.buildType = () => extend(ItemTurret.ItemTurretBuild, therdum, {
             let boxB = new Table();
             boxB.background(Styles.black6);
             boxB.margin(12);
-            boxB.add("[cyan]★ ROLL PHÚC LỢI B (NGẪU NHIÊN) ★[]").row();
+            boxB.add(t("[cyan]★ ROLL PHÚC LỢI B (NGẪU NHIÊN) ★[]", "[cyan]★ ROLL PERK B (RANDOM) ★[]")).row();
 
             let perkB = this.getPerkB();
             if (perkB == 0) {
-                let txtBDesc = boxB.add("Kích hoạt giao thức nâng cấp ngẫu nhiên nhận 1 trong 3 phúc lợi B:\n" +
-                                        " • [cyan]Phúc lợi 1B:[] 15% Cơ hội bắn thêm 10 đạn phụ phân tán (Độ lệch 8°).\n" +
-                                        " • [cyan]Phúc lợi 2B:[] 50% Cơ hội hồi 100% máu khi bắn (Hồi dư xả 20 đạn phụ).\n" +
-                                        " • [cyan]Phúc lợi 3B:[] 30% Cơ hội tăng 120% Tốc độ bắn trong 15s khi trúng địch.");
+                let txtBDesc = boxB.add(t(
+                    "Kích hoạt giao thức nâng cấp ngẫu nhiên nhận 1 trong 3 phúc lợi B:\n" +
+                    " • [cyan]Phúc lợi 1B:[] 15% Cơ hội bắn thêm 10 đạn phụ phân tán (Độ lệch 8°).\n" +
+                    " • [cyan]Phúc lợi 2B:[] 50% Cơ hội hồi 100% máu khi bắn (Hồi dư xả 20 đạn phụ).\n" +
+                    " • [cyan]Phúc lợi 3B:[] 30% Cơ hội tăng 120% Tốc độ bắn trong 15s khi trúng địch.",
+
+                    "Activate upgrade protocol to randomly get 1 of 3 Perk B choices:\n" +
+                    " • [cyan]Perk 1B:[] 15% Chance to fire 10 extra sub-bullets (8° spread).\n" +
+                    " • [cyan]Perk 2B:[] 50% Chance to heal 100% HP on fire (Overheal fires 20 sub-bullets).\n" +
+                    " • [cyan]Perk 3B:[] 30% Chance to increase Fire Rate by 120% for 15s on hit."
+                ));
                 txtBDesc.width(340).get().setWrap(true);
                 txtBDesc.get().setAlignment(Align.left);
                 boxB.row();
 
-                boxB.button("[cyan]QUAY PHÚC LỢI B (1K Titan/Thorium/Graphite)[]", packRun(() => {
+                boxB.button(t("[cyan]QUAY PHÚC LỢI B (1K Titan/Thorium/Graphite)[]", "[cyan]ROLL PERK B (1K Tit/Tho/Graph)[]"), packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.titanium) >= 1000 && core.items.get(Items.thorium) >= 1000 && core.items.get(Items.graphite) >= 1000) {
                         core.items.remove(Items.titanium, 1000);
@@ -356,18 +383,18 @@ therdum.buildType = () => extend(ItemTurret.ItemTurretBuild, therdum, {
 
                         Fx.upgradeCore.at(this.x, this.y);
                         Effect.shake(4, 4, this.x, this.y);
-                        Vars.ui.showInfo("[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[cyan]PHÚC LỢI " + res + "B[]");
+                        Vars.ui.showInfo(t("[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[cyan]PHÚC LỢI " + res + "B[]", "[gold]YOU ROLLED:[]\n[cyan]PERK " + res + "B[]"));
                         dialog.hide();
                         this.deselect();
                     } else {
-                        Vars.ui.showInfo("[red]Không đủ tài nguyên roll Phúc lợi B![]");
+                        Vars.ui.showInfo(t("[red]Không đủ tài nguyên roll Phúc lợi B![]", "[red]Not enough resources to roll Perk B![]"));
                     }
                 })).size(280, 40);
             } else {
                 let txtB = "";
-                if (perkB == 1) txtB = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1B\n• 15% Tỉ lệ bắn thêm 10 đạn phụ (Độ lệch 8°)[]";
-                if (perkB == 2) txtB = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2B\n• 50% Tỉ lệ hồi 100% máu khi bắn\n• Nếu vượt Max HP: Bắn thêm 20 đạn phụ (Độ lệch 4°)[]";
-                if (perkB == 3) txtB = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3B\n• 30% Tỉ lệ tăng 120% tốc độ bắn trong 15s khi trúng mục tiêu[]";
+                if (perkB == 1) txtB = t("[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1B\n• 15% Tỉ lệ bắn thêm 10 đạn phụ (Độ lệch 8°)[]", "[green]✔ ACTIVATED: PERK 1B\n• 15% Chance to fire 10 sub-bullets (8° spread)[]");
+                if (perkB == 2) txtB = t("[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2B\n• 50% Tỉ lệ hồi 100% máu khi bắn\n• Nếu vượt Max HP: Bắn thêm 20 đạn phụ (Độ lệch 4°)[]", "[green]✔ ACTIVATED: PERK 2B\n• 50% Chance to heal 100% HP on fire\n• Overheal: Fires 20 extra sub-bullets (4° spread)[]");
+                if (perkB == 3) txtB = t("[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3B\n• 30% Tỉ lệ tăng 120% tốc độ bắn trong 15s khi trúng mục tiêu[]", "[green]✔ ACTIVATED: PERK 3B\n• 30% Chance to gain +120% Fire Rate for 15s on hit[]");
 
                 let txtBCell = boxB.add(txtB);
                 txtBCell.width(340).get().setWrap(true);
@@ -381,48 +408,85 @@ therdum.buildType = () => extend(ItemTurret.ItemTurretBuild, therdum, {
             dialog.cont.add(scroll).maxHeight(420);
             dialog.addCloseButton();
             dialog.show();
-        })).size(50, 40).tooltip("Trung tâm nâng cấp pháo Therdum");
+        })).size(50, 40).tooltip(t("Trung tâm nâng cấp pháo Therdum", "Therdum Turret Upgrade Center"));
 
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-            let title = " Thông số pháo Therdum Mk1 ";
+            let title = t(" Thông số pháo Therdum Mk1 ", " Therdum Mk1 Stats ");
             
-            let descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN PHÁO THERDUM (MK1) ⚡[]\n" +
-                          "• Máu: 3,600 | Tầm bắn: 105px (13.1 ô) | Sát thương gốc: 30.0\n" +
-                          "• Cơ chế: Bắn shotgun tỏa 40 viên đạn, lifetime đạn tự điều chỉnh chuẩn theo tầm bắn.\n" +
-                          "• Nâng cấp: Nâng cấp trực tiếp chỉ số và kỹ năng qua hệ thống Phúc lợi A & B.";
+            let descStr = t(
+                "[gold]⚡ THÔNG SỐ CƠ BẢN PHÁO THERDUM (MK1) ⚡[]\n" +
+                "• Máu: 3,600 | Tầm bắn: 105px (13.1 ô) | Sát thương gốc: 30.0\n" +
+                "• Cơ chế: Bắn shotgun tỏa 40 viên đạn, lifetime đạn tự điều chỉnh chuẩn theo tầm bắn.\n" +
+                "• Nâng cấp: Nâng cấp trực tiếp chỉ số và kỹ năng qua hệ thống Phúc lợi A & B.",
+
+                "[gold]⚡ THERDUM TURRET BASIC STATS (MK1) ⚡[]\n" +
+                "• Health: 3,600 | Range: 105px (13.1 tiles) | Base Damage: 30.0\n" +
+                "• Mechanism: Shotgun spread firing 40 bullets, bullet lifetime auto-adjusts to range.\n" +
+                "• Upgrades: Directly upgrade stats and skills via Perk A & B system."
+            );
 
             let perkA = this.getPerkA();
             let perkB = this.getPerkB();
 
             if (perkA > 0) {
-                descStr += "\n\n[yellow]★ ĐÃ KÍCH HOẠT PHÚC LỢI A ★[]";
+                descStr += t("\n\n[yellow]★ ĐÃ KÍCH HOẠT PHÚC LỢI A ★[]", "\n\n[yellow]★ PERK A ACTIVATED ★[]");
                 if (perkA == 1) {
-                    descStr += "\n[green]• Phúc lợi 1A: Sát thương +50% (45), Tầm bắn +50% (157.5px), Số đạn +10 (50 viên).[]\n" +
-                               "  [gray]Kỹ năng đặc biệt: Tăng quy mô hỏa lực diện rộng và khoảng cách áp chế.[]";
+                    descStr += t(
+                        "\n[green]• Phúc lợi 1A: Sát thương +50% (45), Tầm bắn +50% (157.5px), Số đạn +10 (50 viên).[]\n" +
+                        "  [gray]Kỹ năng đặc biệt: Tăng quy mô hỏa lực diện rộng và khoảng cách áp chế.[]",
+
+                        "\n[green]• Perk 1A: Damage +50% (45), Range +50% (157.5px), Bullets +10 (50 count).[]\n" +
+                        "  [gray]Special Skill: Increases wide-area firepower and suppression distance.[]"
+                    );
                 }
                 if (perkA == 2) {
-                    descStr += "\n[green]• Phúc lợi 2A: Sát thương +20% (36), Tầm bắn +20% (126px).[]\n" +
-                               "  [gray]Kỹ năng đặc biệt: Đạn gây thêm 10 Dmg lan trong phạm vi 10px quanh mục tiêu.[]";
+                    descStr += t(
+                        "\n[green]• Phúc lợi 2A: Sát thương +20% (36), Tầm bắn +20% (126px).[]\n" +
+                        "  [gray]Kỹ năng đặc biệt: Đạn gây thêm 10 Dmg lan trong phạm vi 10px quanh mục tiêu.[]",
+
+                        "\n[green]• Perk 2A: Damage +20% (36), Range +20% (126px).[]\n" +
+                        "  [gray]Special Skill: Bullets deal +10 splash damage in 10px radius around target.[]"
+                    );
                 }
                 if (perkA == 3) {
-                    descStr += "\n[green]• Phúc lợi 3A: Sát thương +200% (90), Tầm bắn -30% (73.5px), Nạp đạn nhanh +100% (1s).[]\n" +
-                               "  [gray]Kỹ năng đặc biệt: Biến thành pháo cận chiến siêu sát thương với tốc độ xả đạn cực nhanh.[]";
+                    descStr += t(
+                        "\n[green]• Phúc lợi 3A: Sát thương +200% (90), Tầm bắn -30% (73.5px), Nạp đạn nhanh +100% (1s).[]\n" +
+                        "  [gray]Kỹ năng đặc biệt: Biến thành pháo cận chiến siêu sát thương với tốc độ xả đạn cực nhanh.[]",
+
+                        "\n[green]• Perk 3A: Damage +200% (90), Range -30% (73.5px), Fast Reload +100% (1s).[]\n" +
+                        "  [gray]Special Skill: Transforms into ultra-high damage melee turret with extreme burst rate.[]"
+                    );
                 }
             }
 
             if (perkB > 0) {
-                descStr += "\n\n[cyan]★ ĐÃ KÍCH HOẠT PHÚC LỢI B ★[]";
+                descStr += t("\n\n[cyan]★ ĐÃ KÍCH HOẠT PHÚC LỢI B ★[]", "\n\n[cyan]★ PERK B ACTIVATED ★[]");
                 if (perkB == 1) {
-                    descStr += "\n[green]• Phúc lợi 1B: Giữ nguyên các chỉ số cơ bản.[]\n" +
-                               "  [gray]Kỹ năng đặc biệt: 15% cơ hội bắn bổ sung loạt 10 đạn phụ phân tán khi trúng mục tiêu.[]";
+                    descStr += t(
+                        "\n[green]• Phúc lợi 1B: Giữ nguyên các chỉ số cơ bản.[]\n" +
+                        "  [gray]Kỹ năng đặc biệt: 15% cơ hội bắn bổ sung loạt 10 đạn phụ phân tán khi trúng mục tiêu.[]",
+
+                        "\n[green]• Perk 1B: Keeps base stats unchanged.[]\n" +
+                        "  [gray]Special Skill: 15% chance to trigger extra 10 sub-bullets spread fire on hit.[]"
+                    );
                 }
                 if (perkB == 2) {
-                    descStr += "\n[green]• Phúc lợi 2B: Giữ nguyên các chỉ số cơ bản.[]\n" +
-                               "  [gray]Kỹ năng đặc biệt: 50% cơ hội hồi 100% máu khi bắn. Nếu máu đã đầy, bắn xả thêm 20 đạn phụ.[]";
+                    descStr += t(
+                        "\n[green]• Phúc lợi 2B: Giữ nguyên các chỉ số cơ bản.[]\n" +
+                        "  [gray]Kỹ năng đặc biệt: 50% cơ hội hồi 100% máu khi bắn. Nếu máu đã đầy, bắn xả thêm 20 đạn phụ.[]",
+
+                        "\n[green]• Perk 2B: Keeps base stats unchanged.[]\n" +
+                        "  [gray]Special Skill: 50% chance to heal 100% HP when firing. Overheal releases 20 sub-bullets.[]"
+                    );
                 }
                 if (perkB == 3) {
-                    descStr += "\n[green]• Phúc lợi 3B: Tốc độ bắn buff +120% khi kích hoạt.[]\n" +
-                               "  [gray]Kỹ năng đặc biệt: 30% cơ hội tự kích hoạt buff siêu tốc độ bắn duy trì trong 15s mỗi khi bắn trúng địch.[]";
+                    descStr += t(
+                        "\n[green]• Phúc lợi 3B: Tốc độ bắn buff +120% khi kích hoạt.[]\n" +
+                        "  [gray]Kỹ năng đặc biệt: 30% cơ hội tự kích hoạt buff siêu tốc độ bắn duy trì trong 15s mỗi khi bắn trúng địch.[]",
+
+                        "\n[green]• Perk 3B: Fire rate buffed +120% when active.[]\n" +
+                        "  [gray]Special Skill: 30% chance to trigger super fire rate buff for 15s upon hitting target.[]"
+                    );
                 }
             }
 
@@ -437,7 +501,7 @@ therdum.buildType = () => extend(ItemTurret.ItemTurretBuild, therdum, {
             dialog.cont.add(scroll).maxHeight(400);
             dialog.addCloseButton();
             dialog.show();
-        })).size(50, 40).tooltip("Xem thông số pháo Therdum Mk1");
+        })).size(50, 40).tooltip(t("Xem thông số pháo Therdum Mk1", "View Therdum Mk1 Stats"));
     },
 
     write(write) {

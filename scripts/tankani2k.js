@@ -2,21 +2,21 @@ const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
- const reqMK2 = { copper: 4000, lead: 4000, titanium: 0 };
+const reqMK2 = { copper: 4000, lead: 4000, titanium: 0 };
 const reqMK2B = { copper: 4000, lead: 4000, titanium: 2000 };
 
- const hitsPerStack = 10; 
+const hitsPerStack = 10; 
 const maxStack = 8;      
 
- const crumbleExplosionEffect = new Effect(40, cons(e => {
+const crumbleExplosionEffect = new Effect(40, cons(e => {
     let previousZ = Draw.z();
     Draw.z(Layer.effect);
 
-     Draw.color(Pal.redDust, Pal.redderDust, e.fin());
+    Draw.color(Pal.redDust, Pal.redderDust, e.fin());
     Lines.stroke(e.fout() * 6.0);
     Lines.circle(e.x, e.y, Interp.pow3Out.apply(e.fin()) * 45.0);
 
-     let flashColor = Color.white.cpy().lerp(Pal.redDust, e.fin());
+    let flashColor = Color.white.cpy().lerp(Pal.redDust, e.fin());
     flashColor.a = e.fout();
     Draw.color(flashColor);
     Lines.stroke(e.fout() * 8.0);
@@ -26,7 +26,6 @@ const maxStack = 8;
     Draw.reset();
 }));
 
- 
 const tankaniNormalBullet = extend(BasicBulletType, {
     speed: 15, damage: 1115, width: 10, height: 33, lifetime: 60,
     frontColor: Color.valueOf("#e0ea87"), backColor: Color.valueOf("#e5ff00"),
@@ -79,7 +78,6 @@ const tankaniMK2BBullet = extend(BasicBulletType, {
     }
 });
 
- 
 Events.on(ClientLoadEvent, cons(e => {
     const turretBlock = Vars.content.getByName(ContentType.block, "newex-tankani2k");
 
@@ -173,14 +171,16 @@ Events.on(ClientLoadEvent, cons(e => {
             buildConfiguration(table) {
                 table.clear(); table.row();
                 let tier = this.getTier();
+                let isEn = Core.settings.getString("locale").startsWith("en");
 
                 if (tier == 0) {
                     table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-                        let dialog = extend(BaseDialog, "Trung tâm nâng cấp Tankani-2k", {});
+                        let dialogTitle = isEn ? "Tankani-2k Upgrade Center" : "Trung tâm nâng cấp Tankani-2k";
+                        let dialog = extend(BaseDialog, dialogTitle, {});
                         
                         let reqCell = dialog.cont.label(packProv(() => {
                             let core = this.team.core();
-                            if (core == null) return "[red]Không tìm thấy Lõi Đội![]";
+                            if (core == null) return isEn ? "[red]Team Core Not Found![]" : "[red]Không tìm thấy Lõi Đội![]";
                             let currentcopper = core.items.get(Items.copper);
                             let currentlead = core.items.get(Items.lead);
                             let currenttitanium = core.items.get(Items.titanium);
@@ -192,14 +192,25 @@ Events.on(ClientLoadEvent, cons(e => {
                             let leaColor2 = currentlead >= reqMK2B.lead ? "[green]" : "[red]";
                             let titColor2 = currenttitanium >= reqMK2B.titanium ? "[green]" : "[red]";
                             
-                            return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
-                                   "[cyan]Nhánh Cấu Hình MK2:[]\n" +
-                                   " • Đồng: " + copColor1 + currentcopper + "[] / " + reqMK2.copper + "\n" +
-                                   " • Chì: " + leaColor1 + currentlead + "[] / " + reqMK2.lead + "\n" +
-                                   "[purple]Nhánh Biến Thể Chuyên Không MK2B:[]\n" +
-                                   " • Đồng: " + copColor2 + currentcopper + "[] / " + reqMK2B.copper + "\n" +
-                                   " • Chì: " + leaColor2 + currentlead + "[] / " + reqMK2B.lead + "\n" +
-                                   " • Titan: " + titColor2 + currenttitanium + "[] / " + reqMK2B.titanium;
+                            if (isEn) {
+                                return "[yellow]CORE STORAGE REQUIREMENTS:[]\n" +
+                                       "[cyan]MK2 Configuration Branch:[]\n" +
+                                       " • Copper: " + copColor1 + currentcopper + "[] / " + reqMK2.copper + "\n" +
+                                       " • Lead: " + leaColor1 + currentlead + "[] / " + reqMK2.lead + "\n" +
+                                       "[purple]MK2B Anti-Air Variant Branch:[]\n" +
+                                       " • Copper: " + copColor2 + currentcopper + "[] / " + reqMK2B.copper + "\n" +
+                                       " • Lead: " + leaColor2 + currentlead + "[] / " + reqMK2B.lead + "\n" +
+                                       " • Titanium: " + titColor2 + currenttitanium + "[] / " + reqMK2B.titanium;
+                            } else {
+                                return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
+                                       "[cyan]Nhánh Cấu Hình MK2:[]\n" +
+                                       " • Đồng: " + copColor1 + currentcopper + "[] / " + reqMK2.copper + "\n" +
+                                       " • Chì: " + leaColor1 + currentlead + "[] / " + reqMK2.lead + "\n" +
+                                       "[purple]Nhánh Biến Thể Chuyên Không MK2B:[]\n" +
+                                       " • Đồng: " + copColor2 + currentcopper + "[] / " + reqMK2B.copper + "\n" +
+                                       " • Chì: " + leaColor2 + currentlead + "[] / " + reqMK2B.lead + "\n" +
+                                       " • Titan: " + titColor2 + currenttitanium + "[] / " + reqMK2B.titanium;
+                            }
                         }));
                         
                         reqCell.width(360).get().setWrap(true);
@@ -208,49 +219,64 @@ Events.on(ClientLoadEvent, cons(e => {
 
                         let branchesTable = new Table();
 
-                         let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
+                        let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                         b1.add("[cyan]===(MK2)===[]").row();
-                        let b1D = b1.add("Tích hợp công nghệ nổ mảnh diện rộng:\n" +
-                                         " [white]• Tăng lượng máu chống chịu lên [green]735 HP[].[]\n" +
-                                         " [white]• Giữ nguyên cơ chế bắn đa mục tiêu (Đất & Không) và tầm bắn gốc.[]\n" +
-                                         " [white]• Đạn chạm mục tiêu kích nổ lan phạm vi [orange]50 pixel[].[]\n" +
-                                         " [white]• Mục tiêu chính nhận [red]1115 sát thương gốc[] trực diện.[]\n" +
-                                         " [white]• Kẻ địch lân cận chịu [yellow]558 sát thương nổ lan[] (50%).[]");
+                        let b1Text = isEn ? "Integrated area explosive technology:\n" +
+                                            " [white]• Increases HP to [green]735 HP[].[]\n" +
+                                            " [white]• Retains multi-target (Ground & Air) and base range.[]\n" +
+                                            " [white]• Bullets explode in a [orange]50 pixel[] radius on hit.[]\n" +
+                                            " [white]• Primary target takes [red]1115 base damage[] directly.[]\n" +
+                                            " [white]• Nearby enemies take [yellow]558 splash damage[] (50%).[]"
+                                          : "Tích hợp công nghệ nổ mảnh diện rộng:\n" +
+                                            " [white]• Tăng lượng máu chống chịu lên [green]735 HP[].[]\n" +
+                                            " [white]• Giữ nguyên cơ chế bắn đa mục tiêu (Đất & Không) và tầm bắn gốc.[]\n" +
+                                            " [white]• Đạn chạm mục tiêu kích nổ lan phạm vi [orange]50 pixel[].[]\n" +
+                                            " [white]• Mục tiêu chính nhận [red]1115 sát thương gốc[] trực diện.[]\n" +
+                                            " [white]• Kẻ địch lân cận chịu [yellow]558 sát thương nổ lan[] (50%).[]";
+                        let b1D = b1.add(b1Text);
                         b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
-                        b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
+                        b1.button(isEn ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => {
                             let core = this.team.core();
                             if (core != null && core.items.get(Items.copper) >= reqMK2.copper && core.items.get(Items.lead) >= reqMK2.lead) {
                                 core.items.remove(Items.copper, reqMK2.copper); core.items.remove(Items.lead, reqMK2.lead);
                                 Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
                                 
-                                 this.setTier(1);
+                                this.setTier(1);
                                 this.configure(java.lang.Integer.valueOf(1)); 
                                 
                                 dialog.hide(); this.deselect();
-                            } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); }
+                            } else { Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                         })).size(180, 38);
 
-                         let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
+                        let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                         b2.add("[purple]===(MK2B)===[]").row();
-                        let b2D = b2.add("Chuyển đổi sang tổ hợp pháo phòng không hạng nặng:\n" +
-                                         " [white]• Gia tăng lượng máu tối đa lên cực đại [green]950 HP[].[]\n" +
-                                         " [white]• Mở rộng [ultra-light]gấp đôi tầm bắn hiệu dụng [green](x2 Range)[][].[]\n" +
-                                         " [white]• [red]Loại bỏ hoàn toàn khả năng bắn mục tiêu mặt đất[].[]\n" +
-                                         " [white]• Tăng tốc độ đạn bay lên [sky]20.0[] chuyên dụng diệt Không Quân.[]\n" +
-                                         " [white]• Đạn nổ áp suất tạo vùng sát thương lan rộng tới [pink]150 pixel[].[]\n" +
-                                         " [white]• Gây [orange]892 sát thương diện rộng[] (80% lực bắn gốc).[]");
+                        let b2Text = isEn ? "Converts to heavy anti-air artillery complex:\n" +
+                                            " [white]• Increases max HP to [green]950 HP[].[]\n" +
+                                            " [white]• Extends effective range by [ultra-light]2x [green](x2 Range)[][].[]\n" +
+                                            " [white]• [red]Completely removes ground targeting capability[].[]\n" +
+                                            " [white]• Increases bullet speed to [sky]20.0[] dedicated anti-air.[]\n" +
+                                            " [white]• Pressure wave blast area up to [pink]150 pixels[].[]\n" +
+                                            " [white]• Deals [orange]892 AOE damage[] (80% of base damage).[]"
+                                          : "Chuyển đổi sang tổ hợp pháo phòng không hạng nặng:\n" +
+                                            " [white]• Gia tăng lượng máu tối đa lên cực đại [green]950 HP[].[]\n" +
+                                            " [white]• Mở rộng [ultra-light]gấp đôi tầm bắn hiệu dụng [green](x2 Range)[][].[]\n" +
+                                            " [white]• [red]Loại bỏ hoàn toàn khả năng bắn mục tiêu mặt đất[].[]\n" +
+                                            " [white]• Tăng tốc độ đạn bay lên [sky]20.0[] chuyên dụng diệt Không Quân.[]\n" +
+                                            " [white]• Đạn nổ áp suất tạo vùng sát thương lan rộng tới [pink]150 pixel[].[]\n" +
+                                            " [white]• Gây [orange]892 sát thương diện rộng[] (80% lực bắn gốc).[]";
+                        let b2D = b2.add(b2Text);
                         b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
-                        b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
+                        b2.button(isEn ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                             let core = this.team.core();
                             if (core != null && core.items.get(Items.copper) >= reqMK2B.copper && core.items.get(Items.lead) >= reqMK2B.lead && core.items.get(Items.titanium) >= reqMK2B.titanium) {
                                 core.items.remove(Items.copper, reqMK2B.copper); core.items.remove(Items.lead, reqMK2B.lead); core.items.remove(Items.titanium, reqMK2B.titanium);
                                 Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
                                 
-                                 this.setTier(2);
+                                this.setTier(2);
                                 this.configure(java.lang.Integer.valueOf(2)); 
                                 
                                 dialog.hide(); this.deselect();
-                            } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
+                            } else { Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2B![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
                         })).size(180, 38);
 
                         branchesTable.add(b1).width(340); branchesTable.row();
@@ -261,47 +287,69 @@ Events.on(ClientLoadEvent, cons(e => {
                         scroll.setScrollingDisabled(true, false);
                         dialog.cont.add(scroll).maxHeight(400);
                         dialog.addCloseButton(); dialog.show();
-                    })).size(50, 40).tooltip("Nâng cấp cấu trúc hỏa lực tháp pháo");
+                    })).size(50, 40).tooltip(isEn ? "Upgrade turret firepower structure" : "Nâng cấp cấu trúc hỏa lực tháp pháo");
                 } else {
                     table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
-                        Vars.ui.showInfo("[scarlet]HỆ THỐNG TANKANI ĐÃ ĐẠT GIỚI HẠN TIẾN HÓA![]");
-                    })).size(50, 40).tooltip("Đã đạt cấp tối đa");
+                        Vars.ui.showInfo(isEn ? "[scarlet]TANKANI SYSTEM HAS REACHED EVOLUTION LIMIT![]" : "[scarlet]HỆ THỐNG TANKANI ĐÃ ĐẠT GIỚI HẠN TIẾN HÓA![]");
+                    })).size(50, 40).tooltip(isEn ? "Max level reached" : "Đã đạt cấp tối đa");
                 }
 
                 table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-                    let title = " Thông số Tankani-2k: ";
+                    let title = isEn ? " Tankani-2k Stats: " : " Thông số Tankani-2k: ";
                     let descStr = "";
                     let currentTier = this.getTier();
 
-                    let statStackStr = "\n[scarlet]⚡ CƠ CHẾ TIẾN HÓA (HITS) ⚡[]\n" +
-                                       "[lightgray]Số phát bắn trúng:[] [yellow]" + this.hitPoints + " Hits[]\n" +
-                                       "[lightgray]Cấp độ tầng lực:[] [orange]Tầng " + this.damageStack + " / 8[]\n" +
-                                       "[lightgray]Sát thương cộng thêm:[] [green]+" + (this.damageStack * 10) + "%[] (Tối đa +80%)\n";
+                    let statStackStr = isEn ? "\n[scarlet]⚡ EVOLUTION MECHANIC (HITS) ⚡[]\n" +
+                                               "[lightgray]Hits landed:[] [yellow]" + this.hitPoints + " Hits[]\n" +
+                                               "[lightgray]Power level:[] [orange]Tier " + this.damageStack + " / 8[]\n" +
+                                               "[lightgray]Bonus damage:[] [green]+" + (this.damageStack * 10) + "%[] (Max +80%)\n"
+                                             : "\n[scarlet]⚡ CƠ CHẾ TIẾN HÓA (HITS) ⚡[]\n" +
+                                               "[lightgray]Số phát bắn trúng:[] [yellow]" + this.hitPoints + " Hits[]\n" +
+                                               "[lightgray]Cấp độ tầng lực:[] [orange]Tầng " + this.damageStack + " / 8[]\n" +
+                                               "[lightgray]Sát thương cộng thêm:[] [green]+" + (this.damageStack * 10) + "%[] (Tối đa +80%)\n";
 
                     if (currentTier == 0) {
                         title += "[yellow](MK1)[]";
-                        descStr = "[gold]⚡ THÔNG SỐ GỐC CHƯA NÂNG CẤP (MK1) ⚡[]\n" +
-                                  "[lightgray]Máu tháp pháo:[] [green]565 HP[]\n" +
-                                  "[lightgray]Trạng thái mục tiêu:[] Đất & Không\n" +
-                                  "[lightgray]Sát thương mục tiêu đơn:[] [red]" + this.getModifiedDamage(1115) + " Sát thương[] (Gốc: 1115)\n" +
-                                  statStackStr;
+                        descStr = isEn ? "[gold]⚡ UNUPGRADED BASE STATS (MK1) ⚡[]\n" +
+                                         "[lightgray]Turret Health:[] [green]565 HP[]\n" +
+                                         "[lightgray]Target Type:[] Ground & Air\n" +
+                                         "[lightgray]Single Target Damage:[] [red]" + this.getModifiedDamage(1115) + " Damage[] (Base: 1115)\n" +
+                                         statStackStr
+                                       : "[gold]⚡ THÔNG SỐ GỐC CHƯA NÂNG CẤP (MK1) ⚡[]\n" +
+                                         "[lightgray]Máu tháp pháo:[] [green]565 HP[]\n" +
+                                         "[lightgray]Trạng thái mục tiêu:[] Đất & Không\n" +
+                                         "[lightgray]Sát thương mục tiêu đơn:[] [red]" + this.getModifiedDamage(1115) + " Sát thương[] (Gốc: 1115)\n" +
+                                         statStackStr;
                     } else if (currentTier == 1) {
                         title += "[cyan](MK2)[]";
-                        descStr = "[cyan]⚡ CẤU HÌNH ĐẠN DIỆN RỘNG (MK2) ⚡[]\n" +
-                                  "[lightgray]Máu tháp pháo:[] [green]735 HP[]\n" +
-                                  "[lightgray]Vùng nổ lan (Splash):[] [orange]50 Pixel[]\n" +
-                                  "[lightgray]Sát thương trực diện:[] [red]" + this.getModifiedDamage(1115) + " Sát thương[] (Gốc: 1115)\n" +
-                                  "[lightgray]Sát thương nổ lan:[] [yellow]" + this.getModifiedDamage(558) + " Sát thương[] (Gốc: 558)\n" +
-                                  statStackStr;
+                        descStr = isEn ? "[cyan]⚡ AREA DAMAGE CONFIG (MK2) ⚡[]\n" +
+                                         "[lightgray]Turret Health:[] [green]735 HP[]\n" +
+                                         "[lightgray]Splash Area:[] [orange]50 Pixels[]\n" +
+                                         "[lightgray]Direct Damage:[] [red]" + this.getModifiedDamage(1115) + " Damage[] (Base: 1115)\n" +
+                                         "[lightgray]Splash Damage:[] [yellow]" + this.getModifiedDamage(558) + " Damage[] (Base: 558)\n" +
+                                         statStackStr
+                                       : "[cyan]⚡ CẤU HÌNH ĐẠN DIỆN RỘNG (MK2) ⚡[]\n" +
+                                         "[lightgray]Máu tháp pháo:[] [green]735 HP[]\n" +
+                                         "[lightgray]Vùng nổ lan (Splash):[] [orange]50 Pixel[]\n" +
+                                         "[lightgray]Sát thương trực diện:[] [red]" + this.getModifiedDamage(1115) + " Sát thương[] (Gốc: 1115)\n" +
+                                         "[lightgray]Sát thương nổ lan:[] [yellow]" + this.getModifiedDamage(558) + " Sát thương[] (Gốc: 558)\n" +
+                                         statStackStr;
                     } else if (currentTier == 2) {
                         title += "[purple](MK2B)[]";
-                        descStr = "[purple]⚡ CẤU HÌNH PHÒNG KHÔNG HẠNG NẶNG (MK2B) ⚡[]\n" +
-                                  "[lightgray]Máu tháp pháo:[] [green]950 HP[]\n" +
-                                  "[lightgray]Tầm bắn:[] [green]Gấp đôi tầm bắn gốc (x2 Range)[]\n" +
-                                  "[lightgray]Trạng thái mục tiêu:[] [red]Chỉ bắn KHÔNG QUÂN[]\n" +
-                                  "[lightgray]Vùng nổ lan áp suất:[] [pink]150 Pixel[]\n" +
-                                  "[lightgray]Sát thương nổ phòng không:[] [orange]" + this.getModifiedDamage(892) + " Sát thương[] (Gốc: 892)\n" +
-                                  statStackStr;
+                        descStr = isEn ? "[purple]⚡ HEAVY ANTI-AIR CONFIG (MK2B) ⚡[]\n" +
+                                         "[lightgray]Turret Health:[] [green]950 HP[]\n" +
+                                         "[lightgray]Range:[] [green]Double Base Range (x2 Range)[]\n" +
+                                         "[lightgray]Target Type:[] [red]AIR ONLY[]\n" +
+                                         "[lightgray]Pressure Splash Area:[] [pink]150 Pixels[]\n" +
+                                         "[lightgray]Anti-Air Splash Damage:[] [orange]" + this.getModifiedDamage(892) + " Damage[] (Base: 892)\n" +
+                                         statStackStr
+                                       : "[purple]⚡ CẤU HÌNH PHÒNG KHÔNG HẠNG NẶNG (MK2B) ⚡[]\n" +
+                                         "[lightgray]Máu tháp pháo:[] [green]950 HP[]\n" +
+                                         "[lightgray]Tầm bắn:[] [green]Gấp đôi tầm bắn gốc (x2 Range)[]\n" +
+                                         "[lightgray]Trạng thái mục tiêu:[] [red]Chỉ bắn KHÔNG QUÂN[]\n" +
+                                         "[lightgray]Vùng nổ lan áp suất:[] [pink]150 Pixel[]\n" +
+                                         "[lightgray]Sát thương nổ phòng không:[] [orange]" + this.getModifiedDamage(892) + " Sát thương[] (Gốc: 892)\n" +
+                                         statStackStr;
                     }
 
                     let dialog = extend(BaseDialog, title, {});
@@ -312,10 +360,10 @@ Events.on(ClientLoadEvent, cons(e => {
                     scroll.setScrollingDisabled(true, false);
                     dialog.cont.add(scroll).maxHeight(400);
                     dialog.addCloseButton(); dialog.show();
-                })).size(50, 40).tooltip("Xem chi tiết thông số hệ thống");
+                })).size(50, 40).tooltip(isEn ? "View detailed system stats" : "Xem chi tiết thông số hệ thống");
             },
 
-             config() { return java.lang.Integer.valueOf(this.getTier()); },
+            config() { return java.lang.Integer.valueOf(this.getTier()); },
 
             shoot(type) {
                 let tier = this.getTier();

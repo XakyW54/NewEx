@@ -1,4 +1,5 @@
 const globalLockedTiles = new Set();
+const isEn = () => Core.settings.getString("locale").startsWith("en");
 
 Events.on(ContentInitEvent, () => {
     const drexkouDrill = Vars.content.block("newex-drexkou-drills");
@@ -6,7 +7,6 @@ Events.on(ContentInitEvent, () => {
     if (drexkouDrill != null) {
         drexkouDrill.configurable = true;
 
-        // Cấu hình kho chứa Item & Chất lưu trực tiếp trên Block
         drexkouDrill.hasItems = true;
         drexkouDrill.itemCapacity = 30;
         drexkouDrill.hasLiquids = true;
@@ -21,7 +21,7 @@ Events.on(ContentInitEvent, () => {
             mineSpeed: 40,
             range: 200,
             cachedTiles: [],  
-            sallowyrTimer: 0, // Bộ đếm thời gian hiệu ứng sallowyr (frames)
+            sallowyrTimer: 0,
 
             getTileDrop(t) {
                 if (t == null) return null;
@@ -39,7 +39,6 @@ Events.on(ContentInitEvent, () => {
                 return null;
             },
 
-            // --- ĐỒNG BỘ MẠNG (NETWORKING CONFIG) ---
             config() {
                 return this.selectedItem;
             },
@@ -72,9 +71,7 @@ Events.on(ContentInitEvent, () => {
                 this.releaseTarget();
                 this.findTarget();
             },
-            // ----------------------------------------
 
-            // Chấp nhận cấp nước/cryofluid và item sallowyr
             acceptLiquid(source, liquid) {
                 return this.block.hasLiquids && (liquid === Liquids.water || liquid === Liquids.cryofluid);
             },
@@ -82,7 +79,7 @@ Events.on(ContentInitEvent, () => {
             acceptItem(source, item) {
                 let sallowyrItem = Vars.content.item("newex-sallowyr") || Vars.content.item("sallowyr");
                 if (item === sallowyrItem) {
-                    return this.sallowyrTimer <= 0; // Chỉ nhận khi hiệu ứng cũ đã hết
+                    return this.sallowyrTimer <= 0;
                 }
                 return false;
             },
@@ -246,7 +243,6 @@ Events.on(ContentInitEvent, () => {
                 }
             },
 
-            // --- BẢNG CẤU HÌNH VÀ NÚT THÔNG TIN (i) ---
             buildConfiguration(table) {
                 table.clearChildren();
 
@@ -258,12 +254,18 @@ Events.on(ContentInitEvent, () => {
                     }
                 }
 
-                // Nút "i" - Xem Thông Tin
                 table.button(Icon.info, Styles.cleari, 40, () => {
-                    let dialog = new Dialog("[accent]Hướng Dẫn Sử Dụng Khối Khoan[ ]");
+                    let dialog = new Dialog(isEn() ? "[accent]Drill Block Manual[ ]" : "[accent]Hướng Dẫn Sử Dụng Khối Khoan[ ]");
                     dialog.cont.margin(15);
                     
-                    let infoText = 
+                    let infoText = isEn() ?
+                        "[cyan]● Select Resource:[ ] Tap resource icons to force drill targeting. If unselected, automatically selects the scarcest core resource.\n\n" +
+                        "[yellow]● Speed Boost Mechanics:[ ]\n" +
+                        "  - [white]Water Supply:[ ] Increases mining speed by [green]+50%[ ].\n" +
+                        "  - [white]Cryofluid Supply:[ ] Increases mining speed by [green]+100%[ ].\n" +
+                        "  - [white]Sallowyr Item Absorption:[ ] Absorbs 1 [accent]Sallowyr[ ] to boost mining efficiency by [orange]+500%[ ] for [stat]10 seconds[ ].\n\n" +
+                        "[lightgray]Note: Combine liquid supply with Sallowyr to maximize drill speed![ ]"
+                        :
                         "[cyan]● Chọn tài nguyên:[ ] Bấm vào các biểu tượng tài nguyên bên cạnh để bắt buộc máy tập trung khoan loại quặng đó. Nếu không chọn, máy sẽ tự động chọn quặng thiếu nhất trong Lõi.\n\n" +
                         "[yellow]● Cơ chế Tăng Tốc độ Khoan:[ ]\n" +
                         "  - [white]Cấp Nước (Water):[ ] Tăng [green]+50%[ ] tốc độ khai thác.\n" +
@@ -273,8 +275,7 @@ Events.on(ContentInitEvent, () => {
 
                     dialog.cont.add(infoText).width(380).wrap().get();
                     
-                    // Tạo nút Đóng thủ công
-                    dialog.buttons.button("Đóng", () => {
+                    dialog.buttons.button(isEn() ? "Close" : "Đóng", () => {
                         dialog.hide();
                     }).size(140, 50);
 
@@ -299,21 +300,17 @@ Events.on(ContentInitEvent, () => {
             },
 
             updateTile() {
-                // CHỈ XỬ LÝ LOGIC TRÊN HOST / SERVER
                 if (!Vars.net.client()) {
                     let sallowyrItem = Vars.content.item("newex-sallowyr") || Vars.content.item("sallowyr");
                     
-                    // 1. Kiểm tra và hấp thụ sallowyr nếu có trong kho
                     if (sallowyrItem != null && this.items.has(sallowyrItem)) {
                         this.items.remove(sallowyrItem, 1);
-                        this.sallowyrTimer = 600; // 10 giây (60fps * 10)
+                        this.sallowyrTimer = 600; 
                         Call.effect(Fx.upgradeCore, this.x, this.y, 0, Color.sky);
                     }
 
-                    // 2. Tính toán hệ số Tăng Tốc (Boost Multiplier)
                     let boostMultiplier = 1.0;
 
-                    // Nước: +50% | Cryofluid: +100%
                     if (this.liquids.get(Liquids.cryofluid) > 0.01) {
                         boostMultiplier += 1.0;
                         this.liquids.remove(Liquids.cryofluid, 0.15 * Time.delta);
@@ -322,7 +319,6 @@ Events.on(ContentInitEvent, () => {
                         this.liquids.remove(Liquids.water, 0.2 * Time.delta);
                     }
 
-                    // Sallowyr: +500% trong 10 giây
                     if (this.sallowyrTimer > 0) {
                         this.sallowyrTimer -= Time.delta;
                         boostMultiplier += 5.0;
@@ -332,12 +328,10 @@ Events.on(ContentInitEvent, () => {
                         }
                     }
 
-                    // 3. Xả Item ra các băng chuyền xung quanh
                     if (this.items.total() > 0) {
                         this.dump();
                     }
 
-                    // 4. Tiến trình Khoan Quặng
                     if (this.efficiency > 0) {
                         if (!this.isValidTarget(this.targetTile)) {
                             this.releaseTarget();
@@ -367,7 +361,6 @@ Events.on(ContentInitEvent, () => {
                     }
                 }
 
-                // Xoay hướng công trình
                 if (this.targetTile != null) {
                     let tx = this.targetTile.worldx();
                     let ty = this.targetTile.worldy();

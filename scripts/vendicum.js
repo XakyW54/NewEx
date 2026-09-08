@@ -2,6 +2,8 @@ const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
+const isEn = () => Core.settings.getString("locale").startsWith("en");
+
 const reqMK2 = { titanium: 500, silicon: 300 };
 const reqMK2B = { titanium: 800, silicon: 400, plastanium: 200 }; 
 
@@ -166,11 +168,11 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
 
         if(tier == 0) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-                let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Vendicum", {});
+                let dialog = extend(BaseDialog, isEn() ? "Vendicum Upgrade Center" : "Trung tâm nâng cấp pháo Vendicum", {});
                 
                 let reqCell = dialog.cont.label(packProv(() => {
                     let core = this.team.core();
-                    if(core == null) return "[red]Không tìm thấy Lõi Đội![]";
+                    if(core == null) return isEn() ? "[red]Team Core Not Found![]" : "[red]Không tìm thấy Lõi Đội![]";
                     let currentTitanium = core.items.get(Items.titanium);
                     let currentSilicon = core.items.get(Items.silicon);
                     let currentPlastanium = core.items.get(Items.plastanium);
@@ -181,6 +183,17 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                     let titColor2 = currentTitanium >= reqMK2B.titanium ? "[green]" : "[red]";
                     let silColor2 = currentSilicon >= reqMK2B.silicon ? "[green]" : "[red]";
                     let plaColor2 = currentPlastanium >= reqMK2B.plastanium ? "[green]" : "[red]";
+
+                    if(isEn()){
+                        return "[yellow]CORE RESOURCE REQUIREMENTS:[]\n" +
+                               "[cyan]MK2 Branch:[]\n" +
+                               " • Titanium: " + titColor1 + currentTitanium + "[] / " + reqMK2.titanium + "\n" +
+                               " • Silicon: " + silColor1 + currentSilicon + "[] / " + reqMK2.silicon + "\n" +
+                               "[purple]MK2B Branch:[]\n" +
+                               " • Titanium: " + titColor2 + currentTitanium + "[] / " + reqMK2B.titanium + "\n" +
+                               " • Silicon: " + silColor2 + currentSilicon + "[] / " + reqMK2B.silicon + "\n" +
+                               " • Plastanium: " + plaColor2 + currentPlastanium + "[] / " + reqMK2B.plastanium;
+                    }
 
                     return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
                            "[cyan]Nhánh MK2:[]\n" +
@@ -199,37 +212,47 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                 let branchesTable = new Table();
 
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
-                b1.add("[cyan]===(MK2 - XUYÊN PHÁ)===[]").row();
-                let b1D = b1.add("[white]• Máu cấu trúc: [green]+50%[] (1,800 HP)\n" +
-                                 "• Tầm bắn: [green]+31.25%[] (420 px)\n" +
-                                 "• sát thương gốc: [green]+44.4%[] (65 DMG)\n\n" +
-                                 "[lightgray]Kỹ năng đặc biệt: Gia Tốc Từ Tính Xuyên Thấu — Đạn mở rộng khả năng xuyên qua tối đa 5 mục tiêu kẻ địch hoặc công trình, tích hợp mạch siêu sạc giúp rút ngắn thời gian hồi đầy năng lượng xuống 3.0 giây.[]");
+                b1.add("[cyan]===(MK2 - PENETRATION)===[]").row();
+                let b1D = b1.add(isEn() ? 
+                                "[white]• Health: [green]+50%[] (1,800 HP)\n" +
+                                "• Range: [green]+31.25%[] (420 px)\n" +
+                                "• Base Damage: [green]+44.4%[] (65 DMG)\n\n" +
+                                "[lightgray]Special Ability: Penetrating Magnetic Acceleration — Expands pierce cap to 5 enemy targets or structures, built-in supercharge circuit reduces full energy recharge time to 3.0s.[]" :
+                                "[white]• Máu cấu trúc: [green]+50%[] (1,800 HP)\n" +
+                                "• Tầm bắn: [green]+31.25%[] (420 px)\n" +
+                                "• sát thương gốc: [green]+44.4%[] (65 DMG)\n\n" +
+                                "[lightgray]Kỹ năng đặc biệt: Gia Tốc Từ Tính Xuyên Thấu — Đạn mở rộng khả năng xuyên qua tối đa 5 mục tiêu kẻ địch hoặc công trình, tích hợp mạch siêu sạc giúp rút ngắn thời gian hồi đầy năng lượng xuống 3.0 giây.[]");
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
-                b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
+                b1.button(isEn() ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.titanium) >= reqMK2.titanium && core.items.get(Items.silicon) >= reqMK2.silicon){
                         core.items.remove(Items.titanium, reqMK2.titanium); core.items.remove(Items.silicon, reqMK2.silicon);
                         Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(4, 4, this.x, this.y);
                         this.configure(java.lang.Integer(1)); 
                         dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); }
+                    } else { Vars.ui.showInfo(isEn() ? "[red]Not enough resources for MK2![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                 })).size(180, 38);
 
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
-                b2.add("[purple]===(MK2B - TRUY ĐUỔI)===[]").row();
-                let b2D = b2.add("[white]• Máu cấu trúc: [green]+33.3%[] (1,600 HP)\n" +
-                                 "• Tầm bắn: [green]+12.5%[] (360 px)\n" +
-                                 "• sát thương gốc: [green]+172.2%[] (122.5 DMG)\n\n" +
-                                 "[lightgray]Kỹ năng đặc biệt: Xung Kích Tầm Nhiệt Truy Đuổi — Loại bỏ xuyên thấu để tích hợp chip cảm biến thông minh tự động bẻ lái truy đuổi mục tiêu xung quanh, tiết kiệm 70% năng lượng mỗi phát bắn.[]");
+                b2.add("[purple]===(MK2B - HOMING)===[]").row();
+                let b2D = b2.add(isEn() ? 
+                                "[white]• Health: [green]+33.3%[] (1,600 HP)\n" +
+                                "• Range: [green]+12.5%[] (360 px)\n" +
+                                "• Base Damage: [green]+172.2%[] (122.5 DMG)\n\n" +
+                                "[lightgray]Special Ability: Homing Heat-Seeking Impulse — Removes piercing to integrate smart sensors that automatically steer towards nearby targets, saving 70% energy per shot.[]" :
+                                "[white]• Máu cấu trúc: [green]+33.3%[] (1,600 HP)\n" +
+                                "• Tầm bắn: [green]+12.5%[] (360 px)\n" +
+                                "• sát thương gốc: [green]+172.2%[] (122.5 DMG)\n\n" +
+                                "[lightgray]Kỹ năng đặc biệt: Xung Kích Tầm Nhiệt Truy Đuổi — Loại bỏ xuyên thấu để tích hợp chip cảm biến thông minh tự động bẻ lái truy đuổi mục tiêu xung quanh, tiết kiệm 70% năng lượng mỗi phát bắn.[]");
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
-                b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
+                b2.button(isEn() ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.titanium) >= reqMK2B.titanium && core.items.get(Items.silicon) >= reqMK2B.silicon && core.items.get(Items.plastanium) >= reqMK2B.plastanium){
                         core.items.remove(Items.titanium, reqMK2B.titanium); core.items.remove(Items.silicon, reqMK2B.silicon); core.items.remove(Items.plastanium, reqMK2B.plastanium);
                         Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(4, 4, this.x, this.y);
                         this.configure(java.lang.Integer(2)); 
                         dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
+                    } else { Vars.ui.showInfo(isEn() ? "[red]Not enough resources for MK2B![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
                 })).size(180, 38);
 
                 branchesTable.add(b1).width(340); branchesTable.row();
@@ -240,21 +263,30 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                 scroll.setScrollingDisabled(true, false);
                 dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); dialog.show();
-            })).size(50, 40).tooltip("Nâng cấp hệ thống Vendicum");
+            })).size(50, 40).tooltip(isEn() ? "Upgrade Vendicum system" : "Nâng cấp hệ thống Vendicum");
         } else {
             table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
-                Vars.ui.showInfo("[scarlet]HỆ THỐNG VENDICUM ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]");
-            })).size(50, 40).tooltip("Đã đạt cấp tối đa");
+                Vars.ui.showInfo(isEn() ? "[scarlet]VENDICUM HAS REACHED MAX EVOLUTION LEVEL![]" : "[scarlet]HỆ THỐNG VENDICUM ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]");
+            })).size(50, 40).tooltip(isEn() ? "Max level reached" : "Đã đạt cấp tối đa");
         }
 
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-            let title = " Thông số pháo Vendicum: ";
+            let title = isEn() ? " Vendicum Turret Stats: " : " Thông số pháo Vendicum: ";
             let descStr = "";
             let currentTier = this.getTier();
 
             if (currentTier == 0) {
                 title += "[yellow](MK1)[]";
-                descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
+                descStr = isEn() ? 
+                          "[gold]⚡ BASE STATS (MK1) ⚡[]\n" +
+                          "[lightgray]Turret HP:[] [green]1,200[]\n" +
+                          "[lightgray]Effective Range:[] [orange]320 px[]\n" +
+                          "[lightgray]Base Damage:[] [yellow]45.00 DMG[]\n" +
+                          "[lightgray]Penetration:[] [white]3 targets[]\n\n" +
+                          "[sky]⚡ CONSUMPTION MECHANIC:[]\n" +
+                          "• [lightgray]Energy Loss:[] Each shot consumes [red]1.0%[] stored core energy. Damage scales directly with current energy.\n" +
+                          "• [lightgray]Recharge Speed:[] Takes about [yellow]5.0s[] to recharge from 0% to 100% when idle." :
+                          "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
                           "[lightgray]Máu tháp pháo:[] [green]1,200[]\n" +
                           "[lightgray]Tầm bắn hiệu dụng:[] [orange]320 pixel[]\n" +
                           "[lightgray]sát thương gốc:[] [yellow]45.00 DMG[]\n" +
@@ -265,7 +297,16 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
             } 
             else if (currentTier == 1) {
                 title += "[cyan](MK2)[]";
-                descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
+                descStr = isEn() ? 
+                          "[cyan]⚡ BASE STATS (MK2) ⚡[]\n" +
+                          "[lightgray]Turret HP:[] [green]1,800 [lime](+50%)[]\n" +
+                          "[lightgray]Effective Range:[] [orange]420 px [lime](+31.2%)[]\n" +
+                          "[lightgray]Base Damage:[] [yellow]65.00 DMG [lime](+44.4%)[]\n" +
+                          "[lightgray]Penetration:[] [yellow]5 targets [lime](+2 targets)[]\n\n" +
+                          "[lime]⚡ CONSUMPTION MECHANIC:[]\n" +
+                          "• [lightgray]Consumption Optimization:[] Reduces energy loss down to [red]0.5%[] per shot (-50%).\n" +
+                          "• [lightgray]Jet Supercharge:[] Recharge speed significantly increased, taking only [green]3.0s[] to fully recharge." :
+                          "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
                           "[lightgray]Máu tháp pháo:[] [green]1,800 [lime](+50%)[]\n" +
                           "[lightgray]Tầm bắn hiệu dụng:[] [orange]420 pixel [lime](+31.2%)[]\n" +
                           "[lightgray]sát thương gốc:[] [yellow]65.00 DMG [lime](+44.4%)[]\n" +
@@ -276,7 +317,16 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
             } 
             else if (currentTier == 2) {
                 title += "[purple](MK2B)[]";
-                descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
+                descStr = isEn() ? 
+                          "[purple]⚡ BASE STATS (MK2B) ⚡[]\n" +
+                          "[lightgray]Turret HP:[] [green]1,600 [lime](+33.3%)[]\n" +
+                          "[lightgray]Effective Range:[] [orange]360 px [lime](+12.5%)[]\n" +
+                          "[lightgray]Base Damage:[] [red]122.50 DMG (+172.2%)[]\n" +
+                          "[lightgray]Penetration:[] [red]None (Lost piercing)[]\n\n" +
+                          "[purple]🔥 CONSUMPTION MECHANIC:[]\n" +
+                          "• [lightgray]Homing Circuit:[] Replaces pierce with homing sensors, bullets [pink]automatically steer toward targets[] within 200px.\n" +
+                          "• [lightgray]High Stability:[] Energy loss per shot reduced to [green]0.3%[] for extremely stable sustained fire." :
+                          "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
                           "[lightgray]Máu tháp pháo:[] [green]1,600 [lime](+33.3%)[]\n" +
                           "[lightgray]Tầm bắn hiệu dụng:[] [orange]360 pixel [lime](+12.5%)[]\n" +
                           "[lightgray]sát thương gốc:[] [red]122.50 DMG (+172.2%)[]\n" +
@@ -294,7 +344,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
             scroll.setScrollingDisabled(true, false);
             dialog.cont.add(scroll).maxHeight(400);
             dialog.addCloseButton(); dialog.show();
-        })).size(50, 40).tooltip("Xem thông số chi tiết hệ thống");
+        })).size(50, 40).tooltip(isEn() ? "View detailed stats" : "Xem thông số chi tiết hệ thống");
     },
 
     config() { return java.lang.Integer(this.getTier()); },

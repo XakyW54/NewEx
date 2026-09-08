@@ -2,21 +2,21 @@ const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
- 
+function isEnglish() {
+    return Core.settings.getString("locale").startsWith("en");
+}
+
 const shootSound = Vars.tree.loadSound("shotbatt");
 
- 
 const EXPLODE_COLOR = Color.orange; 
 const EXPLODE_COLOR_LIGHT = Color.valueOf("#ffdfa9");  
 
- 
 const reqPerkA = { copper: 1500, lead: 1500, silicon: 1500 };
 const reqPerkB = { titanium: 1500, thorium: 1500, silicon: 1500 };
 const reqPerkC = { surgeAlloy: 500, phaseFabric: 500, silicon: 2000 };
- 
+
 const nitouiMap = new java.util.WeakHashMap();
 
- 
 const nitouiExplodeFx = new Effect(35, cons(e => {
     Draw.z(Layer.effect + 0.1);
     
@@ -30,7 +30,6 @@ const nitouiExplodeFx = new Effect(35, cons(e => {
     let coreScale = 0.2 + 0.8 * zoomProgress;
     let coreRadius = (radius * 0.3) * coreScale;
 
- 
     Draw.color(EXPLODE_COLOR);
     Draw.alpha(0.5 * fout);
     Fill.circle(e.x, e.y, coreRadius * 3.5);
@@ -43,7 +42,6 @@ const nitouiExplodeFx = new Effect(35, cons(e => {
     Draw.alpha(1.0 * fout);
     Fill.circle(e.x, e.y, coreRadius * 1.3);
 
- 
     let ringStroke = 3.0 * Math.sin(fin * Math.PI);
     Draw.color(EXPLODE_COLOR);
     Draw.alpha(0.6 * fout);
@@ -55,7 +53,6 @@ const nitouiExplodeFx = new Effect(35, cons(e => {
     Lines.stroke(ringStroke);
     Lines.circle(e.x, e.y, radius * fin);
 
-    
     let quadCount = 12;
     for (let i = 0; i < quadCount; i++) {
         let seed = e.id + i * 123;
@@ -73,7 +70,6 @@ const nitouiExplodeFx = new Effect(35, cons(e => {
     
     Draw.blend();
 
- 
     Draw.color(Color.white);
     Fill.circle(e.x, e.y, coreRadius * 0.6 * fout);
 
@@ -98,7 +94,6 @@ const nitouiExplodeFx = new Effect(35, cons(e => {
     Draw.reset();
 }));
 
- 
 const nitouiIngatherFx = new Effect(20, cons(e => {
     Draw.z(Layer.effect + 0.05);
     
@@ -146,7 +141,6 @@ var nitouiStatus = extend(StatusEffect, "nitoui-status", {
     }
 });
 
- 
 const maxitonerShootFx = new Effect(25, cons(e => {
     Draw.z(Layer.effect);
     Draw.blend(Blending.additive);
@@ -166,7 +160,6 @@ const maxitonerShootFx = new Effect(25, cons(e => {
     Draw.reset();
 }));
 
- 
 const maxitonerShootFxSmall = new Effect(20, cons(e => {
     Draw.z(Layer.effect);
     Draw.blend(Blending.additive);
@@ -186,7 +179,6 @@ const maxitonerShootFxSmall = new Effect(20, cons(e => {
     Draw.reset();
 }));
 
- 
 const maxitonerBulletBase = extend(BasicBulletType, {
     speed: 7.0,
     damage: 10,
@@ -222,7 +214,6 @@ const maxitonerBulletBase = extend(BasicBulletType, {
     }
 });
 
- 
 const maxitoner = extend(ItemTurret, "maxitoner", {
     configurable: true
 });
@@ -434,7 +425,6 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
 
         maxitonerShootFx.at(this.x, this.y);
 
- 
         if (shootSound != null) {
             shootSound.at(this.x, this.y, Mathf.random(0.9, 1.1));
         }
@@ -455,11 +445,8 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
         for (let i = 1; i < totalBullets; i++) {
             let angle = Mathf.range(spread);
             this.spawnBullet(angle, 1.0, is3C, is3C, true);
-
-
-
         }
-                this.useAmmo();
+        this.useAmmo();
     },
 
     updateTile() {
@@ -493,11 +480,12 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
         table.row();
 
         table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-            let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Maxitoner", {});
+            let dialogTitle = isEnglish() ? "Maxitoner Upgrade Center" : "Trung tâm nâng cấp pháo Maxitoner";
+            let dialog = extend(BaseDialog, dialogTitle, {});
 
             let reqCell = dialog.cont.label(packProv(() => {
                 let core = this.team.core();
-                if (core == null) return "[red]Không tìm thấy Lõi Đội![]";
+                if (core == null) return isEnglish() ? "[red]Team Core not found![]" : "[red]Không tìm thấy Lõi Đội![]";
 
                 let cCop = core.items.get(Items.copper);
                 let cLea = core.items.get(Items.lead);
@@ -519,10 +507,17 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
                 let colPhaC = cPha >= reqPerkC.phaseFabric ? "[green]" : "[red]";
                 let colSilC = cSil >= reqPerkC.silicon ? "[green]" : "[red]";
 
-                return "[gold]YÊU CẦU TÀI NGUYÊN LÕI (MAXITONER):[]\n" +
-                       "[yellow]★ ROLL PHÚC LỢI A:[] Đồng: " + colCopA + cCop + "[]/1500 | Chì: " + colLeaA + cLea + "[]/1500 | Silicon: " + colSilA + cSil + "[]/1500\n" +
-                       "[cyan]★ ROLL PHÚC LỢI B:[] Titan: " + colTitB + cTit + "[]/1500 | Thorium: " + colThoB + cTho + "[]/1500 | Silicon: " + colSilB + cSil + "[]/1500\n" +
-                       "[purple]★ ROLL PHÚC LỢI C:[] Surge: " + colSurC + cSur + "[]/500 | Phase: " + colPhaC + cPha + "[]/500 | Silicon: " + colSilC + cSil + "[]/2000";
+                if (isEnglish()) {
+                    return "[gold]CORE RESOURCE REQUIREMENTS (MAXITONER):[]\n" +
+                           "[yellow]★ PERK ROLL A:[] Copper: " + colCopA + cCop + "[]/1500 | Lead: " + colLeaA + cLea + "[]/1500 | Silicon: " + colSilA + cSil + "[]/1500\n" +
+                           "[cyan]★ PERK ROLL B:[] Titanium: " + colTitB + cTit + "[]/1500 | Thorium: " + colThoB + cTho + "[]/1500 | Silicon: " + colSilB + cSil + "[]/1500\n" +
+                           "[purple]★ PERK ROLL C:[] Surge: " + colSurC + cSur + "[]/500 | Phase: " + colPhaC + cPha + "[]/500 | Silicon: " + colSilC + cSil + "[]/2000";
+                } else {
+                    return "[gold]YÊU CẦU TÀI NGUYÊN LÕI (MAXITONER):[]\n" +
+                           "[yellow]★ ROLL PHÚC LỢI A:[] Đồng: " + colCopA + cCop + "[]/1500 | Chì: " + colLeaA + cLea + "[]/1500 | Silicon: " + colSilA + cSil + "[]/1500\n" +
+                           "[cyan]★ ROLL PHÚC LỢI B:[] Titan: " + colTitB + cTit + "[]/1500 | Thorium: " + colThoB + cTho + "[]/1500 | Silicon: " + colSilB + cSil + "[]/1500\n" +
+                           "[purple]★ ROLL PHÚC LỢI C:[] Surge: " + colSurC + cSur + "[]/500 | Phase: " + colPhaC + cPha + "[]/500 | Silicon: " + colSilC + cSil + "[]/2000";
+                }
             }));
 
             reqCell.width(380).get().setWrap(true);
@@ -531,21 +526,29 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
             dialog.cont.add().height(10).row();
 
             let mainTable = new Table();
- 
+
             let boxA = new Table(); boxA.background(Styles.black6); boxA.margin(12);
-            boxA.add("[yellow]★ ROLL PHÚC LỢI A (NGẪU NHIÊN) ★[]").row();
+            boxA.add(isEnglish() ? "[yellow]★ PERK ROLL A (RANDOM) ★[]" : "[yellow]★ ROLL PHÚC LỢI A (NGẪU NHIÊN) ★[]").row();
 
             let perkA = this.getPerkA();
             if (perkA == 0) {
-                let txtADesc = boxA.add("Kích hoạt nâng cấp ngẫu nhiên nhận 1 trong 3 phúc lợi A:\n" +
-                                        " • [yellow]Phúc lợi 1A (50%):[] Tầm bắn +50%, Sát thương nổ Nitoui +150%.\n" +
-                                        " • [yellow]Phúc lợi 2A (30%):[] Tốc bắn +80%, Nổ Nitoui ngẫu nhiên gắn 7 tầng cho trâu nhất.\n" +
-                                        " • [yellow]Phúc lợi 3A (20%):[] Tầm bắn +20%, Tốc bắn +20%, Dmg nổ +20%, Bắn 9 tia laze khi nổ.");
+                let descA = isEnglish() ? 
+                    "Activate random upgrade to get 1 of 3 Perks A:\n" +
+                    " • [yellow]Perk 1A (50%):[] Range +50%, Nitoui explosion DMG +150%.\n" +
+                    " • [yellow]Perk 2A (30%):[] Fire rate +80%, Nitoui explosion randomly attaches 7 stacks to tankiest enemy.\n" +
+                    " • [yellow]Perk 3A (20%):[] Range +20%, Fire rate +20%, Explosion DMG +20%, Shoots 9 lasers on explosion." :
+                    "Kích hoạt nâng cấp ngẫu nhiên nhận 1 trong 3 phúc lợi A:\n" +
+                    " • [yellow]Phúc lợi 1A (50%):[] Tầm bắn +50%, Sát thương nổ Nitoui +150%.\n" +
+                    " • [yellow]Phúc lợi 2A (30%):[] Tốc bắn +80%, Nổ Nitoui ngẫu nhiên gắn 7 tầng cho trâu nhất.\n" +
+                    " • [yellow]Phúc lợi 3A (20%):[] Tầm bắn +20%, Tốc bắn +20%, Dmg nổ +20%, Bắn 9 tia laze khi nổ.";
+
+                let txtADesc = boxA.add(descA);
                 txtADesc.width(340).get().setWrap(true);
                 txtADesc.get().setAlignment(Align.left);
                 boxA.row();
 
-                boxA.button("[yellow]QUAY PHÚC LỢI A (1.5K Đồng/Chì/Silicon)[]", packRun(() => {
+                let btnAText = isEnglish() ? "[yellow]ROLL PERK A (1.5K Cop/Lead/Sil)[]" : "[yellow]QUAY PHÚC LỢI A (1.5K Đồng/Chì/Silicon)[]";
+                boxA.button(btnAText, packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.copper) >= reqPerkA.copper && core.items.get(Items.lead) >= reqPerkA.lead && core.items.get(Items.silicon) >= reqPerkA.silicon) {
                         core.items.remove(Items.copper, reqPerkA.copper);
@@ -559,18 +562,25 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
 
                         Fx.upgradeCore.at(this.x, this.y);
                         Effect.shake(4, 4, this.x, this.y);
-                        Vars.ui.showInfo("[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[yellow]PHÚC LỢI " + res + "A[]");
+                        let resMsg = isEnglish() ? "[gold]YOU ROLLED:[]\n[yellow]PERK " + res + "A[]" : "[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[yellow]PHÚC LỢI " + res + "A[]";
+                        Vars.ui.showInfo(resMsg);
                         dialog.hide();
                         this.deselect();
                     } else {
-                        Vars.ui.showInfo("[red]Không đủ tài nguyên roll Phúc lợi A![]");
+                        Vars.ui.showInfo(isEnglish() ? "[red]Not enough resources to roll Perk A![]" : "[red]Không đủ tài nguyên roll Phúc lợi A![]");
                     }
                 })).size(280, 40);
             } else {
                 let txtA = "";
-                if (perkA == 1) txtA = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1A\n• Tầm bắn +50% (525px)\n• Sát thương nổ Nitoui +150%[]";
-                if (perkA == 2) txtA = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2A\n• Tốc độ bắn +80%\n• Vụ nổ Nitoui lây 7 tầng cho kẻ địch trâu nhất gần đó[]";
-                if (perkA == 3) txtA = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3A\n• Tầm bắn +20%, Tốc bắn +20%, Dmg nổ +20%\n• Vụ nổ Nitoui phóng thêm 9 tia laze (50 Dmg)[]";
+                if (isEnglish()) {
+                    if (perkA == 1) txtA = "[green]✔ ACTIVATED: PERK 1A\n• Range +50% (525px)\n• Nitoui explosion DMG +150%[]";
+                    if (perkA == 2) txtA = "[green]✔ ACTIVATED: PERK 2A\n• Fire rate +80%\n• Nitoui explosion spreads 7 stacks to nearby tankiest enemy[]";
+                    if (perkA == 3) txtA = "[green]✔ ACTIVATED: PERK 3A\n• Range +20%, Fire rate +20%, Explosion DMG +20%\n• Nitoui explosion shoots 9 extra lasers (50 Dmg)[]";
+                } else {
+                    if (perkA == 1) txtA = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1A\n• Tầm bắn +50% (525px)\n• Sát thương nổ Nitoui +150%[]";
+                    if (perkA == 2) txtA = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2A\n• Tốc độ bắn +80%\n• Vụ nổ Nitoui lây 7 tầng cho kẻ địch trâu nhất gần đó[]";
+                    if (perkA == 3) txtA = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3A\n• Tầm bắn +20%, Tốc bắn +20%, Dmg nổ +20%\n• Vụ nổ Nitoui phóng thêm 9 tia laze (50 Dmg)[]";
+                }
 
                 let txtACell = boxA.add(txtA);
                 txtACell.width(340).get().setWrap(true);
@@ -578,21 +588,29 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
             }
             mainTable.add(boxA).width(360).row();
             mainTable.add().height(12).row();
- 
+
             let boxB = new Table(); boxB.background(Styles.black6); boxB.margin(12);
-            boxB.add("[cyan]★ ROLL PHÚC LỢI B (NGẪU NHIÊN) ★[]").row();
+            boxB.add(isEnglish() ? "[cyan]★ PERK ROLL B (RANDOM) ★[]" : "[cyan]★ ROLL PHÚC LỢI B (NGẪU NHIÊN) ★[]").row();
 
             let perkB = this.getPerkB();
             if (perkB == 0) {
-                let txtBDesc = boxB.add("Kích hoạt nâng cấp ngẫu nhiên nhận 1 trong 3 phúc lợi B:\n" +
-                                        " • [cyan]Phúc lợi 1B (50%):[] Tốc bắn +120%, Máu +500%, Tầm bắn -20%, Nhắm địch nhiều máu nhất.\n" +
-                                        " • [cyan]Phúc lợi 2B (20%):[] Tầm bắn +260%, Tốc bắn -50%, Bắn trúng +3 tầng Nitoui.\n" +
-                                        " • [cyan]Phúc lợi 3B (10%):[] Tốc bắn giảm, Máu -50%, Sát thương gốc +2400%, Bắn thêm 2 đạn, Mốc nổ giảm xuống 7 tầng.");
+                let descB = isEnglish() ? 
+                    "Activate random upgrade to get 1 of 3 Perks B:\n" +
+                    " • [cyan]Perk 1B (50%):[] Fire rate +120%, HP +500%, Range -20%, Targets highest HP enemy.\n" +
+                    " • [cyan]Perk 2B (20%):[] Range +260%, Fire rate -50%, Hit adds +3 Nitoui stacks.\n" +
+                    " • [cyan]Perk 3B (10%):[] Lower fire rate, HP -50%, Base DMG +2400%, Shoots 2 extra bullets, Explosion threshold reduced to 7 stacks." :
+                    "Kích hoạt nâng cấp ngẫu nhiên nhận 1 trong 3 phúc lợi B:\n" +
+                    " • [cyan]Phúc lợi 1B (50%):[] Tốc bắn +120%, Máu +500%, Tầm bắn -20%, Nhắm địch nhiều máu nhất.\n" +
+                    " • [cyan]Phúc lợi 2B (20%):[] Tầm bắn +260%, Tốc bắn -50%, Bắn trúng +3 tầng Nitoui.\n" +
+                    " • [cyan]Phúc lợi 3B (10%):[] Tốc bắn giảm, Máu -50%, Sát thương gốc +2400%, Bắn thêm 2 đạn, Mốc nổ giảm xuống 7 tầng.";
+
+                let txtBDesc = boxB.add(descB);
                 txtBDesc.width(340).get().setWrap(true);
                 txtBDesc.get().setAlignment(Align.left);
                 boxB.row();
 
-                boxB.button("[cyan]QUAY PHÚC LỢI B (1.5K Titan/Thorium/Silicon)[]", packRun(() => {
+                let btnBText = isEnglish() ? "[cyan]ROLL PERK B (1.5K Tit/Tho/Sil)[]" : "[cyan]QUAY PHÚC LỢI B (1.5K Titan/Thorium/Silicon)[]";
+                boxB.button(btnBText, packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.titanium) >= reqPerkB.titanium && core.items.get(Items.thorium) >= reqPerkB.thorium && core.items.get(Items.silicon) >= reqPerkB.silicon) {
                         core.items.remove(Items.titanium, reqPerkB.titanium);
@@ -606,18 +624,25 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
 
                         Fx.upgradeCore.at(this.x, this.y);
                         Effect.shake(4, 4, this.x, this.y);
-                        Vars.ui.showInfo("[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[cyan]PHÚC LỢI " + res + "B[]");
+                        let resMsg = isEnglish() ? "[gold]YOU ROLLED:[]\n[cyan]PERK " + res + "B[]" : "[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[cyan]PHÚC LỢI " + res + "B[]";
+                        Vars.ui.showInfo(resMsg);
                         dialog.hide();
                         this.deselect();
                     } else {
-                        Vars.ui.showInfo("[red]Không đủ tài nguyên roll Phúc lợi B![]");
+                        Vars.ui.showInfo(isEnglish() ? "[red]Not enough resources to roll Perk B![]" : "[red]Không đủ tài nguyên roll Phúc lợi B![]");
                     }
                 })).size(280, 40);
             } else {
                 let txtB = "";
-                if (perkB == 1) txtB = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1B\n• Tốc bắn +120%, Máu +500% (720 HP), Tầm bắn -20%\n• Khóa mục tiêu nhiều máu nhất[]";
-                if (perkB == 2) txtB = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2B\n• Tầm bắn +260% (1260px), Tốc bắn -50%\n• Đạn trúng mục tiêu gắn ngay +3 tầng Nitoui[]";
-                if (perkB == 3) txtB = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3B\n• Sát thương gốc +2400% (250 Dmg), Bắn +2 đạn phụ\n• Máu -50% (60 HP), Giảm mốc nổ Nitoui xuống 7 tầng[]";
+                if (isEnglish()) {
+                    if (perkB == 1) txtB = "[green]✔ ACTIVATED: PERK 1B\n• Fire rate +120%, HP +500% (720 HP), Range -20%\n• Locks target on highest HP unit[]";
+                    if (perkB == 2) txtB = "[green]✔ ACTIVATED: PERK 2B\n• Range +260% (1260px), Fire rate -50%\n• Bullet hit instantly applies +3 Nitoui stacks[]";
+                    if (perkB == 3) txtB = "[green]✔ ACTIVATED: PERK 3B\n• Base DMG +2400% (250 Dmg), Shoots +2 extra bullets\n• HP -50% (60 HP), Reduces Nitoui explosion threshold to 7 stacks[]";
+                } else {
+                    if (perkB == 1) txtB = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1B\n• Tốc bắn +120%, Máu +500% (720 HP), Tầm bắn -20%\n• Khóa mục tiêu nhiều máu nhất[]";
+                    if (perkB == 2) txtB = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2B\n• Tầm bắn +260% (1260px), Tốc bắn -50%\n• Đạn trúng mục tiêu gắn ngay +3 tầng Nitoui[]";
+                    if (perkB == 3) txtB = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3B\n• Sát thương gốc +2400% (250 Dmg), Bắn +2 đạn phụ\n• Máu -50% (60 HP), Giảm mốc nổ Nitoui xuống 7 tầng[]";
+                }
 
                 let txtBCell = boxB.add(txtB);
                 txtBCell.width(340).get().setWrap(true);
@@ -626,21 +651,28 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
             mainTable.add(boxB).width(360).row();
             mainTable.add().height(12).row();
 
- 
             let boxC = new Table(); boxC.background(Styles.black6); boxC.margin(12);
-            boxC.add("[purple]★ ROLL PHÚC LỢI C (NGẪU NHIÊN) ★[]").row();
+            boxC.add(isEnglish() ? "[purple]★ PERK ROLL C (RANDOM) ★[]" : "[purple]★ ROLL PHÚC LỢI C (NGẪU NHIÊN) ★[]").row();
 
             let perkC = this.getPerkC();
             if (perkC == 0) {
-                let txtCDesc = boxC.add("Kích hoạt nâng cấp ngẫu nhiên nhận 1 trong 3 phúc lợi C:\n" +
-                                        " • [purple]Phúc lợi 1C (98%):[] Bắn thêm +5 đạn phụ, mỗi 1s tự động bắn thêm 3 đạn.\n" +
-                                        " • [purple]Phúc lợi 2C (1%):[] Phạm vi nổ Nitoui +100% (200px), lây +2 tầng cho kẻ địch xung quanh.\n" +
-                                        " • [purple]Phúc lợi 3C (1%):[] Đạn gốc +500% Dmg, xuyên 20 mục tiêu, đuổi địch, kích nổ 500 Dmg khi trúng.");
+                let descC = isEnglish() ? 
+                    "Activate random upgrade to get 1 of 3 Perks C:\n" +
+                    " • [purple]Perk 1C (98%):[] Shoots +5 extra bullets, auto-fires 3 extra bullets every 1s.\n" +
+                    " • [purple]Perk 2C (1%):[] Nitoui explosion radius +100% (200px), spreads +2 stacks to surrounding enemies.\n" +
+                    " • [purple]Perk 3C (1%):[] Base bullet +500% DMG, pierces 20 targets, homing, triggers 500 DMG explosion on hit." :
+                    "Kích hoạt nâng cấp ngẫu nhiên nhận 1 trong 3 phúc lợi C:\n" +
+                    " • [purple]Phúc lợi 1C (98%):[] Bắn thêm +5 đạn phụ, mỗi 1s tự động bắn thêm 3 đạn.\n" +
+                    " • [purple]Phúc lợi 2C (1%):[] Phạm vi nổ Nitoui +100% (200px), lây +2 tầng cho kẻ địch xung quanh.\n" +
+                    " • [purple]Phúc lợi 3C (1%):[] Đạn gốc +500% Dmg, xuyên 20 mục tiêu, đuổi địch, kích nổ 500 Dmg khi trúng.";
+
+                let txtCDesc = boxC.add(descC);
                 txtCDesc.width(340).get().setWrap(true);
                 txtCDesc.get().setAlignment(Align.left);
                 boxC.row();
 
-                boxC.button("[purple]QUAY PHÚC LỢI C (500 Surge/Phase, 2K Silicon)[]", packRun(() => {
+                let btnCText = isEnglish() ? "[purple]ROLL PERK C (500 Sur/Pha, 2K Sil)[]" : "[purple]QUAY PHÚC LỢI C (500 Surge/Phase, 2K Silicon)[]";
+                boxC.button(btnCText, packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.surgeAlloy) >= reqPerkC.surgeAlloy && core.items.get(Items.phaseFabric) >= reqPerkC.phaseFabric && core.items.get(Items.silicon) >= reqPerkC.silicon) {
                         core.items.remove(Items.surgeAlloy, reqPerkC.surgeAlloy);
@@ -654,18 +686,25 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
 
                         Fx.upgradeCore.at(this.x, this.y);
                         Effect.shake(4, 4, this.x, this.y);
-                        Vars.ui.showInfo("[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[purple]PHÚC LỢI " + res + "C[]");
+                        let resMsg = isEnglish() ? "[gold]YOU ROLLED:[]\n[purple]PERK " + res + "C[]" : "[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[purple]PHÚC LỢI " + res + "C[]";
+                        Vars.ui.showInfo(resMsg);
                         dialog.hide();
                         this.deselect();
                     } else {
-                        Vars.ui.showInfo("[red]Không đủ tài nguyên roll Phúc lợi C![]");
+                        Vars.ui.showInfo(isEnglish() ? "[red]Not enough resources to roll Perk C![]" : "[red]Không đủ tài nguyên roll Phúc lợi C![]");
                     }
                 })).size(280, 40);
             } else {
                 let txtC = "";
-                if (perkC == 1) txtC = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1C\n• Bắn thêm +5 đạn phụ\n• Mỗi 1 giây tự động xả thêm 3 viên đạn phụ[]";
-                if (perkC == 2) txtC = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2C\n• Phạm vi nổ Nitoui +100% (200px)\n• Nổ Nitoui lây ngay 2 tầng cho kẻ địch trong phạm vi[]";
-                if (perkC == 3) txtC = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3C\n• Đạn gốc +500% Sát thương (60 Dmg), Xuyên 20 mục tiêu, Truy đuổi\n• Đạn trúng mục tiêu gây nổ 500 Dmg (Bán kính 100px)[]";
+                if (isEnglish()) {
+                    if (perkC == 1) txtC = "[green]✔ ACTIVATED: PERK 1C\n• Shoots +5 extra bullets\n• Auto-fires 3 extra sub-bullets every 1 second[]";
+                    if (perkC == 2) txtC = "[green]✔ ACTIVATED: PERK 2C\n• Nitoui explosion radius +100% (200px)\n• Nitoui explosion spreads 2 stacks to enemies in radius[]";
+                    if (perkC == 3) txtC = "[green]✔ ACTIVATED: PERK 3C\n• Base bullet +500% Damage (60 Dmg), Pierces 20 targets, Homing\n• Hits cause 500 Dmg explosion (100px radius)[]";
+                } else {
+                    if (perkC == 1) txtC = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1C\n• Bắn thêm +5 đạn phụ\n• Mỗi 1 giây tự động xả thêm 3 viên đạn phụ[]";
+                    if (perkC == 2) txtC = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2C\n• Phạm vi nổ Nitoui +100% (200px)\n• Nổ Nitoui lây ngay 2 tầng cho kẻ địch trong phạm vi[]";
+                    if (perkC == 3) txtC = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3C\n• Đạn gốc +500% Sát thương (60 Dmg), Xuyên 20 mục tiêu, Truy đuổi\n• Đạn trúng mục tiêu gây nổ 500 Dmg (Bán kính 100px)[]";
+                }
 
                 let txtCCell = boxC.add(txtC);
                 txtCCell.width(340).get().setWrap(true);
@@ -678,39 +717,65 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
             dialog.cont.add(scroll).maxHeight(420);
             dialog.addCloseButton();
             dialog.show();
-        })).size(50, 40).tooltip("Trung tâm nâng cấp pháo Maxitoner");
+        })).size(50, 40).tooltip(isEnglish() ? "Maxitoner Upgrade Center" : "Trung tâm nâng cấp pháo Maxitoner");
 
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-            let title = " Thông số pháo Maxitoner ";
+            let title = isEnglish() ? " Maxitoner Cannon Stats " : " Thông số pháo Maxitoner ";
             
-            let descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN PHÁO MAXITONER ⚡[]\n" +
+            let descStr = "";
+            if (isEnglish()) {
+                descStr = "[gold]⚡ MAXITONER BASE STATS ⚡[]\n" +
+                          "• HP: 120 HP | Range: 350px (43.7 tiles) | Bullet Damage: 10.0\n" +
+                          "• Mechanism: Applies Nitoui stacks on hit. Reaching 9 stacks triggers an AoE explosion equal to 4200% of base damage (100px radius).\n" +
+                          "• Upgrades: Up to 3 independent Perk groups A, B, C for diverse tactical builds.";
+            } else {
+                descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN PHÁO MAXITONER ⚡[]\n" +
                           "• Máu: 120 HP | Tầm bắn: 350px (43.7 ô) | Sát thương đạn: 10.0\n" +
                           "• Cơ chế: Bắn tích tầng hiệu ứng Nitoui lên mục tiêu. Đủ 9 tầng gây nổ diện rộng bằng 4200% Dmg gốc của pháo (Bán kính 100px).\n" +
                           "• Nâng cấp: Tối đa 3 nhóm Phúc lợi độc lập A, B, C nâng cấp đa dạng chiến thuật.";
+            }
 
             let perkA = this.getPerkA();
             let perkB = this.getPerkB();
             let perkC = this.getPerkC();
 
             if (perkA > 0) {
-                descStr += "\n\n[yellow]★ ĐÃ KÍCH HOẠT PHÚC LỢI A ★[]";
-                if (perkA == 1) descStr += "\n[green]• Phúc lợi 1A: Tầm bắn +50% (525px), Dmg nổ Nitoui +150%.[]";
-                if (perkA == 2) descStr += "\n[green]• Phúc lợi 2A: Tốc bắn +80%, Nổ Nitoui ngẫu nhiên lây 7 tầng cho kẻ địch trâu nhất.[]";
-                if (perkA == 3) descStr += "\n[green]• Phúc lợi 3A: Tầm bắn +20%, Tốc bắn +20%, Dmg nổ +20%, Nổ Nitoui bắn 9 tia laze.[]";
+                descStr += isEnglish() ? "\n\n[yellow]★ ACTIVATED PERK A ★[]" : "\n\n[yellow]★ ĐÃ KÍCH HOẠT PHÚC LỢI A ★[]";
+                if (isEnglish()) {
+                    if (perkA == 1) descStr += "\n[green]• Perk 1A: Range +50% (525px), Nitoui explosion DMG +150%.[]";
+                    if (perkA == 2) descStr += "\n[green]• Perk 2A: Fire rate +80%, Nitoui explosion spreads 7 stacks to tankiest enemy.[]";
+                    if (perkA == 3) descStr += "\n[green]• Perk 3A: Range +20%, Fire rate +20%, Explosion DMG +20%, Shoots 9 lasers on explosion.[]";
+                } else {
+                    if (perkA == 1) descStr += "\n[green]• Phúc lợi 1A: Tầm bắn +50% (525px), Dmg nổ Nitoui +150%.[]";
+                    if (perkA == 2) descStr += "\n[green]• Phúc lợi 2A: Tốc bắn +80%, Nổ Nitoui ngẫu nhiên lây 7 tầng cho kẻ địch trâu nhất.[]";
+                    if (perkA == 3) descStr += "\n[green]• Phúc lợi 3A: Tầm bắn +20%, Tốc bắn +20%, Dmg nổ +20%, Nổ Nitoui bắn 9 tia laze.[]";
+                }
             }
 
             if (perkB > 0) {
-                descStr += "\n\n[cyan]★ ĐÃ KÍCH HOẠT PHÚC LỢI B ★[]";
-                if (perkB == 1) descStr += "\n[green]• Phúc lợi 1B: Tốc bắn +120%, Máu +500% (720 HP), Tầm bắn -20%, Nhắm địch trâu nhất.[]";
-                if (perkB == 2) descStr += "\n[green]• Phúc lợi 2B: Tầm bắn +260% (1260px), Tốc bắn -50%, Bắn trúng +3 tầng Nitoui.[]";
-                if (perkB == 3) descStr += "\n[green]• Phúc lợi 3B: Sát thương gốc +2400%, Bắn thêm 2 đạn, Máu -50%, Mốc nổ giảm còn 7 tầng.[]";
+                descStr += isEnglish() ? "\n\n[cyan]★ ACTIVATED PERK B ★[]" : "\n\n[cyan]★ ĐÃ KÍCH HOẠT PHÚC LỢI B ★[]";
+                if (isEnglish()) {
+                    if (perkB == 1) descStr += "\n[green]• Perk 1B: Fire rate +120%, HP +500% (720 HP), Range -20%, Targets highest HP enemy.[]";
+                    if (perkB == 2) descStr += "\n[green]• Perk 2B: Range +260% (1260px), Fire rate -50%, Hit adds +3 Nitoui stacks.[]";
+                    if (perkB == 3) descStr += "\n[green]• Perk 3B: Base DMG +2400%, Shoots +2 extra bullets, HP -50%, Explosion threshold reduced to 7 stacks.[]";
+                } else {
+                    if (perkB == 1) descStr += "\n[green]• Phúc lợi 1B: Tốc bắn +120%, Máu +500% (720 HP), Tầm bắn -20%, Nhắm địch trâu nhất.[]";
+                    if (perkB == 2) descStr += "\n[green]• Phúc lợi 2B: Tầm bắn +260% (1260px), Tốc bắn -50%, Bắn trúng +3 tầng Nitoui.[]";
+                    if (perkB == 3) descStr += "\n[green]• Phúc lợi 3B: Sát thương gốc +2400%, Bắn thêm 2 đạn, Máu -50%, Mốc nổ giảm còn 7 tầng.[]";
+                }
             }
 
             if (perkC > 0) {
-                descStr += "\n\n[purple]★ ĐÃ KÍCH HOẠT PHÚC LỢI C ★[]";
-                if (perkC == 1) descStr += "\n[green]• Phúc lợi 1C: Bắn thêm +5 đạn, mỗi 1s tự bắn thêm 3 đạn phụ.[]";
-                if (perkC == 2) descStr += "\n[green]• Phúc lợi 2C: Phạm vi nổ Nitoui +100% (200px), lây 2 tầng cho kẻ địch xung quanh.[]";
-                if (perkC == 3) descStr += "\n[green]• Phúc lợi 3C: Đạn gốc +500% Dmg (60 Dmg), Xuyên 20 mục tiêu, Đuổi địch, Nổ 500 Dmg khi trúng.[]";
+                descStr += isEnglish() ? "\n\n[purple]★ ACTIVATED PERK C ★[]" : "\n\n[purple]★ ĐÃ KÍCH HOẠT PHÚC LỢI C ★[]";
+                if (isEnglish()) {
+                    if (perkC == 1) descStr += "\n[green]• Perk 1C: Shoots +5 extra bullets, auto-fires 3 extra sub-bullets every 1s.[]";
+                    if (perkC == 2) descStr += "\n[green]• Perk 2C: Nitoui explosion radius +100% (200px), spreads 2 stacks to surrounding enemies.[]";
+                    if (perkC == 3) descStr += "\n[green]• Perk 3C: Base bullet +500% DMG (60 Dmg), Pierces 20 targets, Homing, 500 DMG explosion on hit.[]";
+                } else {
+                    if (perkC == 1) descStr += "\n[green]• Phúc lợi 1C: Bắn thêm +5 đạn, mỗi 1s tự bắn thêm 3 đạn phụ.[]";
+                    if (perkC == 2) descStr += "\n[green]• Phúc lợi 2C: Phạm vi nổ Nitoui +100% (200px), lây 2 tầng cho kẻ địch xung quanh.[]";
+                    if (perkC == 3) descStr += "\n[green]• Phúc lợi 3C: Đạn gốc +500% Dmg (60 Dmg), Xuyên 20 mục tiêu, Đuổi địch, Nổ 500 Dmg khi trúng.[]";
+                }
             }
 
             let dialog = extend(BaseDialog, title, {});
@@ -724,7 +789,7 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
             dialog.cont.add(scroll).maxHeight(400);
             dialog.addCloseButton();
             dialog.show();
-        })).size(50, 40).tooltip("Xem thông số pháo Maxitoner");
+        })).size(50, 40).tooltip(isEnglish() ? "View Maxitoner Cannon Stats" : "Xem thông số pháo Maxitoner");
     },
 
     write(write) {
@@ -742,7 +807,6 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
     }
 });
 
- 
 const smoothHpMap = new ObjectMap();
 const lastDamageTimeMap = new ObjectMap(); 
 

@@ -3,6 +3,11 @@ const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
+function isVN() {
+    let loc = Core.settings.getString("locale", "en");
+    return loc.startsWith("vi");
+}
+
 const reqMK2 = { titanium: 500, silicon: 300 };
 const reqMK2B = { titanium: 800, silicon: 400, plastanium: 200 }; 
 
@@ -254,7 +259,7 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
     amplifierTimer: 0.0,
     isAmplified: false,
     maxAmplifierDuration: 30.0 * 60.0, 
-    activeBullets: [], // Mảng lưu trữ các viên đạn để xử lý True Damage
+    activeBullets: [],  
 
     getTier(){ return this.tierState == null ? 0 : this.tierState; },
     setTier(val){ 
@@ -282,11 +287,12 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
 
         if(tier == 0) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-                let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Nucleytor", {});
+                let dialogTitle = isVN() ? "Trung tâm nâng cấp pháo Nucleytor" : "Nucleytor Upgrade Center";
+                let dialog = extend(BaseDialog, dialogTitle, {});
                 
                 let reqCell = dialog.cont.label(packProv(() => {
                     let core = this.team.core();
-                    if(core == null) return "[red]Không tìm thấy Lõi Đội![]";
+                    if(core == null) return isVN() ? "[red]Không tìm thấy Lõi Đội![]" : "[red]No Team Core Found![]";
                     let currentTitanium = core.items.get(Items.titanium);
                     let currentSilicon = core.items.get(Items.silicon);
                     let currentPlastanium = core.items.get(Items.plastanium);
@@ -298,14 +304,25 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
                     let silColor2 = currentSilicon >= reqMK2.silicon ? "[green]" : "[red]";
                     let plaColor2 = currentPlastanium >= reqMK2B.plastanium ? "[green]" : "[red]";
 
-                    return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
-                           "[cyan]Nhánh MK2:[]\n" +
-                           " • Titan: " + titColor1 + currentTitanium + "[] / " + reqMK2.titanium + "\n" +
-                           " • Silicon: " + silColor1 + currentSilicon + "[] / " + reqMK2.silicon + "\n" +
-                           "[purple]Nhánh MK2B:[]\n" +
-                           " • Titan: " + titColor2 + currentTitanium + "[] / " + reqMK2B.titanium + "\n" +
-                           " • Silicon: " + silColor2 + currentSilicon + "[] / " + reqMK2B.silicon + "\n" +
-                           " • Nhựa: " + plaColor2 + currentPlastanium + "[] / " + reqMK2B.plastanium;
+                    if (isVN()) {
+                        return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
+                               "[cyan]Nhánh MK2:[]\n" +
+                               " • Titan: " + titColor1 + currentTitanium + "[] / " + reqMK2.titanium + "\n" +
+                               " • Silicon: " + silColor1 + currentSilicon + "[] / " + reqMK2.silicon + "\n" +
+                               "[purple]Nhánh MK2B:[]\n" +
+                               " • Titan: " + titColor2 + currentTitanium + "[] / " + reqMK2B.titanium + "\n" +
+                               " • Silicon: " + silColor2 + currentSilicon + "[] / " + reqMK2B.silicon + "\n" +
+                               " • Nhựa: " + plaColor2 + currentPlastanium + "[] / " + reqMK2B.plastanium;
+                    } else {
+                        return "[yellow]CORE RESOURCE REQUIREMENTS:[]\n" +
+                               "[cyan]MK2 Branch:[]\n" +
+                               " • Titanium: " + titColor1 + currentTitanium + "[] / " + reqMK2.titanium + "\n" +
+                               " • Silicon: " + silColor1 + currentSilicon + "[] / " + reqMK2.silicon + "\n" +
+                               "[purple]MK2B Branch:[]\n" +
+                               " • Titanium: " + titColor2 + currentTitanium + "[] / " + reqMK2B.titanium + "\n" +
+                               " • Silicon: " + silColor2 + currentSilicon + "[] / " + reqMK2B.silicon + "\n" +
+                               " • Plastanium: " + plaColor2 + currentPlastanium + "[] / " + reqMK2B.plastanium;
+                    }
                 }));
                 
                 reqCell.width(360).get().setWrap(true);
@@ -315,40 +332,67 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
                 let branchesTable = new Table();
 
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
-                b1.add("[cyan]===(MK2 - XUYÊN PHÁ)===[]").row();
-                let b1D = b1.add("Cải tiến cấu trúc nòng hạt nhân gia tốc:\n" +
-                                 " [white]• Sát thương cơ bản điều chỉnh thành [green]9 đơn vị[] và tầm bắn rộng [green]420 pixel[].[]\n" +
-                                 " [white]• SÁT THƯƠNG CHUẨN: [scarlet]100% True Damage (Trừ thẳng Máu, xuyên giáp, khiên & cơ chế Vela)[]\n" +
-                                 " [white]• Đạn xuyên qua tối đa [yellow]5 mục tiêu[].[]\n" +
-                                 " [white]• Tối ưu hóa tản nhiệt, giữ gia tốc lâu hơn khi dừng bắn.[]\n" +
-                                 " [white]• Nâng cấp giáp tháp pháo, tăng [green]+50% Máu[].[]");
+                let b1Title = isVN() ? "[cyan]===(MK2 - XUYÊN PHÁ)===[]" : "[cyan]===(MK2 - PIERCING)===[]";
+                b1.add(b1Title).row();
+
+                let b1Desc = isVN() ?
+                    "Cải tiến cấu trúc nòng hạt nhân gia tốc:\n" +
+                    " [white]• Sát thương cơ bản điều chỉnh thành [green]9 đơn vị[] và tầm bắn rộng [green]420 pixel[].[]\n" +
+                    " [white]• SÁT THƯƠNG CHUẨN: [scarlet]100% True Damage (Trừ thẳng Máu, xuyên giáp, khiên & cơ chế Vela)[]\n" +
+                    " [white]• Đạn xuyên qua tối đa [yellow]5 mục tiêu[].[]\n" +
+                    " [white]• Tối ưu hóa tản nhiệt, giữ gia tốc lâu hơn khi dừng bắn.[]\n" +
+                    " [white]• Nâng cấp giáp tháp pháo, tăng [green]+50% Máu[].[]"
+                    :
+                    "Accelerated nuclear barrel structure:\n" +
+                    " [white]• Base damage set to [green]9[] with [green]420 px[] range.[]\n" +
+                    " [white]• TRUE DAMAGE: [scarlet]100% True Damage (Bypasses armor, shields & Vela mechanics)[]\n" +
+                    " [white]• Pierces up to [yellow]5 targets[].[]\n" +
+                    " [white]• Optimized cooling, retains charge longer when idle.[]\n" +
+                    " [white]• Enhanced armor, [green]+50% HP[].[]";
+
+                let b1D = b1.add(b1Desc);
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
-                b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => {
+
+                let b1BtnText = isVN() ? "[green]KÍCH HOẠT MK2[]" : "[green]ACTIVATE MK2[]";
+                b1.button(b1BtnText, packRun(() => {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.titanium) >= reqMK2.titanium && core.items.get(Items.silicon) >= reqMK2.silicon){
                         core.items.remove(Items.titanium, reqMK2.titanium); core.items.remove(Items.silicon, reqMK2.silicon);
                         Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(4, 4, this.x, this.y);
                         this.configure(java.lang.Integer(1)); 
                         dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2![]"); }
+                    } else { Vars.ui.showInfo(isVN() ? "[red]Không đủ tài nguyên cho nhánh MK2![]" : "[red]Not enough resources for MK2![]"); }
                 })).size(180, 38);
 
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
-                b2.add("[purple]===(MK2B - TIẾN HÓA)===[]").row();
-                let b2D = b2.add("Chuyển đổi sang lõi nhiệt phân rã:\n" +
-                                 " [white]• Sát thương tinh chỉnh thành [green]9 đơn vị[], gia tốc nhiệt lượng cực nhanh ([green]+3% mỗi phát bắn[]).[]\n" +
-                                 " [white]• SÁT THƯƠNG CHUẨN: [scarlet]100% True Damage (Trừ thẳng Máu, xuyên giáp, khiên & cơ chế Vela)[]\n" +
-                                 " [white]• Tầm bắn đạt [green]360 pixel[].[]\n" +
-                                 " [white]• Loại bỏ hoàn toàn khả năng xuyên thấu và tự dẫn đường.[]");
+                let b2Title = isVN() ? "[purple]===(MK2B - TIẾN HÓA)===[]" : "[purple]===(MK2B - EVOLUTION)===[]";
+                b2.add(b2Title).row();
+
+                let b2Desc = isVN() ?
+                    "Chuyển đổi sang lõi nhiệt phân rã:\n" +
+                    " [white]• Sát thương tinh chỉnh thành [green]9 đơn vị[], gia tốc nhiệt lượng cực nhanh ([green]+3% mỗi phát bắn[]).[]\n" +
+                    " [white]• SÁT THƯƠNG CHUẨN: [scarlet]100% True Damage (Trừ thẳng Máu, xuyên giáp, khiên & cơ chế Vela)[]\n" +
+                    " [white]• Tầm bắn đạt [green]360 pixel[].[]\n" +
+                    " [white]• Loại bỏ hoàn toàn khả năng xuyên thấu và tự dẫn đường.[]"
+                    :
+                    "Converted to thermal decay core:\n" +
+                    " [white]• Base damage set to [green]9[], hyper-fast thermal charge ([green]+3% per shot[]).[]\n" +
+                    " [white]• TRUE DAMAGE: [scarlet]100% True Damage (Bypasses armor, shields & Vela mechanics)[]\n" +
+                    " [white]• Range reaches [green]360 px[].[]\n" +
+                    " [white]• Removes piercing and homing capabilities completely.[]";
+
+                let b2D = b2.add(b2Desc);
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
-                b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => {
+
+                let b2BtnText = isVN() ? "[orange]KÍCH HOẠT MK2B[]" : "[orange]ACTIVATE MK2B[]";
+                b2.button(b2BtnText, packRun(() => {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.titanium) >= reqMK2B.titanium && core.items.get(Items.silicon) >= reqMK2B.silicon && core.items.get(Items.plastanium) >= reqMK2B.plastanium){
                         core.items.remove(Items.titanium, reqMK2B.titanium); core.items.remove(Items.silicon, reqMK2B.silicon); core.items.remove(Items.plastanium, reqMK2B.plastanium);
                         Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(4, 4, this.x, this.y);
                         this.configure(java.lang.Integer(2)); 
                         dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
+                    } else { Vars.ui.showInfo(isVN() ? "[red]Không đủ tài nguyên cho nhánh MK2B![]" : "[red]Not enough resources for MK2B![]"); }
                 })).size(180, 38);
 
                 branchesTable.add(b1).width(340); branchesTable.row();
@@ -359,60 +403,100 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
                 scroll.setScrollingDisabled(true, false);
                 dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); dialog.show();
-            })).size(50, 40).tooltip("Nâng cấp hệ thống Nucleytor");
+            })).size(50, 40).tooltip(isVN() ? "Nâng cấp hệ thống Nucleytor" : "Upgrade Nucleytor system");
         } else {
             table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
-                Vars.ui.showInfo("[scarlet]HỆ THỐNG NUCLEYTOR ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]");
-            })).size(50, 40).tooltip("Đã đạt cấp tối đa");
+                Vars.ui.showInfo(isVN() ? "[scarlet]HỆ THỐNG NUCLEYTOR ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]" : "[scarlet]NUCLEYTOR HAS REACHED MAXIMUM EVOLUTION TIER![]");
+            })).size(50, 40).tooltip(isVN() ? "Đã đạt cấp tối đa" : "Max tier reached");
         }
 
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-            let title = " Thông số pháo Nucleytor: ";
+            let title = isVN() ? " Thông số pháo Nucleytor: " : " Nucleytor Turret Stats: ";
             let descStr = "";
             let currentTier = this.getTier();
 
             if (currentTier == 0) {
                 title += "[yellow](MK1)[]";
-                descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]1,200[]\n" +
-                          "[lightgray]Tầm bắn hiệu dụng:[] [orange]320 pixel[]\n" +
-                          "[lightgray]Sát thương cơ bản:[] [yellow]9.00[]\n" +
-                          "[lightgray]Khả năng xuyên thấu:[] [white]3 mục tiêu[]\n" +
-                          "[scarlet]⚠ Giới hạn: Tối đa 10 cấu trúc trên sân[]\n\n" +
-                          "[sky]⚡ CƠ CHẾ GIA TỐC HẠT NHÂN:[]\n" +
-                          "• [lightgray]Cơ chế bắn tích năng:[] Tháp pháo khởi đầu ở trạng thái yếu nhất. Mỗi phát bắn sẽ tích tụ [green]+1.5%[] gia tốc lõi hạt nhân.\n" +
-                          "• [lightgray]Hiệu ứng cực đại:[] Sát thương tăng [orange]+1200%[] và tốc độ bắn tăng [cyan]+50%[].\n" +
-                          "• [orange]Trạng thái Nuclear Amplifier:[] Khi tích đầy 100% năng lượng, pháo vào trạng thái [yellow]Nuclear Amplifier trong 30s[]. Nhận thêm [green]+20 Giáp[] và [cyan]+50% Tốc độ bắn[] cho các tháp pháo đồng minh lân cận bán kính 100 pixel.\n" +
-                          "• [lightgray]Hiệu ứng đạn:[] Đạn bay chậm trong [yellow]0.5 giây đầu[] để tích năng lượng, sau đó bung xòe vòng từ trường phản lực rồi phóng vụt đi với hiệu ứng vệt xé gió màu vàng nhạt.";
+                descStr = isVN() ?
+                    "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
+                    "[lightgray]Máu tháp pháo:[] [green]1,200[]\n" +
+                    "[lightgray]Tầm bắn hiệu dụng:[] [orange]320 pixel[]\n" +
+                    "[lightgray]Sát thương cơ bản:[] [yellow]9.00[]\n" +
+                    "[lightgray]Khả năng xuyên thấu:[] [white]3 mục tiêu[]\n" +
+                    "[scarlet]⚠ Giới hạn: Tối đa 10 cấu trúc trên sân[]\n\n" +
+                    "[sky]⚡ CƠ CHẾ GIA TỐC HẠT NHÂN:[]\n" +
+                    "• [lightgray]Cơ chế bắn tích năng:[] Tháp pháo khởi đầu ở trạng thái yếu nhất. Mỗi phát bắn sẽ tích tụ [green]+1.5%[] gia tốc lõi hạt nhân.\n" +
+                    "• [lightgray]Hiệu ứng cực đại:[] Sát thương tăng [orange]+1200%[] và tốc độ bắn tăng [cyan]+50%[].\n" +
+                    "• [orange]Trạng thái Nuclear Amplifier:[] Khi tích đầy 100% năng lượng, pháo vào trạng thái [yellow]Nuclear Amplifier trong 30s[]. Nhận thêm [green]+20 Giáp[] và [cyan]+50% Tốc độ bắn[] cho các tháp pháo đồng minh lân cận bán kính 100 pixel.\n" +
+                    "• [lightgray]Hiệu ứng đạn:[] Đạn bay chậm trong [yellow]0.5 giây đầu[] để tích năng lượng, sau đó bung xòe vòng từ trường phản lực rồi phóng vụt đi với hiệu ứng vệt xé gió màu vàng nhạt."
+                    :
+                    "[gold]⚡ BASIC STATS (MK1) ⚡[]\n" +
+                    "[lightgray]Turret HP:[] [green]1,200[]\n" +
+                    "[lightgray]Effective Range:[] [orange]320 px[]\n" +
+                    "[lightgray]Base Damage:[] [yellow]9.00[]\n" +
+                    "[lightgray]Piercing Limit:[] [white]3 targets[]\n" +
+                    "[scarlet]⚠ Limit: Maximum 10 turrets built[]\n\n" +
+                    "[sky]⚡ NUCLEAR ACCELERATION MECHANIC:[]\n" +
+                    "• [lightgray]Energy Charging:[] Starts at lowest power. Each shot gains [green]+1.5%[] core acceleration.\n" +
+                    "• [lightgray]Peak Effect:[] Damage increases up to [orange]+1200%[] and fire rate up to [cyan]+50%[].\n" +
+                    "• [orange]Nuclear Amplifier State:[] At 100% energy, enters [yellow]Nuclear Amplifier for 30s[]. Gains [green]+20 Armor[] and grants [cyan]+50% Attack Speed[] to nearby allied turrets in 100px radius.\n" +
+                    "• [lightgray]Bullet Effect:[] Travels slowly for [yellow]first 0.5s[] to charge energy, then emits a magnetic ring and accelerates with pale yellow trails.";
             } 
             else if (currentTier == 1) {
                 title += "[cyan](MK2)[]";
-                descStr = "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]1,800 [lime](+50%)[]\n" +
-                          "[lightgray]Tầm bắn hiệu dụng:[] [orange]420 pixel [lime](+31.2%)[]\n" +
-                          "[lightgray]Loại Sát Thương:[] [scarlet]100% True Damage (Xuyên giáp, khiên, cơ chế Vela)[]\n" +
-                          "[lightgray]Sát thương cơ bản:[] [yellow]9.00[]\n" +
-                          "[lightgray]Khả năng xuyên thấu:[] [yellow]5 mục tiêu [lime](+2)[]\n" +
-                          "[scarlet]⚠ Giới hạn: Tối đa 10 cấu trúc trên sân[]\n\n" +
-                          "[lime]⚡ CƠ CHẾ GIA TỐC HẠT NHÂN (MK2):[]\n" +
-                          "• [lightgray]Bắn tích năng:[] Mỗi phát bắn gia tốc thêm [green]+2.0%[] năng lượng tích lũy.\n" +
-                          "• [lightgray]Hiệu ứng cực đại:[] Sát thương tăng [orange]+1200%[] và tốc độ bắn tăng [cyan]+50%[].\n" +
-                          "• [orange]Trạng thái Nuclear Amplifier:[] Khi tích đầy 100% năng lượng, pháo vào trạng thái [yellow]Nuclear Amplifier trong 60s[]. Nhận thêm [green]+20 Giáp[] và [cyan]+50% Tốc độ bắn[] cho các tháp pháo đồng minh lân cận bán kính 100 pixel.\n" +
-                          "• [lightgray]Bộ giữ nhiệt cải tiến:[] Khi dừng bắn, năng lượng hạ nhiệt chậm hơn giúp duy trì trạng thái quá tải lâu hơn.";
+                descStr = isVN() ?
+                    "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
+                    "[lightgray]Máu tháp pháo:[] [green]1,800 [lime](+50%)[]\n" +
+                    "[lightgray]Tầm bắn hiệu dụng:[] [orange]420 pixel [lime](+31.2%)[]\n" +
+                    "[lightgray]Loại Sát Thương:[] [scarlet]100% True Damage (Xuyên giáp, khiên, cơ chế Vela)[]\n" +
+                    "[lightgray]Sát thương cơ bản:[] [yellow]9.00[]\n" +
+                    "[lightgray]Khả năng xuyên thấu:[] [yellow]5 mục tiêu [lime](+2)[]\n" +
+                    "[scarlet]⚠ Giới hạn: Tối đa 10 cấu trúc trên sân[]\n\n" +
+                    "[lime]⚡ CƠ CHẾ GIA TỐC HẠT NHÂN (MK2):[]\n" +
+                    "• [lightgray]Bắn tích năng:[] Mỗi phát bắn gia tốc thêm [green]+2.0%[] năng lượng tích lũy.\n" +
+                    "• [lightgray]Hiệu ứng cực đại:[] Sát thương tăng [orange]+1200%[] và tốc độ bắn tăng [cyan]+50%[].\n" +
+                    "• [orange]Trạng thái Nuclear Amplifier:[] Khi tích đầy 100% năng lượng, pháo vào trạng thái [yellow]Nuclear Amplifier trong 60s[]. Nhận thêm [green]+20 Giáp[] và [cyan]+50% Tốc độ bắn[] cho các tháp pháo đồng minh lân cận bán kính 100 pixel.\n" +
+                    "• [lightgray]Bộ giữ nhiệt cải tiến:[] Khi dừng bắn, năng lượng hạ nhiệt chậm hơn giúp duy trì trạng thái quá tải lâu hơn."
+                    :
+                    "[cyan]⚡ BASIC STATS (MK2) ⚡[]\n" +
+                    "[lightgray]Turret HP:[] [green]1,800 [lime](+50%)[]\n" +
+                    "[lightgray]Effective Range:[] [orange]420 px [lime](+31.2%)[]\n" +
+                    "[lightgray]Damage Type:[] [scarlet]100% True Damage (Bypasses armor, shields, Vela mechanics)[]\n" +
+                    "[lightgray]Base Damage:[] [yellow]9.00[]\n" +
+                    "[lightgray]Piercing Limit:[] [yellow]5 targets [lime](+2)[]\n" +
+                    "[scarlet]⚠ Limit: Maximum 10 turrets built[]\n\n" +
+                    "[lime]⚡ NUCLEAR ACCELERATION MECHANIC (MK2):[]\n" +
+                    "• [lightgray]Energy Charging:[] Each shot grants [green]+2.0%[] stored energy.\n" +
+                    "• [lightgray]Peak Effect:[] Damage increases up to [orange]+1200%[] and fire rate up to [cyan]+50%[].\n" +
+                    "• [orange]Nuclear Amplifier State:[] At 100% energy, enters [yellow]Nuclear Amplifier for 60s[]. Gains [green]+20 Armor[] and grants [cyan]+50% Attack Speed[] to nearby allied turrets in 100px radius.\n" +
+                    "• [lightgray]Thermal Retainer:[] Cools down slower when idle, sustaining peak power longer.";
             } 
             else if (currentTier == 2) {
                 title += "[purple](MK2B)[]";
-                descStr = "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]1,600 [lime](+33.3%)[]\n" +
-                          "[lightgray]Tầm bắn hiệu dụng:[] [orange]360 pixel [lime](+12.5%)[]\n" +
-                          "[lightgray]Loại Sát Thương:[] [scarlet]100% True Damage (Xuyên giáp, khiên, cơ chế Vela)[]\n" +
-                          "[lightgray]Sát thương cơ bản:[] [red]9.00[]\n" +
-                          "[lightgray]Khả năng xuyên thấu:[] [red]Không (Mất khả năng xuyên)[]\n" +
-                          "[scarlet]⚠ Giới hạn: Tối đa 10 cấu trúc trên sân[]\n\n" +
-                          "[purple]🔥 CƠ CHẾ GIA TỐC HẠT NHÂN (MK2B):[]\n" +
-                          "• [lightgray]Siêu kích phát nổ:[] Mỗi phát bắn gia tốc thần tốc [pink]+3.0%[] nhiệt lượng. Súng đạt đỉnh công suất cực nhanh.\n" +
-                          "• [lightgray]Hiệu ứng cực đại:[] Sát thương tăng [orange]+1200%[] và tốc độ bắn tăng [cyan]+50%[].\n" +
-                          "• [orange]Trạng thái Nuclear Amplifier:[] Khi tích đầy 100% năng lượng, pháo vào trạng thái [yellow]Nuclear Amplifier trong 30s[]. Nhận thêm [green]+20 Giáp[] và [cyan]+50% Tốc độ bắn[] cho các tháp pháo đồng minh lân cận bán kính 100 pixel.";
+                descStr = isVN() ?
+                    "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
+                    "[lightgray]Máu tháp pháo:[] [green]1,600 [lime](+33.3%)[]\n" +
+                    "[lightgray]Tầm bắn hiệu dụng:[] [orange]360 pixel [lime](+12.5%)[]\n" +
+                    "[lightgray]Loại Sát Thương:[] [scarlet]100% True Damage (Xuyên giáp, khiên, cơ chế Vela)[]\n" +
+                    "[lightgray]Sát thương cơ bản:[] [red]9.00[]\n" +
+                    "[lightgray]Khả năng xuyên thấu:[] [red]Không (Mất khả năng xuyên)[]\n" +
+                    "[scarlet]⚠ Giới hạn: Tối đa 10 cấu trúc trên sân[]\n\n" +
+                    "[purple]🔥 CƠ CHẾ GIA TỐC HẠT NHÂN (MK2B):[]\n" +
+                    "• [lightgray]Siêu kích phát nổ:[] Mỗi phát bắn gia tốc thần tốc [pink]+3.0%[] nhiệt lượng. Súng đạt đỉnh công suất cực nhanh.\n" +
+                    "• [lightgray]Hiệu ứng cực đại:[] Sát thương tăng [orange]+1200%[] và tốc độ bắn tăng [cyan]+50%[].\n" +
+                    "• [orange]Trạng thái Nuclear Amplifier:[] Khi tích đầy 100% năng lượng, pháo vào trạng thái [yellow]Nuclear Amplifier trong 30s[]. Nhận thêm [green]+20 Giáp[] và [cyan]+50% Tốc độ bắn[] cho các tháp pháo đồng minh lân cận bán kính 100 pixel."
+                    :
+                    "[purple]⚡ BASIC STATS (MK2B) ⚡[]\n" +
+                    "[lightgray]Turret HP:[] [green]1,600 [lime](+33.3%)[]\n" +
+                    "[lightgray]Effective Range:[] [orange]360 px [lime](+12.5%)[]\n" +
+                    "[lightgray]Damage Type:[] [scarlet]100% True Damage (Bypasses armor, shields, Vela mechanics)[]\n" +
+                    "[lightgray]Base Damage:[] [red]9.00[]\n" +
+                    "[lightgray]Piercing Limit:[] [red]None (Lost piercing)[]\n" +
+                    "[scarlet]⚠ Limit: Maximum 10 turrets built[]\n\n" +
+                    "[purple]🔥 NUCLEAR ACCELERATION MECHANIC (MK2B):[]\n" +
+                    "• [lightgray]Hyper Charge:[] Each shot charges [pink]+3.0%[] energy rapidly. Reaches max output quickly.\n" +
+                    "• [lightgray]Peak Effect:[] Damage increases up to [orange]+1200%[] and fire rate up to [cyan]+50%[].\n" +
+                    "• [orange]Nuclear Amplifier State:[] At 100% energy, enters [yellow]Nuclear Amplifier for 30s[]. Gains [green]+20 Armor[] and grants [cyan]+50% Attack Speed[] to nearby allied turrets in 100px radius.";
             }
 
             let dialog = extend(BaseDialog, title, {});
@@ -423,7 +507,7 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
             scroll.setScrollingDisabled(true, false);
             dialog.cont.add(scroll).maxHeight(400);
             dialog.addCloseButton(); dialog.show();
-        })).size(50, 40).tooltip("Xem thông số chi tiết hệ thống");
+        })).size(50, 40).tooltip(isVN() ? "Xem thông số chi tiết hệ thống" : "View system details");
     },
 
     config() { return java.lang.Integer(this.getTier()); },
@@ -434,9 +518,8 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
         if(bullet != null){
             let calculatedDmg = bullet.type.damage * (1 + this.energyState * 12);
 
-            // TÍNH NĂNG 100% TRUE DAMAGE DÀNH CHO CẢ MK1, MK2, MK2B
-            let trueDamageVal = calculatedDmg; 
-            bullet.damage = 0; // Đặt sát thương gốc của đạn về 0
+             let trueDamageVal = calculatedDmg; 
+            bullet.damage = 0; 
 
             if(bullet.type != null){
                 bullet.type.absorbable = false;
@@ -446,8 +529,7 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
             }
 
             if(this.activeBullets == null) this.activeBullets = [];
-            // Lưu đạn cùng lượng True Damage vào mảng JS
-            this.activeBullets.push({ bullet: bullet, trueDmg: trueDamageVal });
+             this.activeBullets.push({ bullet: bullet, trueDmg: trueDamageVal });
         }
     },
 
@@ -456,7 +538,11 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
         if(this.limitCheck >= 15){
             this.limitCheck = 0; let count = 0; let firstBuild = null;
             Groups.build.each(packCons(b => { if(b.block == nucleytor && b.team == this.team) { count++; if(firstBuild == null) firstBuild = b; } }));
-            if(count > 10 && this !== firstBuild){ Call.sendMessage("[red]Giới hạn: Chỉ được đặt tối đa 10 pháo Nucleytor!"); this.kill(); return; }
+            if(count > 10 && this !== firstBuild){ 
+                Call.sendMessage(isVN() ? "[red]Giới hạn: Chỉ được đặt tối đa 10 pháo Nucleytor!" : "[red]Limit: Maximum 10 Nucleytor turrets allowed!"); 
+                this.kill(); 
+                return; 
+            }
         }
 
         this.super$updateTile();
@@ -544,8 +630,7 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
         this.coreOpen = Mathf.approach(this.coreOpen, this.isAmplified ? 1.0 : 0.0, 0.08 * Time.delta);
         this.customRecoil = Mathf.approach(this.customRecoil, 0.0, 0.12 * Time.delta);
 
-        // XỬ LÝ 100% SÁT THƯƠNG CHUẨN (TRỪ THẲNG MÁU, XUYÊN KHEN/VELA)
-        if(this.activeBullets != null && this.activeBullets.length > 0){
+         if(this.activeBullets != null && this.activeBullets.length > 0){
             for(let i = this.activeBullets.length - 1; i >= 0; i--){
                 let entry = this.activeBullets[i];
                 if(entry == null) {
@@ -564,8 +649,7 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
                 let radius = (b.type != null ? b.type.hitSize : 8) + 4;
                 let bTeam = this.team;
 
-                // True Damage trừ trực tiếp vào lượng Máu của Unit
-                Groups.unit.intersect(b.x - radius, b.y - radius, radius * 2, radius * 2, cons(u => {
+                 Groups.unit.intersect(b.x - radius, b.y - radius, radius * 2, radius * 2, cons(u => {
                     if (u != null && u.isValid() && u.team != bTeam && Mathf.dst(b.x, b.y, u.x, u.y) <= radius + u.hitSize) {
                         u.health -= trueDmg;
                         Fx.hitBulletSmall.at(u.x, u.y);
@@ -575,8 +659,7 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
                     }
                 }));
 
-                // True Damage trừ trực tiếp vào lượng Máu của Công trình
-                if (b.isAdded()) {
+                 if (b.isAdded()) {
                     let tileBuild = Vars.world.build(World.toTile(b.x), World.toTile(b.y));
                     if (tileBuild != null && tileBuild.team != bTeam) {
                         tileBuild.health -= trueDmg;

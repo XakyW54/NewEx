@@ -158,14 +158,16 @@ Events.on(EventType.ContentInitEvent, () => {
             buildConfiguration(table){
                 table.clear(); table.row();
                 let ev = this.evolution;
+                let isEn = Core.settings.getString("locale").startsWith("en");
 
                 if(ev == 0){
                     table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => { 
-                        let dialog = extend(BaseDialog, "Trung tâm nâng cấp pháo Tyber", {}); 
+                        let dialogTitle = isEn ? "Tyber Turret Upgrade Center" : "Trung tâm nâng cấp pháo Tyber";
+                        let dialog = extend(BaseDialog, dialogTitle, {}); 
                         
                         let reqCell = dialog.cont.label(packProv(() => {
                             let core = this.team.core();
-                            if(core == null) return "[red]Không tìm thấy Lõi Đội![]";
+                            if(core == null) return isEn ? "[red]Team Core Not Found![]" : "[red]Không tìm thấy Lõi Đội![]";
                             
                             let currentTitanium = core.items.get(Items.titanium);
                             let currentSilicon = core.items.get(Items.silicon);
@@ -178,14 +180,25 @@ Events.on(EventType.ContentInitEvent, () => {
                             let silColor2 = currentSilicon >= reqMK2B.silicon ? "[green]" : "[red]";
                             let plaColor2 = currentPlastanium >= reqMK2B.plastanium ? "[green]" : "[red]";
 
-                            return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" + 
-                                   "[cyan]Nhánh MK2:[]\n" +
-                                   " • Titan: " + titColor1 + currentTitanium + "[] / " + reqMK2.titanium + "\n" +
-                                   " • Silicon: " + silColor1 + currentSilicon + "[] / " + reqMK2.silicon + "\n" +
-                                   "[purple]Nhánh MK2B:[]\n" +
-                                   " • Titan: " + titColor2 + currentTitanium + "[] / " + reqMK2B.titanium + "\n" +
-                                   " • Silicon: " + silColor2 + currentSilicon + "[] / " + reqMK2B.silicon + "\n" +
-                                   " • Nhựa: " + plaColor2 + currentPlastanium + "[] / " + reqMK2B.plastanium;
+                            if (isEn) {
+                                return "[yellow]CORE STORAGE REQUIREMENTS:[]\n" + 
+                                       "[cyan]MK2 Branch:[]\n" +
+                                       " • Titanium: " + titColor1 + currentTitanium + "[] / " + reqMK2.titanium + "\n" +
+                                       " • Silicon: " + silColor1 + currentSilicon + "[] / " + reqMK2.silicon + "\n" +
+                                       "[purple]MK2B Branch:[]\n" +
+                                       " • Titanium: " + titColor2 + currentTitanium + "[] / " + reqMK2B.titanium + "\n" +
+                                       " • Silicon: " + silColor2 + currentSilicon + "[] / " + reqMK2B.silicon + "\n" +
+                                       " • Plastanium: " + plaColor2 + currentPlastanium + "[] / " + reqMK2B.plastanium;
+                            } else {
+                                return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" + 
+                                       "[cyan]Nhánh MK2:[]\n" +
+                                       " • Titan: " + titColor1 + currentTitanium + "[] / " + reqMK2.titanium + "\n" +
+                                       " • Silicon: " + silColor1 + currentSilicon + "[] / " + reqMK2.silicon + "\n" +
+                                       "[purple]Nhánh MK2B:[]\n" +
+                                       " • Titan: " + titColor2 + currentTitanium + "[] / " + reqMK2B.titanium + "\n" +
+                                       " • Silicon: " + silColor2 + currentSilicon + "[] / " + reqMK2B.silicon + "\n" +
+                                       " • Nhựa: " + plaColor2 + currentPlastanium + "[] / " + reqMK2B.plastanium;
+                            }
                         }));
                         
                         reqCell.width(360).get().setWrap(true);
@@ -196,31 +209,43 @@ Events.on(EventType.ContentInitEvent, () => {
                         
                         let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                         b1.add("[cyan]===(MK2)===[]").row(); 
-                        let b1D = b1.add("Cải tiến hệ thống lên 5 nòng xả đạn luân phiên:\n" +
-                                 " [white]• Tầm bắn tổng lực gia tăng thêm [green]+50%[] đạt mốc [orange]930 pixel[].[]\n" +
-                                 " [white]• Tự động kích hoạt phóng Tên lửa tầm nhiệt hạng nhẹ tầm xa (Tốc độ: 3).[]\n" +
-                                 " [white]• Tên lửa va chạm giải phóng bão kích diện rộng lên tới [yellow]300 bán kính[] để quét sạch đám đông.[]\n" +
-                                 " [white]• Thời gian sạc xung nổ đại địa tại tâm rút xuống còn [pink]6.0 giây[].[]");
+                        let b1Text = isEn ? "Upgrades system to 5 alternating barrels:\n" +
+                                            " [white]• Total range increased by [green]+50%[] reaching [orange]930 pixels[].[]\n" +
+                                            " [white]• Auto-fires long-range light homing missiles (Speed: 3).[]\n" +
+                                            " [white]• Missile impacts unleash large AOE up to [yellow]300 radius[] crowd control.[]\n" +
+                                            " [white]• Center burst pulse recharge time reduced to [pink]6.0s[].[]"
+                                          : "Cải tiến hệ thống lên 5 nòng xả đạn luân phiên:\n" +
+                                            " [white]• Tầm bắn tổng lực gia tăng thêm [green]+50%[] đạt mốc [orange]930 pixel[].[]\n" +
+                                            " [white]• Tự động kích hoạt phóng Tên lửa tầm nhiệt hạng nhẹ tầm xa (Tốc độ: 3).[]\n" +
+                                            " [white]• Tên lửa va chạm giải phóng bão kích diện rộng lên tới [yellow]300 bán kính[] để quét sạch đám đông.[]\n" +
+                                            " [white]• Thời gian sạc xung nổ đại địa tại tâm rút xuống còn [pink]6.0 giây[].[]";
+                        let b1D = b1.add(b1Text);
                         b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
-                        b1.button("[green]KÍCH HOẠT MK2[]", packRun(() => { 
+                        b1.button(isEn ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => { 
                             let core = this.team.core(); 
                             if(core != null && core.items.get(Items.titanium) >= reqMK2.titanium && core.items.get(Items.silicon) >= reqMK2.silicon){ 
                                 core.items.remove(Items.titanium, reqMK2.titanium); 
                                 core.items.remove(Items.silicon, reqMK2.silicon);
                                 Fx.upgradeCore.at(this.x, this.y); 
                                 this.evolution = 1; dialog.hide(); this.deselect(); 
-                            } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho cấu hình MK2![]"); } 
+                            } else { Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2![]" : "[red]Không đủ tài nguyên cho cấu hình MK2![]"); } 
                         })).size(180, 38); 
 
                         let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                         b2.add("[purple]===(MK2B)===[]").row(); 
-                        let b2D = b2.add("Nén loạt bắn thành 1 nòng tâm bạo kích hội tụ:\n" +
-                                 " [white]• Tốc độ nạp đạn cốt lõi gia tăng thần tốc, giảm Reload xuống [green]40 tích tắc[] (Bắn nhanh gấp đôi).[]\n" +
-                                 " [white]• Khai hỏa đồng thời cặp tên lửa sườn xé gió siêu tốc (Tốc độ: 6) định kỳ mỗi [pink]3.0 giây[].[]\n" +
-                                 " [white]• Đòn nổ tập trung nén điểm gây [red]1350 sát thương bạo kích[] trong bán kính hẹp [yellow]30[].[]\n" +
-                                 " [white]• Xung nổ hỏa lực tại tâm nạp siêu tốc [pink]3.0 giây/lần[], giải phóng sóng chấn động tỏa hạt đỏ hạt nhân.[]");
+                        let b2Text = isEn ? "Compresses fire into a single concentrated core barrel:\n" +
+                                            " [white]• Core reload speed massively boosted to [green]40 ticks[] (2x Fire rate).[]\n" +
+                                            " [white]• Fires dual high-speed side missiles (Speed: 6) every [pink]3.0s[].[]\n" +
+                                            " [white]• Concentrated blast deals [red]1350 crit damage[] in small [yellow]30 radius[].[]\n" +
+                                            " [white]• Center burst pulse charges in [pink]3.0s[], releasing nuclear shockwaves.[]"
+                                          : "Nén loạt bắn thành 1 nòng tâm bạo kích hội tụ:\n" +
+                                            " [white]• Tốc độ nạp đạn cốt lõi gia tăng thần tốc, giảm Reload xuống [green]40 tích tắc[] (Bắn nhanh gấp đôi).[]\n" +
+                                            " [white]• Khai hỏa đồng thời cặp tên lửa sườn xé gió siêu tốc (Tốc độ: 6) định kỳ mỗi [pink]3.0 giây[].[]\n" +
+                                            " [white]• Đòn nổ tập trung nén điểm gây [red]1350 sát thương bạo kích[] trong bán kính hẹp [yellow]30[].[]\n" +
+                                            " [white]• Xung nổ hỏa lực tại tâm nạp siêu tốc [pink]3.0 giây/lần[], giải phóng sóng chấn động tỏa hạt đỏ hạt nhân.[]";
+                        let b2D = b2.add(b2Text);
                         b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
-                        b2.button("[orange]KÍCH HOẠT MK2B[]", packRun(() => { 
+                        b2.button(isEn ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => { 
                             let core = this.team.core(); 
                             if(core != null && core.items.get(Items.titanium) >= reqMK2B.titanium && 
                                core.items.get(Items.silicon) >= reqMK2B.silicon && 
@@ -232,7 +257,7 @@ Events.on(EventType.ContentInitEvent, () => {
                                 
                                 if (typeof Fx.bigShockwave !== 'undefined') Fx.bigShockwave.at(this.x, this.y); 
                                 this.evolution = 2; dialog.hide(); this.deselect(); 
-                            } else { Vars.ui.showInfo("[red]Không đủ tài nguyên cho cấu hình MK2B![]"); } 
+                            } else { Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2B![]" : "[red]Không đủ tài nguyên cho cấu hình MK2B![]"); } 
                         })).size(180, 38); 
 
                         branchesTable.add(b1).width(340); branchesTable.row(); 
@@ -243,39 +268,66 @@ Events.on(EventType.ContentInitEvent, () => {
                         scroll.setScrollingDisabled(true, false);
                         dialog.cont.add(scroll).maxHeight(400);
                         dialog.addCloseButton(); dialog.show(); 
-                    })).size(50, 40).tooltip("Nâng cấp cấu trúc tháp pháo Tyber"); 
+                    })).size(50, 40).tooltip(isEn ? "Upgrade Tyber turret structure" : "Nâng cấp cấu trúc tháp pháo Tyber"); 
                 } else {
                     table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
-                        Vars.ui.showInfo(this.evolution == 1 ? "[cyan]HỆ THỐNG ĐANG HOẠT ĐỘNG Ở CẤU HÌNH TYBER MK2![]" : "[orange]HỆ THỐNG ĐANG HOẠT ĐỘNG Ở CẤU HÌNH TYBER MK2B![]");
-                    })).size(50, 40).tooltip("Đã khóa nhánh tiến hóa");
+                        if (isEn) {
+                            Vars.ui.showInfo(this.evolution == 1 ? "[cyan]SYSTEM OPERATING AT TYBER MK2 CONFIG![]" : "[orange]SYSTEM OPERATING AT TYBER MK2B CONFIG![]");
+                        } else {
+                            Vars.ui.showInfo(this.evolution == 1 ? "[cyan]HỆ THỐNG ĐANG HOẠT ĐỘNG Ở CẤU HÌNH TYBER MK2![]" : "[orange]HỆ THỐNG ĐANG HOẠT ĐỘNG Ở CẤU HÌNH TYBER MK2B![]");
+                        }
+                    })).size(50, 40).tooltip(isEn ? "Evolution branch locked" : "Đã khóa nhánh tiến hóa");
                 }
 
                 table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-                    let title = " Thông số pháo Tyber: ";
+                    let title = isEn ? " Tyber Turret Stats: " : " Thông số pháo Tyber: ";
                     let descStr = "";
 
                     if (ev == 0 || ev == 1) {
                         title += (ev == 0) ? "[yellow](MK1)[]" : "[cyan](MK2)[]";
-                        descStr = (ev == 0) ? "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" : "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n";
-                        descStr += "[lightgray]Máu tháp pháo:[] [green]565 HP[]\n" +
-                                  "[lightgray]Tầm bắn hiệu dụng:[] " + (ev == 1 ? "[orange]930 pixel [lime](+50%)[]" : "[orange]620 pixel[]") + "\n\n" +
-                                  "[sky]⚡ CƠ CHẾ HỎA LỰC CHÍNH:[]\n" +
-                                  "• [lightgray]Hệ thống nòng súng:[] " + (ev == 1 ? "Cải tiến [cyan]5 nòng song song[] bắn luân phiên liên tục (Giãn cách: 4)." : "Mặc định gồm [yellow]3 nòng cốt lõi[] xả loạt đạn luân phiên (Giãn cách: 6).") + "\n" +
-                                  "• [lightgray]Đạn chính (Titanium):[] Triệu hồi Tên lửa hạng nặng Tyber vọt tầm xa.\n\n" +
-                                  "[lime]⚡ HỆ THỐNG PHỤ TRỢ TỰ ĐỘNG:[]\n" +
-                                  "• [lightgray]Tên lửa định vị phụ (Tốc độ 3):[] Phóng tầm nhiệt sườn định kỳ mỗi " + (ev == 1 ? "[green]4.0 giây[]" : "[yellow]5.0 giây[]") + ". Khi chạm nổ giải phóng phá hủy diện rộng cực đại lên tới [orange]300 bán kính[] (Sát thương nổ: 235).\n" +
-                                  "• [lightgray]Xung nổ đại địa:[] Kích nổ lõi nhiệt hạch tại tâm pháo định kỳ mỗi " + (ev == 1 ? "[green]6.0 giây[]" : "[yellow]7.0 giây[]") + ", gây [red]1700 Sát thương diện rộng[] trong phạm vi [lightgray]176 ô[] giúp chống tiếp cận.";
+                        if (isEn) {
+                            descStr = (ev == 0) ? "[gold]⚡ BASE STATS (MK1) ⚡[]\n" : "[cyan]⚡ BASE STATS (MK2) ⚡[]\n";
+                            descStr += "[lightgray]Turret Health:[] [green]565 HP[]\n" +
+                                      "[lightgray]Effective Range:[] " + (ev == 1 ? "[orange]930 pixels [lime](+50%)[]" : "[orange]620 pixels[]") + "\n\n" +
+                                      "[sky]⚡ MAIN FIREPOWER MECHANIC:[]\n" +
+                                      "• [lightgray]Barrel System:[] " + (ev == 1 ? "Upgraded [cyan]5 parallel barrels[] alternating fire (Delay: 4)." : "Default [yellow]3 core barrels[] alternating fire (Delay: 6).") + "\n" +
+                                      "• [lightgray]Main Ammo (Titanium):[] Summons long-range Tyber Heavy Missiles.\n\n" +
+                                      "[lime]⚡ AUTOMATIC SECONDARY SYSTEM:[]\n" +
+                                      "• [lightgray]Secondary Homing Missile (Speed 3):[] Launches side homing missiles every " + (ev == 1 ? "[green]4.0s[]" : "[yellow]5.0s[]") + ". Impact creates massive AOE explosion up to [orange]300 radius[] (Blast damage: 235).\n" +
+                                      "• [lightgray]Ground Blast Pulse:[] Detonates core fusion at center every " + (ev == 1 ? "[green]6.0s[]" : "[yellow]7.0s[]") + ", dealing [red]1700 Area Damage[] within [lightgray]176 tiles[] to deter close threats.";
+                        } else {
+                            descStr = (ev == 0) ? "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" : "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n";
+                            descStr += "[lightgray]Máu tháp pháo:[] [green]565 HP[]\n" +
+                                      "[lightgray]Tầm bắn hiệu dụng:[] " + (ev == 1 ? "[orange]930 pixel [lime](+50%)[]" : "[orange]620 pixel[]") + "\n\n" +
+                                      "[sky]⚡ CƠ CHẾ HỎA LỰC CHÍNH:[]\n" +
+                                      "• [lightgray]Hệ thống nòng súng:[] " + (ev == 1 ? "Cải tiến [cyan]5 nòng song song[] bắn luân phiên liên tục (Giãn cách: 4)." : "Mặc định gồm [yellow]3 nòng cốt lõi[] xả loạt đạn luân phiên (Giãn cách: 6).") + "\n" +
+                                      "• [lightgray]Đạn chính (Titanium):[] Triệu hồi Tên lửa hạng nặng Tyber vọt tầm xa.\n\n" +
+                                      "[lime]⚡ HỆ THỐNG PHỤ TRỢ TỰ ĐỘNG:[]\n" +
+                                      "• [lightgray]Tên lửa định vị phụ (Tốc độ 3):[] Phóng tầm nhiệt sườn định kỳ mỗi " + (ev == 1 ? "[green]4.0 giây[]" : "[yellow]5.0 giây[]") + ". Khi chạm nổ giải phóng phá hủy diện rộng cực đại lên tới [orange]300 bán kính[] (Sát thương nổ: 235).\n" +
+                                      "• [lightgray]Xung nổ đại địa:[] Kích nổ lõi nhiệt hạch tại tâm pháo định kỳ mỗi " + (ev == 1 ? "[green]6.0 giây[]" : "[yellow]7.0 giây[]") + ", gây [red]1700 Sát thương diện rộng[] trong phạm vi [lightgray]176 ô[] giúp chống tiếp cận.";
+                        }
                     } 
                     else if (ev == 2) {
                         title += "[purple](MK2B)[]";
-                        descStr = "[purple]⚡ THÔNG SỐ BIẾN THỂ (MK2B) ⚡[]\n" +
-                                  "[lightgray]Máu tháp pháo:[] [green]565 HP[]\n" +
-                                  "[lightgray]Tầm bắn hiệu dụng:[] [orange]620 pixel[]\n\n" +
-                                  "[purple]🔥 HỎA LỰC HỘI TỤ SIÊU TRỌNG:[]\n" +
-                                  "• [lightgray]Chế độ nòng tâm:[] Gom hỏa lực xả [red]1 viên bạo kích duy nhất[] tập trung, giảm Reload xuống chỉ còn [green]40 tích tắc[] (Tốc độ bắn nhanh gấp đôi).\n\n" +
-                                  "[lime]⚡ HỆ THỐNG PHỤ TRỢ TỰ ĐỘNG (MK2B):[]\n" +
-                                  "• [lightgray]Cặp tên lửa bạo kích phụ (Tốc độ 6):[] Khai hỏa đồng thời [yellow]2 tên lửa phụ dạt góc 12°[] liên tục mỗi [green]3.0 giây[]. Đòn nổ nén điểm tập trung gây [red]1350 sát thương bạo kích[] cực lớn trong phạm vi hẹp [lightgray]30[].\n" +
-                                  "• [lightgray]Xung nổ đại địa cấp tốc:[] Tốc độ nạp xung kích tại tâm rút ngắn kỷ lục xuống còn [green]3.0 giây/lần[], giải phóng sóng chấn động tỏa hạt đỏ hạt nhân, gây [red]1700 Sát thương[] diện rộng phạm vi [lightgray]176 ô[].";
+                        if (isEn) {
+                            descStr = "[purple]⚡ VARIANT STATS (MK2B) ⚡[]\n" +
+                                      "[lightgray]Turret Health:[] [green]565 HP[]\n" +
+                                      "[lightgray]Effective Range:[] [orange]620 pixels[]\n\n" +
+                                      "[purple]🔥 CONCENTRATED HEAVY FIREPOWER:[]\n" +
+                                      "• [lightgray]Core Barrel Mode:[] Focuses fire into [red]1 single crit bullet[], reducing reload to [green]40 ticks[] (Double fire rate).\n\n" +
+                                      "[lime]⚡ AUTOMATIC SECONDARY SYSTEM (MK2B):[]\n" +
+                                      "• [lightgray]Dual Crit Side Missiles (Speed 6):[] Fires [yellow]2 side missiles at 12° angle[] simultaneously every [green]3.0s[]. Concentrated hit deals massive [red]1350 crit damage[] in small [lightgray]30[] area.\n" +
+                                      "• [lightgray]Rapid Ground Pulse:[] Center burst recharge time reduced to [green]3.0s/pulse[], releasing nuclear shockwaves dealing [red]1700 Area Damage[] within [lightgray]176 tiles[].";
+                        } else {
+                            descStr = "[purple]⚡ THÔNG SỐ BIẾN THỂ (MK2B) ⚡[]\n" +
+                                      "[lightgray]Máu tháp pháo:[] [green]565 HP[]\n" +
+                                      "[lightgray]Tầm bắn hiệu dụng:[] [orange]620 pixel[]\n\n" +
+                                      "[purple]🔥 HỎA LỰC HỘI TỤ SIÊU TRỌNG:[]\n" +
+                                      "• [lightgray]Chế độ nòng tâm:[] Gom hỏa lực xả [red]1 viên bạo kích duy nhất[] tập trung, giảm Reload xuống chỉ còn [green]40 tích tắc[] (Tốc độ bắn nhanh gấp đôi).\n\n" +
+                                      "[lime]⚡ HỆ THỐNG PHỤ TRỢ TỰ ĐỘNG (MK2B):[]\n" +
+                                      "• [lightgray]Cặp tên lửa bạo kích phụ (Tốc độ 6):[] Khai hỏa đồng thời [yellow]2 tên lửa phụ dạt góc 12°[] liên tục mỗi [green]3.0 giây[]. Đòn nổ nén điểm tập trung gây [red]1350 sát thương bạo kích[] cực lớn trong phạm vi hẹp [lightgray]30[].\n" +
+                                      "• [lightgray]Xung nổ đại địa cấp tốc:[] Tốc độ nạp xung kích tại tâm rút ngắn kỷ lục xuống còn [green]3.0 giây/lần[], giải phóng sóng chấn động tỏa hạt đỏ hạt nhân, gây [red]1700 Sát thương[] diện rộng phạm vi [lightgray]176 ô[].";
+                        }
                     }
 
                     let dialog = extend(BaseDialog, title, {});
@@ -286,7 +338,7 @@ Events.on(EventType.ContentInitEvent, () => {
                     scroll.setScrollingDisabled(true, false);
                     dialog.cont.add(scroll).maxHeight(400);
                     dialog.addCloseButton(); dialog.show();
-                })).size(50, 40).tooltip("Xem chi tiết thông số trạng thái");
+                })).size(50, 40).tooltip(isEn ? "View detailed status stats" : "Xem chi tiết thông số trạng thái");
             }
         });
     }

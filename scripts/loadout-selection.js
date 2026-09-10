@@ -9,7 +9,7 @@
         "maxitoner", "xylaon", "lyvervon", "vendicum", "drone-launcher",
         "holyder", "plasanod", "tankani4k", "therdum", "lazash",
         "forstarsilum", "hitekalum", "reguilater", "lavunder", "blaw",
-        "dtg-soldern", "indeniter", "rangtaturs", "tyber"
+        "dtg-soldern", "indeniter", "rangtaturs", "tyber", "endyr"
     ];
 
     let turretList = new Seq();
@@ -20,27 +20,26 @@
         let mod = Vars.mods.getMod(CURRENT_MOD_NAME);
         
         if (mod != null && mod.root != null) {
-            let turretsDir = mod.root.child("content").child("blocks").child("turrets");
+            let blocksDir = mod.root.child("content").child("blocks");
             
-            if (turretsDir.exists() && turretsDir.isDirectory()) {
-                let files = turretsDir.list();
-                for (let i = 0; i < files.length; i++) {
-                    let file = files[i];
-                    let blockName = file.nameWithoutExtension();
-                    let fullName = CURRENT_MOD_NAME + "-" + blockName;
-                    
-                    let block = Vars.content.block(fullName);
-                    if (block != null) {
-                        turretList.add(block);
+            if (blocksDir.exists() && blocksDir.isDirectory()) {
+                blocksDir.walk(cons(file => {
+                    if (!file.isDirectory()) {
+                        let blockName = file.nameWithoutExtension();
+                        let fullName = CURRENT_MOD_NAME + "-" + blockName;
+                        let block = Vars.content.block(fullName);
+                        if (block != null && block instanceof Turret && !turretList.contains(block)) {
+                            turretList.add(block);
+                        }
                     }
-                }
+                }));
             }
         }
 
         if (turretList.isEmpty()) {
             fallbackTurrets.forEach(name => {
                 let block = Vars.content.block(CURRENT_MOD_NAME + "-" + name);
-                if (block != null) {
+                if (block != null && !turretList.contains(block)) {
                     turretList.add(block);
                 }
             });
@@ -91,7 +90,7 @@
         const contentTable = dialog.cont;
         contentTable.clear();
 
-        let titleLabel = contentTable.add("Vui lòng chọn đúng " + maxCount + " tháp pháo cho trận đấu này (Người chơi khác kết nối vào sẽ dùng chung lựa chọn này):").pad(8).get();
+        let titleLabel = contentTable.add("Vui lòng chọn tối đa " + maxCount + " tháp pháo cho trận đấu này:").pad(8).get();
         titleLabel.setWrap(true);
         titleLabel.setAlignment(Align.center);
         contentTable.row();
@@ -131,9 +130,11 @@
         scrollPane.setFadeScrollBars(false);
         contentTable.add(scrollPane).grow().row();
 
-        contentTable.button("Xác nhận & Đồng bộ", () => {
+        let buttonTable = new Table();
+
+        buttonTable.button("Xác nhận & Đồng bộ", () => {
             if (selectedTurrets.size !== maxCount) {
-                Vars.ui.showInfo("Bạn phải chọn đúng " + maxCount + " tháp pháo!");
+                Vars.ui.showInfo("Bạn cần chọn đúng " + maxCount + " tháp pháo!");
                 return;
             }
 
@@ -150,7 +151,25 @@
 
             applyTurretVisibility(allowedNames);
             dialog.hide();
-        }).size(180, 50).pad(10);
+        }).size(180, 50).pad(6);
+
+        buttonTable.button("Thoát vào trận", () => {
+            let savedArray = [];
+            let allowedNames = new Seq();
+            selectedTurrets.each(block => {
+                savedArray.push(block.name);
+                allowedNames.add(block.name);
+            });
+
+            if (Vars.state.rules != null && Vars.state.rules.tags != null) {
+                Vars.state.rules.tags.put(TAG_KEY, savedArray.join(","));
+            }
+
+            applyTurretVisibility(allowedNames);
+            dialog.hide();
+        }).size(160, 50).pad(6);
+
+        contentTable.add(buttonTable).pad(10);
 
         dialog.show();
     }

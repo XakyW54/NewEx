@@ -1,0 +1,24 @@
+type: "ItemTurret"
+name: "Endyr"
+description: "Tháp pháo điều khiển thủ công. Cho phép chỉ định vị trí oanh tạt trong tầm bắn, liên tục xả các đợt đạn năng lượng hoặc tia laser chiếu thẳng gây sát thương diện rộng."
+size: 3
+health: 1200
+reload: 12.0
+range: 380
+recoil: 3
+shake: 1.5
+
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+}
+
+requirements: [
+  copper/150
+  lead/120
+  silicon/80
+  titanium/50
+]
+
+category: "turret"
+research: "newex"

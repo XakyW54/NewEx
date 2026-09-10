@@ -179,11 +179,13 @@
 
         const dialog = new BaseDialog("Cài Đặt Mod Newex");
         const content = dialog.cont;
+        content.clear();
 
-        content.add("Số lượng tháp pháo chọn mỗi trận:").padBottom(10).row();
+         content.add("[accent]-- GIỚI HẠN THÁP PHÁO --[]").row();
+        content.add("Số lượng tháp pháo chọn mỗi trận:").padBottom(5).row();
 
         let currentLimit = getMaxSelectCount();
-        let textLabel = content.add(currentLimit >= turretList.size ? "Tất cả (Full)" : currentLimit.toString()).fontScale(1.4).get();
+        let textLabel = content.add(currentLimit >= turretList.size ? "Tất cả (Full)" : currentLimit.toString()).fontScale(1.3).get();
         content.row();
 
         let maxSliderVal = Math.max(1, turretList.size);
@@ -194,21 +196,53 @@
             } else {
                 textLabel.setText(val.toString());
             }
-        }).width(220).pad(10).get();
+        }).width(240).pad(8).get();
         content.row();
 
-        content.button("Lưu cài đặt", () => {
+         content.add("[accent]-- CHẾ ĐỘ HIỂN THỊ THANH MÁU (HP) --[]").padTop(10).row();
+
+        let currentHpStyle = Core.settings.getString("newex-hp-style", "show-hp");
+
+        let styleGroup = new ButtonGroup();
+        styleGroup.setMinCheckCount(0);
+
+        let tableHp = new Table();
+
+        let btnShowHp = new TextButton("Bật hp\n[gray](Ngang + số)[]", Styles.togglet);
+        let btnHp = new TextButton("Bật hp\n[gray](Dọc cổ điển)[]", Styles.togglet);
+        let btnOff = new TextButton("Tắt HP", Styles.togglet);
+
+        btnShowHp.getLabel().setFontScale(0.8);
+        btnHp.getLabel().setFontScale(0.8);
+        btnOff.getLabel().setFontScale(0.8);
+
+        styleGroup.add(btnShowHp);
+        styleGroup.add(btnHp);
+        styleGroup.add(btnOff);
+
+        if (currentHpStyle === "show-hp") btnShowHp.setChecked(true);
+        else if (currentHpStyle === "hp") btnHp.setChecked(true);
+        else btnOff.setChecked(true);
+
+        tableHp.add(btnShowHp).size(145, 54).pad(3);
+        tableHp.add(btnHp).size(145, 54).pad(3);
+        tableHp.add(btnOff).size(85, 54).pad(3);
+
+        content.add(tableHp).row();
+
+         content.button("Lưu Cài Đặt", () => {
             let newValue = Math.floor(slider.getValue());
             Core.settings.put("newex-max-turrets", java.lang.Integer(newValue));
-            
-            if (newValue >= turretList.size) {
-                Vars.ui.showInfo("Đã lưu: Mở toàn bộ tháp pháo.");
-            } else {
-                Vars.ui.showInfo("Đã lưu số lượng tháp pháo cần chọn là: " + newValue);
-            }
-            
+
+            let selectedStyle = "off";
+            if (btnShowHp.isChecked()) selectedStyle = "show-hp";
+            else if (btnHp.isChecked()) selectedStyle = "hp";
+
+            Core.settings.put("newex-hp-style", selectedStyle);
+
+            Vars.ui.showInfo("Đã lưu cài đặt Newex thành công!");
             dialog.hide();
-        }).size(160, 45).padTop(10);
+        }).size(170, 45).padTop(12);
 
         dialog.addCloseButton();
         dialog.show();

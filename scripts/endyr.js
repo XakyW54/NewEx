@@ -34,6 +34,18 @@ const laserBeamFx = new Effect(20, e => {
     Fill.circle(tx, ty, e.fout() * 5.0);
 });
 
+// Effect tạo đường laser nối từ tâm pháo đến điểm phát tia laser
+const mainToSpawnLaserFx = new Effect(20, e => {
+    if (!e.data) return;
+    let spawnX = e.data.x;
+    let spawnY = e.data.y;
+
+    Draw.color(Color.valueOf("fef08a"), Color.white, e.fin());
+    Lines.stroke(e.fout() * 3.0);
+    Lines.line(e.x, e.y, spawnX, spawnY);
+    Fill.circle(e.x, e.y, e.fout() * 5.0);
+});
+
 const executeFx = new Effect(25, e => {
     Draw.color(Pal.accent, Color.white, e.fin());
     Lines.stroke(e.fout() * 3.0);
@@ -108,6 +120,9 @@ Events.on(ContentInitEvent, () => {
             burstQueue: 0,
             burstDelayTimer: 0,
             burstIntervalTimer: 0,
+
+            // Biến quản lý góc xoay đầu pháo theo chiều kim đồng hồ
+            spinAngle: 0,
 
             equipSlots: [0, 0, 0, 0],
 
@@ -415,6 +430,9 @@ Events.on(ContentInitEvent, () => {
                 this.super$updateTile();
                 let dt = Time.delta;
 
+                // Xoay đầu pháo liên tục theo chiều kim đồng hồ
+                this.spinAngle = (this.spinAngle - 1.5 * dt) % 360;
+
                 if (this.selectingTarget) {
                     if (Core.input.keyTap(KeyCode.mouseLeft)) {
                         let worldVec = Core.camera.unproject(Core.input.mouse());
@@ -491,6 +509,10 @@ Events.on(ContentInitEvent, () => {
                         let spawnX = this.x + Angles.trnsx(randAngle, outerTurretRadius);
                         let spawnY = this.y + Angles.trnsy(randAngle, outerTurretRadius);
 
+                        // 1. Tia laser dẫn đường chiếu từ tâm pháo (this.x, this.y) đến vị trí tạo tia laser (spawnX, spawnY)
+                        mainToSpawnLaserFx.at(this.x, this.y, 0, Color.white, { x: spawnX, y: spawnY });
+
+                        // 2. Bắn tia laser chính từ vị trí đó vào kẻ địch
                         applyDamageWithStarlight(this, unit, subBeamDmg);
                         laserBeamFx.at(spawnX, spawnY, 0, Color.white, { x: unit.x, y: unit.y });
                         chargedExplosionFx.at(unit.x, unit.y, 0.2);
@@ -500,6 +522,9 @@ Events.on(ContentInitEvent, () => {
                             let extraAngle = Mathf.random(360.0);
                             let extraSpawnX = this.x + Angles.trnsx(extraAngle, outerTurretRadius);
                             let extraSpawnY = this.y + Angles.trnsy(extraAngle, outerTurretRadius);
+
+                            // Tia laser dẫn đường bổ sung từ tâm pháo tới điểm bắn thêm
+                            mainToSpawnLaserFx.at(this.x, this.y, 0, Color.white, { x: extraSpawnX, y: extraSpawnY });
 
                             applyDamageWithStarlight(this, unit, extraBeamDmg);
                             laserBeamFx.at(extraSpawnX, extraSpawnY, 0, Color.red, { x: unit.x, y: unit.y });
@@ -534,24 +559,32 @@ Events.on(ContentInitEvent, () => {
                 }
             },
 
-            // Hiển thị vòng phạm vi hoạt động & vùng chọn theo chuột khi chọn vị trí
+            // Hàm draw vẽ phần đầu pháo tự quay tròn theo chiều kim đồng hồ
+            // Đế pháo được tự động vẽ dựa theo thiết lập hjson (drawBase: true)
             draw() {
+                // Gọi super.draw() để Mindustry tự vẽ đế pháo cấu hình từ hjson
                 this.super$draw();
 
+                // Lấy sprite đầu pháo 'turretRegion' hoặc 'region'
+                let turretRegion = (this.block.turretRegion && this.block.turretRegion.found()) 
+                    ? this.block.turretRegion 
+                    : this.block.region;
+
+                // Vẽ đầu pháo đè lên đế và xoay theo chiều kim đồng hồ
+                Draw.rect(turretRegion, this.x, this.y, this.spinAngle);
+
+                // Giữ nguyên giao diện UI khi đang chọn vị trí mục tiêu bằng chuột
                 if (this.selectingTarget) {
                     let currentRange = this.range();
                     let zoneRadius = 30.0 * Vars.tilesize;
 
-                    // Hiển thị tầm bắn tối đa của pháo từ vị trí đặt pháo
                     Drawf.dashCircle(this.x, this.y, currentRange, Pal.accent);
 
-                    // Lấy vị trí con trỏ chuột trong thế giới game
                     let mouseWorld = Core.camera.unproject(Core.input.mouse());
                     let dist = Mathf.dst(this.x, this.y, mouseWorld.x, mouseWorld.y);
                     let isWithinRange = dist <= currentRange;
                     let targetColor = isWithinRange ? Pal.accent : Color.red;
 
-                    // Đường nối và vòng tròn vị trí mục tiêu theo vị trí chuột
                     Drawf.dashLine(targetColor, this.x, this.y, mouseWorld.x, mouseWorld.y);
                     Drawf.square(mouseWorld.x, mouseWorld.y, 6.0, 0, targetColor);
                     Drawf.dashCircle(mouseWorld.x, mouseWorld.y, zoneRadius, isWithinRange ? Color.valueOf("fef08a") : Color.red);

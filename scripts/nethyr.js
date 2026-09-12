@@ -7,41 +7,13 @@ const isEn = () => Core.settings.getString("locale").startsWith("en");
 
 const customNoneFx = new Effect(0, e => {});
 
-const chargedExplosionFx = new Effect(35, e => {
-    let purple = Color.valueOf("a855f7"); 
-    let lightYellow = Color.valueOf("fef08a"); 
-
-    Draw.color(purple, lightYellow, e.fin());
-    Lines.stroke(e.fout() * 4.0);
-    Lines.circle(e.x, e.y, e.finpow() * 20.0);
-
-    Lines.stroke(e.fout() * 2.0);
-    Lines.circle(e.x, e.y, e.finpow() * 12.0);
-
-    Draw.color(lightYellow);
-    Fill.circle(e.x, e.y, e.fout() * 8.0);
-});
-
-const laserBeamFx = new Effect(20, e => {
-    if (!e.data) return;
-    let tx = e.data.x;
-    let ty = e.data.y;
-
-    Draw.color(Color.valueOf("fef08a"), Color.valueOf("a855f7"), e.fin());
-    Lines.stroke(e.fout() * 3.5);
-    Lines.line(e.x, e.y, tx, ty);
-    Fill.circle(e.x, e.y, e.fout() * 4.0);
-    Fill.circle(tx, ty, e.fout() * 5.0);
-});
-
-const mainToSpawnLaserFx = new Effect(20, e => {
-    if (!e.data) return;
-    let spawnX = e.data.x;
-    let spawnY = e.data.y;
-
-    Draw.color(Color.valueOf("fef08a"), Color.white, e.fin());
-    Lines.stroke(e.fout() * 3.0);
-    Lines.line(e.x, e.y, spawnX, spawnY);
+// Hiệu ứng va chạm đạn vật lý
+const physicalImpactFx = new Effect(25, e => {
+    Draw.color(Pal.lightOrange, Color.gray, e.fin());
+    Lines.stroke(e.fout() * 2.5);
+    Lines.circle(e.x, e.y, e.finpow() * 16.0);
+    
+    Draw.color(Pal.accent);
     Fill.circle(e.x, e.y, e.fout() * 5.0);
 });
 
@@ -58,13 +30,18 @@ const executeFx = new Effect(25, e => {
 });
 
 function applyDamageWithStarlight(sourceBuild, targetUnit, baseDmg) {
+    if (targetUnit == null || !targetUnit.isValid() || targetUnit.dead) return;
+
     let critChance = sourceBuild.getCritChance ? sourceBuild.getCritChance() : 0.0;
     let critDmgMult = sourceBuild.getCritMultiplier ? sourceBuild.getCritMultiplier() : 1.0;
     let hasStarlightPassive = sourceBuild.hasStarlightPassive ? sourceBuild.hasStarlightPassive() : false;
 
-    let finalDmg = baseDmg;
-    let isCrit = Mathf.chance(critChance);
+    let hpRatioBeforeHit = targetUnit.health / targetUnit.maxHealth;
 
+    let randomMultiplier = Mathf.random(0.5, 2.0);
+    let finalDmg = baseDmg * randomMultiplier;
+
+    let isCrit = Mathf.chance(critChance);
     if (isCrit) {
         finalDmg *= critDmgMult;
     }
@@ -72,7 +49,7 @@ function applyDamageWithStarlight(sourceBuild, targetUnit, baseDmg) {
     targetUnit.damage(finalDmg);
 
     if (hasStarlightPassive && targetUnit.isValid() && !targetUnit.dead) {
-        if (targetUnit.health <= targetUnit.maxHealth * 0.05) {
+        if (hpRatioBeforeHit <= 0.05 || targetUnit.health <= targetUnit.maxHealth * 0.05) {
             targetUnit.kill();
             executeFx.at(targetUnit.x, targetUnit.y);
 
@@ -94,7 +71,7 @@ const dummyBullet = extend(BasicBulletType, {
 });
 
 Events.on(ContentInitEvent, () => {
-    const turretBlock = Vars.content.getByName(ContentType.block, "newex-endyr");
+    const turretBlock = Vars.content.getByName(ContentType.block, "newex-nethyr");
 
     if (turretBlock != null) {
         turretBlock.configurable = true;
@@ -118,17 +95,18 @@ Events.on(ContentInitEvent, () => {
             hasTargetSet: false,
             burstQueue: 0,
             burstDelayTimer: 0,
-            burstIntervalTimer: 0,
 
             spinAngle: 0,
-
             equipSlots: [0, 0, 0, 0],
+
+            orbitingBullets: [],
 
             created() {
                 this.super$created();
                 this.targetX = this.x;
                 this.targetY = this.y;
                 this.hasTargetSet = true;
+                this.orbitingBullets = [];
             },
 
             placed() {
@@ -136,22 +114,19 @@ Events.on(ContentInitEvent, () => {
                 this.targetX = this.x;
                 this.targetY = this.y;
                 this.hasTargetSet = true;
-            },
-
-            getSlotType(slotIdx) {
-                return this.equipSlots[slotIdx];
+                this.orbitingBullets = [];
             },
 
             getItemCount(type) {
                 let count = 0;
                 for (let i = 0; i < 4; i++) {
-                    if (this.equipSlots[i] === type) count++;
+                    if (Number(this.equipSlots[i]) === Number(type)) count++;
                 }
                 return count;
             },
 
             setSlotConfig(val) {
-                let mask = val;
+                let mask = Number(val);
                 for (let i = 0; i < 4; i++) {
                     this.equipSlots[i] = (mask >> (i * 3)) & 7;
                 }
@@ -160,7 +135,7 @@ Events.on(ContentInitEvent, () => {
             getSlotConfig() {
                 let mask = 0;
                 for (let i = 0; i < 4; i++) {
-                    mask |= ((this.equipSlots[i] & 7) << (i * 3));
+                    mask |= ((Number(this.equipSlots[i]) & 7) << (i * 3));
                 }
                 return mask;
             },
@@ -222,7 +197,7 @@ Events.on(ContentInitEvent, () => {
 
                 for (let i = 0; i < 4; i++) {
                     let slotIdx = i;
-                    let slotType = this.equipSlots[slotIdx];
+                    let slotType = Number(this.equipSlots[slotIdx]);
 
                     if (slotType === 0) {
                         slotsTable.button(Icon.add, Styles.cleari, 36, packRun(() => {
@@ -250,7 +225,7 @@ Events.on(ContentInitEvent, () => {
                                         this.deselect();
                                     }
                                 })).size(50, 50);
-                                itemRow.add(isEn() ? " Sallowyr (Bonus Laser 150% Base Dmg vs <80% HP) [" + countS + "]" : " Sallowyr (Bắn thêm laser 150% gốc khi <80% HP) [" + countS + "]").padLeft(8);
+                                itemRow.add(isEn() ? " Sallowyr (Bonus Projectile 150% Base Dmg vs <80% HP) [" + countS + "]" : " Sallowyr (Bắn thêm 1 đạn 150% gốc khi <80% HP) [" + countS + "]").padLeft(8);
                                 content.add(itemRow).left().row();
                             }
 
@@ -331,7 +306,7 @@ Events.on(ContentInitEvent, () => {
                 table.add(slotsTable);
 
                 table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-                    let title = isEn() ? " Endyr Turret Stats " : " Thông số pháo Endyr ";
+                    let title = isEn() ? " Nethyr Turret Stats " : " Thông số pháo Nethyr ";
                     let sCount = this.getItemCount(1);
                     let oCount = this.getItemCount(2);
                     let stCount = this.getItemCount(3);
@@ -355,7 +330,7 @@ Events.on(ContentInitEvent, () => {
                         "[lightgray]Crit Chance:[] [cyan]" + critChance + "%[]\n" +
                         "[lightgray]Crit Damage:[] [cyan]" + critDmgPercent + "%[]\n\n" +
                         "[sky]⚡ ITEM BUFF MECHANIC:[]\n" +
-                        "• [yellow]Sallowyr:[] Passive: Fires an extra laser beam dealing 150% base dmg when target HP < 80%.\n" +
+                        "• [yellow]Sallowyr:[] Passive: Fires 1 extra physical projectile dealing 150% base dmg when target HP < 80%.\n" +
                         "• [yellow]Obsidis:[] +10% Attack, +10% Speed, +50% Range.\n" +
                         "• [yellow]Starlight:[] +5% Crit Chance, +15% Crit Dmg, Execute targets below 5% HP (+1000 Copper)." :
                         "[gold]⚡ THÔNG SỐ TRANG BỊ THÁP PHÁO ⚡[]\n" +
@@ -368,7 +343,7 @@ Events.on(ContentInitEvent, () => {
                         "[lightgray]Tỉ lệ bạo kích:[] [cyan]" + critChance + "%[]\n" +
                         "[lightgray]Sát thương bạo kích:[] [cyan]" + critDmgPercent + "%[]\n\n" +
                         "[sky]⚡ CƠ CHẾ BUFF TRANG BỊ:[]\n" +
-                        "• [yellow]Sallowyr:[] Nội tại: Bắn thêm 1 tia laser 150% ST gốc khi máu mục tiêu < 80%.\n" +
+                        "• [yellow]Sallowyr:[] Nội tại: Bắn thêm 1 đạn vật lý 150% ST gốc khi máu mục tiêu < 80%.\n" +
                         "• [yellow]Obsidis:[] +10% TC/TĐ, +50% PB.\n" +
                         "• [yellow]Starlight:[] +5% Bạo, +15% ST Bạo, Kết liễu mục tiêu <5% HP (+1000 Đồng).";
 
@@ -398,9 +373,7 @@ Events.on(ContentInitEvent, () => {
 
                         this.hasTargetSet = true;
                         this.burstDelayTimer = Mathf.random(12, 120);
-                        this.burstQueue = 3;
-                        this.burstIntervalTimer = 0;
-
+                        this.burstQueue = 1;
                         Fx.select.at(destX, destY);
                     } else {
                         Fx.smeltsmoke.at(destX, destY);
@@ -432,9 +405,19 @@ Events.on(ContentInitEvent, () => {
 
                 if (this.selectingTarget) {
                     if (Core.input.keyTap(KeyCode.mouseLeft)) {
-                        let worldVec = Core.camera.unproject(Core.input.mouse());
-                        let tile = Vars.world.tileWorld(worldVec.x, worldVec.y);
-                        
+                        let rawWorld = Core.camera.unproject(Core.input.mouse());
+                        let currentRange = this.range();
+                        let dist = Mathf.dst(this.x, this.y, rawWorld.x, rawWorld.y);
+                        let finalX = rawWorld.x;
+                        let finalY = rawWorld.y;
+
+                        if (dist > currentRange) {
+                            let angle = Angles.angle(this.x, this.y, rawWorld.x, rawWorld.y);
+                            finalX = this.x + Angles.trnsx(angle, currentRange);
+                            finalY = this.y + Angles.trnsy(angle, currentRange);
+                        }
+
+                        let tile = Vars.world.tileWorld(finalX, finalY);
                         if (tile != null) {
                             this.configure(Point2.pack(tile.x, tile.y));
                         }
@@ -446,12 +429,19 @@ Events.on(ContentInitEvent, () => {
                 let adjustedDt = dt * speedMultiplier;
 
                 if (this.hasTargetSet) {
-                    if (this.burstQueue > 0) {
-                        if (this.burstDelayTimer > 0) {
-                            this.burstDelayTimer -= adjustedDt;
-                        } else {
-                            if (this.burstIntervalTimer > 0) {
-                                this.burstIntervalTimer -= adjustedDt;
+                    let zoneRadius = 30.0 * Vars.tilesize;
+                    let targetEnemyFound = false;
+
+                    Units.nearbyEnemies(this.team, this.targetX - zoneRadius, this.targetY - zoneRadius, zoneRadius * 2, zoneRadius * 2, packCons(u => {
+                        if (u.within(this.targetX, this.targetY, zoneRadius) && !u.dead) {
+                            targetEnemyFound = true;
+                        }
+                    }));
+
+                    if (targetEnemyFound) {
+                        if (this.burstQueue > 0) {
+                            if (this.burstDelayTimer > 0) {
+                                this.burstDelayTimer -= adjustedDt;
                             } else {
                                 if (this.isReadyToShoot()) {
                                     this.fireAtTarget();
@@ -461,70 +451,122 @@ Events.on(ContentInitEvent, () => {
                                     }
 
                                     this.burstQueue--;
-                                    this.burstIntervalTimer = 15;
                                 }
                             }
+                        } else {
+                            this.burstDelayTimer = (Mathf.random(12, 120)) / speedMultiplier;
+                            this.burstQueue = 1;
                         }
-                    } else {
-                        this.burstDelayTimer = Mathf.random(12, 120) / speedMultiplier;
-                        this.burstQueue = 3;
-                        this.burstIntervalTimer = 0;
+                    }
+                }
+
+                for (let i = this.orbitingBullets.length - 1; i >= 0; i--) {
+                    let b = this.orbitingBullets[i];
+                    b.timer += dt;
+
+                    let orbitDuration = 100.0;
+                    if (b.state === "orbit") {
+                        let progress = b.timer / orbitDuration;
+                        if (progress >= 1.0) {
+                            b.state = "launch";
+                            b.timer = 0;
+                            let distToTarget = Mathf.dst(b.x, b.y, this.targetX, this.targetY);
+                            let flySpeedPerTick = 12.0;
+                            b.maxLifetime = distToTarget / flySpeedPerTick;
+                            b.reachedInitialPoint = false;
+                        } else {
+                            let currentAngle = b.startAngle + progress * 720.0;
+                            let orbitRadius = progress * 24.0;
+                            b.x = this.x + Angles.trnsx(currentAngle, orbitRadius);
+                            b.y = this.y + Angles.trnsy(currentAngle, orbitRadius);
+                            b.rotation = currentAngle;
+                        }
+                    } else if (b.state === "launch") {
+                        let flySpeed = 12.0 * dt;
+
+                        if (!b.reachedInitialPoint) {
+                            if (Mathf.dst(b.x, b.y, this.targetX, this.targetY) <= flySpeed) {
+                                b.reachedInitialPoint = true;
+                                b.x = this.targetX;
+                                b.y = this.targetY;
+                            }
+                        }
+
+                        if (b.reachedInitialPoint) {
+                            if (b.targetUnit == null || !b.targetUnit.isValid() || b.targetUnit.dead) {
+                                let zoneRadius = 30.0 * Vars.tilesize;
+                                let chosenTarget = null;
+                                Units.nearbyEnemies(this.team, this.targetX - zoneRadius, this.targetY - zoneRadius, zoneRadius * 2, zoneRadius * 2, packCons(u => {
+                                    if (chosenTarget == null && u.within(this.targetX, this.targetY, zoneRadius) && !u.dead) {
+                                        chosenTarget = u;
+                                    }
+                                }));
+                                b.targetUnit = chosenTarget;
+                            }
+                        }
+
+                        let destX = (b.reachedInitialPoint && b.targetUnit != null && b.targetUnit.isValid() && !b.targetUnit.dead) ? b.targetUnit.x : this.targetX;
+                        let destY = (b.reachedInitialPoint && b.targetUnit != null && b.targetUnit.isValid() && !b.targetUnit.dead) ? b.targetUnit.y : this.targetY;
+
+                        if (!b.reachedInitialPoint || (b.targetUnit != null && b.targetUnit.isValid() && !b.targetUnit.dead)) {
+                            let angle = Angles.angle(b.x, b.y, destX, destY);
+                            b.x += Angles.trnsx(angle, flySpeed);
+                            b.y += Angles.trnsy(angle, flySpeed);
+                            b.rotation = angle;
+
+                            if (Mathf.chance(0.3)) {
+                                Fx.shootHeal.at(b.x, b.y, angle, Pal.accent);
+                            }
+                        }
+
+                        let hitEnemy = (b.reachedInitialPoint && b.targetUnit != null && b.targetUnit.isValid() && !b.targetUnit.dead && Mathf.dst(b.x, b.y, b.targetUnit.x, b.targetUnit.y) <= flySpeed);
+                        let reachedMaxLife = (b.timer >= b.maxLifetime && (b.targetUnit == null || !b.targetUnit.isValid() || b.targetUnit.dead));
+
+                        if (hitEnemy || reachedMaxLife) {
+                            physicalImpactFx.at(b.x, b.y);
+
+                            if (b.targetUnit != null && b.targetUnit.isValid() && !b.targetUnit.dead) {
+                                let enemyHpRatio = b.targetUnit.health / b.targetUnit.maxHealth;
+
+                                applyDamageWithStarlight(this, b.targetUnit, b.damage);
+
+                                if (b.isExtra === false && this.hasSallowyrPassive() && enemyHpRatio < 0.80) {
+                                    let extraDmg = 80.0 * 1.50 * this.getDamageMultiplier();
+                                    this.spawnOrbitBullet(b.startAngle + 180, extraDmg, true);
+                                }
+                            } else {
+                                Damage.damage(this.team, b.x, b.y, 16.0, b.damage);
+                            }
+
+                            this.orbitingBullets.splice(i, 1);
+                        }
                     }
                 }
             },
 
+            spawnOrbitBullet(startAngle, baseDmg, isExtra) {
+                this.orbitingBullets.push({
+                    x: this.x,
+                    y: this.y,
+                    startAngle: startAngle,
+                    timer: 0,
+                    state: "orbit",
+                    damage: baseDmg,
+                    isExtra: !!isExtra,
+                    targetUnit: null,
+                    reachedInitialPoint: false,
+                    maxLifetime: 180,
+                    rotation: startAngle
+                });
+            },
+
             fireAtTarget() {
-                let tx = this.targetX;
-                let ty = this.targetY;
-                let dmgMultiplier = this.getDamageMultiplier();
-                let hasSallowyr = this.hasSallowyrPassive();
-
-                let zoneRadius = 30.0 * Vars.tilesize;
                 let baseSubBeamDmg = 80.0;
-                let subBeamDmg = baseSubBeamDmg * dmgMultiplier;
-                let outerTurretRadius = 4.0 * Vars.tilesize;
+                let subBeamDmg = baseSubBeamDmg * this.getDamageMultiplier();
 
-                let targets = [];
-                Units.nearbyEnemies(this.team, tx - zoneRadius, ty - zoneRadius, zoneRadius * 2, zoneRadius * 2, packCons(unit => {
-                    if (unit.within(tx, ty, zoneRadius)) {
-                        targets.push(unit);
-                    }
-                }));
-
-                if (targets.length > 0) {
-                    for (let i = targets.length - 1; i > 0; i--) {
-                        let j = Math.floor(Mathf.random(i + 1));
-                        let temp = targets[i];
-                        targets[i] = targets[j];
-                        targets[j] = temp;
-                    }
-
-                    let maxTargets = Math.min(targets.length, 3);
-                    for (let i = 0; i < maxTargets; i++) {
-                        let unit = targets[i];
-                        let randAngle = Mathf.random(360.0);
-                        let spawnX = this.x + Angles.trnsx(randAngle, outerTurretRadius);
-                        let spawnY = this.y + Angles.trnsy(randAngle, outerTurretRadius);
-
-                        mainToSpawnLaserFx.at(this.x, this.y, 0, Color.white, { x: spawnX, y: spawnY });
-
-                        applyDamageWithStarlight(this, unit, subBeamDmg);
-                        laserBeamFx.at(spawnX, spawnY, 0, Color.white, { x: unit.x, y: unit.y });
-                        chargedExplosionFx.at(unit.x, unit.y, 0.2);
-
-                        if (hasSallowyr && unit.isValid() && !unit.dead && unit.health < unit.maxHealth * 0.80) {
-                            let extraBeamDmg = baseSubBeamDmg * 1.50;
-                            let extraAngle = Mathf.random(360.0);
-                            let extraSpawnX = this.x + Angles.trnsx(extraAngle, outerTurretRadius);
-                            let extraSpawnY = this.y + Angles.trnsy(extraAngle, outerTurretRadius);
-
-                            mainToSpawnLaserFx.at(this.x, this.y, 0, Color.white, { x: extraSpawnX, y: extraSpawnY });
-
-                            applyDamageWithStarlight(this, unit, extraBeamDmg);
-                            laserBeamFx.at(extraSpawnX, extraSpawnY, 0, Color.red, { x: unit.x, y: unit.y });
-                            chargedExplosionFx.at(unit.x, unit.y, 0.3);
-                        }
-                    }
+                for (let i = 0; i < 3; i++) {
+                    let angle = i * 120.0 + Mathf.random(360.0);
+                    this.spawnOrbitBullet(angle, subBeamDmg, false);
                 }
             },
 
@@ -543,11 +585,9 @@ Events.on(ContentInitEvent, () => {
                 this.super$drawConfigure();
                 let currentRange = this.range();
                 let zoneRadius = 30.0 * Vars.tilesize;
-                let outerTurretRadius = 4.0 * Vars.tilesize;
 
                 Draw.z(Layer.overlayUI);
                 Drawf.dashCircle(this.x, this.y, currentRange, Pal.accent);
-                Drawf.dashCircle(this.x, this.y, outerTurretRadius, Color.valueOf("a855f7"));
 
                 if (this.hasTargetSet && Mathf.dst(this.x, this.y, this.targetX, this.targetY) <= currentRange) {
                     Drawf.dashLine(Pal.accent, this.x, this.y, this.targetX, this.targetY);
@@ -565,6 +605,35 @@ Events.on(ContentInitEvent, () => {
                     : this.block.region;
 
                 Draw.rect(turretRegion, this.x, this.y, this.spinAngle);
+
+                let bulletRegion = Core.atlas.find("newex-nethyr-bullet");
+
+                for (let i = 0; i < this.orbitingBullets.length; i++) {
+                    let b = this.orbitingBullets[i];
+                    let rot = b.rotation || 0;
+
+                    Drawf.light(b.x, b.y, 50.0, Pal.accent, 0.8);
+
+                    if (bulletRegion.found()) {
+                        Draw.color(Pal.accent);
+                        Draw.rect(bulletRegion, b.x, b.y, bulletRegion.width * 1.25 / 4.0, bulletRegion.height * 1.25 / 4.0, rot - 90);
+                        Draw.color();
+
+                        Draw.rect(bulletRegion, b.x, b.y, rot - 90);
+                    } else {
+                        Draw.color(Pal.accent, Color.white, 0.4);
+                        Lines.stroke(3.0);
+                        Lines.poly(b.x, b.y, 5, 6.0, rot);
+
+                        Draw.color(Pal.accent);
+                        Lines.stroke(1.8);
+                        Lines.poly(b.x, b.y, 5, 5.0, rot);
+
+                        Draw.color(Color.white);
+                        Lines.stroke(1.2);
+                        Lines.poly(b.x, b.y, 5, 2.5, rot);
+                    }
+                }
 
                 if (this.selectingTarget) {
                     let currentRange = this.range();
@@ -597,7 +666,7 @@ Events.on(ContentInitEvent, () => {
 
 Events.run(Trigger.draw, () => {
     let build = Vars.control.input.block;
-    if (build != null && build.name === "newex-endyr") {
+    if (build != null && build.name === "newex-nethyr") {
         let tile = Vars.world.tileWorld(Core.input.mouseWorldX(), Core.input.mouseWorldY());
         if (tile != null) {
             let centerX = tile.drawx() + build.offset;

@@ -163,11 +163,12 @@ require("corvus");
 
 
 require("endyr");
+require("nethyr");
+require("overyr");
 
 
-
-
-
+require("korynd");
+require("crynex");
 
 
 

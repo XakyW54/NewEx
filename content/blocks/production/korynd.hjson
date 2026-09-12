@@ -1,0 +1,25 @@
+type: GenericCrafter
+name: "Korynd"
+description: "Khoan tự động khai thác Than từ lòng đất theo khoảng thời gian ngẫu nhiên. Khi tích đủ 2 Than, khối sẽ bắt đầu chế tạo Than chì với tốc độ cao."
+size: 3
+health: 320
+hasItems: true
+hasPower: true
+itemCapacity: 20
+
+craftTime: 30
+
+consumes: {
+  power: 1.5
+}
+
+outputItem: graphite/1
+
+requirements: [
+  copper/60
+  lead/50
+  silicon/30
+]
+
+category: crafting
+research: newex

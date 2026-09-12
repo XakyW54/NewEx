@@ -1,0 +1,39 @@
+type: GenericCrafter
+name: "Crynex"
+description: "Yêu cầu Nước và Titan để tạo ra Chất làm lạnh (Cryofluid). Khi chứa đủ 100 đơn vị, kích hoạt hệ thống phát xung điện từ giúp Buff hiệu suất nhà máy/máy khoan lân cận, tăng sát thương cho Pháo, và đặc biệt kích thích nhà máy Korynd lên 300% hiệu suất."
+size: 3
+health: 500
+hasItems: true
+hasLiquids: true
+hasPower: true
+
+itemCapacity: 40
+liquidCapacity: 120
+
+craftTime: 60
+
+consumes: {
+  power: 3.0
+  items: {
+    items: [
+      titanium/20
+    ]
+  }
+  liquids: {
+    liquids: [
+      water/100
+    ]
+  }
+}
+
+outputLiquid: cryofluid/100
+
+requirements: [
+  copper/120
+  lead/100
+  titanium/80
+  silicon/60
+]
+
+category: crafting
+research: korynd

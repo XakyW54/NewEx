@@ -2,7 +2,7 @@ Events.on(ContentInitEvent, () => {
     const wuexConveyor = Vars.content.block("newex-wuex-conveyor-mk1");
 
     if (wuexConveyor != null) {
- 
+
         const teleportEffect = new Effect(20, e => {
             Draw.color(Pal.heal, Color.white, e.fin());
             let rad = e.rotation * Mathf.degRad;
@@ -12,7 +12,6 @@ Events.on(ContentInitEvent, () => {
             Fill.poly(px, py, 3, 5 * e.fout(), e.rotation);
         });
 
- 
         const receiveEffect = new Effect(25, e => {
             Draw.color(Pal.heal, Color.green, e.fin());
             let radius = 14 * e.fout();
@@ -22,6 +21,32 @@ Events.on(ContentInitEvent, () => {
             let ry = e.y + Math.sin(rad) * radius;
             Fill.poly(rx, ry, 3, 4 * e.fout(), angle);
         });
+
+        // Hàm hỗ trợ vẽ đường vạch gạch di chuyển mượt
+        const drawMovingDashLine = (x1, y1, x2, y2, color) => {
+            let len = Mathf.dst(x1, y1, x2, y2);
+            let dashLen = 6;
+            let gapLen = 4;
+            let step = dashLen + gapLen;
+            let angle = Angles.angle(x1, y1, x2, y2);
+            let offset = (Time.time * 1.5) % step;
+
+            Draw.color(color);
+            Lines.stroke(1.5);
+
+            for (let d = offset; d < len; d += step) {
+                let startD = d;
+                let endD = Math.min(d + dashLen, len);
+                if (startD < len) {
+                    let sx = x1 + Angles.trnsx(angle, startD);
+                    let sy = y1 + Angles.trnsy(angle, startD);
+                    let ex = x1 + Angles.trnsx(angle, endD);
+                    let ey = y1 + Angles.trnsy(angle, endD);
+                    Lines.line(sx, sy, ex, ey);
+                }
+            }
+            Draw.reset();
+        };
 
         wuexConveyor.buildType = () => extend(StorageBlock.StorageBuild, wuexConveyor, {
             targetX: 0,
@@ -88,7 +113,6 @@ Events.on(ContentInitEvent, () => {
 
                 this.isTeleporting = false;
 
-        
                 let dst = Mathf.dst(this.x, this.y, this.targetX, this.targetY);
                 if (dst > 1 && dst <= this.maxRange) {
                     let sourceTile = Vars.world.tileWorld(this.targetX, this.targetY);
@@ -122,7 +146,6 @@ Events.on(ContentInitEvent, () => {
                     }
                 }
 
-            
                 if (this.items != null && this.items.total() > 0) {
                     this.dump();
                 }
@@ -138,6 +161,24 @@ Events.on(ContentInitEvent, () => {
                     Lines.poly(this.x, this.y, 3, 5 + Math.sin(Time.time / 5) * 2, Time.time * 3);
                     Draw.reset();
                 }
+
+                if (this.selectingTarget) {
+                    Draw.color(Pal.heal);
+                    Lines.stroke(1);
+                    Lines.circle(this.x, this.y, this.maxRange);
+
+                    let mouseWorld = Core.camera.unproject(Core.input.mouse());
+                    let isWithinRange = Mathf.dst(this.x, this.y, mouseWorld.x, mouseWorld.y) <= this.maxRange;
+                    let targetColor = isWithinRange ? Pal.heal : Color.red;
+
+                    // Đường vạch kẻ mượt từ chuột về khối (vì rút item từ vị trí chọn về khối)
+                    drawMovingDashLine(mouseWorld.x, mouseWorld.y, this.x, this.y, targetColor);
+
+                    let mouseTile = Vars.world.tileWorld(mouseWorld.x, mouseWorld.y);
+                    if (mouseTile != null) {
+                        Drawf.square(mouseTile.drawx(), mouseTile.drawy(), 4, 0, targetColor);
+                    }
+                }
             },
 
             drawConfigure() {
@@ -148,7 +189,9 @@ Events.on(ContentInitEvent, () => {
                 Lines.circle(this.x, this.y, this.maxRange);
 
                 if (Mathf.dst(this.x, this.y, this.targetX, this.targetY) <= this.maxRange && (this.targetX !== this.x || this.targetY !== this.y)) {
-                    Drawf.dashLine(Pal.heal, this.x, this.y, this.targetX, this.targetY);
+                    // Vẽ đường vạch chạy mượt từ Nguồn (Target) về Khối (This)
+                    drawMovingDashLine(this.targetX, this.targetY, this.x, this.y, Pal.heal);
+                    Drawf.square(this.targetX, this.targetY, 4, 0, Pal.heal);
                 }
                 Draw.reset();
             }
@@ -156,7 +199,6 @@ Events.on(ContentInitEvent, () => {
     }
 });
 
- 
 Events.run(Trigger.draw, () => {
     let build = Vars.control.input.block;
     if (build != null && build.name === "newex-wuex-conveyor-mk1") {
@@ -165,6 +207,7 @@ Events.run(Trigger.draw, () => {
             let centerX = tile.drawx() + build.offset;
             let centerY = tile.drawy() + build.offset;
             Drawf.dashCircle(centerX, centerY, 380, Pal.heal);
+            Drawf.square(centerX, centerY, 4, 0, Pal.heal);
         }
     }
 });

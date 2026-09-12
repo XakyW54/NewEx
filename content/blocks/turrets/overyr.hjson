@@ -1,0 +1,24 @@
+type: "ItemTurret"
+name: "Overyr"
+description: "Tháp pháo điều khiển chỉ định mục tiêu. Chiếu ngay 1 laser chỉ định và tạo hiệu ứng dấu '+' cảnh báo. Sau 1 giây (60 ticks), đồng thời giội một loạt đạn vật lý và tia laser từ trên trời xuống vị trí chỉ định."
+size: 3
+health: 1450
+reload: 120.0
+range: 760
+recoil: 0
+shake: 1.5
+
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+}
+
+requirements: [
+  copper/250
+  lead/200
+  silicon/150
+  titanium/100
+]
+
+category: "turret"
+research: "nethyr"

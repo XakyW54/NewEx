@@ -1,0 +1,28 @@
+type: Block
+name: "Sonicor"
+description: "Tháp pháo sóng âm phòng thủ không quân. Phát ra sóng âm cực mạnh đẩy lùi mục tiêu trên không trong vùng hình chữ nhật kéo dài từ pháo tới điểm chọn (Sát thương: 10).\n\nCó thể kết nối với [accent]DTG-Soldern[] để kích hoạt hệ thống bắn đạn đánh chặn siêu tốc phá hủy đạn kẻ thù trong vùng ảnh hưởng."
+size: 3
+health: 1200
+update: true
+solid: true
+configurable: true
+hasPower: true
+range: 320
+
+consumes: {
+  power: 6.5
+}
+
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+}
+
+category: turret
+research: newex
+requirements: [
+  copper/150
+  plastanium/120
+  silicon/280
+  phase-fabric/250
+]

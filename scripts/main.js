@@ -173,6 +173,20 @@ require("crynex");
 
 
 
+
+
+
+
+
+
+
+
+require("sonicor");
+
+
+
+
+
 require("loadout-selection");
 
 Events.on(ClientLoadEvent, e => {

@@ -58,7 +58,7 @@ const shockwaveFx = new Effect(30, e => {
 
 const reflecounum = extend(Turret, "reflecounum", {
     size: 3,
-    health: 2400,
+    health: 9200,
     hasPower: true,
     hasItems: true,
     configurable: true,

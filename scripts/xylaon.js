@@ -1,17 +1,53 @@
+const customCritEffect = new Effect(15, e => {
+    Draw.color(Color.yellow, Color.white, e.fin());
+    Lines.stroke(e.fout() * 1.5);
+    Lines.lineAngle(e.x, e.y, e.rotation, e.fout() * 12);
+});
+
+const customHitBullet = new Effect(14, e => {
+    Draw.color(Color.orange, Color.white, e.fin());
+    Lines.stroke(e.fout() * 2);
+    Lines.circle(e.x, e.y, e.fin() * 10);
+});
+
+const customHitLancer = new Effect(20, e => {
+    Draw.color(Color.valueOf("#b92eff"), Color.white, e.fin());
+    Lines.stroke(e.fout() * 2.5);
+    Lines.circle(e.x, e.y, e.fin() * 14);
+});
+
+const customUpgradeCore = new Effect(30, e => {
+    Draw.color(Color.cyan, Color.white, e.fin());
+    Lines.stroke(e.fout() * 3);
+    Lines.circle(e.x, e.y, e.fin() * 30);
+});
+
+const customMineHuge = new Effect(25, e => {
+    Draw.color(Color.gold, Color.white, e.fin());
+    Lines.stroke(e.fout() * 2.5);
+    Lines.circle(e.x, e.y, e.fin() * 20);
+});
+
+const customBigShockwave = new Effect(35, e => {
+    Draw.color(Color.purple, Color.white, e.fin());
+    Lines.stroke(e.fout() * 4);
+    Lines.circle(e.x, e.y, e.fin() * 45);
+});
+
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
 const isEn = () => Core.settings.getString("locale").startsWith("en");
 
- const reqMK2 = {
-    titanium: 2000,
-    silicon: 2000
+const reqMK2 = {
+    titanium: 400,
+    silicon: 400
 };
 
 const reqMK2B = {
-    titanium: 2500,
-    silicon: 2000,
-    plastanium: 1000
+    titanium: 500,
+    silicon: 400,
+    plastanium: 200
 };
 
 const overheatCapTable = [60 * 9, 60 * 8, 60 * 8];
@@ -20,9 +56,9 @@ const maxAsCapTable = [60 * 3, 60 * 3, 60 * 3];
 const asMultiplierTable = [3.5, 4.5, 9.99];          
 
 let xylaon = extend(ItemTurret, "xylaon", {});
-xylaon.health = 1600;
+xylaon.health = 2400;
 xylaon.size = 4;
-xylaon.reload = 30;
+xylaon.reload = 20;
 xylaon.range = 420;
 xylaon.configurable = true;
 xylaon.category = Category.turret;
@@ -32,14 +68,22 @@ xylaon.ammoPerShot = 1;
 xylaon.shots = 5;              
 xylaon.inaccuracy = 4.5;       
 
-const applyBulletUpgrades = (bullet) => {
+const setupBulletSpecs = (bullet) => {
     bullet.pierce = true;             
     bullet.pierceCap = 3;             
     bullet.homingPower = 0.04;        
     bullet.homingRange = 120;        
 };
 
-let xylaonBullet = extend(BasicBulletType, {});
+let xylaonBullet = extend(BasicBulletType, {
+    hitEntity(b, entity, health){
+        this.super$hitEntity(b, entity, health);
+        if(Mathf.chance(0.5)){
+            entity.damage(b.damage * 0.8);
+            customCritEffect.at(b.x, b.y, b.rotation());
+        }
+    }
+});
 xylaonBullet.speed = 12;
 xylaonBullet.damage = 20;
 xylaonBullet.lifetime = 35;
@@ -50,9 +94,38 @@ xylaonBullet.trailEffect = Fx.disperseTrail;
 xylaonBullet.trailColor = Color.valueOf("#66ccff");
 xylaonBullet.backColor = Color.valueOf("#88ddff");
 xylaonBullet.frontColor = Color.white;
-applyBulletUpgrades(xylaonBullet);
+setupBulletSpecs(xylaonBullet);
 
-let xylaonMK2Bullet = extend(BasicBulletType, {});
+let xylaonCopperBullet = extend(BasicBulletType, {
+    hitEntity(b, entity, health){
+        this.super$hitEntity(b, entity, health);
+        if(Mathf.chance(0.5)){
+            entity.damage(b.damage * 0.8);
+            customCritEffect.at(b.x, b.y, b.rotation());
+        }
+    }
+});
+xylaonCopperBullet.speed = 11;
+xylaonCopperBullet.damage = 12;
+xylaonCopperBullet.lifetime = 38;
+xylaonCopperBullet.width = 3.5;
+xylaonCopperBullet.height = 15;
+xylaonCopperBullet.trailChance = 0.15;
+xylaonCopperBullet.trailEffect = Fx.disperseTrail;
+xylaonCopperBullet.trailColor = Color.valueOf("#d99d73");
+xylaonCopperBullet.backColor = Color.valueOf("#ebaa78");
+xylaonCopperBullet.frontColor = Color.white;
+setupBulletSpecs(xylaonCopperBullet);
+
+let xylaonMK2Bullet = extend(BasicBulletType, {
+    hitEntity(b, entity, health){
+        this.super$hitEntity(b, entity, health);
+        if(Mathf.chance(0.5)){
+            entity.damage(b.damage * 0.8);
+            customCritEffect.at(b.x, b.y, b.rotation());
+        }
+    }
+});
 xylaonMK2Bullet.speed = 15.6; 
 xylaonMK2Bullet.damage = 26; 
 xylaonMK2Bullet.lifetime = 35; 
@@ -64,12 +137,20 @@ xylaonMK2Bullet.trailEffect = Fx.disperseTrail;
 xylaonMK2Bullet.trailColor = Color.valueOf("#ffaa66");
 xylaonMK2Bullet.backColor = Color.valueOf("#ffcc88"); 
 xylaonMK2Bullet.frontColor = Color.white; 
-xylaonMK2Bullet.despawnEffect = Fx.hitBulletColor;
+xylaonMK2Bullet.despawnEffect = customHitBullet;
 xylaonMK2Bullet.knockback = 1.3; 
 xylaonMK2Bullet.impact = true;
-applyBulletUpgrades(xylaonMK2Bullet);
+setupBulletSpecs(xylaonMK2Bullet);
 
-let xylaonMK2BBullet = extend(BasicBulletType, {});
+let xylaonMK2BBullet = extend(BasicBulletType, {
+    hitEntity(b, entity, health){
+        this.super$hitEntity(b, entity, health);
+        if(Mathf.chance(0.5)){
+            entity.damage(b.damage * 0.8);
+            customCritEffect.at(b.x, b.y, b.rotation());
+        }
+    }
+});
 xylaonMK2BBullet.speed = 16.5; 
 xylaonMK2BBullet.damage = 13; 
 xylaonMK2BBullet.lifetime = 18; 
@@ -81,13 +162,16 @@ xylaonMK2BBullet.trailEffect = Fx.disperseTrail;
 xylaonMK2BBullet.trailColor = Color.valueOf("#b92eff");
 xylaonMK2BBullet.backColor = Color.valueOf("#e09cf1"); 
 xylaonMK2BBullet.frontColor = Color.white; 
-xylaonMK2BBullet.despawnEffect = Fx.hitLancer;
+xylaonMK2BBullet.despawnEffect = customHitLancer;
 xylaonMK2BBullet.despawnColor = Color.valueOf("#aa2ee8");
 xylaonMK2BBullet.knockback = 0.8; 
 xylaonMK2BBullet.impact = true;
-applyBulletUpgrades(xylaonMK2BBullet);
+setupBulletSpecs(xylaonMK2BBullet);
 
-xylaon.ammo(Items.graphite, xylaonBullet);
+xylaon.ammo(
+    Items.graphite, xylaonBullet,
+    Items.copper, xylaonCopperBullet
+);
 
 xylaon.addBar("heat", e => new Bar(
     new Prov({
@@ -137,8 +221,8 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
     getTier(){ return this.tierState == null ? 0 : this.tierState; },
     setTier(val){ 
         this.tierState = val;
-        if(val == 1) this.health = 2080;
-        if(val == 2) this.health = 2500;
+        if(val == 1) this.health = 3120;
+        if(val == 2) this.health = 3750;
     },
 
     range(){
@@ -200,11 +284,11 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                 b1.add("[cyan]===(MK2)===[]").row();
                 let b1D = b1.add(isEn() ?
-                                 "[white]• Health: [green]+30%[] (2,080 HP)\n" +
+                                 "[white]• Health: [green]+30%[] (3,120 HP)\n" +
                                  "• Range: [green]+29.5%[] (544 px)\n" +
                                  "• Base Damage: [green]+30%[] (26 DMG/bullet)\n\n" +
                                  "[lightgray]Special Ability: Accelerated Semiconductor Cooling — Attack speed increases up to +450% based on heat buildup, while reducing cooldown lock time down to 3.0s.[]" :
-                                 "[white]• Máu cấu trúc: [green]+30%[] (2,080 HP)\n" +
+                                 "[white]• Máu cấu trúc: [green]+30%[] (3,120 HP)\n" +
                                  "• Tầm bắn: [green]+29.5%[] (544 px)\n" +
                                  "• sát thương gốc: [green]+30%[] (26 DMG/viên)\n\n" +
                                  "[lightgray]Kỹ năng đặc biệt: Tản Nhiệt Bán Dẫn Gia Tốc — Tốc độ xả đạn gia tăng tối đa +450% theo nhiệt tích lũy, đồng thời giảm thời gian khóa xả nhiệt xuống chỉ còn 3.0 giây.[]");
@@ -213,7 +297,7 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.titanium) >= reqMK2.titanium && core.items.get(Items.silicon) >= reqMK2.silicon){
                         core.items.remove(Items.titanium, reqMK2.titanium); core.items.remove(Items.silicon, reqMK2.silicon);
-                        Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
+                        customUpgradeCore.at(this.x, this.y); customMineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
                         this.setTier(1); dialog.hide(); this.deselect();
                     } else { Vars.ui.showInfo(isEn() ? "[red]Not enough resources for MK2![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                 })).size(180, 38);
@@ -221,11 +305,11 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                 b2.add("[purple]===(MK2B)===[]").row();
                 let b2D = b2.add(isEn() ?
-                                 "[white]• Health: [green]+56.25%[] (2,500 HP)\n" +
+                                 "[white]• Health: [green]+56.25%[] (3,750 HP)\n" +
                                  "• Range: [red]-30%[] (294 px)\n" +
                                  "• Base Damage: [red]-35%[] (13 DMG/bullet)\n\n" +
                                  "[lightgray]Special Ability: Cyclic Super-Impulse Burst — Accelerated fire rate hits a explosive +999%, automatically triggering ultra-fast 1.5s cooling to maintain relentless close-range firepower.[]" :
-                                 "[white]• Máu cấu trúc: [green]+56.25%[] (2,500 HP)\n" +
+                                 "[white]• Máu cấu trúc: [green]+56.25%[] (3,750 HP)\n" +
                                  "• Tầm bắn: [red]-30%[] (294 px)\n" +
                                  "• sát thương gốc: [red]-35%[] (13 DMG/viên)\n\n" +
                                  "[lightgray]Kỹ năng đặc biệt: Siêu Xung Bùng Nổ Chu Kỳ Tốc Độ — Tốc độ bắn gia tốc chạm mốc bùng nổ +999%, tự động kích hoạt xả nhiệt cực nhanh chỉ trong 1.5 giây để duy trì mật độ hỏa lực tầm gần liên tục.[]");
@@ -234,7 +318,7 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.titanium) >= reqMK2B.titanium && core.items.get(Items.silicon) >= reqMK2B.silicon && core.items.get(Items.plastanium) >= reqMK2B.plastanium){
                         core.items.remove(Items.titanium, reqMK2B.titanium); core.items.remove(Items.silicon, reqMK2B.silicon); core.items.remove(Items.plastanium, reqMK2B.plastanium);
-                        Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
+                        customBigShockwave.at(this.x, this.y); customMineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
                         this.setTier(2); dialog.hide(); this.deselect();
                     } else { Vars.ui.showInfo(isEn() ? "[red]Not enough resources for MK2B![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
                 })).size(180, 38);
@@ -263,21 +347,25 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                 title += isEn() ? "[yellow]Base Config (MK1)[]" : "[yellow]Cấu hình gốc (MK1)[]";
                 descStr = isEn() ? 
                           "[gold]⚡ BASE STATS (MK1) ⚡[]\n" +
-                          "[lightgray]Turret HP:[] [green]1,600[]\n" +
+                          "[lightgray]Turret HP:[] [green]2,400[]\n" +
                           "[gray]📐 Block Size:[] [white]4x4[]\n" +
                           "[lightgray]Effective Range:[] [orange]420 px[]\n" +
-                          "[lightgray]Base Damage:[] [white]20.00 DMG/bullet[]\n" +
-                          "[lightning] Base Fire Rate:[] [white]30.00 Firepower[]\n\n" +
+                          "[lightgray]Base Damage (Graphite):[] [white]20.00 DMG/bullet[]\n" +
+                          "[lightgray]Base Damage (Copper):[] [white]12.00 DMG/bullet[]\n" +
+                          "[gold]Critical Hit:[] [yellow]50% Chance / 180% Damage[]\n" +
+                          "[lightning] Base Reload Time:[] [white]20 ticks[]\n\n" +
                           "[sky]⚡ THERMAL MECHANIC:[]\n" +
                           "• [lightgray]Overheat:[] Each shot builds [red]1%[] heat. At [red]540 heat points[], the core enters protective overload.\n" +
                           "• [lightgray]System Lock:[] During overload, the turret completely stops for [yellow]4.0s[] to cool down.\n" +
                           "• [lightgray]Accelerated Fire (AS):[] Continuous firing up to [cyan]3.0s[] grants up to [cyan]+350%[] base attack speed." :
                           "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]1,600[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]2,400[]\n" +
                           "[gray]📐 Kích thước khối:[] [white]4x4[]\n" +
                           "Tầm bắn hiệu dụng:[] [orange]420 pixel[]\n" +
-                          "[lightgray]sát thương gốc:[] [white]20.00 DMG/viên[]\n" +
-                          "[lightning] Tốc độ bắn cơ bản:[] [white]30.00 hỏa lực[]\n\n" +
+                          "[lightgray]Sát thương gốc (Graphite):[] [white]20.00 DMG/viên[]\n" +
+                          "[lightgray]Sát thương gốc (Copper):[] [white]12.00 DMG/viên[]\n" +
+                          "[gold]Bạo kích:[] [yellow]50% Tỉ lệ / 180% Sát thương[]\n" +
+                          "[lightning] Thời gian hồi đạn gốc:[] [white]20 ticks[]\n\n" +
                           "[sky]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
                           "• [lightgray]Quá nhiệt (Overheat):[] Mỗi phát bắn tích lũy [red]1%[] nhiệt lượng. Khi đạt ngưỡng [red]540 điểm[] nhiệt, lõi sẽ rơi vào trạng thái quá tải bảo vệ.\n" +
                           "• [lightgray]Đóng băng hệ thống:[] Khi quá tải, pháo ngừng hoạt động hoàn toàn trong [yellow]4.0 giây[] để xả hoàn toàn thanh nhiệt.\n" +
@@ -287,20 +375,22 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                 title += isEn() ? "[cyan]STANDARD CONFIG (MK2)[]" : "[cyan]CẤU HÌNH TIÊU CHUẨN (MK2)[]";
                 descStr = isEn() ? 
                           "[cyan]⚡ BASE STATS (MK2) ⚡[]\n" +
-                          "[lightgray]Turret HP:[] [green]2,080 [lime](+30%)[]\n" +
+                          "[lightgray]Turret HP:[] [green]3,120 [lime](+30%)[]\n" +
                           "[gray]📐 Block Size:[] [white]4x4[]\n" +
                           "[lightgray]Effective Range:[] [orange]544 px [lime](+29.5%)[]\n" +
                           "[lightgray]Base Damage:[] [white]26.00 DMG/bullet [lime](+30%)[]\n" +
+                          "[gold]Critical Hit:[] [yellow]50% Chance / 180% Damage[]\n" +
                           "[lightning] Max Attack Speed:[] [yellow]Up to +450%[]\n\n" +
                           "[lime]⚡ THERMAL MECHANIC:[]\n" +
                           "• [lightgray]Enhanced Overheat:[] Max heat capacity set to [red]480 points[] (1% per shot).\n" +
                           "• [lightgray]Shorter Cooldown:[] Cooling system lock duration reduced to [yellow]3.0s[] [lime](-25%)].\n" +
                           "• [lightgray]Accelerated Fire (AS):[] Sustained firing for [cyan]3.0s[] reaches peak speed of [cyan]+450%[]." :
                           "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]2,080 [lime](+30%)[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]3,120 [lime](+30%)[]\n" +
                           "[gray]📐 Kích thước khối:[] [white]4x4[]\n" +
                           "Tầm bắn hiệu dụng:[] [orange]544 pixel [lime](+29.5%)[]\n" +
                           "[lightgray]sát thương gốc:[] [white]26.00 DMG/viên [lime](+30%)[]\n" +
+                          "[gold]Bạo kích:[] [yellow]50% Tỉ lệ / 180% Sát thương[]\n" +
                           "[lightning] Tốc độ bắn gia tốc:[] [yellow]Tối đa +450%[]\n\n" +
                           "[lime]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
                           "• [lightgray]Quá nhiệt nâng cao:[] Giới hạn chịu nhiệt tối đa đạt [red]480 điểm[] (Mỗi phát tích 1%).\n" +
@@ -311,20 +401,22 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                 title += isEn() ? "[purple]SUPER-IMPULSE VARIANT (MK2B)[]" : "[purple]BIẾN THỂ SIÊU XUNG (MK2B)[]";
                 descStr = isEn() ? 
                           "[purple]⚡ BASE STATS (MK2B) ⚡[]\n" +
-                          "[lightgray]Turret HP:[] [green]2,500 [lime](+56.25%)[]\n" +
+                          "[lightgray]Turret HP:[] [green]3,750 [lime](+56.25%)[]\n" +
                           "[gray]📐 Block Size:[] [white]4x4[]\n" +
                           "[lightgray]Effective Range:[] [red]294 px (-30%)[]\n" +
                           "[lightgray]Base Damage:[] [white]13.00 DMG/bullet [red](-35%)[]\n" +
+                          "[gold]Critical Hit:[] [yellow]50% Chance / 180% Damage[]\n" +
                           "[lightning] Burst Attack Speed:[] [pink]Up to +999%[]\n\n" +
                           "[purple]🔥 THERMAL MECHANIC:[]\n" +
                           "• [lightgray]Ultra-short Cycle:[] Heat cap of [red]480 points[], fire rate ramps up to an insane [red]+999%[].\n" +
                           "• [lightgray]Ultra Jet Cooling:[] System lock time to fully flush heat drops to only [green]1.5s[] [lime](-62.5%)].\n" +
                           "• [lightgray]Accelerated Fire (AS):[] Reaches extreme [pink]+999%[] speed after just [cyan]3.0s[] of continuous firing." :
                           "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]2,500 [lime](+56.25%)[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]3,750 [lime](+56.25%)[]\n" +
                           "[gray]📐 Kích thước khối:[] [white]4x4[]\n" +
                           "Tầm bắn hiệu dụng:[] [red]294 pixel (-30%)[]\n" +
                           "[lightgray]sát thương gốc:[] [white]13.00 DMG/viên [red](-35%)[]\n" +
+                          "[gold]Bạo kích:[] [yellow]50% Tỉ lệ / 180% Sát thương[]\n" +
                           "[lightning] Tốc độ bắn bùng nổ:[] [pink]Tối đa +999%[]\n\n" +
                           "[purple]🔥 CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
                           "• [lightgray]Chu kỳ siêu ngắn:[] Giới hạn chịu nhiệt [red]480 điểm[], xả đạn bùng nổ chạm ngưỡng kinh hoàng [red]+999%[] tốc độ bắn.\n" +
@@ -376,7 +468,7 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
         this.thermalstate += overheatCap / 100;
         if(this.thermalstate >= overheatCap) this.thermalstate = -cooldownCap;
         
-        let activeBullet = xylaonBullet;
+        let activeBullet = type;
         if(tier == 1) activeBullet = xylaonMK2Bullet;
         if(tier == 2) activeBullet = xylaonMK2BBullet;
         

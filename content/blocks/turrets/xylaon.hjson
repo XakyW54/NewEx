@@ -215,7 +215,7 @@ drawer: {
 requirements: [
   copper/40
   lead/17
-  graphite/150
+  graphite/50
 ]
 category: turret
 research: dor

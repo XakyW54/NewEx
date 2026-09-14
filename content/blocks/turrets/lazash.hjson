@@ -25,7 +25,6 @@ shootType: {
 drawer: {
   type: DrawTurret
   basePrefix: reinforced-
-
 }
 
 researchCostMultiplier: 0.1

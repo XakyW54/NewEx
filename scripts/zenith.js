@@ -100,8 +100,7 @@ function initCustomWeapons(){
     let w3 = new Weapon("blaster-gun");
     w3.baseRotation = -35;
     w3.shootCone = 360;
-    w3.recoil = 0.15;
-    w3.top = true;
+     w3.top = true;
     w3.x = 4;
     w3.y = -2;
     w3.velocityRnd = 0.2;
@@ -132,8 +131,7 @@ function initCustomWeapons(){
     w4.layerOffset = -0.01;
     w4.rotate = false;
     w4.mirror = false;
-    w4.recoil = 1;
-    w4.shootY = 5;
+     w4.shootY = 5;
     w4.top = false;
     w4.inaccuracy = 10;
 
@@ -156,15 +154,14 @@ function initCustomWeapons(){
     w4.bullet = b4;
     customModWeapons.add(w4);
 
-    // --- VŨ KHÍ 5: BẮN ĐẠN XOAY PHỨC TẠP (Vũ khí đuôi xả khói + Frag) ---
+    // --- VŨ KHÍ 5: BẮN ĐẠN XOAY PHỨC TẠP ---
     let w5 = new Weapon();
     w5.layerOffset = 0.0001;
     w5.rotateSpeed = 0;
     w5.rotate = false;
     w5.baseRotation = 180;
     w5.reload = 9;
-    w5.recoil = 0;
-    w5.shake = 0;
+     w5.shake = 0;
     w5.shootY = -9;
     w5.x = 0;
     w5.top = true;
@@ -175,7 +172,6 @@ function initCustomWeapons(){
     w5.minShootVelocity = 0.8;
     w5.alwaysShooting = true;
 
-    // Cấp Đạn C: Đạn con khóa mục tiêu xa 320
     let subFrag = new BasicBulletType(16, 60);
     subFrag.height = 12;
     subFrag.width = 7;
@@ -189,7 +185,6 @@ function initCustomWeapons(){
     subFrag.trailLength = 9;
     subFrag.trailWidth = 1.5;
 
-    // Cấp Đạn B: Đạn xoay tròn (circleShooter)
     let midFrag = new BasicBulletType(6, 60);
     midFrag.height = 12;
     midFrag.width = 7;
@@ -203,6 +198,7 @@ function initCustomWeapons(){
     midFrag.frontColor = Color.valueOf("ffffff");
     midFrag.backColor = Color.valueOf("fa9238");
     midFrag.hitColor = Color.valueOf("fa9238");
+    midFrag.hitColor = Color.valueOf("fa9238");
     midFrag.trailColor = Color.valueOf("fa9238");
     midFrag.trailLength = 9;
     midFrag.trailWidth = 1.5;
@@ -210,7 +206,6 @@ function initCustomWeapons(){
     midFrag.fragVelocityMin = 1;
     midFrag.fragBullet = subFrag;
 
-    // Cấp Đạn A: Đạn chính xả ra từ đít
     let mainBullet = new BasicBulletType(2.0, 60);
     mainBullet.height = 12;
     mainBullet.width = 7;
@@ -237,15 +232,27 @@ Events.on(ClientLoadEvent, () => {
     let zenith = UnitTypes.zenith;
     if(!zenith) return;
 
-    // Lưu lại bộ vũ khí tên lửa chuẩn Vanilla
     if(zenith.weapons != null && !zenith.weapons.isEmpty()){
         zenith.weapons.each(w => {
             vanillaWeapons.add(w.copy());
         });
     }
 
-    // Khởi tạo bộ vũ khí Mod JS
     initCustomWeapons();
+
+    // Nạp đầy đủ Texture Region cho từng Vũ khí và tất cả các tầng Đạn (Chính & Frag)[cite: 20]
+    customModWeapons.each(w => {
+        w.load();
+        if(w.bullet){
+            w.bullet.load();
+            if(w.bullet.fragBullet){
+                w.bullet.fragBullet.load();
+                if(w.bullet.fragBullet.fragBullet){
+                    w.bullet.fragBullet.fragBullet.load();
+                }
+            }
+        }
+    });
 });
 
 // 3. CHUYỂN ĐỔI BẬT / TẮT KHI VÀO BẢN ĐỒ
@@ -257,10 +264,8 @@ Events.on(WorldLoadEvent, () => {
 
     zenith.weapons.clear();
     if(isEnabled){
-        // --- BẬT: Nạp dàn 5 vũ khí Mod JS ---
         zenith.weapons.addAll(customModWeapons);
     } else {
-        // --- TẮT: Trả về tên lửa Vanilla ---
         zenith.weapons.addAll(vanillaWeapons);
     }
 });

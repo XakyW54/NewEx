@@ -5,87 +5,18 @@ let mapHasAntikei = false;
 
 // Lưu hướng di chuyển dạng Angle cho từng ô
 let flowDirectionMap = new java.util.HashMap();
-// Lưu hướng đi cuối cùng của Unit bằng ID để tránh lỗi customData
+// Lưu hướng đi cuối cùng của Unit bằng ID
 let unitLastAngles = new java.util.HashMap();
+
+// Biến hỗ trợ nhận biết kéo chuột trong Editor
+let lastEditorTile = null;
 
 Events.on(ContentInitEvent, () => {
     antikeiBlock = Vars.content.block("newex-antikei");
 });
 
-function getClosestPlayerCoreDynamic(x, y) {
-    let teamData = Vars.state.teams.get(Vars.player.team());
-    if (teamData != null && teamData.cores != null && !teamData.cores.isEmpty()) {
-        return Geometry.findClosest(x, y, teamData.cores);
-    }
-    return null;
-}
-
 function getTileKey(x, y) {
     return (x & 0xFFFF) | ((y & 0xFFFF) << 16);
-}
-
-// Cập nhật đường đi tự động ban đầu
-function updateDynamicFlowMapMultiCore() {
-    if (!antikeiBlock || Vars.world == null) return;
-
-    let teamData = Vars.state.teams.get(Vars.player.team());
-    if (teamData == null || teamData.cores == null || teamData.cores.isEmpty()) {
-        flowDirectionMap.clear();
-        return;
-    }
-
-    let newDirMap = new java.util.HashMap();
-    let queue = [];
-    let visited = new java.util.HashSet();
-    let dirs = [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [-1, -1], [1, -1], [-1, 1]];
-
-    teamData.cores.each(core => {
-        let coreTileX = core.tileX();
-        let coreTileY = core.tileY();
-        let radius = 12;
-
-        for (let dx = -radius; dx <= radius; dx++) {
-            for (let dy = -radius; dy <= radius; dy++) {
-                let tile = Vars.world.tile(coreTileX + dx, coreTileY + dy);
-                if (tile != null && tile.floor() === antikeiBlock) {
-                    let key = getTileKey(tile.x, tile.y);
-                    if (!visited.contains(key)) {
-                        visited.add(key);
-                        queue.push(tile);
-                    }
-                }
-            }
-        }
-    });
-
-    while (queue.length > 0) {
-        let current = queue.shift();
-
-        for (let i = 0; i < dirs.length; i++) {
-            let nx = current.x + dirs[i][0];
-            let ny = current.y + dirs[i][1];
-            let neighborKey = getTileKey(nx, ny);
-
-            let neighbor = Vars.world.tile(nx, ny);
-            if (neighbor != null && neighbor.floor() === antikeiBlock && !visited.contains(neighborKey)) {
-                visited.add(neighborKey);
-                
-                // Mũi tên mặc định hướng về Lõi
-                let angle = Angles.angle(neighbor.worldx(), neighbor.worldy(), current.worldx(), current.worldy());
-                
-                // Nếu người chơi đã xoay hướng mũi tên thủ công trước đó thì giữ nguyên
-                if (flowDirectionMap.containsKey(neighborKey)) {
-                    newDirMap.put(neighborKey, flowDirectionMap.get(neighborKey));
-                } else {
-                    newDirMap.put(neighborKey, java.lang.Float.valueOf(angle));
-                }
-                
-                queue.push(neighbor);
-            }
-        }
-    }
-
-    flowDirectionMap = newDirMap;
 }
 
 function checkMapHasAntikei() {
@@ -143,26 +74,50 @@ Events.on(WorldLoadEvent, () => {
     checkMapHasAntikei();
     if (mapHasAntikei) {
         clearOresOnAntikei();
-        updateDynamicFlowMapMultiCore();
-    }
-});
-
-Events.on(BlockDestroyEvent, event => {
-    if (!mapHasAntikei) return;
-    if (event.tile != null && event.tile.build != null && event.tile.build.team == Vars.player.team()) {
-        updateDynamicFlowMapMultiCore();
     }
 });
 
 Events.run(Trigger.update, () => {
-    if (!antikeiBlock || Vars.state.isMenu() || !mapHasAntikei) return;
+    if (!antikeiBlock || Vars.state.isMenu()) return;
+
+    // KÉO CHUỘT TRONG MAP EDITOR ĐỂ ĐẶT HƯỚNG MŨI TÊN TỰ DO (KHÔNG DỰA VÀO LÕI)
+    if (Vars.state.isEditor() && (Core.input.keyDown(KeyCode.mouseLeft) || Core.input.isTouched())) {
+        let mouseVec = Core.camera.unproject(Core.input.mouse());
+        let currentTile = Vars.world.tileWorld(mouseVec.x, mouseVec.y);
+
+        if (currentTile != null && currentTile.floor() === antikeiBlock) {
+            if (lastEditorTile != null && (lastEditorTile.x !== currentTile.x || lastEditorTile.y !== currentTile.y)) {
+                // Hướng đi đúng theo đường kéo của tay người dùng
+                let dragAngle = Angles.angle(lastEditorTile.worldx(), lastEditorTile.worldy(), currentTile.worldx(), currentTile.worldy());
+                
+                let lastKey = getTileKey(lastEditorTile.x, lastEditorTile.y);
+                let currentKey = getTileKey(currentTile.x, currentTile.y);
+
+                flowDirectionMap.put(lastKey, java.lang.Float.valueOf(dragAngle));
+                flowDirectionMap.put(currentKey, java.lang.Float.valueOf(dragAngle));
+                mapHasAntikei = true;
+            } else {
+                // Nếu chỉ click 1 điểm mà chưa có hướng, mặc định cho hướng góc 0 độ
+                let currentKey = getTileKey(currentTile.x, currentTile.y);
+                if (!flowDirectionMap.containsKey(currentKey)) {
+                    flowDirectionMap.put(currentKey, java.lang.Float.valueOf(0));
+                }
+            }
+            lastEditorTile = currentTile;
+        } else {
+            lastEditorTile = null;
+        }
+    } else {
+        lastEditorTile = null;
+    }
+
+    if (!mapHasAntikei) return;
 
     if (Vars.state.isPlaying() && Time.time % 60 == 0) {
         clearOresOnAntikei();
-        updateDynamicFlowMapMultiCore();
     }
 
-    // NHẤP CHUỘT GIỮA ĐỂ XOAY HƯỚNG MŨI TÊN CHỈ ĐƯỜNG
+    // NHẤP CHUỘT GIỮA ĐỂ XOAY HƯỚNG MŨI TÊN THỦ CÔNG
     if (Core.input.keyTap(KeyCode.mouseMiddle)) {
         let mouseVec = Core.camera.unproject(Core.input.mouse());
         let tile = Vars.world.tileWorld(mouseVec.x, mouseVec.y);
@@ -171,7 +126,6 @@ Events.run(Trigger.update, () => {
             let key = getTileKey(tile.x, tile.y);
             let currentAngle = flowDirectionMap.containsKey(key) ? Number(flowDirectionMap.get(key)) : 0;
             
-            // Xoay 90 độ mỗi lần nhấp chuột giữa
             let nextAngle = (currentAngle + 90) % 360;
             flowDirectionMap.put(key, java.lang.Float.valueOf(nextAngle));
         }
@@ -182,12 +136,6 @@ Events.run(Trigger.update, () => {
     Groups.unit.each(unit => {
         if (unit == null || !unit.isAdded() || unit.isFlying() || unit.team == playerTeam) return;
 
-        let liveCore = getClosestPlayerCoreDynamic(unit.x, unit.y);
-        if (liveCore == null) {
-            unit.vel.set(0, 0);
-            return;
-        }
-
         let currentTile = unit.tileOn();
         if (currentTile == null) return;
 
@@ -195,19 +143,19 @@ Events.run(Trigger.update, () => {
         let uTileY = unit.tileY();
         let moveAngle = 0;
 
-        // BÀN CỜ DẪN ĐƯỜNG
+        // DI CHUYỂN HOÀN TOÀN THEO HƯỚNG BẠN ĐÃ TẠO
         if (currentTile.floor() === antikeiBlock) {
             let currentKey = getTileKey(uTileX, uTileY);
             let arrowDir = flowDirectionMap.get(currentKey);
 
             if (arrowDir != null) {
                 moveAngle = Number(arrowDir);
-                unitLastAngles.put(unit.id, java.lang.Float.valueOf(moveAngle)); // Lưu hướng vào Map an toàn
+                unitLastAngles.put(unit.id, java.lang.Float.valueOf(moveAngle));
             } else {
-                moveAngle = unit.angleTo(liveCore.x, liveCore.y);
+                moveAngle = unit.rotation;
             }
         } else {
-            // KHI RỜI KHỎI KHỐI: Đi thẳng theo hướng mũi tên cuối cùng
+            // RỜI KHỎI Ô ANTIKEI: Giữ nguyên hướng đi thẳng cũ
             if (unitLastAngles.containsKey(unit.id)) {
                 moveAngle = Number(unitLastAngles.get(unit.id));
 
@@ -219,8 +167,6 @@ Events.run(Trigger.update, () => {
                     let nearest = findNearestAntikeiFast(unit);
                     if (nearest != null) {
                         moveAngle = unit.angleTo(nearest.worldx(), nearest.worldy());
-                    } else {
-                        moveAngle = unit.angleTo(liveCore.x, liveCore.y);
                     }
                 }
             } else {
@@ -228,15 +174,13 @@ Events.run(Trigger.update, () => {
                 if (nearest != null) {
                     moveAngle = unit.angleTo(nearest.worldx(), nearest.worldy());
                 } else {
-                    moveAngle = unit.angleTo(liveCore.x, liveCore.y);
+                    moveAngle = unit.rotation;
                 }
             }
         }
 
-        // Áp dụng vận tốc
         unit.vel.trns(moveAngle, unit.speed());
 
-        // Ngắm và bắn khi di chuyển
         let range = unit.range ? unit.range() : 100;
         let target = Units.closestTarget(unit.team, unit.x, unit.y, range);
 
@@ -252,9 +196,9 @@ Events.run(Trigger.update, () => {
     });
 });
 
-// VẼ MŨI TÊN CHỈ ĐƯỜNG TRÊN Ô ANTIKEI
+// VẼ MŨI TÊN CHỈ ĐƯỜNG TRÊN CÁC Ô ANTIKEI
 Events.run(Trigger.draw, () => {
-    if (!mapHasAntikei || !antikeiBlock || Vars.state.isMenu()) return;
+    if (!antikeiBlock || Vars.state.isMenu()) return;
 
     Draw.z(Layer.floor + 0.1);
     
@@ -276,7 +220,6 @@ Events.run(Trigger.draw, () => {
             Draw.color(Pal.accent);
             Lines.stroke(1.2);
             
-            // Vẽ thân và đầu mũi tên
             Lines.lineAngleCenter(worldX, worldY, angle, 4);
             Lines.lineAngle(worldX + Angles.trnsx(angle, 2), worldY + Angles.trnsy(angle, 2), angle + 135, 2);
             Lines.lineAngle(worldX + Angles.trnsx(angle, 2), worldY + Angles.trnsy(angle, 2), angle - 135, 2);

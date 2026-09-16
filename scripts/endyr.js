@@ -4,8 +4,16 @@ const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
 const isEn = () => Core.settings.getString("locale").startsWith("en");
-
 const customNoneFx = new Effect(0, e => {});
+
+const ItemStats = {
+    "copper": { damage: 0.05, desc: isEn() ? "[stat]+5% Dmg[]" : "[stat]+5% Sát thương[]" },
+    "silicon": { reload: 0.05, desc: isEn() ? "[stat]+5% Fire Rate[]" : "[stat]+5% Tốc độ bắn[]" },
+    "thorium": { range: 0.05, desc: isEn() ? "[stat]+5% Range[]" : "[stat]+5% Tầm bắn[]" },
+    "sallowyr": { desc: isEn() ? "[stat]Fires an extra laser beam (150% Base Dmg) when target HP <80%[]" : "[stat]Bắn thêm 1 tia laser (150% ST gốc) khi máu <80%[]" },
+    "obsidis": { damage: 0.10, reload: 0.10, range: 0.50, desc: isEn() ? "[stat]+10% Dmg/FireRate, +50% Range[]" : "[stat]+10% TC/TĐ, +50% Tầm bắn[]" },
+    "starlight": { critChance: 0.05, critMultiplier: 0.15, desc: isEn() ? "[stat]+5% Crit | +15% CritDmg\nExecute targets below 5% HP (+1000 Copper)[]" : "[stat]+5% Bạo | +15% ST Bạo\nKết liễu mục tiêu <5% HP (+1000 Đồng)[]" }
+};
 
 const chargedExplosionFx = new Effect(35, e => {
     let purple = Color.valueOf("a855f7"); 
@@ -58,14 +66,14 @@ const executeFx = new Effect(25, e => {
 });
 
 function applyDamageWithStarlight(sourceBuild, targetUnit, baseDmg) {
+    if (targetUnit == null || !targetUnit.isValid() || targetUnit.dead) return;
+
     let critChance = sourceBuild.getCritChance ? sourceBuild.getCritChance() : 0.0;
     let critDmgMult = sourceBuild.getCritMultiplier ? sourceBuild.getCritMultiplier() : 1.0;
     let hasStarlightPassive = sourceBuild.hasStarlightPassive ? sourceBuild.hasStarlightPassive() : false;
 
     let finalDmg = baseDmg;
-    let isCrit = Mathf.chance(critChance);
-
-    if (isCrit) {
+    if (Mathf.chance(critChance)) {
         finalDmg *= critDmgMult;
     }
 
@@ -92,6 +100,140 @@ const dummyBullet = extend(BasicBulletType, {
     speed: 0, lifetime: 0, damage: 0, collides: false,
     hitEffect: customNoneFx, despawnEffect: customNoneFx
 });
+
+const UniversalItemUI = {
+    buildSlotUI(table, build, onConfigChange) {
+        let slotsTable = new Table();
+        slotsTable.background(Styles.black6);
+        slotsTable.margin(6);
+
+        let maxSlots = 4;
+        let core = build.team.core();
+
+        for (let i = 0; i < maxSlots; i++) {
+            let slotIndex = i;
+            let slotType = Number(build.equipSlots[slotIndex]);
+            let currentItem = this.getItemBySlotType(slotType);
+
+            let slotBtn = slotsTable.button(cons(b => {
+                b.clearChildren();
+                if (currentItem != null) {
+                    b.image(currentItem.uiIcon).size(28);
+                } else {
+                    b.add("[gray]+[]").fontScale(1.2);
+                }
+            }), Styles.defaultb, () => {
+                if (currentItem != null) {
+                    let currentCore = build.team.core();
+                    if (currentCore != null) currentCore.items.add(currentItem, 1);
+                    build.equipSlots[slotIndex] = 0;
+                    if (onConfigChange) onConfigChange();
+                } else {
+                    this.showItemSelectionDialog(build, (selectedType) => {
+                        build.equipSlots[slotIndex] = selectedType;
+                        if (onConfigChange) onConfigChange();
+                    });
+                }
+            }).size(44).pad(3).get();
+
+            if (currentItem != null) {
+                let cleanName = currentItem.name.replace("newex-", "");
+                let buffText = ItemStats[cleanName] ? ItemStats[cleanName].desc : "[gray]Không có chỉ số buff[]";
+                let tooltipText = "[accent]" + currentItem.localizedName + "[]\n" + buffText;
+                let hasItemInCore = core != null && core.items.has(currentItem, 1);
+                
+                slotBtn.addListener(new Tooltip(cons(t => {
+                    t.background(Styles.black6).margin(8);
+                    t.add(tooltipText);
+                })));
+                slotBtn.setColor(hasItemInCore ? Pal.heal : Pal.remove);
+            } else {
+                slotBtn.addListener(new Tooltip(cons(t => {
+                    t.background(Styles.black6).margin(8);
+                    t.add(isEn() ? "[gray]Click to equip item[]" : "[gray]Nhấp để gắn trang bị[]");
+                })));
+                slotBtn.setColor(Color.white);
+            }
+        }
+        table.add(slotsTable);
+    },
+
+    getItemBySlotType(type) {
+        if (type === 1) return Vars.content.getByName(ContentType.item, "copper") || Items.copper;
+        if (type === 2) return Vars.content.getByName(ContentType.item, "silicon") || Items.silicon;
+        if (type === 3) return Vars.content.getByName(ContentType.item, "thorium") || Items.thorium;
+        if (type === 4) return Vars.content.getByName(ContentType.item, "newex-sallowyr");
+        if (type === 5) return Vars.content.getByName(ContentType.item, "newex-obsidis");
+        if (type === 6) return Vars.content.getByName(ContentType.item, "newex-starlight");
+        return null;
+    },
+
+    getSlotTypeByItem(item) {
+        if (!item) return 0;
+        let cleanName = item.name.replace("newex-", "");
+        if (cleanName === "copper") return 1;
+        if (cleanName === "silicon") return 2;
+        if (cleanName === "thorium") return 3;
+        if (cleanName === "sallowyr") return 4;
+        if (cleanName === "obsidis") return 5;
+        if (cleanName === "starlight") return 6;
+        return 0;
+    },
+
+    showItemSelectionDialog(build, onSelect) {
+        let dialog = new BaseDialog(isEn() ? "Equipment Storage" : "Kho Trang Bị");
+        dialog.addCloseButton();
+        let dialogWidth = Math.min(Core.graphics.getWidth() * 0.85, 360);
+
+        dialog.cont.pane(p => {
+            p.margin(6);
+            let core = build.team.core();
+            let validItems = ["copper", "silicon", "thorium", "newex-sallowyr", "newex-obsidis", "newex-starlight"];
+
+            validItems.forEach(itemName => {
+                let item = Vars.content.getByName(ContentType.item, itemName);
+                if (!item) return;
+
+                let cleanName = item.name.replace("newex-", "");
+                let statData = ItemStats[cleanName];
+                if (!statData) return;
+
+                let count = core != null ? core.items.get(item) : 0;
+                let hasItem = count > 0;
+
+                let btn = new Button(Styles.cleart);
+                btn.margin(8);
+                btn.add(new Image(item.uiIcon)).size(32).padRight(10).top();
+
+                let infoTable = new Table();
+                infoTable.left();
+                let statusColor = hasItem ? "[#84f491]" : "[#ff795e]";
+                
+                let titleLabel = infoTable.add(item.localizedName + " " + statusColor + "(Lõi: " + count + ")[]").left().growX().get();
+                titleLabel.setWrap(true);
+                infoTable.row();
+                
+                let buffLabel = infoTable.add(statData.desc).fontScale(0.85).left().growX().get();
+                buffLabel.setWrap(true);
+
+                btn.add(infoTable).growX().width(dialogWidth - 80);
+                btn.setColor(hasItem ? Pal.heal : Pal.remove);
+
+                btn.clicked(() => {
+                    if (hasItem) {
+                        core.items.remove(item, 1);
+                        onSelect(this.getSlotTypeByItem(item));
+                        dialog.hide();
+                    } else {
+                        Vars.ui.showInfoToast(isEn() ? "[red]Core missing this item![]" : "[red]Lõi không có nguyên liệu này![]", 2);
+                    }
+                });
+                p.add(btn).width(dialogWidth - 20).pad(3).row();
+            });
+        }).scrollX(false).grow();
+        dialog.show();
+    }
+};
 
 Events.on(ContentInitEvent, () => {
     const turretBlock = Vars.content.getByName(ContentType.block, "newex-endyr");
@@ -121,7 +263,6 @@ Events.on(ContentInitEvent, () => {
             burstIntervalTimer: 0,
 
             spinAngle: 0,
-
             equipSlots: [0, 0, 0, 0],
 
             created() {
@@ -138,20 +279,18 @@ Events.on(ContentInitEvent, () => {
                 this.hasTargetSet = true;
             },
 
-            getSlotType(slotIdx) {
-                return this.equipSlots[slotIdx];
-            },
+            getSlotType(slotIdx) { return Number(this.equipSlots[slotIdx]); },
 
             getItemCount(type) {
                 let count = 0;
                 for (let i = 0; i < 4; i++) {
-                    if (this.equipSlots[i] === type) count++;
+                    if (Number(this.equipSlots[i]) === Number(type)) count++;
                 }
                 return count;
             },
 
             setSlotConfig(val) {
-                let mask = val;
+                let mask = Number(val);
                 for (let i = 0; i < 4; i++) {
                     this.equipSlots[i] = (mask >> (i * 3)) & 7;
                 }
@@ -160,182 +299,36 @@ Events.on(ContentInitEvent, () => {
             getSlotConfig() {
                 let mask = 0;
                 for (let i = 0; i < 4; i++) {
-                    mask |= ((this.equipSlots[i] & 7) << (i * 3));
+                    mask |= ((Number(this.equipSlots[i]) & 7) << (i * 3));
                 }
                 return mask;
             },
 
-            getDamageMultiplier() {
-                let oCount = this.getItemCount(2);
-                return 1.0 + (oCount * 0.10);
-            },
-
-            getSpeedMultiplier() {
-                let oCount = this.getItemCount(2);
-                return 1.0 + (oCount * 0.10);
-            },
-
-            getRangeMultiplier() {
-                let oCount = this.getItemCount(2);
-                return 1.0 + (oCount * 0.50);
-            },
-
-            getCritChance() {
-                let stCount = this.getItemCount(3);
-                return stCount * 0.05;
-            },
-
-            getCritMultiplier() {
-                let stCount = this.getItemCount(3);
-                return 1.0 + (stCount * 0.15);
-            },
-
-            hasStarlightPassive() {
-                return this.getItemCount(3) > 0;
-            },
-
-            hasSallowyrPassive() {
-                return this.getItemCount(1) > 0;
-            },
-
-            range() {
-                return this.baseMaxRange * this.getRangeMultiplier();
-            },
-
-            updateShooting() {
-                this.reloadCounter = 0;
-            },
+            getDamageMultiplier() { return 1.0 + (this.getItemCount(1) * 0.05) + (this.getItemCount(5) * 0.10); },
+            getSpeedMultiplier() { return 1.0 + (this.getItemCount(2) * 0.05) + (this.getItemCount(5) * 0.10); },
+            getRangeMultiplier() { return 1.0 + (this.getItemCount(3) * 0.05) + (this.getItemCount(5) * 0.50); },
+            getCritChance() { return this.getItemCount(6) * 0.05; },
+            getCritMultiplier() { return 1.0 + (this.getItemCount(6) * 0.15); },
+            hasStarlightPassive() { return this.getItemCount(6) > 0; },
+            hasSallowyrPassive() { return this.getItemCount(4) > 0; },
+            range() { return this.baseMaxRange * this.getRangeMultiplier(); },
+            updateShooting() { this.reloadCounter = 0; },
 
             buildConfiguration(table) {
-                table.clear(); table.row();
+                table.clear();
 
-                table.button(Icon.commandRally, Styles.cleari, 40, packRun(() => {
+                let topRowTable = new Table();
+                topRowTable.background(Styles.black6);
+                topRowTable.margin(0);
+
+                topRowTable.button(Icon.commandRally, Styles.cleari, 40, packRun(() => {
                     this.deselect();
                     this.selectingTarget = true;
                     Vars.ui.hudfrag.showToast(isEn() ? "Click target location within range!" : "Nhấp vào vị trí mục tiêu bắn trong tầm hoạt động!");
                 })).size(50, 40).tooltip(isEn() ? "Set Target Location" : "Đặt vị trí mục tiêu bắn");
 
-                let slotsTable = new Table();
-                let itemSallowyr = Vars.content.getByName(ContentType.item, "newex-sallowyr");
-                let itemObsidis = Vars.content.getByName(ContentType.item, "newex-obsidis");
-                let itemStarlight = Vars.content.getByName(ContentType.item, "newex-starlight");
-
-                for (let i = 0; i < 4; i++) {
-                    let slotIdx = i;
-                    let slotType = this.equipSlots[slotIdx];
-
-                    if (slotType === 0) {
-                        slotsTable.button(Icon.add, Styles.cleari, 36, packRun(() => {
-                            let core = this.team.core();
-                            if (core == null) {
-                                Vars.ui.showInfo(isEn() ? "[red]Team Core Not Found![]" : "[red]Không tìm thấy Lõi Đội![]");
-                                return;
-                            }
-
-                            let dialog = extend(BaseDialog, isEn() ? "Select Equipment" : "Chọn vật phẩm trang bị", {});
-                            let content = new Table();
-                            let foundAny = false;
-
-                            if (itemSallowyr != null && core.items.get(itemSallowyr) > 0) {
-                                foundAny = true;
-                                let countS = core.items.get(itemSallowyr);
-                                let itemRow = new Table();
-                                itemRow.button(new TextureRegionDrawable(itemSallowyr.uiIcon), Styles.cleari, 40, packRun(() => {
-                                    if (core.items.get(itemSallowyr) > 0) {
-                                        core.items.remove(itemSallowyr, 1);
-                                        this.equipSlots[slotIdx] = 1;
-                                        this.configure(java.lang.Integer(this.getSlotConfig()));
-                                        Fx.mineHuge.at(this.x, this.y);
-                                        dialog.hide();
-                                        this.deselect();
-                                    }
-                                })).size(50, 50);
-                                itemRow.add(isEn() ? " Sallowyr (Bonus Laser 150% Base Dmg vs <80% HP) [" + countS + "]" : " Sallowyr (Bắn thêm laser 150% gốc khi <80% HP) [" + countS + "]").padLeft(8);
-                                content.add(itemRow).left().row();
-                            }
-
-                            if (itemObsidis != null && core.items.get(itemObsidis) > 0) {
-                                foundAny = true;
-                                let countO = core.items.get(itemObsidis);
-                                let itemRow = new Table();
-                                itemRow.button(new TextureRegionDrawable(itemObsidis.uiIcon), Styles.cleari, 40, packRun(() => {
-                                    if (core.items.get(itemObsidis) > 0) {
-                                        core.items.remove(itemObsidis, 1);
-                                        this.equipSlots[slotIdx] = 2;
-                                        this.configure(java.lang.Integer(this.getSlotConfig()));
-                                        Fx.mineHuge.at(this.x, this.y);
-                                        dialog.hide();
-                                        this.deselect();
-                                    }
-                                })).size(50, 50);
-                                itemRow.add(isEn() ? " Obsidis (+10% Dmg/Spd, +50% Range) [" + countO + "]" : " Obsidis (+10% TC/TĐ, +50% PB) [" + countO + "]").padLeft(8);
-                                content.add(itemRow).left().row();
-                            }
-
-                            if (itemStarlight != null && core.items.get(itemStarlight) > 0) {
-                                foundAny = true;
-                                let countSt = core.items.get(itemStarlight);
-                                let itemRow = new Table();
-                                itemRow.button(new TextureRegionDrawable(itemStarlight.uiIcon), Styles.cleari, 40, packRun(() => {
-                                    if (core.items.get(itemStarlight) > 0) {
-                                        core.items.remove(itemStarlight, 1);
-                                        this.equipSlots[slotIdx] = 3;
-                                        this.configure(java.lang.Integer(this.getSlotConfig()));
-                                        Fx.mineHuge.at(this.x, this.y);
-                                        dialog.hide();
-                                        this.deselect();
-                                    }
-                                })).size(50, 50);
-                                itemRow.add(isEn() ? " Starlight (+5% Crit, +15% CritDmg, Execute <5% HP) [" + countSt + "]" : " Starlight (+5% Bạo, +15% ST Bạo, Kết liễu <5% HP) [" + countSt + "]").padLeft(8);
-                                content.add(itemRow).left().row();
-                            }
-
-                            if (!foundAny) {
-                                content.add(isEn() ? "[red]No valid items in Core![]" : "[red]Không có vật phẩm phù hợp trong Lõi![]");
-                            }
-
-                            dialog.cont.add(content);
-                            dialog.addCloseButton();
-                            dialog.show();
-                        })).size(40, 40).tooltip(isEn() ? "Empty Slot (Click to Equip)" : "Ô Trống (Nhấp để trang bị)");
-                    } else {
-                        let equippedItem = (slotType === 1) ? itemSallowyr : ((slotType === 2) ? itemObsidis : itemStarlight);
-                        let itemIconDrawable = (equippedItem != null) ? new TextureRegionDrawable(equippedItem.uiIcon) : Icon.cancel;
-                        let itemName = (slotType === 1) ? "Sallowyr" : ((slotType === 2) ? "Obsidis" : "Starlight");
-
-                        slotsTable.button(itemIconDrawable, Styles.cleari, 32, packRun(() => {
-                            let dialog = extend(BaseDialog, isEn() ? "Unequip Item" : "Tháo trang bị", {});
-                            dialog.cont.add(isEn() ? "Unequip '" + itemName + "' back to Core?" : "Tháo '" + itemName + "' và trả về Lõi?").row();
-                            dialog.cont.add().height(10).row();
-                            
-                            let btnTable = new Table();
-                            btnTable.button(Icon.cancel, Styles.cleari, 36, packRun(() => {
-                                let core = this.team.core();
-                                if (core != null && equippedItem != null) {
-                                    core.items.add(equippedItem, 1);
-                                }
-                                this.equipSlots[slotIdx] = 0;
-                                this.configure(java.lang.Integer(this.getSlotConfig()));
-                                Fx.smoke.at(this.x, this.y);
-                                dialog.hide();
-                                this.deselect();
-                            })).size(50, 50).tooltip(isEn() ? "Confirm Unequip" : "Xác nhận tháo");
-                            
-                            dialog.cont.add(btnTable);
-                            dialog.addCloseButton();
-                            dialog.show();
-                        })).size(40, 40).tooltip(isEn() ? "Equipped: " + itemName + " (Click to Unequip)" : "Đã trang bị: " + itemName + " (Nhấp để tháo)");
-                    }
-                }
-
-                table.add(slotsTable);
-
-                table.button(Icon.info, Styles.cleari, 40, packRun(() => {
+                topRowTable.button(Icon.info, Styles.cleari, 40, packRun(() => {
                     let title = isEn() ? " Endyr Turret Stats " : " Thông số pháo Endyr ";
-                    let sCount = this.getItemCount(1);
-                    let oCount = this.getItemCount(2);
-                    let stCount = this.getItemCount(3);
-
                     let statDmgPercent = Math.round(this.getDamageMultiplier() * 100);
                     let statSpeedPercent = Math.round(this.getSpeedMultiplier() * 100);
                     let statRangePercent = Math.round(this.getRangeMultiplier() * 100);
@@ -346,28 +339,36 @@ Events.on(ContentInitEvent, () => {
 
                     let descStr = isEn() ?
                         "[gold]⚡ TURRET EQUIPMENT STATS ⚡[]\n" +
-                        "[lightgray]Equipped Sallowyr:[] [yellow]" + sCount + " / 4[]\n" +
-                        "[lightgray]Equipped Obsidis:[] [yellow]" + oCount + " / 4[]\n" +
-                        "[lightgray]Equipped Starlight:[] [yellow]" + stCount + " / 4[]\n\n" +
+                        "[lightgray]Copper:[] [yellow]" + this.getItemCount(1) + " / 4[] | " +
+                        "[lightgray]Silicon:[] [yellow]" + this.getItemCount(2) + " / 4[] | " +
+                        "[lightgray]Thorium:[] [yellow]" + this.getItemCount(3) + " / 4[]\n" +
+                        "[lightgray]Sallowyr:[] [yellow]" + this.getItemCount(4) + " / 4[] | " +
+                        "[lightgray]Obsidis:[] [yellow]" + this.getItemCount(5) + " / 4[] | " +
+                        "[lightgray]Starlight:[] [yellow]" + this.getItemCount(6) + " / 4[]\n\n" +
                         "[lightgray]Attack Multiplier:[] [green]" + statDmgPercent + "%[]\n" +
                         "[lightgray]Fire Rate Multiplier:[] [green]" + statSpeedPercent + "%[]\n" +
                         "[lightgray]Effective Range:[] [orange]" + currentRangePx + " px[] [lime](" + statRangePercent + "%)[]\n" +
                         "[lightgray]Crit Chance:[] [cyan]" + critChance + "%[]\n" +
                         "[lightgray]Crit Damage:[] [cyan]" + critDmgPercent + "%[]\n\n" +
                         "[sky]⚡ ITEM BUFF MECHANIC:[]\n" +
+                        "• [yellow]Copper / Silicon / Thorium:[] +5% Dmg / FireRate / Range per slot.\n" +
                         "• [yellow]Sallowyr:[] Passive: Fires an extra laser beam dealing 150% base dmg when target HP < 80%.\n" +
                         "• [yellow]Obsidis:[] +10% Attack, +10% Speed, +50% Range.\n" +
                         "• [yellow]Starlight:[] +5% Crit Chance, +15% Crit Dmg, Execute targets below 5% HP (+1000 Copper)." :
                         "[gold]⚡ THÔNG SỐ TRANG BỊ THÁP PHÁO ⚡[]\n" +
-                        "[lightgray]Số Sallowyr đã lắp:[] [yellow]" + sCount + " / 4[]\n" +
-                        "[lightgray]Số Obsidis đã lắp:[] [yellow]" + oCount + " / 4[]\n" +
-                        "[lightgray]Số Starlight đã lắp:[] [yellow]" + stCount + " / 4[]\n\n" +
+                        "[lightgray]Đồng:[] [yellow]" + this.getItemCount(1) + " / 4[] | " +
+                        "[lightgray]Silicon:[] [yellow]" + this.getItemCount(2) + " / 4[] | " +
+                        "[lightgray]Thorium:[] [yellow]" + this.getItemCount(3) + " / 4[]\n" +
+                        "[lightgray]Sallowyr:[] [yellow]" + this.getItemCount(4) + " / 4[] | " +
+                        "[lightgray]Obsidis:[] [yellow]" + this.getItemCount(5) + " / 4[] | " +
+                        "[lightgray]Starlight:[] [yellow]" + this.getItemCount(6) + " / 4[]\n\n" +
                         "[lightgray]Tấn công:[] [green]" + statDmgPercent + "%[]\n" +
                         "[lightgray]Tốc độ bắn:[] [green]" + statSpeedPercent + "%[]\n" +
                         "[lightgray]Tầm bắn hiệu dụng:[] [orange]" + currentRangePx + " pixel[] [lime](" + statRangePercent + "%)[]\n" +
                         "[lightgray]Tỉ lệ bạo kích:[] [cyan]" + critChance + "%[]\n" +
                         "[lightgray]Sát thương bạo kích:[] [cyan]" + critDmgPercent + "%[]\n\n" +
                         "[sky]⚡ CƠ CHẾ BUFF TRANG BỊ:[]\n" +
+                        "• [yellow]Đồng / Silicon / Thorium:[] +5% Tấn công / Tốc độ / Tầm bắn mỗi ô.\n" +
                         "• [yellow]Sallowyr:[] Nội tại: Bắn thêm 1 tia laser 150% ST gốc khi máu mục tiêu < 80%.\n" +
                         "• [yellow]Obsidis:[] +10% TC/TĐ, +50% PB.\n" +
                         "• [yellow]Starlight:[] +5% Bạo, +15% ST Bạo, Kết liễu mục tiêu <5% HP (+1000 Đồng).";
@@ -381,6 +382,13 @@ Events.on(ContentInitEvent, () => {
                     dialog.cont.add(scroll).maxHeight(400);
                     dialog.addCloseButton(); dialog.show();
                 })).size(50, 40).tooltip(isEn() ? "View detailed stats" : "Xem thông số chi tiết hệ thống");
+
+                table.add(topRowTable).center().padBottom(3).row();
+
+                UniversalItemUI.buildSlotUI(table, this, () => {
+                    this.configure(java.lang.Integer(this.getSlotConfig()));
+                    this.deselect();
+                });
             },
 
             config() { return java.lang.Integer(this.getSlotConfig()); },
@@ -455,11 +463,7 @@ Events.on(ContentInitEvent, () => {
                             } else {
                                 if (this.isReadyToShoot()) {
                                     this.fireAtTarget();
-
-                                    if (this.hasAmmo()) {
-                                        this.useAmmo();
-                                    }
-
+                                    if (this.hasAmmo()) this.useAmmo();
                                     this.burstQueue--;
                                     this.burstIntervalTimer = 15;
                                 }
@@ -486,7 +490,7 @@ Events.on(ContentInitEvent, () => {
 
                 let targets = [];
                 Units.nearbyEnemies(this.team, tx - zoneRadius, ty - zoneRadius, zoneRadius * 2, zoneRadius * 2, packCons(unit => {
-                    if (unit.within(tx, ty, zoneRadius)) {
+                    if (unit.within(tx, ty, zoneRadius) && !unit.dead) {
                         targets.push(unit);
                     }
                 }));
@@ -513,7 +517,7 @@ Events.on(ContentInitEvent, () => {
                         chargedExplosionFx.at(unit.x, unit.y, 0.2);
 
                         if (hasSallowyr && unit.isValid() && !unit.dead && unit.health < unit.maxHealth * 0.80) {
-                            let extraBeamDmg = baseSubBeamDmg * 1.50;
+                            let extraBeamDmg = baseSubBeamDmg * 1.50 * dmgMultiplier;
                             let extraAngle = Mathf.random(360.0);
                             let extraSpawnX = this.x + Angles.trnsx(extraAngle, outerTurretRadius);
                             let extraSpawnY = this.y + Angles.trnsy(extraAngle, outerTurretRadius);
@@ -560,7 +564,7 @@ Events.on(ContentInitEvent, () => {
             draw() {
                 this.super$draw();
 
-                let turretRegion = (this.block.turretRegion && this.block.turretRegion.found()) 
+                let turretRegion = (this.block.turretRegion && typeof this.block.turretRegion.found === "function" && this.block.turretRegion.found()) 
                     ? this.block.turretRegion 
                     : this.block.region;
 

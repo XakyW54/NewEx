@@ -1,10 +1,9 @@
 // Tên file: eclipse-buff.js
-// Mô tả: Buff Eclipse chuẩn xác (Sửa triệt để cơ chế hồi sinh tại Core khi chết).
-
 const eclipseDataMap = new ObjectMap();
 const antumbraRed = Color.valueOf("feb380");
+const eclipseOriginals = {};
 
-// 1. TẠO ĐẠN TRÒN CHẬM VÀ ĐẠN NGÔI SAO NHANH
+// Đạn tròn & Đạn ngôi sao kèm theo
 const orbBullet = new BasicBulletType(5, 1);
 orbBullet.width = 18;
 orbBullet.height = 18;
@@ -29,11 +28,39 @@ starBullet.spin = 6;
 starBullet.hitEffect = Fx.hitBulletColor;
 starBullet.despawnEffect = Fx.none;
 
-// 2. KHỞI TẠO VÀ PHÂN LOẠI VŨ KHÍ ECLIPSE
 Events.on(ClientLoadEvent, () => {
     let eclipse = UnitTypes.eclipse;
-    if(eclipse != null){
-        eclipse.speed *= 1.2;
+    if(!eclipse) return;
+
+    eclipseOriginals.speed = eclipse.speed;
+    eclipseOriginals.maxRange = eclipse.maxRange;
+    eclipseOriginals.aimDst = eclipse.aimDst;
+    eclipseOriginals.weapons = [];
+
+    if(eclipse.weapons != null){
+        for(let i = 0; i < eclipse.weapons.size; i++){
+            let w = eclipse.weapons.get(i);
+            if(!w || !w.bullet) continue;
+            eclipseOriginals.weapons.push({
+                speed: w.bullet.speed,
+                lifetime: w.bullet.lifetime,
+                height: w.bullet.height,
+                width: w.bullet.width,
+                length: (w.bullet instanceof LaserBulletType) ? w.bullet.length : 0,
+                range: w.bullet.range
+            });
+        }
+    }
+});
+
+Events.on(WorldLoadEvent, () => {
+    let eclipse = UnitTypes.eclipse;
+    if(!eclipse || eclipseOriginals.speed == null) return;
+
+    let isEnabled = Core.settings.getBool("newex-logic-support-units", true);
+
+    if(isEnabled){
+        eclipse.speed = eclipseOriginals.speed * 1.2;
 
         let totalDPS = 0;
         let maxLaserLifetime = 60;
@@ -48,16 +75,17 @@ Events.on(ClientLoadEvent, () => {
                 let dps = (w.bullet.damage * shots) / (w.reload / 60);
                 totalDPS += dps;
 
+                // TĂNG CHIỀU DÀI TIA LASER CỰC XA
                 if(w.bullet instanceof LaserBulletType){
                     maxLaserLifetime = w.bullet.lifetime;
-                    w.bullet.length *= 2; 
+                    w.bullet.length = eclipseOriginals.weapons[i].length * 2.5; 
                     actualLaserLength = w.bullet.length;
+                    w.bullet.range = w.bullet.length;
                 }
             }
 
             orbBullet.damage = totalDPS * 1.2;
             starBullet.damage = totalDPS * 0.8;
-
             orbBullet.lifetime = actualLaserLength / orbBullet.speed;
             starBullet.lifetime = maxLaserLifetime;
 
@@ -65,13 +93,14 @@ Events.on(ClientLoadEvent, () => {
 
             for(let i = 0; i < eclipse.weapons.size; i++){
                 let w = eclipse.weapons.get(i);
-                if(!w || !w.bullet) continue;
+                let orig = eclipseOriginals.weapons[i];
+                if(!w || !w.bullet || !orig) continue;
 
                 if(!(w.bullet instanceof LaserBulletType)){
-                    w.bullet.speed *= 2;
+                    w.bullet.speed = orig.speed * 2;
                     w.bullet.lifetime = maxLaserLifetime;
-                    w.bullet.height *= 1.5;
-                    w.bullet.width *= 0.7;
+                    w.bullet.height = orig.height * 1.5;
+                    w.bullet.width = orig.width * 0.7;
 
                     if(w.bullet.spawnBullets == null){
                         w.bullet.spawnBullets = Seq.with(orbBullet, starBullet);
@@ -79,11 +108,6 @@ Events.on(ClientLoadEvent, () => {
                         w.bullet.spawnBullets.add(orbBullet);
                         w.bullet.spawnBullets.add(starBullet);
                     }
-                }
-
-                if(w.bullet instanceof LaserBulletType){
-                    w.bullet.range = w.bullet.length;
-                } else {
                     w.bullet.range = w.bullet.speed * w.bullet.lifetime;
                 }
 
@@ -95,15 +119,43 @@ Events.on(ClientLoadEvent, () => {
             eclipse.maxRange = maxWeaponRange;
             eclipse.aimDst = maxWeaponRange;
         }
+    } else {
+        eclipse.speed = eclipseOriginals.speed;
+        eclipse.maxRange = eclipseOriginals.maxRange;
+        eclipse.aimDst = eclipseOriginals.aimDst;
+
+        if(eclipse.weapons != null){
+            for(let i = 0; i < eclipse.weapons.size; i++){
+                let w = eclipse.weapons.get(i);
+                let orig = eclipseOriginals.weapons[i];
+                if(!w || !w.bullet || !orig) continue;
+
+                if(!(w.bullet instanceof LaserBulletType)){
+                    w.bullet.speed = orig.speed;
+                    w.bullet.lifetime = orig.lifetime;
+                    w.bullet.height = orig.height;
+                    w.bullet.width = orig.width;
+
+                    if(w.bullet.spawnBullets != null){
+                        w.bullet.spawnBullets.remove(orbBullet);
+                        w.bullet.spawnBullets.remove(starBullet);
+                    }
+                } else if(w.bullet instanceof LaserBulletType) {
+                    w.bullet.length = orig.length;
+                }
+
+                w.bullet.range = orig.range;
+            }
+        }
     }
 });
 
-// 3. XỬ LÝ BẠO KÍCH VÀ GIẢM SÁT THƯƠNG
 Events.on(EventType.UnitDamageEvent, event => {
+    if(!Core.settings.getBool("newex-logic-support-units", true)) return;
+
     let u = event.unit;
     let b = event.bullet;
 
-    // A. BẠO KÍCH TẤN CÔNG (15% tỉ lệ, +50% sát thương)
     if(b && b.owner && b.owner.type == UnitTypes.eclipse && u && u.team != b.team){
         if(Math.random() < 0.15){
             u.health -= (b.damage * 0.5);
@@ -111,7 +163,6 @@ Events.on(EventType.UnitDamageEvent, event => {
         }
     }
 
-    // B. GIẢM 90% SÁT THƯƠNG NHẬN VÀO CHO ECLIPSE
     if(u && !u.dead && u.type == UnitTypes.eclipse){
         let damageTaken = b ? b.damage : 0;
         if(damageTaken > 0){
@@ -123,18 +174,17 @@ Events.on(EventType.UnitDamageEvent, event => {
     }
 });
 
-// 4. NỘI TẠI HỒI SINH TẠI LÕI KHI BỊ BẮN HẠ
 Events.on(EventType.UnitDestroyEvent, event => {
+    if(!Core.settings.getBool("newex-logic-support-units", true)) return;
+
     let u = event.unit;
     if(u && u.type == UnitTypes.eclipse){
-        // Xóa timer cũ
         eclipseDataMap.remove(u.id);
 
         let ownTeamData = Vars.state.teams.get(u.team);
         if(ownTeamData != null && ownTeamData.cores != null && !ownTeamData.cores.isEmpty()){
             let nearestCore = ownTeamData.cores.first();
 
-            // Spawn lại 1 con Eclipse mới tại Core ngay lập tức
             Time.run(1, () => {
                 let revivedUnit = UnitTypes.eclipse.spawn(u.team, nearestCore.x, nearestCore.y);
                 if(revivedUnit != null){
@@ -146,8 +196,10 @@ Events.on(EventType.UnitDestroyEvent, event => {
     }
 });
 
-// 5. SPAWN UNIT, ĐIỀU KHIỂN TẤN CÔNG VÀ HỒI MÁU
 Events.run(Trigger.update, () => {
+    if(Vars.state.isPaused() || Vars.state.isMenu()) return;
+    if(!Core.settings.getBool("newex-logic-support-units", true)) return;
+
     Groups.unit.each(u => {
         if(!u || u.dead || u.type != UnitTypes.eclipse) return;
 
@@ -162,12 +214,8 @@ Events.run(Trigger.update, () => {
         if(data.spawnTimer >= 300){
             data.spawnTimer = 0;
 
-            if(UnitTypes.flare != null){
-                UnitTypes.flare.spawn(u.team, u.x + Mathf.range(12), u.y + Mathf.range(12));
-            }
-            if(UnitTypes.dagger != null){
-                UnitTypes.dagger.spawn(u.team, u.x + Mathf.range(12), u.y + Mathf.range(12));
-            }
+            if(UnitTypes.flare != null) UnitTypes.flare.spawn(u.team, u.x + Mathf.range(12), u.y + Mathf.range(12));
+            if(UnitTypes.dagger != null) UnitTypes.dagger.spawn(u.team, u.x + Mathf.range(12), u.y + Mathf.range(12));
 
             Fx.spawn.at(u.x, u.y);
 
@@ -175,7 +223,6 @@ Events.run(Trigger.update, () => {
             let daggerCount = Groups.unit.count(other => other.team == u.team && !other.dead && other.type == UnitTypes.dagger);
 
             let target = Units.closestTarget(u.team, u.x, u.y, 8000);
-            
             if(target == null){
                 let teamData = Vars.state.teams.get(u.team);
                 if(teamData != null && teamData.cores != null && !teamData.cores.isEmpty()){

@@ -1,5 +1,5 @@
 // Tên file: fortress.js
-// Mô tả: Đạn Fortress hình tứ giác rỗng lõi nghiêng 45 độ, kích thước nhỏ gấp đôi, zoom từ ngoài vào tâm
+// Mô tả: Đạn Fortress hình tứ giác rỗng lõi nghiêng 45 độ, kích thước nhỏ gấp đôi, zoom từ ngoài vào tâm. Bật/Tắt theo "newex-logic-support-units".
 
 const lightOrange = Color.valueOf("ffc27d");
 const deepOrange = Color.valueOf("ffa85c");
@@ -29,15 +29,15 @@ const customCritEffect = new Effect(25, e => {
     Lines.square(e.x, e.y, 3 + e.fin() * 9, 45);
 });
 
-// Trạng thái Buff của Fortress
 const fortressBuffMap = new ObjectMap();
+var vanillaFortressWeaponBullet = null;
 
 const orbitBullet = extend(BasicBulletType, {
-    height: 6, // Giảm kích thước va chạm nhỏ gấp đôi (12 -> 6)
+    height: 6,
     width: 6,
     damage: 32,
     speed: 0,
-    lifetime: 600, // Tồn tại 10 giây
+    lifetime: 600,
     pierceCap: 2,
 
     homingPower: 0.08,
@@ -128,26 +128,20 @@ const orbitBullet = extend(BasicBulletType, {
         }
     },
 
-    // 2. VẼ TỨ GIÁC NHỎ GẤP ĐÔI VÀ CÓ GÓC NGHIÊNG 45 ĐỘ
     draw(b){
         if(!b) return;
 
         let spawnProgress = Mathf.clamp(b.time / 15);
-        
-        // Kích thước nhỏ gấp đôi: Zoom từ 10px về 3px ở tâm
         let outerZoomSize = Mathf.lerp(10, 3, spawnProgress);
         let innerSize = 3;
 
-        // Góc nghiêng cố định 45 độ làm hình thoi nghiêng
         let tiltAngle = b.rotation() + 45;
 
         Lines.stroke(1.2);
         Draw.color(lightOrange);
 
-        // Khung thu nhỏ từ ngoài vào với góc nghiêng
         Lines.square(b.x, b.y, outerZoomSize, tiltAngle + (1 - spawnProgress) * 45);
 
-        // Khung tứ giác rỗng tâm nhỏ nghiêng
         if(spawnProgress > 0.3){
             Draw.color(Color.white);
             Lines.square(b.x, b.y, innerSize, tiltAngle);
@@ -163,7 +157,6 @@ const orbitBullet = extend(BasicBulletType, {
             let owner = b.owner;
             let unitId = owner.id;
 
-            // Hồi 1% máu tối đa
             owner.heal(owner.maxHealth * 0.01);
             customHealEffect.at(owner.x, owner.y);
 
@@ -191,34 +184,22 @@ const orbitBullet = extend(BasicBulletType, {
     }
 });
 
-// Quản lý đếm ngược Buff & Tốc độ di chuyển
-Events.run(Trigger.update, () => {
-    Groups.unit.each(u => {
-        if(u.type == UnitTypes.fortress && fortressBuffMap.containsKey(u.id)){
-            let data = fortressBuffMap.get(u.id);
-
-            if(data.buffTimer > 0){
-                data.buffTimer--;
-            }
-
-            if(data.speedTimer > 0){
-                data.speedTimer--;
-                let speedMultiplier = 1.0 + (data.speedStacks * 0.10);
-                u.speedMultiplier = speedMultiplier; 
-            } else {
-                data.speedStacks = 0;
-                u.speedMultiplier = 1.0;
-            }
-        }
-    });
-});
-
-// Cấu hình Fortress tự động bắn
 Events.on(ClientLoadEvent, () => {
     let fortress = UnitTypes.fortress;
-    if(fortress != null){
+    if(fortress != null && fortress.weapons.size > 0){
+        vanillaFortressWeaponBullet = fortress.weapons.get(0).bullet.copy();
+    }
+});
+
+// Chuyển đổi trạng thái đạn và chế độ bắn Fortress theo Setting
+Events.on(WorldLoadEvent, () => {
+    let fortress = UnitTypes.fortress;
+    if(!fortress) return;
+
+    let isEnabled = Core.settings.getBool("newex-logic-support-units", true);
+
+    if(isEnabled){
         fortress.targetFlags = null;
-        
         if(fortress.weapons.size > 0){
             fortress.weapons.each(w => {
                 w.bullet = orbitBullet;
@@ -231,5 +212,45 @@ Events.on(ClientLoadEvent, () => {
                 w.aiControllable = true;
             });
         }
+    } else if(vanillaFortressWeaponBullet != null){
+        if(fortress.weapons.size > 0){
+            fortress.weapons.each(w => {
+                w.bullet = vanillaFortressWeaponBullet;
+                w.alwaysShooting = false;
+                w.alwaysContinuous = false;
+            });
+        }
     }
+});
+
+Events.run(Trigger.update, () => {
+    if(Vars.state.isPaused() || Vars.state.isMenu()) return;
+    let isEnabled = Core.settings.getBool("newex-logic-support-units", true);
+
+    Groups.unit.each(u => {
+        if(u.type == UnitTypes.fortress){
+            if(!isEnabled){
+                u.speedMultiplier = 1.0;
+                fortressBuffMap.remove(u.id);
+                return;
+            }
+
+            if(fortressBuffMap.containsKey(u.id)){
+                let data = fortressBuffMap.get(u.id);
+
+                if(data.buffTimer > 0){
+                    data.buffTimer--;
+                }
+
+                if(data.speedTimer > 0){
+                    data.speedTimer--;
+                    let speedMultiplier = 1.0 + (data.speedStacks * 0.10);
+                    u.speedMultiplier = speedMultiplier; 
+                } else {
+                    data.speedStacks = 0;
+                    u.speedMultiplier = 1.0;
+                }
+            }
+        }
+    });
 });

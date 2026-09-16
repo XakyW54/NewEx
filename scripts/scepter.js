@@ -1,13 +1,10 @@
 // Tên file: scepter.js
-// Mô tả: Nâng cấp Unit Scepter bắn ra đạn Star 4 cánh tự vẽ, tích ấn nổ 10 tầng và nổ công trình 12 ô
+// Mô tả: Đạn Star 4 cánh tự vẽ, dồn 10 tầng nổ Unit & nổ công trình. Bật/Tắt theo "newex-logic-support-units".
 
 const starColorFront = Color.valueOf("ffffff");
 const starColorBack = Color.valueOf("ffd27d");
 const starColorGlow = Color.valueOf("ff8c00");
 
-// 1. TỰ VẼ CÁC HIỆU ỨNG TỰ ĐỊNH NGHĨA (KHÔNG DÙNG Fx)
-
-// Hiệu ứng va chạm đạn Star
 const starHitEffect = new Effect(20, e => {
     Draw.color(starColorFront, starColorBack, e.fin());
     Lines.stroke(2 * e.fout());
@@ -20,7 +17,6 @@ const starHitEffect = new Effect(20, e => {
     }
 });
 
-// Hiệu ứng nổ công trình (Bán kính 12 ô = 96 pixels)
 const buildingExplodeEffect = new Effect(40, e => {
     Draw.color(starColorGlow, starColorBack, e.fin());
     Lines.stroke(3.5 * e.fout());
@@ -31,7 +27,6 @@ const buildingExplodeEffect = new Effect(40, e => {
     Lines.circle(e.x, e.y, e.fin() * 60);
 });
 
-// Hiệu ứng nổ khi đủ 10 tầng Ấn Scepter
 const markDetonateEffect = new Effect(35, e => {
     Draw.color(Color.white, starColorGlow, e.fin());
     Lines.stroke(4 * e.fout());
@@ -47,30 +42,26 @@ const markDetonateEffect = new Effect(35, e => {
     }
 });
 
-// Hiệu ứng hiển thị khi bị gắn Ấn Scepter trên Unit
 const markApplyEffect = new Effect(15, e => {
     Draw.color(starColorBack);
     Lines.stroke(1.5 * e.fout());
     Lines.square(e.x, e.y, 4 + e.fin() * 8, 45);
 });
 
-// Quản lý dồn tầng ấn (Mark) trên Unit
 const unitMarkMap = new ObjectMap();
 
-// 2. TẠO ĐẠN NGÔI SAO 4 CÁNH (STAR BULLET)
 const starBullet = extend(BasicBulletType, {
-    speed: 12,           // Tốc độ cao
-    damage: 450,         // 150% DPS Scepter
+    speed: 12,
+    damage: 450,
     lifetime: 45,
     pierce: true,
-    pierceCap: 12,       // Xuyên thấu 12 mục tiêu
+    pierceCap: 12,
     pierceBuilding: true,
 
     hitEffect: starHitEffect,
     despawnEffect: starHitEffect,
     smokeEffect: Fx.none,
 
-    // Hàm tự vẽ Ngôi Sao 4 Cánh theo mẫu ảnh
     draw(b){
         if(!b) return;
 
@@ -110,16 +101,14 @@ const starBullet = extend(BasicBulletType, {
         Draw.reset();
     },
 
-    // Xử lý khi va chạm Công trình (Building)
     hitTile(b, tile, x, y, initialHealth, direct){
         this.super$hitTile(b, tile, x, y, initialHealth, direct);
 
-        let radius = 96; // 12 ô (12 * 8px)
+        let radius = 96;
         Damage.damage(b.team, x, y, radius, 300);
         buildingExplodeEffect.at(x, y);
     },
 
-    // Xử lý khi va chạm Unit (Gắn Ấn Scepter & Tích 10 Tầng Nổ)
     hitEntity(b, other, initialHealth){
         this.super$hitEntity(b, other, initialHealth);
 
@@ -131,8 +120,8 @@ const starBullet = extend(BasicBulletType, {
             markApplyEffect.at(other.x, other.y);
 
             if(currentStacks >= 10){
-                let scepterDmg = 600; // 200% DPS Scepter
-                let maxHPDmg = other.maxHealth * 0.10; // 10% Max HP
+                let scepterDmg = 600;
+                let maxHPDmg = other.maxHealth * 0.10;
                 let totalExplosionDmg = scepterDmg + maxHPDmg;
 
                 other.damage(totalExplosionDmg);
@@ -146,17 +135,19 @@ const starBullet = extend(BasicBulletType, {
     }
 });
 
-// 3. QUẢN LÝ BẮN ĐẠN STAR BẰNG TRIGGER.UPDATE (AN TOÀN TUYỆT ĐỐI)
 Events.run(Trigger.update, () => {
+    if(Vars.state.isPaused() || Vars.state.isMenu()) return;
+    
+    // KIỂM TRA CÔNG TẮC SWITCH
+    if(!Core.settings.getBool("newex-logic-support-units", true)) return;
+
     Groups.unit.each(u => {
         if(u && !u.dead && u.type == UnitTypes.scepter && u.isShooting){
-            // Kiểm tra trạng thái nạp đạn của vũ khí
             if(u.mounts && u.mounts.length > 0){
                 for(let i = 0; i < u.mounts.length; i++){
                     let mount = u.mounts[i];
-                    // Khi vũ khí vừa xả đạn (reload tiệm cận 0)
                     if(mount.reload <= 1.0 && mount.shoot){
-                        if(Mathf.chance(0.08)){ // Tỉ lệ xuất hiện đạn Star đều đặn theo mỗi nhịp bắn
+                        if(Mathf.chance(0.08)){
                             let bulletAngle = u.rotation + Mathf.range(12);
                             starBullet.create(u, u.team, u.x + Angles.trnsx(u.rotation, 10), u.y + Angles.trnsy(u.rotation, 10), bulletAngle);
                         }

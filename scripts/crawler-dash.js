@@ -1,6 +1,4 @@
-// ----------------------------------------------------
-// HIỆU ỨNG VỤ NỔ CỦA PHÁO INDENITER
-// ----------------------------------------------------
+ 
 function createIndeniterExplosionFx(radius, colorHex) {
     let col = colorHex ? Color.valueOf(colorHex) : Color.valueOf("#ff3300");
     return new Effect(50, cons(e => {
@@ -41,11 +39,9 @@ function createIndeniterExplosionFx(radius, colorHex) {
     }));
 }
 
-// Effect vụ nổ Indeniter 15 ô (120px) và 20 ô (160px)
 const fxIndeniter15 = createIndeniterExplosionFx(120, "#ff6b35");
 const fxIndeniter20 = createIndeniterExplosionFx(160, "#ff3300");
 
-// Effect lướt
 const dashStartFx = new Effect(25, cons(e => {
     Draw.z(Layer.effect);
     Draw.color(Color.valueOf("ffa665"), Color.gray, e.fin());
@@ -61,13 +57,12 @@ const dashStartFx = new Effect(25, cons(e => {
     Draw.reset();
 }));
 
-// ----------------------------------------------------
-// BỘ LƯU TRỮ DỮ LIỆU & VÒNG LẶP CHÍNH
-// ----------------------------------------------------
 const crawlerData = {};
 
 Timer.schedule(() => {
     if (Vars.state.isPaused() || Vars.state.isMenu()) return;
+
+    let isEnabled = Core.settings.getBool("newex-logic-support-units", true);
 
     let crawlerType = Vars.content.getByName(ContentType.unit, "crawler");
     if (crawlerType == null) return;
@@ -75,6 +70,11 @@ Timer.schedule(() => {
     Groups.unit.each(u => {
         if (u != null && u.isValid() && u.type == crawlerType) {
             let id = u.id;
+
+            if (!isEnabled) {
+                if (crawlerData[id]) delete crawlerData[id];
+                return;
+            }
 
             if (!crawlerData[id]) {
                 crawlerData[id] = { 
@@ -93,7 +93,6 @@ Timer.schedule(() => {
             let isMoving = u.vel != null && u.vel.len() > 0.01;
 
             if (isMoving) {
-                // TĂNG TỐC AN TOÀN (GIỚI HẠN VẬN TỐC TỐI ĐA ĐỂ TRÁNH TRƯỢT XUYÊN TƯỜNG)
                 data.speedBoost = Mathf.approach(data.speedBoost, 1.0, 0.005 * Time.delta);
                 if (u.vel.len() < crawlerType.speed * 1.5) {
                     u.vel.scl(1.0 + data.speedBoost * 0.02);
@@ -101,7 +100,6 @@ Timer.schedule(() => {
 
                 data.moveTimer += Time.delta;
 
-                // TÌM KẺ ĐỊCH TRONG PHẠM VI 20 Ô (160 PIXELS)
                 let target = Units.closestTarget(u.team, u.x, u.y, 160, e => e.checkTarget(true, true));
 
                 if (target != null && data.dashCooldown <= 0) {
@@ -121,8 +119,9 @@ Timer.schedule(() => {
     });
 }, 0, 0.016);
 
-// GIẢM 100% SÁT THƯƠNG NHẬN VÀO
 Events.on(UnitDamageEvent, cons(e => {
+    if (!Core.settings.getBool("newex-logic-support-units", true)) return;
+
     let unit = e.unit;
     let crawlerType = Vars.content.getByName(ContentType.unit, "crawler");
     if (unit != null && unit.isValid() && crawlerType != null && unit.type == crawlerType) {
@@ -130,14 +129,12 @@ Events.on(UnitDamageEvent, cons(e => {
     }
 }));
 
-// DASH THƯỜNG -> NỔ 15 Ô (100 DMG)
 function performNormalDash(unit) {
-    let dashDistance = 40; // 5 ô
+    let dashDistance = 40;
     let angle = unit.rotation;
     let targetX = unit.x + Angles.trnsx(angle, dashDistance);
     let targetY = unit.y + Angles.trnsy(angle, dashDistance);
 
-    // Kiểm tra chướng ngại vật trước khi di chuyển
     let safePos = getSafeDashPosition(unit.x, unit.y, targetX, targetY, angle, dashDistance);
     if (safePos.x !== unit.x || safePos.y !== unit.y) {
         dashStartFx.at(unit.x, unit.y, angle);
@@ -146,12 +143,10 @@ function performNormalDash(unit) {
     }
 }
 
-// DASH MỤC TIÊU -> KIỂM TRA TƯỜNG TRƯỚC KHI TỚI GẦN
 function performTargetDashAndExplode(unit, target) {
     let angle = unit.angleTo(target);
     let dist = Mathf.dst(unit.x, unit.y, target.x, target.y);
     
-    // Tìm vị trí an toàn xa nhất trên đường lướt tới mục tiêu
     let safePos = getSafeDashPosition(unit.x, unit.y, target.x, target.y, angle, dist);
 
     dashStartFx.at(unit.x, unit.y, angle);
@@ -161,14 +156,12 @@ function performTargetDashAndExplode(unit, target) {
     explodeAt(unit, safePos.x, safePos.y, 160, 200, fxIndeniter20);
 }
 
-// XỬ LÝ SÁT THƯƠNG
 function explodeAt(unit, x, y, radiusPixels, damage, fxEffect) {
     fxEffect.at(x, y);
     Effect.shake(5, 5, x, y);
     Damage.damage(unit.team, x, y, radiusPixels, damage, true, true);
 }
 
-// TÌM TỌA ĐỘ LƯỚT AN TOÀN KHÔNG CHẠM TƯỜNG
 function getSafeDashPosition(startX, startY, targetX, targetY, angle, maxDist) {
     let steps = 10;
     let lastSafeX = startX;
@@ -179,7 +172,6 @@ function getSafeDashPosition(startX, startY, targetX, targetY, angle, maxDist) {
         let checkY = startY + Angles.trnsy(angle, (maxDist / steps) * i);
         
         let tile = Vars.world.tileWorld(checkX, checkY);
-        // Nếu chạm tường hoặc công trình thì dừng tại điểm an toàn trước đó
         if (tile == null || tile.build != null || (tile.block() != null && tile.block().solid)) {
             break;
         }
@@ -190,7 +182,6 @@ function getSafeDashPosition(startX, startY, targetX, targetY, angle, maxDist) {
     return { x: lastSafeX, y: lastSafeY };
 }
 
-// DỌN DẸP BỘ NHỚ
 Events.on(UnitDestroyEvent, cons(e => {
     if (e.unit != null && crawlerData[e.unit.id]) {
         delete crawlerData[e.unit.id];

@@ -91,14 +91,3 @@
 -------------------------------------------
 > Điều chỉnh cân bằng bản 0.6.9:
 - Khối Laser Brey: tăng 75% tốc độ đào pháo tường địa hình Vanilla.
-
-
- 
--------------------------------------------
-> Điều chỉnh cân bằng bản 0.7.6:
-+ Pháo Xylaon:
-   - Máu gốc tăng 50%: Tăng từ 1600 lên 2400.
-   - Thời gian hồi đạn gốc: Giảm từ 30 xuống 20.
-   - Thêm loại đạn Copper: Yếu hơn đạn Graphite 40% về sát thương.
-   - Thêm cơ chế Bạo kích: 50% Tỉ lệ Bạo kích / 180% Sát thương Bạo kích.
-

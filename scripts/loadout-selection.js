@@ -181,7 +181,7 @@
         const content = dialog.cont;
         content.clear();
 
-         content.add("[accent]-- GIỚI HẠN THÁP PHÁO --[]").row();
+        content.add("[accent]-- GIỚI HẠN THÁP PHÁO --[]").row();
         content.add("Số lượng tháp pháo chọn mỗi trận:").padBottom(5).row();
 
         let currentLimit = getMaxSelectCount();
@@ -199,7 +199,7 @@
         }).width(240).pad(8).get();
         content.row();
 
-         content.add("[accent]-- CHẾ ĐỘ HIỂN THỊ THANH MÁU (HP) --[]").padTop(10).row();
+        content.add("[accent]-- CHẾ ĐỘ HIỂN THỊ THANH MÁU (HP) --[]").padTop(10).row();
 
         let currentHpStyle = Core.settings.getString("newex-hp-style", "show-hp");
 
@@ -230,7 +230,17 @@
 
         content.add(tableHp).row();
 
-         content.button("Lưu Cài Đặt", () => {
+        content.add("[accent]-- LOGIC UNIT VANILLA BUFF --[]").padTop(10).row();
+
+        let unitsEnabled = Core.settings.getBool("newex-logic-support-units", true);
+
+        let btnUnits = new TextButton("Bật Buff Units Vanilla", Styles.togglet);
+        btnUnits.getLabel().setFontScale(0.85);
+        btnUnits.setChecked(unitsEnabled);
+
+        content.add(btnUnits).size(220, 48).pad(5).row();
+
+        content.button("Lưu Cài Đặt", () => {
             let newValue = Math.floor(slider.getValue());
             Core.settings.put("newex-max-turrets", java.lang.Integer(newValue));
 
@@ -239,6 +249,7 @@
             else if (btnHp.isChecked()) selectedStyle = "hp";
 
             Core.settings.put("newex-hp-style", selectedStyle);
+            Core.settings.put("newex-logic-support-units", java.lang.Boolean(btnUnits.isChecked()));
 
             Vars.ui.showInfo("Đã lưu cài đặt Newex thành công!");
             dialog.hide();

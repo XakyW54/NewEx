@@ -1,3 +1,6 @@
+// Tên file: atrax.js
+// Mô tả: Buff di chuyển giảm sát thương, hồi máu khi bắn, vụ nổ 50% HP và bất tử 15% HP. Bật/Tắt theo "newex-logic-support-units".
+
 const sta = require("sta");
 
 const atraxExplosionFx = new Effect(35, cons(e => {
@@ -23,12 +26,21 @@ const atraxData = {};
 Timer.schedule(() => {
     if (Vars.state.isPaused() || Vars.state.isMenu()) return;
 
+    let isEnabled = Core.settings.getBool("newex-logic-support-units", true);
+
     let atraxUnit = Vars.content.getByName(ContentType.unit, "atrax");
     if (atraxUnit == null) return;
 
     Groups.unit.each(u => {
         if (u != null && u.isValid() && u.type == atraxUnit) {
             let id = u.id;
+
+            // Nếu TẮT -> Dọn dẹp dữ liệu và bỏ qua Logic Mod
+            if (!isEnabled) {
+                if (atraxData[id]) delete atraxData[id];
+                return;
+            }
+
             if (!atraxData[id]) {
                 atraxData[id] = {
                     scanTimer: 60,
@@ -48,11 +60,9 @@ Timer.schedule(() => {
             // ==========================================
             let damageTaken = data.lastHealth - u.health;
             if (damageTaken > 0) {
-                // Nếu đang BẤT TỬ
                 if (u.hasEffect(sta.atraxInvulnerableBuff)) {
-                    u.health = data.lastHealth; // Khóa máu, hoàn 100% HP
+                    u.health = data.lastHealth;
 
-                    // Hiệu ứng hình tứ giác méo biến dạng hướng va chạm
                     let hitAngle = u.rotation;
                     let attacker = Units.closestEnemy(u.team, u.x, u.y, 300, e => true);
                     if (attacker != null) {
@@ -65,24 +75,22 @@ Timer.schedule(() => {
                         sta.atraxShieldHitFx.at(u.x, u.y, hitAngle, hitAngle);
                     }
                 } 
-                // Nếu đang mang Buff Di Chuyển (Giảm 70% sát thương)
                 else if (u.hasEffect(sta.atraxSoloBuff)) {
-                    u.health += damageTaken * 0.70; // Hoàn 70% lượng máu bị mất
+                    u.health += damageTaken * 0.70;
                 }
             }
 
             // ==========================================
-            // 1. KIỂM TRA MỖI 1S: KHI DI CHUYỂN NHẬN BUFF TỒN TẠI 2S (120 TICKS)
+            // 1. KIỂM TRA MỖI 1S: KHI DI CHUYỂN NHẬN BUFF TỒN TẠI 2S
             // ==========================================
             data.scanTimer += Time.delta;
-            if (data.scanTimer >= 60.0) { // Mỗi 1 giây kiểm tra 1 lần
+            if (data.scanTimer >= 60.0) {
                 data.scanTimer = 0;
 
-                // Kiểm tra xem đơn vị có đang di chuyển không (moving/walking)
                 let isMoving = u.isMoving && u.isMoving();
 
                 if (isMoving && sta.atraxSoloBuff != null) {
-                    u.apply(sta.atraxSoloBuff, 120); // Cấp/làm mới buff độc lập tồn tại 2 giây
+                    u.apply(sta.atraxSoloBuff, 120);
                 }
             }
 
@@ -90,14 +98,12 @@ Timer.schedule(() => {
             // 2. CƠ CHẾ HỒI MÁU KHI CÓ BUFF
             // ==========================================
             if (u.hasEffect(sta.atraxSoloBuff)) {
-                // Mỗi 0.1s (6 ticks) hồi 0.1% max HP
                 data.healTimer += Time.delta;
                 if (data.healTimer >= 6.0) {
                     data.healTimer = 0;
                     u.heal(u.maxHealth * 0.001);
                 }
 
-                // Khi bắn: Cứ mỗi 1s (60 ticks) hồi 1% max HP
                 if (u.isShooting) {
                     data.shootHealTimer += Time.delta;
                     if (data.shootHealTimer >= 60.0) {
@@ -110,7 +116,7 @@ Timer.schedule(() => {
             }
 
             // ==========================================
-            // 3. VỤ NỔ KHI MÁU DƯỚI 50% (1 LẦN DUY NHẤT)
+            // 3. VỤ NỔ KHI MÁU DƯỚI 50%
             // ==========================================
             if (!data.exploded50 && u.health < u.maxHealth * 0.5) {
                 data.exploded50 = true;
@@ -119,11 +125,11 @@ Timer.schedule(() => {
             }
 
             // ==========================================
-            // 4. BẤT TỬ KHI MÁU DƯỚI 15% (DUY TRÌ 10 S = 600 TICKS)
+            // 4. BẤT TỬ KHI MÁU DƯỚI 15%
             // ==========================================
             if (!data.invulnerableUsed && u.health < u.maxHealth * 0.15) {
                 data.invulnerableUsed = true;
-                data.invulnerableTimer = 600; // 10 giây
+                data.invulnerableTimer = 600;
             }
 
             if (data.invulnerableTimer > 0) {
@@ -133,7 +139,6 @@ Timer.schedule(() => {
                 }
             }
 
-            // Lưu máu để tính sát thương frame tiếp theo
             data.lastHealth = u.health;
         }
     });

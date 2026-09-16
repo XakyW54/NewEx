@@ -155,11 +155,11 @@ require("eclipse-buff");
 require("pulsar-lightning");
 require("quasar");
 require("corvus");
-
-
-
-
-
+require("spiroct");
+require("arkyid");
+require("toxopid");
+require("poly");
+require("mega");
 
 
 require("endyr");
@@ -339,3 +339,4 @@ require("suv-27");
 
 
 
+require("turret-system");

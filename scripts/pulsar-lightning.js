@@ -1,10 +1,8 @@
 // Tên file: pulsar-lightning.js
-// Mô tả: Sửa lỗi StackOverflowError bằng cách thay thế override hit/despawn bằng deselect/hitTile/hitEntity an toàn.
-
 const pulsarGreen = Color.valueOf("#84f491");
 const pulsarGreenLight = Color.valueOf("#c0ffc8");
+const pulsarOriginals = {};
 
-// 1. HIỆU ỨNG VẼ TIA ĐIỆN VÀ SÓNG XUNG KÍCH
 const greenLightningEffect = new Effect(14, e => {
     if(!(e.data instanceof Seq)) return;
     const points = e.data;
@@ -46,7 +44,6 @@ function createGreenLightning(x1, y1, x2, y2, thickness){
     greenLightningEffect.at((x1 + x2) / 2, (y1 + y2) / 2, thickness, points);
 }
 
-// Xử lý kích hoạt tia điện khi va chạm
 function triggerLightningCluster(b){
     if(!b || b.data === true) return; 
     b.data = true;
@@ -81,54 +78,80 @@ function triggerLightningCluster(b){
     }
 }
 
-// 2. CẤU HÌNH STATS VÀ ĐẠN CHO PULSAR
-Events.on(ContentInitEvent, () => {
+const greenOrbBullet = extend(BasicBulletType, {
+    hitEntity(b, entity, health){ triggerLightningCluster(b); },
+    hitTile(b, tile, build, x, y, hitx, hity, param){ triggerLightningCluster(b); },
+    despawn(b){ triggerLightningCluster(b); }
+});
+
+greenOrbBullet.speed = 4.0;
+greenOrbBullet.damage = 14;
+greenOrbBullet.lifetime = 35;
+greenOrbBullet.width = 10;
+greenOrbBullet.height = 10;
+greenOrbBullet.shrinkX = 0;
+greenOrbBullet.shrinkY = 0;
+greenOrbBullet.frontColor = pulsarGreenLight;
+greenOrbBullet.backColor = pulsarGreen;
+greenOrbBullet.trailColor = pulsarGreen;
+greenOrbBullet.trailWidth = 2.2;
+greenOrbBullet.trailLength = 7;
+
+Events.on(ClientLoadEvent, () => {
     const pulsar = UnitTypes.pulsar;
     if(!pulsar) return;
 
-    // A. CHỈ SỐ CƠ BẢN
-    pulsar.speed *= 1.5;            // +50% Tốc độ di chuyển
-    pulsar.health *= 1.15;          // Giảm 15% sát thương nhận vào (tương đương +15% HP)
-    pulsar.armor += 3;              // Cộng thêm giáp chống chịu
+    pulsarOriginals.speed = pulsar.speed;
+    pulsarOriginals.health = pulsar.health;
+    pulsarOriginals.armor = pulsar.armor;
+    pulsarOriginals.reloads = [];
+    pulsarOriginals.fragBullets = [];
 
-    // B. KHẮC PHỤC LỖI STACKOVERFLOW: Khai báo BulletType bằng cách gán sự kiện va chạm chuẩn
-    const greenOrbBullet = extend(BasicBulletType, {
-        hitEntity(b, entity, health){
-            triggerLightningCluster(b);
-        },
-        hitTile(b, tile, build, x, y, hitx, hity, param){
-            triggerLightningCluster(b);
-        },
-        despawn(b){
-            triggerLightningCluster(b);
-        }
-    });
-
-    greenOrbBullet.speed = 4.0;
-    greenOrbBullet.damage = 14;
-    greenOrbBullet.lifetime = 35;
-    greenOrbBullet.width = 10;
-    greenOrbBullet.height = 10;
-    greenOrbBullet.shrinkX = 0;
-    greenOrbBullet.shrinkY = 0;
-    greenOrbBullet.frontColor = pulsarGreenLight;
-    greenOrbBullet.backColor = pulsarGreen;
-    greenOrbBullet.trailColor = pulsarGreen;
-    greenOrbBullet.trailWidth = 2.2;
-    greenOrbBullet.trailLength = 7;
-
-    // C. CẤU HÌNH VŨ KHÍ PULSAR
-    if(pulsar.weapons && pulsar.weapons.size > 0){
+    if(pulsar.weapons){
         for(let i = 0; i < pulsar.weapons.size; i++){
             let w = pulsar.weapons.get(i);
-            w.reload /= 1.5; // +50% Tốc độ bắn
+            pulsarOriginals.reloads.push(w.reload);
+            pulsarOriginals.fragBullets.push(w.bullet ? w.bullet.fragBullet : null);
+        }
+    }
+});
 
-            if(w.bullet){
-                w.bullet.fragBullet = greenOrbBullet;
-                w.bullet.fragBullets = 3;
-                w.bullet.fragVelocityMin = 0.8;
-                w.bullet.fragVelocityMax = 1.2;
-                w.bullet.fragRandomSpread = 25;
+Events.on(WorldLoadEvent, () => {
+    const pulsar = UnitTypes.pulsar;
+    if(!pulsar || pulsarOriginals.speed == null) return;
+
+    let isEnabled = Core.settings.getBool("newex-logic-support-units", true);
+
+    if(isEnabled){
+        pulsar.speed = pulsarOriginals.speed * 1.5;
+        pulsar.health = pulsarOriginals.health * 1.15;
+        pulsar.armor = pulsarOriginals.armor + 3;
+
+        if(pulsar.weapons){
+            for(let i = 0; i < pulsar.weapons.size; i++){
+                let w = pulsar.weapons.get(i);
+                if(pulsarOriginals.reloads[i] != null) w.reload = pulsarOriginals.reloads[i] / 1.5;
+                if(w.bullet){
+                    w.bullet.fragBullet = greenOrbBullet;
+                    w.bullet.fragBullets = 3;
+                    w.bullet.fragVelocityMin = 0.8;
+                    w.bullet.fragVelocityMax = 1.2;
+                    w.bullet.fragRandomSpread = 25;
+                }
+            }
+        }
+    } else {
+        pulsar.speed = pulsarOriginals.speed;
+        pulsar.health = pulsarOriginals.health;
+        pulsar.armor = pulsarOriginals.armor;
+
+        if(pulsar.weapons){
+            for(let i = 0; i < pulsar.weapons.size; i++){
+                let w = pulsar.weapons.get(i);
+                if(pulsarOriginals.reloads[i] != null) w.reload = pulsarOriginals.reloads[i];
+                if(w.bullet){
+                    w.bullet.fragBullet = pulsarOriginals.fragBullets[i];
+                }
             }
         }
     }

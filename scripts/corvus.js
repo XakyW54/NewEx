@@ -1,17 +1,12 @@
 // Tên file: corvus.js
-// Vị trí: scripts/corvus.js
-
 const laserColor = Color.valueOf("84f491"); 
-
-const spacing13TilesPx = 13 * 8; // 104px (khoảng cách 13 ô)
-const maxCircleRadiusPx = (33 * 8) / 2; // Giảm kích thước vòng laser xuống 1/2
+const spacing13TilesPx = 13 * 8;
+const maxCircleRadiusPx = (33 * 8) / 2;
 
 const chargingUnits = new Set();
 const activeLightningZones = [];
+const corvusOriginals = {};
 
-// =========================================================================
-// THUẬT TOÁN VẼ VÒNG TRÒN MÉO CHUẨN TỪ REGUILATER.JS
-// =========================================================================
 function drawReguLaserRing(cx, cy, radiusX, radiusY, laserAngle, strokeWidth, color, isFill){
     Draw.color(color); 
     if(!isFill) Lines.stroke(strokeWidth);
@@ -45,10 +40,8 @@ function drawReguLaserRing(cx, cy, radiusX, radiusY, laserAngle, strokeWidth, co
     }
 }
 
-// 1. HIỆU ỨNG 1 VÒNG MÉO TỪ PHÍA TRƯỚC HÚT VỀ TÂM (Thời lượng 20 Ticks)
 const corvusFrontSingleRingEffect = new Effect(20, e => {
     let fout = e.fout();
-
     let rad = e.rotation * Mathf.degRad;
     let cosA = Math.cos(rad);
     let sinA = Math.sin(rad);
@@ -63,7 +56,6 @@ const corvusFrontSingleRingEffect = new Effect(20, e => {
     drawReguLaserRing(cx, cy, radX, radY, e.rotation, 3.0 * fout, laserColor, false);
 });
 
-// 2. HIỆU ỨNG VÒNG LỚN ZOOM TỪ NGOÀI VÀO TÂM (60 Ticks)
 const corvusBigOuterRingEffect = new Effect(60, e => {
     let fout = e.fout();
     let fin = e.fin();
@@ -75,7 +67,6 @@ const corvusBigOuterRingEffect = new Effect(60, e => {
     Draw.reset();
 });
 
-// 3. HIỆU ỨNG HẠT TRÒN BẮT ĐẦU BAY LIÊN TỤC VÀO TÂM (Tần suất dày đặc)
 const corvusContinuousParticleEffect = new Effect(25, e => {
     let fout = e.fout();
     let fin = e.fin();
@@ -88,8 +79,6 @@ const corvusContinuousParticleEffect = new Effect(25, e => {
         
         let px = e.x + Angles.trnsx(pAngle, currentDist);
         let py = e.y + Angles.trnsy(pAngle, currentDist);
-        
-        // Kích thước ngẫu nhiên từ 1px đến 8px (1 ô)
         let particleSize = Mathf.randomSeed(e.id * 7 + i, 0.5, 4.0) * fout;
         
         Fill.circle(px, py, particleSize);
@@ -97,7 +86,6 @@ const corvusContinuousParticleEffect = new Effect(25, e => {
     Draw.reset();
 });
 
-// 4. HIỆU ỨNG VÒNG MÉO TRÊN ĐƯỜNG LASER KHI BẮN
 const corvusLaserZoomEffect = new Effect(40, e => {
     let fin = e.fin();
     let fout = e.fout();
@@ -111,7 +99,6 @@ const corvusLaserZoomEffect = new Effect(40, e => {
     Draw.reset();
 });
 
-// 5. HIỆU ỨNG KHÓI BỐC LÊN KHI BẮN
 const corvusMuzzleSmokeEffect = new Effect(60, e => {
     Draw.color(Color.gray, laserColor, e.fout());
     Angles.randLenVectors(e.id, 16, 50 * e.finpow(), e.rotation, 45, (x, y) => {
@@ -120,31 +107,22 @@ const corvusMuzzleSmokeEffect = new Effect(60, e => {
     Draw.reset();
 });
 
-// 6. HÀM KÍCH HOẠT CHUỖI 3 VÒNG MÉO CHUẨN ĐỒNG BỘ TỚI PHÁT BẮN
 function startTripleChargeProcess(gunX, gunY, rotation){
-    // Vòng tròn lớn zoom ngoài vào tâm
     corvusBigOuterRingEffect.at(gunX, gunY, rotation);
-
-    // Vòng méo 1 (0 -> 20 Ticks)
     corvusFrontSingleRingEffect.at(gunX, gunY, rotation);
 
-    // Vòng méo 2 (20 -> 40 Ticks)
     Time.run(20, () => {
         corvusFrontSingleRingEffect.at(gunX, gunY, rotation);
     });
 
-    // Vòng méo 3 (40 -> 60 Ticks - Vừa chạm tâm là phát bắn nổ ra)
     Time.run(40, () => {
         corvusFrontSingleRingEffect.at(gunX, gunY, rotation);
     });
 }
 
-// 7. HÀM KÍCH HOẠT KHI BẮN
 function triggerCorvusShotFeatures(team, gunX, gunY, rotation){
-    // Khói bốc lên tại nòng
     corvusMuzzleSmokeEffect.at(gunX, gunY, rotation);
 
-    // 12 vòng méo nối tiếp trên đường laser
     for(let c = 1; c <= 12; c++){
         let dist = c * spacing13TilesPx;
         let px = gunX + Angles.trnsx(rotation, dist);
@@ -155,7 +133,6 @@ function triggerCorvusShotFeatures(team, gunX, gunY, rotation){
         });
     }
 
-    // Vùng nhiễm điện 10s gây sát thương
     for(let d = 32; d < 1200; d += 48){
         let ex = gunX + Angles.trnsx(rotation, d);
         let ey = gunY + Angles.trnsy(rotation, d);
@@ -171,34 +148,69 @@ function triggerCorvusShotFeatures(team, gunX, gunY, rotation){
     }
 }
 
-// 8. THIẾT LẬP CORVUS
-Events.on(ContentInitEvent, () => {
+Events.on(ClientLoadEvent, () => {
     const corvus = UnitTypes.corvus;
     if(!corvus || !corvus.weapons) return;
 
+    corvusOriginals.weapons = [];
     for(let i = 0; i < corvus.weapons.size; i++){
         let w = corvus.weapons.get(i);
-        w.cooldownTime = 220;
+        let b = w.bullet;
+        corvusOriginals.weapons.push({
+            cooldownTime: w.cooldownTime,
+            chargeEffect: b ? b.chargeEffect : null,
+            shootEffect: b ? b.shootEffect : null,
+            damage: b ? b.damage : 0,
+            length: b ? b.length : 0,
+            width: b ? b.width : 0,
+            pierceArmor: b ? b.pierceArmor : false,
+            absorbable: b ? b.absorbable : true
+        });
+    }
+});
 
-        if(w.bullet){
-            let b = w.bullet;
+Events.on(WorldLoadEvent, () => {
+    const corvus = UnitTypes.corvus;
+    if(!corvus || !corvus.weapons || !corvusOriginals.weapons) return;
 
-            b.chargeEffect = Fx.none;
-            b.shootEffect = Fx.none;
+    let isEnabled = Core.settings.getBool("newex-logic-support-units", true);
 
-            b.damage *= 6.0;
-            if(b.length !== undefined) b.length *= 3.0;
-            if(b.width !== undefined) b.width *= 2.0;
+    for(let i = 0; i < corvus.weapons.size; i++){
+        let w = corvus.weapons.get(i);
+        let orig = corvusOriginals.weapons[i];
+        if(!orig) continue;
 
-            b.pierceArmor = true;
-            b.absorbable = false;
+        if(isEnabled){
+            w.cooldownTime = 220;
+            if(w.bullet){
+                let b = w.bullet;
+                b.chargeEffect = Fx.none;
+                b.shootEffect = Fx.none;
+                b.damage = orig.damage * 6.0;
+                if(b.length !== undefined) b.length = orig.length * 3.0;
+                if(b.width !== undefined) b.width = orig.width * 2.0;
+                b.pierceArmor = true;
+                b.absorbable = false;
+            }
+        } else {
+            w.cooldownTime = orig.cooldownTime;
+            if(w.bullet){
+                let b = w.bullet;
+                b.chargeEffect = orig.chargeEffect;
+                b.shootEffect = orig.shootEffect;
+                b.damage = orig.damage;
+                if(b.length !== undefined) b.length = orig.length;
+                if(b.width !== undefined) b.width = orig.width;
+                b.pierceArmor = orig.pierceArmor;
+                b.absorbable = orig.absorbable;
+            }
         }
     }
 });
 
-// 9. VÒNG LẶP UPDATE CHÍNH (SPAWN HẠT TRÒN TỪNG TICK)
 Events.run(Trigger.update, () => {
-    if(Vars.state.isPaused()) return;
+    if(Vars.state.isPaused() || Vars.state.isMenu()) return;
+    if(!Core.settings.getBool("newex-logic-support-units", true)) return;
 
     const corvus = UnitTypes.corvus;
     if(!corvus) return;
@@ -215,14 +227,12 @@ Events.run(Trigger.update, () => {
                 let key = u.id + "_" + i;
 
                 if(mount.charging){
-                    // A. Kích hoạt chuỗi 3 vòng méo chuẩn thời gian khi bắt đầu gồng
                     if(!chargingUnits.has(key)){
                         chargingUnits.add(key);
                         startTripleChargeProcess(gunX, gunY, u.rotation);
                     }
 
-                    // B. TẠO HẠT TRÒN HÚT VÀO TÂM LIÊN TỤC TRONG TOÀN BỘ THỜI GIAN GỒNG LỰC
-                    if(Time.time % 2 < 1){ // Cứ 2 ticks spawn 1 đợt hạt mới liên tục
+                    if(Time.time % 2 < 1){
                         corvusContinuousParticleEffect.at(gunX, gunY, u.rotation);
                     }
                 } 
@@ -234,7 +244,6 @@ Events.run(Trigger.update, () => {
         }
     });
 
-    // Cập nhật vùng nhiễm điện 10 giây (Gây sát thương)
     for(let i = activeLightningZones.length - 1; i >= 0; i--){
         let zone = activeLightningZones[i];
         zone.life -= Time.delta;

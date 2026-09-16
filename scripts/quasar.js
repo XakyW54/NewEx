@@ -1,44 +1,85 @@
 // Tên file: quasar.js
-// Mô tả: Sửa triệt để lỗi gán hitEntity, hỗ trợ tăng tốc bắn 500%, hồi khiên 0.5s và hồi 1% HP khi gây sát thương.
-
 const rampMap = new Map();
 const quasarRampEffect = new StatusEffect("quasar-ramp-effect");
 quasarRampEffect.show = false;
+const quasarOriginals = {};
 
-Events.on(ContentInitEvent, () => {
+Events.on(ClientLoadEvent, () => {
     const quasar = UnitTypes.quasar;
     if(!quasar) return;
 
-    // 1. TĂNG CHỈ SỐ CƠ BẢN
-    quasar.armor += 20;          // +20 giáp
-    quasar.speed *= 2.5;         // +150% tốc độ bay
+    quasarOriginals.armor = quasar.armor;
+    quasarOriginals.speed = quasar.speed;
+    quasarOriginals.abilities = [];
 
-    // 2. CẤU HÌNH KHIÊN: Thời gian hồi khiên nguyên vẹn = 0.5s (30 ticks)
     if(quasar.abilities){
         for(let i = 0; i < quasar.abilities.size; i++){
             let ab = quasar.abilities.get(i);
             if(ab instanceof ForceFieldAbility){
-                ab.max *= 3.0;        // +200% độ bền khiên
-                ab.cooldown = 30;      // 0.5s thời gian hồi khi chưa bị vỡ khiên completely
+                quasarOriginals.abilities.push({
+                    max: ab.max,
+                    cooldown: ab.cooldown
+                });
             }
         }
     }
 });
 
-// 3. CƠ CHẾ HỒI 1% MÁU KHI BẮN TRÚNG MỤC TIÊU (AN TOÀN BẰNG EVENT)
+Events.on(WorldLoadEvent, () => {
+    const quasar = UnitTypes.quasar;
+    if(!quasar || quasarOriginals.speed == null) return;
+
+    let isEnabled = Core.settings.getBool("newex-logic-support-units", true);
+
+    if(isEnabled){
+        quasar.armor = quasarOriginals.armor + 20;
+        quasar.speed = quasarOriginals.speed * 2.5;
+
+        if(quasar.abilities){
+            let idx = 0;
+            for(let i = 0; i < quasar.abilities.size; i++){
+                let ab = quasar.abilities.get(i);
+                if(ab instanceof ForceFieldAbility && quasarOriginals.abilities[idx]){
+                    ab.max = quasarOriginals.abilities[idx].max * 3.0;
+                    ab.cooldown = 30;
+                    idx++;
+                }
+            }
+        }
+    } else {
+        quasar.armor = quasarOriginals.armor;
+        quasar.speed = quasarOriginals.speed;
+
+        if(quasar.abilities){
+            let idx = 0;
+            for(let i = 0; i < quasar.abilities.size; i++){
+                let ab = quasar.abilities.get(i);
+                if(ab instanceof ForceFieldAbility && quasarOriginals.abilities[idx]){
+                    ab.max = quasarOriginals.abilities[idx].max;
+                    ab.cooldown = quasarOriginals.abilities[idx].cooldown;
+                    idx++;
+                }
+            }
+        }
+    }
+});
+
 Events.on(UnitDamageEvent, e => {
-    // Kiểm tra đạn gây sát thương có nguồn gốc từ Quasar không
+    if(!Core.settings.getBool("newex-logic-support-units", true)) return;
+
     if(e.source && e.source instanceof Bullet && e.source.owner){
         let owner = e.source.owner;
         if(!owner.dead && owner.type === UnitTypes.quasar){
-            let healAmount = owner.maxHealth * 0.01; // 1% HP tối đa
+            let healAmount = owner.maxHealth * 0.01;
             owner.heal(healAmount);
         }
     }
 });
 
-// 4. CƠ CHẾ TĂNG TỐC BẮN 500% (MỖI 0.1s +10%)
 Events.run(Trigger.update, () => {
+    if(Vars.state.isPaused() || Vars.state.isMenu()) return;
+    if(!Core.settings.getBool("newex-logic-support-units", true)) return;
+
     const quasar = UnitTypes.quasar;
     if(!quasar) return;
 

@@ -21,8 +21,9 @@
 
     const isEn = () => Core.settings.get("locale", "").startsWith("en");
 
-    // Hàm hỗ trợ cộng item newex-starlight vào lõi đội
+    // Hàm hỗ trợ cộng item newex-starlight vào lõi đội (Chỉ chạy trên Server/Host)
     function tryRewardStarlight(team) {
+        if (Vars.net.client) return; // Client không tự ý cộng item
         if (team == null) return;
         let core = team.core();
         if (core == null) return;
@@ -30,7 +31,7 @@
         let starlightItem = Vars.content.getByName(ContentType.item, modPrefix + "-starlight");
         if (starlightItem != null && Mathf.chance(0.09)) {
             core.items.add(starlightItem, 1);
-            Fx.itemTransfer.at(core.x, core.y, 0, Color.valueOf("ffda66"), core);
+            Call.effect(Fx.itemTransfer, core.x, core.y, 0, Color.valueOf("ffda66"), core);
         }
     }
 
@@ -191,7 +192,11 @@
 
             if (Mathf.chance(0.50)) {
                 let extraCritDmg = b.damage * 4.0;
-                entity.damage(extraCritDmg);
+                
+                // Chỉ Server/Host tự gây damage trực tiếp lên entity
+                if (!Vars.net.client) {
+                    entity.damage(extraCritDmg);
+                }
 
                 ultShockwaveEffect.at(b.x, b.y, b.rotation());
                 ultBlastEffect.at(b.x, b.y);
@@ -383,92 +388,92 @@
                     })).size(50, 40).tooltip(english ? "Reached maximum level" : "Đã đạt cấp tối đa");
                 }
 
-table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-    let title = english ? " Forstarsilum Stats: " : " Thông số pháo Forstarsilum: ";
-    let descStr = "";
-    let currentTier = this.getTier();
+                table.button(Icon.info, Styles.cleari, 40, packRun(() => {
+                    let title = english ? " Forstarsilum Stats: " : " Thông số pháo Forstarsilum: ";
+                    let descStr = "";
+                    let currentTier = this.getTier();
 
-    let rewardDesc = english ?
-        "\n\n[gold]🎁 DROP BONUS:[]\n• Has a [stat]9% chance[] to gain 1x [accent]Starlight[] directly to Core when Ultimate kills an enemy unit/structure." :
-        "\n\n[gold]🎁 PHẦN THƯỞNG PHỤ:[]\n• Có [stat]9% cơ hội[] nhận 1x [accent]Starlight[] trực tiếp vào Lõi khi đòn Ult tiêu diệt mục tiêu.";
+                    let rewardDesc = english ?
+                        "\n\n[gold]🎁 DROP BONUS:[]\n• Has a [stat]9% chance[] to gain 1x [accent]Starlight[] directly to Core when Ultimate kills an enemy unit/structure." :
+                        "\n\n[gold]🎁 PHẦN THƯỞNG PHỤ:[]\n• Có [stat]9% cơ hội[] nhận 1x [accent]Starlight[] trực tiếp vào Lõi khi đòn Ult tiêu diệt mục tiêu.";
 
-    if (currentTier == 0) {
-        title += "[yellow](MK1)[]";
-        descStr = (english ?
-            "[gold]⚡ BASE STATS (MK1) ⚡[]\n" +
-            "[lightgray]Turret Health:[] [green]1,200[]\n" +
-            "[lightgray]Effective Range:[] [orange]750 pixels[]\n" +
-            "[lightgray]Base Damage:[] [yellow]78.00 DMG[]\n" +
-            "[lightgray]Charged Strike (Sword):[] [scarlet]75% True Damage (Pierces armor, shields & Vela mechanics)[]\n" +
-            "[lightgray]Fire Rate:[] [white]1 shot / 1.0 seconds[]\n\n" +
-            "[sky]⚡ ACCUMULATED ENERGY MECHANIC (BUFF):[]\n" +
-            "• [lightgray]Buff Accumulation:[] Each hit/activation gains [green]+10.0%[] buff.\n" +
-            "• [lightgray]Decay:[] Automatically decays over time when not attacking targets." :
-            "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-            "[lightgray]Máu tháp pháo:[] [green]1,200[]\n" +
-            "[lightgray]Tầm bắn hiệu dụng:[] [orange]750 pixel[]\n" +
-            "[lightgray]Sát thương gốc:[] [yellow]78.00 DMG[]\n" +
-            "[lightgray]Đòn Tụ Lực (Kiếm):[] [scarlet]75% True Damage (Xuyên giáp, khiên & cơ chế Vela)[]\n" +
-            "[lightgray]Tốc độ bắn:[] [white]1 phát / 1.0 giây[]\n\n" +
-            "[sky]⚡ CƠ CHẾ NĂNG LƯỢNG TÍCH LŨY (BUFF):[]\n" +
-            "• [lightgray]Tích lũy Buff:[] Mỗi phát bắn trúng/kích hoạt sẽ tăng [green]+10.0%[] buff.\n" +
-            "• [lightgray]Suy giảm:[] Tự động suy giảm dần theo thời gian khi không bắn mục tiêu.") + rewardDesc;
-    } 
-    else if (currentTier == 1) {
-        title += "[cyan](MK2)[]";
-        descStr = (english ?
-            "[cyan]⚡ BASE STATS (MK2) ⚡[]\n" +
-            "[lightgray]Turret Health:[] [green]1,800 [lime](+50%)[]\n" +
-            "[lightgray]Effective Range:[] [orange]750 pixels[]\n" +
-            "[lightgray]Base Damage:[] [yellow]105.00 DMG [lime](+34.6%)[]\n" +
-            "[lightgray]Charged Strike (Sword):[] [scarlet]75% True Damage (Pierces armor, shields & Vela mechanics)[]\n\n" +
-            "[lime]⚡ MK2 SPECIAL MECHANIC:[]\n" +
-            "• [lightgray]Ult Chance:[] Has a [gold]40% chance[] to trigger 1s sword charge to fire ultimate per regular shot.\n" +
-            "• [lightgray]Accumulation Speed:[] Gains [green]+20.0%[] buff per shot.\n" +
-            "• [lightgray]Stable Retention:[] Buff drop rate when idle reduced to [green]0.08/s[]." :
-            "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
-            "[lightgray]Máu tháp pháo:[] [green]1,800 [lime](+50%)[]\n" +
-            "[lightgray]Tầm bắn hiệu dụng:[] [orange]750 pixel[]\n" +
-            "[lightgray]Sát thương gốc:[] [yellow]105.00 DMG [lime](+34.6%)[]\n" +
-            "[lightgray]Đòn Tụ Lực (Kiếm):[] [scarlet]75% True Damage (Xuyên giáp, khiên & cơ chế Vela)[]\n\n" +
-            "[lime]⚡ CƠ CHẾ ĐẶC BIỆT MK2:[]\n" +
-            "• [lightgray]Xác suất Ult:[] Có [gold]40% cơ hội[] kích hoạt tụ kiếm 1s bắn đòn dồn lực theo mỗi phát bắn thường.\n" +
-            "• [lightgray]Tốc độ tích tụ:[] Tăng [green]+20.0%[] buff mỗi phát bắn.\n" +
-            "• [lightgray]Duy trì ổn định:[] Tốc độ rớt buff khi dừng bắn giảm còn [green]0.08/s[].") + rewardDesc;
-    } 
-    else if (currentTier == 2) {
-        title += "[purple](MK2B)[]";
-        descStr = (english ?
-            "[purple]⚡ BASE STATS (MK2B) ⚡[]\n" +
-            "[lightgray]Turret Health:[] [green]1,600 [lime](+33.3%)[]\n" +
-            "[lightgray]Effective Range:[] [orange]750 pixels[]\n" +
-            "[lightgray]Base Damage:[] [red]165.00 DMG (+111.5%)[]\n" +
-            "[lightgray]Charged Strike (Sword):[] [scarlet]75% True Damage (Pierces armor, shields & Vela mechanics)[]\n\n" +
-            "[purple]🔥 MK2B SPECIAL MECHANIC:[]\n" +
-            "• [lightgray]No Buff Reset:[] After ultimate shot, has a chance to [gold]keep 100% buff[] without resetting (80% -> 70% -> ... -> 0%).\n" +
-            "• [lightgray]Homing Circuit:[] Starsword ammo [pink]automatically homes into targets[] (300px).\n" +
-            "• [lightgray]Firepower Stacking:[] Gains [green]+15.0%[] buff/shot." :
-            "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
-            "[lightgray]Máu tháp pháo:[] [green]1,600 [lime](+33.3%)[]\n" +
-            "[lightgray]Tầm bắn hiệu dụng:[] [orange]750 pixel[]\n" +
-            "[lightgray]Sát thương gốc:[] [red]165.00 DMG (+111.5%)[]\n" +
-            "[lightgray]Đòn Tụ Lực (Kiếm):[] [scarlet]75% True Damage (Xuyên giáp, khiên & cơ chế Vela)[]\n\n" +
-            "[purple]🔥 CƠ CHẾ ĐẶC BIỆT MK2B:[]\n" +
-            "• [lightgray]Không Reset Buff:[] Sau đòn dồn lực, có cơ hội [gold]giữ nguyên 100% buff[] không bị reset (80% -> 70% -> ... -> 0%).\n" +
-            "• [lightgray]Mạch định vị:[] Đạn Starsword [pink]tự động bẻ lái tìm mục tiêu[] (300px).\n" +
-            "• [lightgray]Tích lũy hỏa lực:[] Tăng [green]+15.0%[] buff/viên.") + rewardDesc;
-    }
+                    if (currentTier == 0) {
+                        title += "[yellow](MK1)[]";
+                        descStr = (english ?
+                            "[gold]⚡ BASE STATS (MK1) ⚡[]\n" +
+                            "[lightgray]Turret Health:[] [green]1,200[]\n" +
+                            "[lightgray]Effective Range:[] [orange]750 pixels[]\n" +
+                            "[lightgray]Base Damage:[] [yellow]78.00 DMG[]\n" +
+                            "[lightgray]Charged Strike (Sword):[] [scarlet]75% True Damage (Pierces armor, shields & Vela mechanics)[]\n" +
+                            "[lightgray]Fire Rate:[] [white]1 shot / 1.0 seconds[]\n\n" +
+                            "[sky]⚡ ACCUMULATED ENERGY MECHANIC (BUFF):[]\n" +
+                            "• [lightgray]Buff Accumulation:[] Each hit/activation gains [green]+10.0%[] buff.\n" +
+                            "• [lightgray]Decay:[] Automatically decays over time when not attacking targets." :
+                            "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
+                            "[lightgray]Máu tháp pháo:[] [green]1,200[]\n" +
+                            "[lightgray]Tầm bắn hiệu dụng:[] [orange]750 pixel[]\n" +
+                            "[lightgray]Sát thương gốc:[] [yellow]78.00 DMG[]\n" +
+                            "[lightgray]Đòn Tụ Lực (Kiếm):[] [scarlet]75% True Damage (Xuyên giáp, khiên & cơ chế Vela)[]\n" +
+                            "[lightgray]Tốc độ bắn:[] [white]1 phát / 1.0 giây[]\n\n" +
+                            "[sky]⚡ CƠ CHẾ NĂNG LƯỢNG TÍCH LŨY (BUFF):[]\n" +
+                            "• [lightgray]Tích lũy Buff:[] Mỗi phát bắn trúng/kích hoạt sẽ tăng [green]+10.0%[] buff.\n" +
+                            "• [lightgray]Suy giảm:[] Tự động suy giảm dần theo thời gian khi không bắn mục tiêu.") + rewardDesc;
+                    } 
+                    else if (currentTier == 1) {
+                        title += "[cyan](MK2)[]";
+                        descStr = (english ?
+                            "[cyan]⚡ BASE STATS (MK2) ⚡[]\n" +
+                            "[lightgray]Turret Health:[] [green]1,800 [lime](+50%)[]\n" +
+                            "[lightgray]Effective Range:[] [orange]750 pixels[]\n" +
+                            "[lightgray]Base Damage:[] [yellow]105.00 DMG [lime](+34.6%)[]\n" +
+                            "[lightgray]Charged Strike (Sword):[] [scarlet]75% True Damage (Pierces armor, shields & Vela mechanics)[]\n\n" +
+                            "[lime]⚡ MK2 SPECIAL MECHANIC:[]\n" +
+                            "• [lightgray]Ult Chance:[] Has a [gold]40% chance[] to trigger 1s sword charge to fire ultimate per regular shot.\n" +
+                            "• [lightgray]Accumulation Speed:[] Gains [green]+20.0%[] buff per shot.\n" +
+                            "• [lightgray]Stable Retention:[] Buff drop rate when idle reduced to [green]0.08/s[]." :
+                            "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
+                            "[lightgray]Máu tháp pháo:[] [green]1,800 [lime](+50%)[]\n" +
+                            "[lightgray]Tầm bắn hiệu dụng:[] [orange]750 pixel[]\n" +
+                            "[lightgray]Sát thương gốc:[] [yellow]105.00 DMG [lime](+34.6%)[]\n" +
+                            "[lightgray]Đòn Tụ Lực (Kiếm):[] [scarlet]75% True Damage (Xuyên giáp, khiên & cơ chế Vela)[]\n\n" +
+                            "[lime]⚡ CƠ CHẾ ĐẶC BIỆT MK2:[]\n" +
+                            "• [lightgray]Xác suất Ult:[] Có [gold]40% cơ hội[] kích hoạt tụ kiếm 1s bắn đòn dồn lực theo mỗi phát bắn thường.\n" +
+                            "• [lightgray]Tốc độ tích tụ:[] Tăng [green]+20.0%[] buff mỗi phát bắn.\n" +
+                            "• [lightgray]Duy trì ổn định:[] Tốc độ rớt buff khi dừng bắn giảm còn [green]0.08/s[].") + rewardDesc;
+                    } 
+                    else if (currentTier == 2) {
+                        title += "[purple](MK2B)[]";
+                        descStr = (english ?
+                            "[purple]⚡ BASE STATS (MK2B) ⚡[]\n" +
+                            "[lightgray]Turret Health:[] [green]1,600 [lime](+33.3%)[]\n" +
+                            "[lightgray]Effective Range:[] [orange]750 pixels[]\n" +
+                            "[lightgray]Base Damage:[] [red]165.00 DMG (+111.5%)[]\n" +
+                            "[lightgray]Charged Strike (Sword):[] [scarlet]75% True Damage (Pierces armor, shields & Vela mechanics)[]\n\n" +
+                            "[purple]🔥 MK2B SPECIAL MECHANIC:[]\n" +
+                            "• [lightgray]No Buff Reset:[] After ultimate shot, has a chance to [gold]keep 100% buff[] without resetting (80% -> 70% -> ... -> 0%).\n" +
+                            "• [lightgray]Homing Circuit:[] Starsword ammo [pink]automatically homes into targets[] (300px).\n" +
+                            "• [lightgray]Firepower Stacking:[] Gains [green]+15.0%[] buff/shot." :
+                            "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
+                            "[lightgray]Máu tháp pháo:[] [green]1,600 [lime](+33.3%)[]\n" +
+                            "[lightgray]Tầm bắn hiệu dụng:[] [orange]750 pixel[]\n" +
+                            "[lightgray]Sát thương gốc:[] [red]165.00 DMG (+111.5%)[]\n" +
+                            "[lightgray]Đòn Tụ Lực (Kiếm):[] [scarlet]75% True Damage (Xuyên giáp, khiên & cơ chế Vela)[]\n\n" +
+                            "[purple]🔥 CƠ CHẾ ĐẶC BIỆT MK2B:[]\n" +
+                            "• [lightgray]Không Reset Buff:[] Sau đòn dồn lực, có cơ hội [gold]giữ nguyên 100% buff[] không bị reset (80% -> 70% -> ... -> 0%).\n" +
+                            "• [lightgray]Mạch định vị:[] Đạn Starsword [pink]tự động bẻ lái tìm mục tiêu[] (300px).\n" +
+                            "• [lightgray]Tích lũy hỏa lực:[] Tăng [green]+15.0%[] buff/viên.") + rewardDesc;
+                    }
 
-    let dialog = extend(BaseDialog, title, {});
-    let infoTable = new Table();
-    let cell = infoTable.add(descStr).width(360);
-    cell.get().setWrap(true); cell.get().setAlignment(Align.left);
-    let scroll = new ScrollPane(infoTable);
-    scroll.setScrollingDisabled(true, false);
-    dialog.cont.add(scroll).maxHeight(400);
-    dialog.addCloseButton(); dialog.show();
-})).size(50, 40).tooltip(english ? "View detailed system stats" : "Xem thông số chi tiết hệ thống");            
-},
+                    let dialog = extend(BaseDialog, title, {});
+                    let infoTable = new Table();
+                    let cell = infoTable.add(descStr).width(360);
+                    cell.get().setWrap(true); cell.get().setAlignment(Align.left);
+                    let scroll = new ScrollPane(infoTable);
+                    scroll.setScrollingDisabled(true, false);
+                    dialog.cont.add(scroll).maxHeight(400);
+                    dialog.addCloseButton(); dialog.show();
+                })).size(50, 40).tooltip(english ? "View detailed system stats" : "Xem thông số chi tiết hệ thống");            
+            },
 
             config() { return java.lang.Integer(this.getTier()); },
 
@@ -546,7 +551,8 @@ table.button(Icon.info, Styles.cleari, 40, packRun(() => {
 
                 this.customRecoil = Mathf.approach(this.customRecoil, 0.0, 0.12 * Time.delta);
 
-                if(this.activeUltBullets != null && this.activeUltBullets.length > 0){
+                // CHỈ SERVER/HOST MỚI XỬ LÝ TRỪ MÁU & TIÊU DIỆT CÔNG TRÌNH/UNIT TRỰC TIẾP
+                if(!Vars.net.client && this.activeUltBullets != null && this.activeUltBullets.length > 0){
                     for(let i = this.activeUltBullets.length - 1; i >= 0; i--){
                         let entry = this.activeUltBullets[i];
                         if(entry == null) {
@@ -685,6 +691,7 @@ table.button(Icon.info, Styles.cleari, 40, packRun(() => {
                 }
             },
 
+            // ĐỌC/GHI DỮ LIỆU ĐƯỢC CHUẨN HÓA HOÀN TOÀN TRÁNH BỊ LỆCH BYTE SAVE
             write(write){ 
                 this.super$write(write); 
                 write.b(this.getTier()); 
@@ -694,9 +701,10 @@ table.button(Icon.info, Styles.cleari, 40, packRun(() => {
             read(read, revision){ 
                 this.super$read(read, revision); 
                 this.setTier(read.b()); 
-                if(revision >= 1) this.energyState = read.f(); 
-                if(revision >= 2) this.noResetChanceMK2B = read.f();
+                this.energyState = read.f(); 
+                this.noResetChanceMK2B = read.f();
                 this.customRecoil = 0.0;
+                this.activeUltBullets = [];
             }
         });
     });

@@ -18,6 +18,6 @@ requirements: [
   silicon/200
   phase-fabric/50
   obs/200
-  obsidis/1500
+  obsidis/150
 ]
 research: xeuw-conveyor-mk1

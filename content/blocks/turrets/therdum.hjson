@@ -2,6 +2,7 @@
 name: Therdum
 description: "Shotgun"
 health: 6800
+armor: 46
 size: 2
 reload: 60
 range: 105
@@ -30,8 +31,8 @@ drawer: {
 researchCostMultiplier: 0.1
 
 requirements: [
-  copper/266
-    lead/170
+  copper/67
+    lead/70
 ]
 category: turret
 research: xylaon

@@ -57,12 +57,12 @@ const createDtgHitEffect = (life, tier, damage) => new Effect(life, e => {
     Draw.reset();
 });
 
-const dtgHitEffectMk1 = createDtgHitEffect(20, 0, 63);
-const dtgHitEffectMk2 = createDtgHitEffect(22, 1, 56);
-const dtgHitEffectMk2b = createDtgHitEffect(26, 2, 122);
-const dtgSprayHitEffect = createDtgHitEffect(14, 0, 21);
-const dtgSprayHitEffectMk2 = createDtgHitEffect(14, 1, 30);
-const dtgSprayHitEffectMk2b = createDtgHitEffect(14, 2, 23);
+const dtgHitEffectMk1 = createDtgHitEffect(20, 0, 220.5);
+const dtgHitEffectMk2 = createDtgHitEffect(22, 1, 196);
+const dtgHitEffectMk2b = createDtgHitEffect(26, 2, 427);
+const dtgSprayHitEffect = createDtgHitEffect(14, 0, 73.5);
+const dtgSprayHitEffectMk2 = createDtgHitEffect(14, 1, 107.1);
+const dtgSprayHitEffectMk2b = createDtgHitEffect(14, 2, 80.5);
  
 
  const reqMK2 = {
@@ -117,7 +117,7 @@ function getAngleDiff(angle1, angle2) {
 
 const dtgSoldernNormalBullet = extend(BasicBulletType, {
     speed: 7,
-    damage: 63,
+    damage: 220.5,
     width: 9,
     height: 22,
     lifetime: 52, 
@@ -133,7 +133,7 @@ const dtgSoldernNormalBullet = extend(BasicBulletType, {
 const dtgSoldernSmallSprayBullet = extend(BasicBulletType, {
     sprite: "bullet",
     speed: 8.5,
-    damage: 21,
+    damage: 73.5,
     width: 3.5,
     height: 9,
     lifetime: 12,
@@ -148,7 +148,7 @@ const dtgSoldernSmallSprayBullet = extend(BasicBulletType, {
 
 const dtgSoldernmk2NormalBullet = extend(BasicBulletType, {
     speed: 10.4,
-    damage: 56,
+    damage: 196,
     width: 9.5,
     height: 24,
     lifetime: 45,      
@@ -164,7 +164,7 @@ const dtgSoldernmk2NormalBullet = extend(BasicBulletType, {
 const dtgSoldernmk2SmallSprayBullet = extend(BasicBulletType, {
     sprite: "bullet",
     speed: 9.0,
-    damage: 30.6,
+    damage: 107.1,
     width: 3.85,
     height: 10,
     lifetime: 12, 
@@ -180,7 +180,7 @@ const dtgSoldernmk2SmallSprayBullet = extend(BasicBulletType, {
 const dtgSoldernmk2bSmallSprayBullet = extend(BasicBulletType, {
     sprite: "bullet",
     speed: 8.5,
-    damage: 23,
+    damage: 80.5,
     width: 3.5,
     height: 9,
     lifetime: 14,
@@ -196,7 +196,7 @@ const dtgSoldernmk2bSmallSprayBullet = extend(BasicBulletType, {
 const spraySpreadB = extend(BasicBulletType, {
     sprite: "bullet",
     speed: 11.0,
-    damage: 23,
+    damage: 80.5,
     width: 4.0,
     height: 12,
     lifetime: 20,
@@ -211,7 +211,7 @@ const spraySpreadB = extend(BasicBulletType, {
 
 const laserBulletB = extend(LaserBulletType, {
     length: 252,
-    damage: 122,
+    damage: 427,
     width: 24,
     lifetime: 25, 
     colors: [Color.valueOf("#ff1744"), Color.valueOf("#b71c1c"), Color.white],
@@ -340,15 +340,15 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                     " [white]• Structure HP greatly increased to [green]2860 HP[] (+30%).[]\n" + 
                     " [white]• Shield core expanded, boosting matrix durability to [cyan]6500[].[]\n" +
                     " [white]• Long-range targeting drastically expanded to [green]468 pixels[] (+30%).[]\n" +
-                    " [white]• Ranged ammo upgraded to MK2 variant (Speed: 10.4, Damage: 56).[]\n" +
-                    " [white]• Close Combat: Retains 100 range, boosts shotgun damage to [yellow]30.6[].[]\n" +
+                    " [white]• Ranged ammo upgraded to MK2 variant (Speed: 10.4, Damage: 196).[]\n" +
+                    " [white]• Close Combat: Retains 100 range, boosts shotgun damage to [yellow]107.1[].[]\n" +
                     " [white]• Special: Instantly recharges shield when target enters close-range for the first time.[]" :
                     "Cải tiến năng lực hỏa lực và năng lượng xung kích:\n" +
                     " [white]• Kết cấu HP pháo tăng mạnh lên [green]2860 HP[] (+30%).[]\n" + 
                     " [white]• Lõi khiên mở rộng, gia tăng độ bền màng chắn lên [cyan]6500[].[]\n" +
                     " [white]• Tầm bắn tầm xa mở rộng vượt trội đạt [green]468 pixel[] (+30%).[]\n" +
-                    " [white]• Đạn tầm xa nâng cấp lên dạng MK2 (Vận tốc: 10.4, Sát thương: 56).[]\n" +
-                    " [white]• Cận chiến: Giữ nguyên cự ly áp sát 100, cường hóa đạn rải lên [yellow]30.6[].[]\n" +
+                    " [white]• Đạn tầm xa nâng cấp lên dạng MK2 (Vận tốc: 10.4, Sát thương: 196).[]\n" +
+                    " [white]• Cận chiến: Giữ nguyên cự ly áp sát 100, cường hóa đạn rải lên [yellow]107.1[].[]\n" +
                     " [white]• Cơ chế đặc biệt: Cho phép sạc đầy lại màng khiên tức thời khi mục tiêu lọt vào tầm gần lần đầu.[]";
                 let b1D = b1.add(b1Text);
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
@@ -367,13 +367,13 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                     "Complete Conversion to Compressed Heavy Laser Variant:\n" +
                     " [white]• Reinforced frame boosts turret HP to ultra tier [green]4400 HP[] (+100%).[]\n" +
                     " [white]• Shield matrix capacity maxes out at [cyan]12000[] health points.[]\n" +
-                    " [white]• Ranged attack distance reduced to [red]252 pixels[], but converts to [orange]Piercing Laser Beams[] with [red]122 heavy damage[].[]\n" +
+                    " [white]• Ranged attack distance reduced to [red]252 pixels[], but converts to [orange]Piercing Laser Beams[] with [red]427 heavy damage[].[]\n" +
                     " [white]• Close Combat: Shotgun trigger threshold expanded to [yellow]145 pixels[].[]\n" +
                     " [white]• Hybrid Shotgun Fire: Simultaneously launches [scarlet]14 red pellets[] and [orange]6 wide-spread spread beams[] to clear enemies.[]" :
                     "Chuyển đổi toàn diện sang dạng Trọng Pháo Laser bạo nén:\n" +
                     " [white]• Kết cấu khung vững chắc nâng HP pháo lên mức siêu cấp [green]4400 HP[] (+100%).[]\n" +
                     " [white]• Lõi nén lá chắn hấp thụ đạt mốc tối đa [cyan]12000[] độ bền.[]\n" +
-                    " [white]• Tầm bắn tầm xa thu hẹp còn [red]252 pixel[], bù lại chuyển sang dạng [orange]Chùm tia Laser xuyên phá[] tầm trung cực đại [red]122 sát thương[].[]\n" +
+                    " [white]• Tầm bắn tầm xa thu hẹp còn [red]252 pixel[], bù lại chuyển sang dạng [orange]Chùm tia Laser xuyên phá[] tầm trung cực đại [red]427 sát thương[].[]\n" +
                     " [white]• Cận chiến: Tầm quét kích hoạt shotgun mở rộng lên [yellow]145 pixel[].[]\n" +
                     " [white]• Giải phóng hỏa lực shotgun hỗn hợp: Phóng đồng thời [scarlet]14 đạn rải đỏ[] kèm [orange]6 tia đạn tỏa diện rộng[] quét sạch vật cản xung quanh.[]";
                 let b2D = b2.add(b2Text);
@@ -418,18 +418,18 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                           "• [lightgray]Turret Health:[] [green]2200 HP[]\n" +
                           "• [lightgray]Shield Health:[] [cyan]" + shieldHealthMK1 + "[]\n" +
                           "• [lightgray]Effective Range:[] [orange]" + this.range() + " pixels[]\n" +
-                          "• [lightgray]Ranged Damage:[] [yellow]63.0[] (Bullet Speed: 7)\n\n" +
+                          "• [lightgray]Ranged Damage:[] [yellow]220.5[] (Bullet Speed: 7)\n\n" +
                           "[sky]⚡ UTILITY MECHANICS:[]\n" +
                           "• [lightgray]Energy Shield:[] Automatically deploys a 120° shield blocking incoming projectiles in aiming direction.\n" +
-                          "• [lightgray]Close Combat Mode (Shotgun):[] Deploys mechanical claws when enemies step within [yellow]100 pixels[]. Fires a burst of 14 pellets (Damage: 21) across 10 rapid magazines." :
+                          "• [lightgray]Close Combat Mode (Shotgun):[] Deploys mechanical claws when enemies step within [yellow]100 pixels[]. Fires a burst of 14 pellets (Damage: 73.5) across 10 rapid magazines." :
                           "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
                           "• [lightgray]Máu tháp pháo:[] [green]2200 HP[]\n" +
                           "• [lightgray]Độ bền lá chắn:[] [cyan]" + shieldHealthMK1 + "[]\n" +
                           "• [lightgray]Tầm bắn hiệu dụng:[] [orange]" + this.range() + " pixel[]\n" +
-                          "• [lightgray]Sát thương tầm xa:[] [yellow]63.0[] (Tốc độ đạn: 7)\n\n" +
+                          "• [lightgray]Sát thương tầm xa:[] [yellow]220.5[] (Tốc độ đạn: 7)\n\n" +
                           "[sky]⚡ CƠ CHẾ ĐA DỤNG:[]\n" +
                           "• [lightgray]Màng chắn năng lượng:[] Tự động bung góc chặn 120° theo hướng nòng súng khi bắn để triệt tiêu đạn địch.\n" +
-                          "• [lightgray]Chế độ Cận chiến (Shotgun):[] Kích hoạt vuốt máy khi mục tiêu lọt vào cự ly [yellow]100 pixel[]. Xả loạt 14 đạn rải (Sát thương: 21) liên thanh liên tục trong 10 băng đạn.";
+                          "• [lightgray]Chế độ Cận chiến (Shotgun):[] Kích hoạt vuốt máy khi mục tiêu lọt vào cự ly [yellow]100 pixel[]. Xả loạt 14 đạn rải (Sát thương: 73.5) liên thanh liên tục trong 10 băng đạn.";
             } 
             else if (currentTier == 1) {
                 title += "[cyan](MK2)[]";
@@ -438,18 +438,18 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                           "• [lightgray]Turret Health:[] [green]2860 HP [yellow](+30%)[]\n" +
                           "• [lightgray]Shield Health:[] [cyan]" + shieldHealthMK2 + "[]\n" +
                           "• [lightgray]Effective Range:[] [orange]" + this.range() + " pixels [yellow](+30%)[]\n" +
-                          "• [lightgray]Ranged Damage:[] [yellow]56.0[] (Velocity boosted: 10.4)\n\n" +
+                          "• [lightgray]Ranged Damage:[] [yellow]196.0[] (Velocity boosted: 10.4)\n\n" +
                           "[lime]⚡ ADDITIONAL UTILITY MECHANICS:[]\n" +
                           "• [lightgray]Instant Shield Recharge:[] Shield instantly recharges to full capacity when an enemy enters close-range for the first time.\n" +
-                          "• [lightgray]Enhanced Shotgun:[] Significantly increases pellet shotgun damage to [yellow]30.6[]." :
+                          "• [lightgray]Enhanced Shotgun:[] Significantly increases pellet shotgun damage to [yellow]107.1[]." :
                           "[cyan]⚡ THÔNG SỐ CẤU HÌNH NÂNG CẤP (MK2) ⚡[]\n" +
                           "• [lightgray]Máu tháp pháo:[] [green]2860 HP [yellow](+30%)[]\n" +
                           "• [lightgray]Độ bền lá chắn:[] [cyan]" + shieldHealthMK2 + "[]\n" +
                           "• [lightgray]Tầm bắn hiệu dụng:[] [orange]" + this.range() + " pixel [yellow](+30%)[]\n" +
-                          "• [lightgray]Sát thương tầm xa:[] [yellow]56.0[] (Gia tốc đạn tăng vọt: 10.4)\n\n" +
+                          "• [lightgray]Sát thương tầm xa:[] [yellow]196.0[] (Gia tốc đạn tăng vọt: 10.4)\n\n" +
                           "[lime]⚡ CƠ CHẾ ĐA DỤNG BỔ SUNG:[]\n" +
                           "• [lightgray]Nạp khiên tức thời:[] Khiên tự động sạc đầy lại hoàn toàn khi kẻ địch lần đầu tiên bước vào vùng cận chiến.\n" +
-                          "• [lightgray]Hỏa lực shotgun cải tiến:[] Tăng mạnh sát thương mỗi viên đạn rải trong loạt tỏa cận chiến lên [yellow]30.6[].";
+                          "• [lightgray]Hỏa lực shotgun cải tiến:[] Tăng mạnh sát thương mỗi viên đạn rải trong loạt tỏa cận chiến lên [yellow]107.1[].";
             } 
             else if (currentTier == 2) {
                 title += "[purple](MK2B)[]";
@@ -458,18 +458,18 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                           "• [lightgray]Turret Health:[] [green]4400 HP [yellow](+100%)[]\n" +
                           "• [lightgray]Shield Health:[] [cyan]" + shieldHealthMK3 + "[]\n" +
                           "• [lightgray]Effective Range:[] [orange]" + this.range() + " pixels [coral](Reduced)[]\n" +
-                          "• [lightgray]Ranged Mode:[] Replaced with [orange]Destructive Laser Beam[] dealing [red]122 direct damage[].\n\n" +
+                          "• [lightgray]Ranged Mode:[] Replaced with [orange]Destructive Laser Beam[] dealing [red]427 direct damage[].\n\n" +
                           "[purple]🔥 ULTIMATE CLOSE-RANGE POWER:[]\n" +
                           "• [lightgray]Expanded Shotgun Range:[] Threshold expanded to [yellow]145 pixels[].\n" +
-                          "• [lightgray]Hybrid Firepower:[] Fires a combined combo of [scarlet]14 red pellets[] (Damage: 23) and [sharp]6 angled spread beams (12°)[] (Damage: 23) to obliterate nearby targets instantly." :
+                          "• [lightgray]Hybrid Firepower:[] Fires a combined combo of [scarlet]14 red pellets[] (Damage: 80.5) and [sharp]6 angled spread beams (12°)[] (Damage: 80.5) to obliterate nearby targets instantly." :
                           "[purple]⚡ THÔNG SỐ BIẾN THỂ TRỌNG LỰC (MK2B) ⚡[]\n" +
                           "• [lightgray]Máu tháp pháo:[] [green]4400 HP [yellow](+100%)[]\n" +
                           "• [lightgray]Độ bền lá chắn:[] [cyan]" + shieldHealthMK3 + "[]\n" +
                           "• [lightgray]Tầm bắn hiệu dụng:[] [orange]" + this.range() + " pixel [coral](Thu hẹp)[]\n" +
-                          "• [lightgray]Chế độ tầm xa:[] Chuyển hẳn thành [orange]Laser hủy diệt[] nén điểm gây [red]122 sát thương[] trực diện.\n\n" +
+                          "• [lightgray]Chế độ tầm xa:[] Chuyển hẳn thành [orange]Laser hủy diệt[] nén điểm gây [red]427 sát thương[] trực diện.\n\n" +
                           "[purple]🔥 SỨC MẠNH ÁP SÁT TỐI THƯỢNG:[]\n" +
                           "• [lightgray]Mở rộng tầm Shotgun:[] Ngưỡng kích hoạt tăng lên [yellow]145 pixel[].\n" +
-                          "• [lightgray]Hỏa lực hỗn hợp:[] Khai hỏa đồng loạt tổ hợp bạo kích gồm [scarlet]14 đạn rải đỏ[] (Sát thương: 23) đan xen [sharp]6 tia đạn tỏa chéo dạt góc 12°[] (Sát thương: 23) để xóa sổ quân địch trong tích tắc.";
+                          "• [lightgray]Hỏa lực hỗn hợp:[] Khai hỏa đồng loạt tổ hợp bạo kích gồm [scarlet]14 đạn rải đỏ[] (Sát thương: 80.5) đan xem [sharp]6 tia đạn tỏa chéo dạt góc 12°[] (Sát thương: 80.5) để xóa sổ quân địch trong tích tắc.";
             }
 
             let dialog = extend(BaseDialog, title, {});

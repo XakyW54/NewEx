@@ -4,12 +4,13 @@ const packProv = (func) => new Prov({ get: func });
 
 const isEn = () => Core.settings.getString("locale").startsWith("en");
 
- const reqMK2 = { copper: 2000, lead: 2000, titanium: 0 };
-const reqMK2B = { copper: 2000, lead: 2000, titanium: 1000 };
-const reqMK3 = { copper: 4000, lead: 4000, titanium: 2000 };
+// Đã giảm 90% chi phí tài nguyên nâng cấp
+const reqMK2 = { copper: 200, lead: 200, titanium: 0 };
+const reqMK2B = { copper: 200, lead: 200, titanium: 100 };
+const reqMK3 = { copper: 400, lead: 400, titanium: 200 };
 
-const reqMK2B1 = { copper: 4000, lead: 4000, titanium: 2000 };
-const reqMK3B = { copper: 8000, lead: 8000, titanium: 4000 };
+const reqMK2B1 = { copper: 400, lead: 400, titanium: 200 };
+const reqMK3B = { copper: 800, lead: 800, titanium: 400 };
 
 const CHARGE_TIME_MK1 = 60;    
 const CHARGE_TIME_MK2 = 48;    
@@ -19,50 +20,51 @@ const BERSERK_TIME_MK1 = 300;
 const BERSERK_TIME_MK2 = 360;  
 const BERSERK_TIME_MK3 = 486;  
 
- const dorNormalBullet = extend(BasicBulletType, {
-    speed: 7, damage: 12, width: 7, height: 18, lifetime: 43,
+// Đã điều chỉnh lifetime khớp chính xác với Range / Speed
+const dorNormalBullet = extend(BasicBulletType, {
+    speed: 7, damage: 12, width: 7, height: 18, lifetime: 42.86,
     frontColor: Color.valueOf("#e0f7fa"), backColor: Color.valueOf("#00bcd4"),
     trailColor: Color.valueOf("#80deea"), trailWidth: 1.5, trailLength: 5,
     hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor
 });
 
 const dorSmallSprayBullet = extend(BasicBulletType, {
-    speed: 8.5, damage: 21, width: 3.5, height: 9, lifetime: 35,
+    speed: 8.5, damage: 21, width: 3.5, height: 9, lifetime: 35.29,
     frontColor: Color.valueOf("#e0f7fa"), backColor: Color.valueOf("#00bcd4"),
     trailColor: Color.valueOf("#80deea"), trailWidth: 0.75, trailLength: 3,
     hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor
 });
 
 const dormk2NormalBullet = extend(BasicBulletType, {
-    speed: 7.7, damage: 21, width: 7.7, height: 19.8, lifetime: 43,      
+    speed: 7.7, damage: 21, width: 7.7, height: 19.8, lifetime: 50.65,      
     frontColor: Color.valueOf("#e0f7fa"), backColor: Color.valueOf("#00bcd4"),
     trailColor: Color.valueOf("#80deea"), trailWidth: 1.65, trailLength: 6,    
     hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor
 });
 
 const dormk2SmallSprayBullet = extend(BasicBulletType, {
-    speed: 9.0, damage: 25.5, width: 3.85, height: 10, lifetime: 35,
+    speed: 9.0, damage: 25.5, width: 3.85, height: 10, lifetime: 43.33,
     frontColor: Color.valueOf("#e0f7fa"), backColor: Color.valueOf("#00bcd4"),
     trailColor: Color.valueOf("#80deea"), trailWidth: 0.82, trailLength: 4,
     hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor
 });
 
 const dormk3NormalBullet = extend(BasicBulletType, {
-    speed: 8.5, damage: 28.35, width: 8.5, height: 21.5, lifetime: 45,      
+    speed: 8.5, damage: 28.35, width: 8.5, height: 21.5, lifetime: 61.94,      
     frontColor: Color.valueOf("#fff59d"), backColor: Color.valueOf("#fbc02d"),
     trailColor: Color.valueOf("#ffee58"), trailWidth: 1.8, trailLength: 7,    
     hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor
 });
 
 const dormk3SmallSprayBullet = extend(BasicBulletType, {
-    speed: 9.5, damage: 34.425, width: 4.2, height: 11, lifetime: 35,
+    speed: 9.5, damage: 34.425, width: 4.2, height: 11, lifetime: 55.42,
     frontColor: Color.valueOf("#fff59d"), backColor: Color.valueOf("#fbc02d"),
     trailColor: Color.valueOf("#ffee58"), trailWidth: 0.9, trailLength: 5,
     hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor
 });
 
- const normalBulletB = extend(BasicBulletType, {
-    speed: 8, damage: 27, width: 8, height: 20, lifetime: 40, 
+const normalBulletB = extend(BasicBulletType, {
+    speed: 8, damage: 27, width: 8, height: 20, lifetime: 30, 
     frontColor: Color.valueOf("#ff8a80"), backColor: Color.valueOf("#ff1744"), 
     trailColor: Color.valueOf("#ff5252"), trailWidth: 2, trailLength: 6,
     hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor,
@@ -76,7 +78,7 @@ const laserBulletB = extend(LaserBulletType, {
 });
 
 const normalBulletB1 = extend(BasicBulletType, {
-    speed: 8.8, damage: 29.7, width: 8.8, height: 22, lifetime: 40, 
+    speed: 8.8, damage: 29.7, width: 8.8, height: 22, lifetime: 30, 
     frontColor: Color.valueOf("#ff8a80"), backColor: Color.valueOf("#ff1744"), 
     trailColor: Color.valueOf("#ff5252"), trailWidth: 2.2, trailLength: 7,
     hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor,
@@ -90,7 +92,7 @@ const laserBulletB1 = extend(LaserBulletType, {
 });
 
 const shotgunBulletB3 = extend(BasicBulletType, {
-    speed: 9.5, damage: 81, width: 9, height: 18, lifetime: 45, 
+    speed: 9.5, damage: 81, width: 9, height: 18, lifetime: 37.89, 
     frontColor: Color.valueOf("#ea80fc"), backColor: Color.valueOf("#aa00ff"), 
     trailColor: Color.valueOf("#e040fb"), trailWidth: 2.5, trailLength: 6,
     hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor,

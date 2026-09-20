@@ -69,8 +69,8 @@ drawer: {
 researchCostMultiplier: 0.1
 
 requirements: [
-  copper/2660
-    lead/2700
+  copper/266
+    lead/270
     titanium/130
     silicon/168
 ]

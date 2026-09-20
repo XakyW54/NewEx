@@ -152,8 +152,7 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
     getDamageMultiplier(){
         let missingHpPercent = Math.max(0, (1 - (this.health / this.maxHealth)) * 100);
         let steps = Math.floor(missingHpPercent / 10);
-        let tier = this.getTier();
-        return tier == 1 ? (1 + steps * 0.50) : (1 + steps * 0.20);
+        return 1 + steps * 0.50;
     },
 
     range(){
@@ -415,7 +414,7 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
                     "[lightgray]Sát thương gốc:[] [orange]150[]\n" +
                     "[lightgray]Phạm vi bắn:[] [orange]550 px[]\n\n" +
                     "[yellow]CƠ CHẾ BẮN & NỘI TẠI:[]\n" +
-                    "• Mất [red]10% HP[] -> [yellow]+20% Sát thương[] cho mọi đạn.\n" +
+                    "• Mất [red]10% HP[] -> [yellow]+50% Sát thương[] cho mọi đạn.\n" +
                     "• Tự tổn hại: Mất [red]1% HP[] hiện tại mỗi khi bắn trúng mục tiêu.\n" +
                     "• Đạn phụ: [cyan]40% cơ hội[] kích hoạt 8 đạn phụ có sát thương bằng [yellow]80%[] đạn gốc:\n" +
                     "   - [orange]4 viên bắn thẳng:[] Phạm vi đuổi ngắn.\n" +
@@ -426,7 +425,7 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
                     "[lightgray]Base Damage:[] [orange]150[]\n" +
                     "[lightgray]Range:[] [orange]550 px[]\n\n" +
                     "[yellow]MECHANICS & PASSIVE:[]\n" +
-                    "• Lost [red]10% HP[] -> [yellow]+20% Damage[] for all bullets.\n" +
+                    "• Lost [red]10% HP[] -> [yellow]+50% Damage[] for all bullets.\n" +
                     "• Self-damage: Lose [red]1% current HP[] whenever hitting a target.\n" +
                     "• Sub-bullets: [cyan]40% chance[] to fire 8 sub-bullets dealing [yellow]80%[] base damage:\n" +
                     "   - [orange]4 straight bullets:[] Short homing range.\n" +
@@ -463,7 +462,7 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
                     "[lightgray]Sát thương gốc:[] [orange]150[] [cyan](Đạn tự dẫn đường 12%)[]\n" +
                     "[lightgray]Phạm vi bắn:[] [orange]560 px[] [lime](+1.8%)[]\n\n" +
                     "[yellow]CƠ CHẾ BẮN & NỘI TẠI:[]\n" +
-                    "• Mất [red]10% HP[] -> [yellow]+20% Sát thương[] cho mọi đạn.\n" +
+                    "• Mất [red]10% HP[] -> [yellow]+50% Sát thương[] cho mọi đạn.\n" +
                     "• [orange]Nội tại Cuồng Bạo:[] Khi Máu [red]< 50% HP[] -> [yellow]+200% Tốc bắn (x3)[]!\n" +
                     "• Tự tổn hại: Mất [red]1% HP[] hiện tại mỗi khi bắn trúng mục tiêu.\n" +
                     "• Đạn phụ: [cyan]40% cơ hội[] kích hoạt 8 đạn phụ có sát thương bằng [yellow]80%[] đạn gốc:\n" +
@@ -475,7 +474,7 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
                     "[lightgray]Base Damage:[] [orange]150[] [cyan](12% Homing)[]\n" +
                     "[lightgray]Range:[] [orange]560 px[] [lime](+1.8%)[]\n\n" +
                     "[yellow]MECHANICS & PASSIVE:[]\n" +
-                    "• Lost [red]10% HP[] -> [yellow]+20% Damage[] for all bullets.\n" +
+                    "• Lost [red]10% HP[] -> [yellow]+50% Damage[] for all bullets.\n" +
                     "• [orange]Berserk Passive:[] When HP [red]< 50%[] -> [yellow]+200% Fire Rate (x3)[]!\n" +
                     "• Self-damage: Lose [red]1% current HP[] whenever hitting a target.\n" +
                     "• Sub-bullets: [cyan]40% chance[] to fire 8 sub-bullets dealing [yellow]80%[] base damage:\n" +

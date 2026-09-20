@@ -68,7 +68,7 @@ const bulletSlashEffect = new Effect(15, e => {
 });
 
  const vendicumBullet = extend(BasicBulletType, {
-    speed: 8, damage: 45, lifetime: 48, width: 11, height: 16, 
+    speed: 8, damage: 67.5, lifetime: 48, width: 11, height: 16, 
     frontColor: Color.white, backColor: Color.valueOf("#e0b080"),
     textType: "vendicumBullet",
     pierce: true, pierceCap: 3, pierceBuilding: true, knockback: 1, impact: true,
@@ -80,7 +80,7 @@ const bulletSlashEffect = new Effect(15, e => {
 });
 
  const vendicumMK2Bullet = extend(BasicBulletType, {
-    speed: 10, damage: 65, lifetime: 45, width: 13, height: 20, 
+    speed: 10, damage: 97.5, lifetime: 45, width: 13, height: 20, 
     frontColor: Color.white, backColor: Color.valueOf("#ffaa66"),
     pierce: true, pierceCap: 5, pierceBuilding: true, knockback: 1.4, impact: true,
     
@@ -91,7 +91,7 @@ const bulletSlashEffect = new Effect(15, e => {
 });
 
  const vendicumMK2BBullet = extend(BasicBulletType, {
-    speed: 9, damage: 122.5, lifetime: 50, width: 5, height: 64, 
+    speed: 9, damage: 183.75, lifetime: 50, width: 5, height: 64, 
     frontColor: Color.white, backColor: Color.valueOf("#831006"),
     trailEffect: Fx.disperseTrail, trailChance: 0.40, 
     trailColor: Color.valueOf("#ff2525"),
@@ -216,11 +216,11 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                 let b1D = b1.add(isEn() ? 
                                 "[white]• Health: [green]+50%[] (1,800 HP)\n" +
                                 "• Range: [green]+31.25%[] (420 px)\n" +
-                                "• Base Damage: [green]+44.4%[] (65 DMG)\n\n" +
+                                "• Base Damage: [green]+44.4%[] (97.5 DMG)\n\n" +
                                 "[lightgray]Special Ability: Penetrating Magnetic Acceleration — Expands pierce cap to 5 enemy targets or structures, built-in supercharge circuit reduces full energy recharge time to 3.0s.[]" :
                                 "[white]• Máu cấu trúc: [green]+50%[] (1,800 HP)\n" +
                                 "• Tầm bắn: [green]+31.25%[] (420 px)\n" +
-                                "• sát thương gốc: [green]+44.4%[] (65 DMG)\n\n" +
+                                "• sát thương gốc: [green]+44.4%[] (97.5 DMG)\n\n" +
                                 "[lightgray]Kỹ năng đặc biệt: Gia Tốc Từ Tính Xuyên Thấu — Đạn mở rộng khả năng xuyên qua tối đa 5 mục tiêu kẻ địch hoặc công trình, tích hợp mạch siêu sạc giúp rút ngắn thời gian hồi đầy năng lượng xuống 3.0 giây.[]");
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                 b1.button(isEn() ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => {
@@ -238,11 +238,11 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                 let b2D = b2.add(isEn() ? 
                                 "[white]• Health: [green]+33.3%[] (1,600 HP)\n" +
                                 "• Range: [green]+12.5%[] (360 px)\n" +
-                                "• Base Damage: [green]+172.2%[] (122.5 DMG)\n\n" +
+                                "• Base Damage: [green]+172.2%[] (183.75 DMG)\n\n" +
                                 "[lightgray]Special Ability: Homing Heat-Seeking Impulse — Removes piercing to integrate smart sensors that automatically steer towards nearby targets, saving 70% energy per shot.[]" :
                                 "[white]• Máu cấu trúc: [green]+33.3%[] (1,600 HP)\n" +
                                 "• Tầm bắn: [green]+12.5%[] (360 px)\n" +
-                                "• sát thương gốc: [green]+172.2%[] (122.5 DMG)\n\n" +
+                                "• sát thương gốc: [green]+172.2%[] (183.75 DMG)\n\n" +
                                 "[lightgray]Kỹ năng đặc biệt: Xung Kích Tầm Nhiệt Truy Đuổi — Loại bỏ xuyên thấu để tích hợp chip cảm biến thông minh tự động bẻ lái truy đuổi mục tiêu xung quanh, tiết kiệm 70% năng lượng mỗi phát bắn.[]");
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
                 b2.button(isEn() ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => {
@@ -281,7 +281,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                           "[gold]⚡ BASE STATS (MK1) ⚡[]\n" +
                           "[lightgray]Turret HP:[] [green]1,200[]\n" +
                           "[lightgray]Effective Range:[] [orange]320 px[]\n" +
-                          "[lightgray]Base Damage:[] [yellow]45.00 DMG[]\n" +
+                          "[lightgray]Base Damage:[] [yellow]67.50 DMG[]\n" +
                           "[lightgray]Penetration:[] [white]3 targets[]\n\n" +
                           "[sky]⚡ CONSUMPTION MECHANIC:[]\n" +
                           "• [lightgray]Energy Loss:[] Each shot consumes [red]1.0%[] stored core energy. Damage scales directly with current energy.\n" +
@@ -289,7 +289,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                           "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
                           "[lightgray]Máu tháp pháo:[] [green]1,200[]\n" +
                           "[lightgray]Tầm bắn hiệu dụng:[] [orange]320 pixel[]\n" +
-                          "[lightgray]sát thương gốc:[] [yellow]45.00 DMG[]\n" +
+                          "[lightgray]sát thương gốc:[] [yellow]67.50 DMG[]\n" +
                           "[lightgray]Khả năng xuyên thấu:[] [white]3 mục tiêu[]\n\n" +
                           "[sky]⚡ CƠ CHẾ NĂNG LƯỢNG TIÊU HAO:[]\n" +
                           "• [lightgray]Tiêu hao (Energy Loss):[] Mỗi phát bắn làm tiêu trừ [red]1.0%[] năng lượng tích lũy của lõi. Sát thương đầu ra tỷ lệ thuận với lượng điện tích hiện có.\n" +
@@ -301,7 +301,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                           "[cyan]⚡ BASE STATS (MK2) ⚡[]\n" +
                           "[lightgray]Turret HP:[] [green]1,800 [lime](+50%)[]\n" +
                           "[lightgray]Effective Range:[] [orange]420 px [lime](+31.2%)[]\n" +
-                          "[lightgray]Base Damage:[] [yellow]65.00 DMG [lime](+44.4%)[]\n" +
+                          "[lightgray]Base Damage:[] [yellow]97.50 DMG [lime](+44.4%)[]\n" +
                           "[lightgray]Penetration:[] [yellow]5 targets [lime](+2 targets)[]\n\n" +
                           "[lime]⚡ CONSUMPTION MECHANIC:[]\n" +
                           "• [lightgray]Consumption Optimization:[] Reduces energy loss down to [red]0.5%[] per shot (-50%).\n" +
@@ -309,7 +309,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                           "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
                           "[lightgray]Máu tháp pháo:[] [green]1,800 [lime](+50%)[]\n" +
                           "[lightgray]Tầm bắn hiệu dụng:[] [orange]420 pixel [lime](+31.2%)[]\n" +
-                          "[lightgray]sát thương gốc:[] [yellow]65.00 DMG [lime](+44.4%)[]\n" +
+                          "[lightgray]sát thương gốc:[] [yellow]97.50 DMG [lime](+44.4%)[]\n" +
                           "[lightgray]Khả năng xuyên thấu:[] [yellow]5 mục tiêu [lime](+2 mục tiêu)[]\n\n" +
                           "[lime]⚡ CƠ CHẾ NĂNG LƯỢNG TIÊU HAO:[]\n" +
                           "• [lightgray]Tối ưu tiêu hao:[] Giảm thiểu mức tiêu hao năng lượng xuống chỉ còn [red]0.5%[] cho mỗi phát bắn (Giảm -50%).\n" +
@@ -321,7 +321,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                           "[purple]⚡ BASE STATS (MK2B) ⚡[]\n" +
                           "[lightgray]Turret HP:[] [green]1,600 [lime](+33.3%)[]\n" +
                           "[lightgray]Effective Range:[] [orange]360 px [lime](+12.5%)[]\n" +
-                          "[lightgray]Base Damage:[] [red]122.50 DMG (+172.2%)[]\n" +
+                          "[lightgray]Base Damage:[] [red]183.75 DMG (+172.2%)[]\n" +
                           "[lightgray]Penetration:[] [red]None (Lost piercing)[]\n\n" +
                           "[purple]🔥 CONSUMPTION MECHANIC:[]\n" +
                           "• [lightgray]Homing Circuit:[] Replaces pierce with homing sensors, bullets [pink]automatically steer toward targets[] within 200px.\n" +
@@ -329,7 +329,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                           "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
                           "[lightgray]Máu tháp pháo:[] [green]1,600 [lime](+33.3%)[]\n" +
                           "[lightgray]Tầm bắn hiệu dụng:[] [orange]360 pixel [lime](+12.5%)[]\n" +
-                          "[lightgray]sát thương gốc:[] [red]122.50 DMG (+172.2%)[]\n" +
+                          "[lightgray]sát thương gốc:[] [red]183.75 DMG (+172.2%)[]\n" +
                           "[lightgray]Khả năng xuyên thấu:[] [red]Không (Mất khả năng xuyên)[]\n\n" +
                           "[purple]🔥 CƠ CHẾ NĂNG LƯỢNG TIÊU HAO:[]\n" +
                           "• [lightgray]Mạch định vị:[] Đổi khả năng xuyên lấy cảm biến tích hợp, đạn [pink]tự động bẻ lái tìm mục tiêu[] trong phạm vi 200 pixel.\n" +

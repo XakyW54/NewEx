@@ -35,7 +35,7 @@ researchCostMultiplier: 0.1
 requirements: [
   copper/2240
   lead/2560
-  thorium/420
+  thorium/1420
 ]
 category: turret
 research: vendicum

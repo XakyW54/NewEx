@@ -80,6 +80,40 @@
         });
     }
 
+    // --- HÀM ĐỌC VÀ HIỂN THỊ FILE README.MD ---
+    function showReadmeDialog() {
+        let readmeContent = "Không tìm thấy file README.md trong mod.";
+        let mod = Vars.mods.getMod(CURRENT_MOD_NAME);
+
+        if (mod != null && mod.root != null) {
+            let readmeFile = mod.root.child("README.md");
+            if (readmeFile.exists()) {
+                readmeContent = readmeFile.readString();
+            }
+        }
+
+        const readmeDialog = new BaseDialog("Thông Tin Mod (README)");
+        readmeDialog.setFillParent(true);
+
+        const content = readmeDialog.cont;
+        content.clear();
+
+        let table = new Table();
+        table.top().left().margin(12);
+
+        let label = table.add(readmeContent).growX().get();
+        label.setWrap(true);
+        label.setAlignment(Align.left);
+
+        let scrollPane = new ScrollPane(table);
+        scrollPane.setFadeScrollBars(false);
+
+        content.add(scrollPane).grow().row();
+
+        readmeDialog.addCloseButton();
+        readmeDialog.show();
+    }
+
     function showTurretSelectionDialog() {
         selectedTurrets.clear();
         const maxCount = getMaxSelectCount();
@@ -181,6 +215,7 @@
         const content = dialog.cont;
         content.clear();
 
+        // --- 1. GIỚI HẠN THÁP PHÁO ---
         content.add("[accent]-- GIỚI HẠN THÁP PHÁO --[]").row();
         content.add("Số lượng tháp pháo chọn mỗi trận:").padBottom(5).row();
 
@@ -199,6 +234,21 @@
         }).width(240).pad(8).get();
         content.row();
 
+        // --- 2. Ô NHẬP TỶ LỆ TĂNG MÁU (GIỚI HẠN 0 -> 999) ---
+        content.add("[accent]-- TĂNG MÁU ĐỊCH THEO TỪNG WAVE --[]").padTop(10).row();
+        content.add("% Máu tăng thêm trên mỗi Wave (Tối đa 999%):").padBottom(4).row();
+
+        let currentHp = Core.settings.getInt("newex-hp-per-wave-percent", 10);
+        
+        let hpFieldTable = new Table();
+        let hpField = hpFieldTable.field(currentHp.toString(), text => {}).width(120).get();
+        hpField.setFilter(TextField.TextFieldFilter.digitsOnly);
+        hpField.setMaxLength(3);
+        hpFieldTable.add("% / Wave").padLeft(8);
+
+        content.add(hpFieldTable).pad(5).row();
+
+        // --- 3. CHẾ ĐỘ HIỂN THỊ THANH MÁU ---
         content.add("[accent]-- CHẾ ĐỘ HIỂN THỊ THANH MÁU (HP) --[]").padTop(10).row();
 
         let currentHpStyle = Core.settings.getString("newex-hp-style", "show-hp");
@@ -230,6 +280,7 @@
 
         content.add(tableHp).row();
 
+        // --- 4. LOGIC UNIT VANILLA BUFF ---
         content.add("[accent]-- LOGIC UNIT VANILLA BUFF --[]").padTop(10).row();
 
         let unitsEnabled = Core.settings.getBool("newex-logic-support-units", true);
@@ -240,9 +291,29 @@
 
         content.add(btnUnits).size(220, 48).pad(5).row();
 
+        // --- 5. NÚT XEM THÔNG TIN README.MD ---
+        content.add("[accent]-- THÔNG TIN CHI TIẾT --[]").padTop(10).row();
+        content.button("Xem README / Update Log", Icon.info, () => {
+            showReadmeDialog();
+        }).size(240, 48).pad(5).row();
+
+        // --- LƯU CÀI ĐẶT ---
         content.button("Lưu Cài Đặt", () => {
             let newValue = Math.floor(slider.getValue());
             Core.settings.put("newex-max-turrets", java.lang.Integer(newValue));
+
+            let parsedHp = 0;
+            try {
+                parsedHp = parseInt(hpField.getText());
+                if (isNaN(parsedHp)) parsedHp = 0;
+            } catch(e) {
+                parsedHp = 0;
+            }
+
+            if (parsedHp > 999) parsedHp = 999;
+            if (parsedHp < 0) parsedHp = 0;
+
+            Core.settings.put("newex-hp-per-wave-percent", java.lang.Integer(parsedHp));
 
             let selectedStyle = "off";
             if (btnShowHp.isChecked()) selectedStyle = "show-hp";

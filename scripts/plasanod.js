@@ -1,4 +1,3 @@
- 
 let sta = null;
 try {
     sta = require("sta");
@@ -11,7 +10,7 @@ const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
- function isEn() {
+function isEn() {
     return Core.settings.getString("locale", "en") === "en" || Core.settings.getString("locale", "").startsWith("en");
 }
 
@@ -97,16 +96,18 @@ function trP(key, viText, enText) {
             "[gold]⚡ BASE STATS (MK1) ⚡[]\n" +
             "[lightgray]Turret HP:[] [green]4,200 HP[]\n" +
             "[lightgray]Effective Range:[] [orange]" + viText + " pixels[]" + enText + "\n" +
-            "[lightgray]Base Damage:[] [yellow]35.00 DPS (Per beam)[]\n\n" +
+            "[lightgray]Base Damage:[] [yellow]210.00 DPS (Per beam)[]\n\n" +
             "[sky]⚡ SKILL MECHANICS:[]\n" +
-            "• Sweeps 2 Continuous Energy Lasers combined with Piercing Long Physical Bullets."
+            "• Sweeps 2 Continuous Energy Lasers combined with Piercing Long Physical Bullets.\n" +
+            "• Passive: +50% Damage per 10% missing HP."
             :
             "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
             "[lightgray]Máu tháp pháo:[] [green]4,200 HP[]\n" +
             "[lightgray]Tầm bắn hiệu dụng:[] [orange]" + viText + " pixel[]" + enText + "\n" +
-            "[lightgray]Sát thương gốc:[] [yellow]35.00 DPS (Mỗi tia)[]\n\n" +
+            "[lightgray]Sát thương gốc:[] [yellow]210.00 DPS (Mỗi tia)[]\n\n" +
             "[sky]⚡ CƠ CHẾ KĨ NĂNG:[]\n" +
-            "• Quét 2 chùm Laser Năng Lượng Liên Tục kết hợp xả đạn Vật Lý Dài xuyên phá.";
+            "• Quét 2 chùm Laser Năng Lượng Liên Tục kết hợp xả đạn Vật Lý Dài xuyên phá.\n" +
+            "• Nội tại: Mất 10% HP sẽ tăng +50% sát thương cho mọi loại đạn.";
     }
     if (key === "info_mk2") {
         return currentIsEn ?
@@ -115,14 +116,16 @@ function trP(key, viText, enText) {
             "[lightgray]Effective Range:[] [orange]" + viText + " pixels [lime](+30%)[]" + enText + "\n" +
             "[lightgray]Base Damage:[] [yellow]140.00 DPS [lime](+300%)[]\n\n" +
             "[lime]⚡ SKILL MECHANICS:[]\n" +
-            "• [lightgray]Long-Range Superconductive Laser:[] Inflicts Shocked effect with 15% chance to chain lightning."
+            "• [lightgray]Long-Range Superconductive Laser:[] Inflicts Shocked effect with 15% chance to chain lightning.\n" +
+            "• Passive: +50% Damage per 10% missing HP."
             :
             "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
             "[lightgray]Máu tháp pháo:[] [green]4,200 HP[]\n" +
             "[lightgray]Tầm bắn hiệu dụng:[] [orange]" + viText + " pixel [lime](+30%)[]" + enText + "\n" +
             "[lightgray]Sát thương gốc:[] [yellow]140.00 DPS [lime](+300%)[]\n\n" +
             "[lime]⚡ CƠ CHẾ KĨ NĂNG:[]\n" +
-            "• [lightgray]Laser Siêu Dẫn Tầm Xa:[] Gây hiệu ứng Giật Điện (Shocked) kèm 15% tỷ lệ phóng sét lan rộng sang các mục tiêu.";
+            "• [lightgray]Laser Siêu Dẫn Tầm Xa:[] Gây hiệu ứng Giật Điện (Shocked) kèm 15% tỷ lệ phóng sét lan rộng sang các mục tiêu.\n" +
+            "• Nội tại: Mất 10% HP sẽ tăng +50% sát thương cho mọi loại đạn.";
     }
     if (key === "info_mk2b") {
         return currentIsEn ?
@@ -131,14 +134,16 @@ function trP(key, viText, enText) {
             "[lightgray]Effective Range:[] [orange]" + viText + " pixels[]" + enText + "\n" +
             "[lightgray]Base Damage:[] [red]160.00 DPS [lime](+357%)[]\n\n" +
             "[purple]🔥 SPECIAL SKILL MECHANICS:[]\n" +
-            "• [lightgray]Melee Gravity Vortex:[] Applies Melting & Electrified, continuously adding +3 CEI stacks/sec."
+            "• [lightgray]Melee Gravity Vortex:[] Applies Melting & Electrified, continuously adding +3 CEI stacks/sec.\n" +
+            "• Passive: +50% Damage per 10% missing HP."
             :
             "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
             "[lightgray]Máu tháp pháo:[] [green]6,500 HP [lime](+55%)[]\n" +
             "[lightgray]Tầm bắn hiệu dụng:[] [orange]" + viText + " pixel[]" + enText + "\n" +
             "[lightgray]Sát thương gốc:[] [red]160.00 DPS [lime](+357%)[]\n\n" +
             "[purple]🔥 CƠ CHẾ KĨ NĂNG ĐẶC BIỆT:[]\n" +
-            "• [lightgray]Xoáy Trọng Lực Cận Chiến:[] Áp dụng đồng thời trạng thái Nóng Chảy & Điện Hóa, liên tục cộng dồn +3 tầng CEI/giây.";
+            "• [lightgray]Xoáy Trọng Lực Cận Chiến:[] Áp dụng đồng thời trạng thái Nóng Chảy & Điện Hóa, liên tục cộng dồn +3 tầng CEI/giây.\n" +
+            "• Nội tại: Mất 10% HP sẽ tăng +50% sát thương cho mọi loại đạn.";
     }
     if (key === "info_perk_header") return currentIsEn ? "\n\n[gold]★ SPECIAL PERKS ACTIVATED ★[]" : "\n\n[gold]★ ĐÃ KÍCH HOẠT PHÚC LỢI ĐẶC BIỆT ★[]";
     if (key === "info_p1") return currentIsEn ? "\n[yellow]• Perk 1: Base Damage +215%, Faster Laser focus.[]" : "\n[yellow]• Phúc lợi 1: Sát thương gốc +215%, Tăng tốc độ hội tụ chùm Laser.[]";
@@ -159,23 +164,21 @@ if (typeof global !== "undefined" && !global.ceiLastAppliedTurret) {
     global.ceiLastAppliedTurret = {};
 }
 
- const ringExpandFx = new Effect(35, cons(e => {
+const ringExpandFx = new Effect(35, cons(e => {
     Draw.z(Layer.effect + 0.05);
     let fin = e.fin();    
     let fout = e.fout();   
 
-     let baseColor = e.color != null ? e.color : Color.valueOf("00ffcc");
-    
-     let maxRadius = (e.data != null ? e.data : 12.0);
+    let baseColor = e.color != null ? e.color : Color.valueOf("00ffcc");
+    let maxRadius = (e.data != null ? e.data : 12.0);
     let currentRadius = fin * maxRadius;
-    
-     let strokeWidth = (1.5 + 1.5 * fout) * fout;
+    let strokeWidth = (1.5 + 1.5 * fout) * fout;
 
-     Draw.color(baseColor, Color.white, fin * 0.3);
+    Draw.color(baseColor, Color.white, fin * 0.3);
     Lines.stroke(strokeWidth);
     Lines.circle(e.x, e.y, currentRadius);
 
-     Draw.color(Color.white, baseColor, fin);
+    Draw.color(Color.white, baseColor, fin);
     Fill.circle(e.x, e.y, 2.5 * fout);
 
     Draw.reset();
@@ -191,7 +194,7 @@ function distToSegment(x, y, x1, y1, x2, y2) {
     return Mathf.dst(x, y, projX, projY);
 }
 
- const physicalBullet = extend(BasicBulletType, {
+const physicalBullet = extend(BasicBulletType, {
     speed: 9,
     damage: 150,
     pierce: true,
@@ -210,7 +213,7 @@ function distToSegment(x, y, x1, y1, x2, y2) {
     despawnEffect: Fx.select
 });
 
- function createPlasanodLaser(baseDmg, hitHex, beamLen) {
+function createPlasanodLaser(baseDmg, hitHex, beamLen) {
     return extend(PointLaserBulletType, {
         damage: baseDmg,
         beamLength: beamLen,
@@ -221,7 +224,7 @@ function distToSegment(x, y, x1, y1, x2, y2) {
     });
 }
 
-const laserMK1 = createPlasanodLaser(35, "84e184", 600);
+const laserMK1 = createPlasanodLaser(210, "84e184", 600);
 const laserMK2 = createPlasanodLaser(140, "00ffcc", 780);
 const laserMK2B = createPlasanodLaser(160, "bf40bf", 600);
 
@@ -286,6 +289,12 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
         return this;
     },
 
+    getDamageMultiplier(){
+        let missingHpPercent = Math.max(0, (1 - (this.health / this.maxHealth)) * 100);
+        let steps = Math.floor(missingHpPercent / 10);
+        return 1 + steps * 0.50;
+    },
+
     getPerkTier() {
         return (this.perkTierState == null) ? 0 : this.perkTierState;
     },
@@ -308,7 +317,7 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
         
         let currentRange = this.range();
         let baseBullet = (val == 2) ? createPlasanodLaser(160, "bf40bf", currentRange) : 
-                        ((val == 1) ? createPlasanodLaser(140, "00ffcc", currentRange) : createPlasanodLaser(35, "84e184", currentRange));
+                        ((val == 1) ? createPlasanodLaser(140, "00ffcc", currentRange) : createPlasanodLaser(210, "84e184", currentRange));
 
         if (this.getPerkTier() == 4) {
             this.shootType = extend(PointLaserBulletType, {
@@ -342,7 +351,7 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
         table.clear(); 
         table.row();
 
-         table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
+        table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
             let dialog = extend(BaseDialog, trP("dialog_title"), {});
             
             let reqCell = dialog.cont.label(packProv(() => {
@@ -381,7 +390,7 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
 
             let branchesTable = new Table();
 
-             let spBox = new Table(); 
+            let spBox = new Table(); 
             spBox.background(Styles.black6); 
             spBox.margin(12);
             spBox.add(trP("sp_title")).row();
@@ -459,7 +468,7 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
             branchesTable.row();
             branchesTable.add().height(12).row();
 
-             if (tier == 0) {
+            if (tier == 0) {
                 let b1 = new Table(); 
                 b1.background(Styles.black6); 
                 b1.margin(12);
@@ -534,7 +543,7 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
             dialog.show();
         })).size(50, 40).tooltip(trP("dialog_title"));
 
-         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
+        table.button(Icon.info, Styles.cleari, 40, packRun(() => {
             let title = trP("info_title");
             let descStr = "";
             let currentTier = this.getTier();
@@ -584,6 +593,7 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
 
         if(this.efficiency > 0 && this.isShooting){
             let rot = this.rotation;
+            let dmgMult = this.getDamageMultiplier();
 
             if(Math.abs(Angles.angleDist(rot, this.lastRotation)) < 0.2){
                 this.aimTimer += Time.delta;
@@ -605,29 +615,30 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
                 this.ceiStackTimer += Time.delta;
                 this.ringFxTimer += Time.delta;
 
- 
                 if (this.ringFxTimer >= 42) {
                     let off1X = bx + Angles.trnsx(rot + 90, 6);
                     let off1Y = by + Angles.trnsy(rot + 90, 6);
                     let off2X = bx + Angles.trnsx(rot - 90, 6);
                     let off2Y = by + Angles.trnsy(rot - 90, 6);
 
- 
                     let randRadius1 = Mathf.random(8, 20);
                     let randRadius2 = Mathf.random(8, 20);
 
-                     ringExpandFx.at(off1X, off1Y, rot, Color.valueOf("00ffcc"), randRadius1);
+                    ringExpandFx.at(off1X, off1Y, rot, Color.valueOf("00ffcc"), randRadius1);
                     ringExpandFx.at(off2X, off2Y, rot, Color.valueOf("ffcc66"), randRadius2);
 
                     this.ringFxTimer = 0;
                 }
 
                 if(this.physShootTimer >= 24){
-                    physicalBullet.create(this, this.team, startX, startY, rot);
+                    let pb = physicalBullet.create(this, this.team, startX, startY, rot);
+                    if(pb != null){
+                        pb.damage = physicalBullet.damage * dmgMult;
+                    }
                     this.physShootTimer = 0;
                 }
 
-                let dpsDamage = (200 / 60) * Time.delta * this.efficiency;
+                let dpsDamage = (200 / 60) * Time.delta * this.efficiency * dmgMult;
 
                 let off1X = bx + Angles.trnsx(rot + 90, 6);
                 let off1Y = by + Angles.trnsy(rot + 90, 6);
@@ -689,7 +700,7 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
                 let themeColor = (tier == 2) ? Color.valueOf("bf40bf") : ((tier == 1) ? Color.valueOf("00ffcc") : Color.valueOf("84e184"));
 
                 if(Mathf.chanceDelta(0.12)){
-                    Lightning.create(this.team, themeColor, 20, targetUnit.x, targetUnit.y, Mathf.random(360), 5);
+                    Lightning.create(this.team, themeColor, 20 * dmgMult, targetUnit.x, targetUnit.y, Mathf.random(360), 5);
                 }
             }
         } else {
@@ -739,12 +750,12 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
                     let e2X = off2X + Angles.trnsx(rot, len);
                     let e2Y = off2Y + Angles.trnsy(rot, len);
 
-                     Draw.color(Color.valueOf("00ffcc"), Color.white, 0.8 + Mathf.absin(Time.time, 1, 0.2));
+                    Draw.color(Color.valueOf("00ffcc"), Color.white, 0.8 + Mathf.absin(Time.time, 1, 0.2));
                     Lines.stroke(2.5 + Mathf.absin(Time.time, 2, 1.0));
                     Lines.line(off1X, off1Y, e1X, e1Y);
                     Fill.circle(e1X, e1Y, 3 + Mathf.absin(Time.time, 2, 1.5));
 
-                     Draw.color(Color.valueOf("ffcc66"), Color.white, 0.8 + Mathf.absin(Time.time, 1, 0.2));
+                    Draw.color(Color.valueOf("ffcc66"), Color.white, 0.8 + Mathf.absin(Time.time, 1, 0.2));
                     Lines.stroke(2.5 + Mathf.absin(Time.time, 2, 1.0));
                     Lines.line(off2X, off2Y, e2X, e2Y);
                     Fill.circle(e2X, e2Y, 3 + Mathf.absin(Time.time, 2, 1.5));

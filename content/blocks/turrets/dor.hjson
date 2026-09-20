@@ -4,7 +4,7 @@ description: "Pháo Dor: Sản phẩm quân sự đầu tay của NewEx. Pháo b
 health: 380
 size: 2
 reload: 20
-range: 176
+range: 300
 inaccuracy: 2
 targetAir: true
 targetGround: true
@@ -61,7 +61,7 @@ drawer: {
 
 
 requirements: [
-  copper/170
+  copper/70
 ]
 researchCostMultiplier: 0.1
 category: turret

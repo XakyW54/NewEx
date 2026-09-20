@@ -3,8 +3,8 @@ const berserkTimeMax = 300;
 const chargeTimeMaxMK2 = 140;   
 const berserkTimeMaxMK2 = 360;  
 
- const reqRangtatursMK2 = { copper: 1600, lead: 1400, silicon: 0 };
-const reqRangtatursMK2B = { copper: 2400, lead: 1900, silicon: 1100 };
+ const reqRangtatursMK2 = { copper: 560, lead: 490, silicon: 0 };
+const reqRangtatursMK2B = { copper: 840, lead: 665, silicon: 385 };
 
 const acidCorrosionEffect = new Effect(30, cons(e => {
     Draw.color(Color.valueOf("#a3e635"), Color.valueOf("#65a30d"), e.fin());
@@ -317,12 +317,12 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                 b1.add("[cyan]===(MK2)===[]").row();
                 let b1Text = isEn ?
                     "Firepower Density Boost Configuration:\n" +
-                    " [white]• Status Volley: Increases to [green]39 shrapnel bullets[].[]\n" +
+                    " [white]• Status Volley: Increases to [green]53 shrapnel bullets[].[]\n" +
                     " [white]• Super Laser Charge: Charge time reduced to [yellow]2.33s (140 ticks)[] [lime](-22.2%) [].[]\n" +
                     " [white]• Laser Detonation: Exponential damage spikes to [red]310%[] base firepower.[]\n" +
                     " [white]• Berserk Cycle: Duration extended to [orange]6.0s[] [lime](+20%)[], boosting standard fire rate to [red]250%[].[]" :
                     "Cấu hình tăng cường mật độ mảnh hỏa lực:\n" +
-                    " [white]• Mưa đạn trạng thái: Đẩy mạnh lên [green]39 viên đạn mảnh[].[]\n" +
+                    " [white]• Mưa đạn trạng thái: Đẩy mạnh lên [green]53 viên đạn mảnh[].[]\n" +
                     " [white]• Siêu Laser tích tụ: Thời gian sạc rút ngắn còn [yellow]2.33 giây (140 tick)[] [lime](Giảm -22.2%)[].[]\n" +
                     " [white]• Laze kích nổ: Sát thương đột biến nhân tiến đạt mức [red]310% hỏa lực[] cơ bản.[]\n" +
                     " [white]• Chu kỳ Cuồng nộ: Kéo dài thời gian bộc phá lên [orange]6.0 giây[] [lime](+20%)[], đẩy tốc bắn thường lên [red]250%[].[]";
@@ -346,14 +346,14 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                 b2.add("[purple]===(MK2B)===[]").row();
                 let b2Text = isEn ?
                     "Ultimate Area Storm Destruction Configuration:\n" +
-                    " [white]• Hybrid Superstorm: Shotgun burst pellet count increased to [green]50 bullets[].[]\n" +
+                    " [white]• Hybrid Superstorm: Shotgun burst pellet count increased to [green]68 bullets[].[]\n" +
                     " [white]• Overclock Cycle: Fixed standard reload time to [yellow]1.16s (70 ticks)[].[]\n" +
-                    " [white]• Burst Mode: Fire 6 shots to unleash a massive unipolar storm of [orange]100 compressed bullets[].[]\n" +
+                    " [white]• Burst Mode: Fire 6 shots to unleash a massive unipolar storm of [orange]135 compressed bullets[].[]\n" +
                     " [white]• Thermal Overload: Forced cooling system locks barrels for [purple]3.0s (180 ticks)[].[]" :
                     "Cấu hình tối thượng hủy diệt bão đạn diện rộng:\n" +
-                    " [white]• Siêu bão hỗn hợp: Loạt bắn shotgun tăng số lượng mảnh lên [green]50 viên đạn[].[]\n" +
+                    " [white]• Siêu bão hỗn hợp: Loạt bắn shotgun tăng số lượng mảnh lên [green]68 viên đạn[].[]\n" +
                     " [white]• Chu kỳ nén ép xung: Khóa cố định thời gian năng lượng hồi loạt bắn thường còn [yellow]1.16 giây (70 tick)[].[]\n" +
-                    " [white]• Tuyệt chiêu Xả Bão (Burst): Bắn đủ 6 phát giải phóng bão đơn cực cực đại [orange]100 viên đạn nén[].[]\n" +
+                    " [white]• Tuyệt chiêu Xả Bão (Burst): Bắn đủ 6 phát giải phóng bão đơn cực cực đại [orange]135 viên đạn nén[].[]\n" +
                     " [white]• Quá tải nhiệt: Hệ thống rơi vào trạng thái làm mát cưỡng bức, ngắt nòng trong [purple]3.0 giây (180 tick)[].[]";
                 let b2D = b2.add(b2Text);
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left);
@@ -401,7 +401,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                           "Effective Range:[] [orange]" + this.block.range + " pixels[]\n" +
                           "Target Type:[] [yellow]Ground targets only[]\n\n" +
                           "[sky]⚡ FIREPOWER & MECHANICS:[]\n" +
-                          "• [lightgray]Standard Shotgun:[] Fires a spread of [green]29 shrapnel bullets[] applying random status effects from a 7-debuff pool.\n" +
+                          "• [lightgray]Standard Shotgun:[] Fires a spread of [green]39 shrapnel bullets[] applying random status effects from a 7-debuff pool.\n" +
                           "• [lightgray]Charge Cycle:[] Continuous standard fire for [yellow]3.0s (180 ticks)[] activates Grand Laser Beam dealing [gold]280%[] exponential damage.\n" +
                           "• [lightgray]Berserk Protocol:[] Firing 3 Laser shots overcharges the core for [orange]5.0s (300 ticks)[], granting [green]+150%[] reload speed." :
                           "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
@@ -410,7 +410,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                           "Tầm bắn hiệu dụng:[] [orange]" + this.block.range + " pixel[]\n" +
                           "Mục tiêu phát xạ:[] [yellow]Mặt đất (Không bắn phòng không)[]\n\n" +
                           "[sky]⚡ ĐẶC TÍNH HỎA LỰC VÀ CHU KỲ CƠ CHẾ:[]\n" +
-                          "• [lightgray]Bắn Shotgun thường:[] Phóng loạt gồm [green]29 viên đạn mảnh[] mang ngẫu nhiên hiệu ứng bộ 7 trạng thái bất lợi.\n" +
+                          "• [lightgray]Bắn Shotgun thường:[] Phóng loạt gồm [green]39 viên đạn mảnh[] mang ngẫu nhiên hiệu ứng bộ 7 trạng thái bất lợi.\n" +
                           "• [lightgray]Chu kỳ Tích tụ (Sạc điểm):[] Bắn thường liên tục trong [yellow]3.0 giây (180 tick)[] kích hoạt Đại Pháo Laser gây sát thương nhân tiến lên [gold]280%[].[]\n" +
                           "• [lightgray]Mạch Cuồng nộ (Berserk):[] Tích đủ 3 phát Laze đưa lõi pháo vào trạng thái quá tải trong [orange]5.0 giây (300 tick)[], tăng tốc độ hồi đạn bắn thường lên [green]+150%[].";
             } else if (currentTier == 1) {
@@ -421,7 +421,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                           "📐 Block Size:[] [white]" + this.block.size + "x" + this.block.size + "[]\n" +
                           "Effective Range:[] [orange]" + this.block.range + " pixels[]\n\n" +
                           "[lime]⚡ FIREPOWER & MECHANICS:[]\n" +
-                          "• [lightgray]Status Barrage:[] Shotgun pellet count increased to [green]39 bullets[].\n" +
+                          "• [lightgray]Status Barrage:[] Shotgun pellet count increased to [green]53 bullets[].\n" +
                           "• [lightgray]Short-Circuit Charge:[] Laser charge time reduced to [yellow]2.33s (140 ticks) [lime](-22.2%)[], Laser core damage boosted to [red]310%[].[]\n" +
                           "• [lightgray]Super Berserk:[] Overcharge duration increased to [orange]6.0s (360 ticks) [lime](+20%)[], driving normal reload speed up to [red]250%[].":
                           "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
@@ -429,7 +429,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                           "📐 Kích thước khối:[] [white]" + this.block.size + "x" + this.block.size + "[]\n" +
                           "Tầm bắn hiệu dụng:[] [orange]" + this.block.range + " pixel[]\n\n" +
                           "[lime]⚡ ĐẶC TÍNH HỎA LỰC VÀ CHU KỲ CƠ CHẾ:[]\n" +
-                          "• [lightgray]Mưa đạn trạng thái:[] Số lượng đạn Shotgun tăng lên [green]39 viên mảnh[].\n" +
+                          "• [lightgray]Mưa đạn trạng thái:[] Số lượng đạn Shotgun tăng lên [green]53 viên mảnh[].\n" +
                           "• [lightgray]Sạc xung ngắn mạch:[] Thời gian tích tụ năng lượng Laser rút xuống còn [yellow]2.33 giây (140 tick) [lime](Giảm -22.2%)[], sát thương Laser lõi tăng vọt đạt [red]310%[].[]\n" +
                           "• [lightgray]Chu kỳ Siêu cuồng nộ:[] Thời gian bộc phá tăng lên [orange]6.0 giây (360 tick) [lime](+20%)[], ép tốc độ xả đạn bắn thường lên mức cực đại [red]250%[].";
             } else if (currentTier == 2) {
@@ -441,18 +441,18 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                           "Effective Range:[] [orange]" + this.block.range + " pixels[]\n\n" +
                           "[purple]🔥 🔥 GRAVITY STATUS SUPERSTORM MECHANICS:[]\n" +
                           "• Removes old point-charging and Berserk gauge mechanisms completely.\n" +
-                          "• [lightgray]Hybrid Shotgun Storm:[] Fires a compressed Laser beam accompanied by a heavy density shotgun spray of up to [green]50 bullets[].\n" +
+                          "• [lightgray]Hybrid Shotgun Storm:[] Fires a compressed Laser beam accompanied by a heavy density shotgun spray of up to [green]68 bullets[].\n" +
                           "• [lightgray]Overclock Cycle:[] Locks normal reload intervals strictly to [yellow]1.16s (70 ticks)[].[]\n" +
-                          "• [lightgray]Burst Mode:[] Accumulates 6 shots to automatically unleash a hyper storm of [red]100 hybrid bullets[], followed by a forced cooling lockdown for [white]3.0s (180 ticks)[].":
+                          "• [lightgray]Burst Mode:[] Accumulates 6 shots to automatically unleash a hyper storm of [red]135 hybrid bullets[], followed by a forced cooling lockdown for [white]3.0s (180 ticks)[].":
                           "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
                           "[lightgray]Máu tháp pháo:[] [green]" + this.health + "[]\n" +
                           "📐 Kích thước khối:[] [white]" + this.block.size + "x" + this.block.size + "[]\n" +
                           "Tầm bắn hiệu dụng:[] [orange]" + this.block.range + " pixel[]\n\n" +
                           "[purple]🔥 🔥 CƠ CHẾ SIÊU BÃO LOẠN TRẠNG THÁI TRỌNG LỰC:[]\n" +
                           "• Hệ thống loại bỏ hoàn toàn cơ chế sạc tích tụ điểm và thanh cuồng nộ cũ.\n" +
-                          "• [lightgray]Bão Shotgun hỗn hợp:[] Phóng ra tia Laze nén kèm chùm đạn shotgun tập trung mật độ cao lên tới [green]50 viên đạn[].\n" +
+                          "• [lightgray]Bão Shotgun hỗn hợp:[] Phóng ra tia Laze nén kèm chùm đạn shotgun tập trung mật độ cao lên tới [green]68 viên đạn[].\n" +
                           "• [lightgray]Cơ chế nén ép xung:[] Khóa cố định chu kỳ thời gian hồi giữa các loạt bắn thông thường thành [yellow]1.16 giây (70 tick)[].[]\n" +
-                          "• [lightgray]Tuyệt chiêu Xả Bão (Burst Mode):[] Tích lũy đủ 6 phát bắn, pháo tự động giải phóng một siêu bão tổng lực cực đại gồm [red]100 viên đạn hỗn hợp[], sau đó rơi vào trạng thái đóng băng hệ thống làm mát ngắt nòng trong [white]3.0 giây (180 tick)[].";
+                          "• [lightgray]Tuyệt chiêu Xả Bão (Burst Mode):[] Tích lũy đủ 6 phát bắn, pháo tự động giải phóng một siêu bão tổng lực cực đại gồm [red]135 viên đạn hỗn hợp[], sau đó rơi vào trạng thái đóng băng hệ thống làm mát ngắt nòng trong [white]3.0 giây (180 tick)[].";
             }
 
             let dialog = extend(BaseDialog, title, {});
@@ -504,7 +504,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
         if(this.evolutionTier == 2){
             if (this.customReloadTimer <= 0) {
                 if (this.burstTimer == 1) {
-                    handleShotgunShoot(this, 2, 100, 35, 1.0, 1.2); 
+                    handleShotgunShoot(this, 2, 135, 35, 1.0, 1.2); 
                     Fx.bigShockwave.at(this.x, this.y);
                     
                     this.burstTimer = 0;
@@ -526,7 +526,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                     targetLaser.create(this, this.team, muzzleX, muzzleY, this.rotation);
                     Fx.lightningCharge.at(this.x, this.y);
                     
-                    handleShotgunShoot(this, 2, 50, 4, 1.0, 1.1); 
+                    handleShotgunShoot(this, 2, 68, 4, 1.0, 1.1); 
                     
                     this.laserCount++;
                     this.customReloadTimer = 70; 
@@ -580,13 +580,13 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
             }
         } else {
             let pType = this.evolutionTier;
-            let pellets = 29; 
+            let pellets = 39; 
             let spread = 8;        
             let dmgMul = 1.0;      
             let spdMul = 1.0;      
 
             if(this.evolutionTier == 1){ 
-                pellets = 39; 
+                pellets = 53; 
                 spread = 8;
                 dmgMul = 0.95; 
             } 

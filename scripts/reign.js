@@ -1,283 +1,233 @@
-// Tên file: reign.js
-// Mô tả: Reign duy nhất/team, khóa sát thương 500 DMG/lần, bảo hộ chống bị kill tức thì & bất tử chỉ kích hoạt 1 lần.
+// antikei-logic.js
 
-const reignYellowWhite = Color.valueOf("#fff5cc");
-const reignSoftGold = Color.valueOf("#fffbbf");
-const reignWhite = Color.valueOf("#ffffff");
+let antikeiBlock;
+let mapHasAntikei = false;
 
-// 1. HIỆU ỨNG VỤ NỔ INDENITER CỦA BUFF F (Màu vàng trắng nhạt)
-function createIndeniterExplosionEffect(radius) {
-    return new Effect(50, e => {
-        Draw.z(Layer.effect + 0.1);
-        let maxRadius = radius;
-        let alpha = 1.0 - e.fin();
+// Lưu hướng di chuyển dạng Angle cho từng ô
+let flowDirectionMap = new java.util.HashMap();
+// Lưu hướng đi cuối cùng của Unit bằng ID
+let unitLastAngles = new java.util.HashMap();
 
-        Draw.color(reignYellowWhite);
-        Draw.alpha(alpha * 0.35);
-        Fill.circle(e.x, e.y, maxRadius);
+// Biến hỗ trợ nhận biết kéo chuột trong Editor
+let lastEditorTile = null;
 
-        Draw.color(reignSoftGold);
-        Draw.alpha(alpha * 0.7);
-        Lines.stroke(2.5 * alpha);
-        Lines.circle(e.x, e.y, maxRadius);
-
-        const ringColors = [
-            reignWhite, 
-            reignSoftGold, 
-            reignYellowWhite 
-        ];
-
-        for (let i = 0; i < 3; i++) {
-            let delay = i * 0.12;
-            if (e.fin() > delay) {
-                let progress = (e.fin() - delay) / (1.0 - delay);
-                let smoothProgress = Interp.pow3Out.apply(progress);
-                let dynamicRadius = maxRadius * smoothProgress;
-
-                Draw.color(ringColors[i]);
-                Draw.alpha(alpha * (1.0 - smoothProgress));
-                Lines.stroke((14.0 - i * 3.0) * (1.0 - smoothProgress));
-                Lines.circle(e.x, e.y, dynamicRadius);
-            }
-        }
-
-        Draw.reset();
-    });
-}
-
-// 2. TỰ VẼ HIỆU ỨNG CHỮ CÁI NẢY LÊN (FLOATING LETTER EFFECT)
-function createFloatingLetterEffect(letter, color) {
-    return new Effect(40, e => {
-        Draw.color(color);
-        let offsetY = e.finpow() * 25;
-        let scale = 1.0 + Math.sin(e.fin() * Math.PI) * 0.5;
-
-        Lines.stroke(2.5 * e.fout());
-        let x = e.x, y = e.y + offsetY;
-        let s = 8 * scale;
-
-        switch(letter) {
-            case "A":
-                Lines.line(x - s/2, y - s, x, y + s);
-                Lines.line(x, y + s, x + s/2, y - s);
-                Lines.line(x - s/4, y, x + s/4, y);
-                break;
-            case "B":
-                Lines.line(x - s/2, y - s, x - s/2, y + s);
-                Lines.line(x - s/2, y + s, x + s/4, y + s);
-                Lines.line(x + s/4, y + s, x + s/4, y);
-                Lines.line(x + s/4, y, x - s/2, y);
-                Lines.line(x - s/2, y, x + s/3, y);
-                Lines.line(x + s/3, y, x + s/3, y - s);
-                Lines.line(x + s/3, y - s, x - s/2, y - s);
-                break;
-            case "C":
-                Lines.line(x + s/2, y + s, x - s/2, y + s);
-                Lines.line(x - s/2, y + s, x - s/2, y - s);
-                Lines.line(x - s/2, y - s, x + s/2, y - s);
-                break;
-            case "D":
-                Lines.line(x - s/2, y - s, x - s/2, y + s);
-                Lines.line(x - s/2, y + s, x + s/4, y + s);
-                Lines.line(x + s/4, y + s, x + s/2, y);
-                Lines.line(x + s/2, y, x + s/4, y - s);
-                Lines.line(x + s/4, y - s, x - s/2, y - s);
-                break;
-            case "E":
-                Lines.line(x + s/2, y + s, x - s/2, y + s);
-                Lines.line(x - s/2, y + s, x - s/2, y - s);
-                Lines.line(x - s/2, y - s, x + s/2, y - s);
-                Lines.line(x - s/2, y, x + s/4, y);
-                break;
-            case "F":
-                Lines.line(x + s/2, y + s, x - s/2, y + s);
-                Lines.line(x - s/2, y + s, x - s/2, y - s);
-                Lines.line(x - s/2, y, x + s/4, y);
-                break;
-        }
-    });
-}
-
-const letterAEffect = createFloatingLetterEffect("A", Color.valueOf("84f491"));
-const letterBEffect = createFloatingLetterEffect("B", Color.valueOf("fffbbf"));
-const letterCEffect = createFloatingLetterEffect("C", Color.valueOf("ff5d5d"));
-const letterDEffect = createFloatingLetterEffect("D", Color.valueOf("e868ff"));
-const letterEEffect = createFloatingLetterEffect("E", Color.valueOf("72f2ff"));
-const letterFEffect = createFloatingLetterEffect("F", Color.valueOf("fff5cc"));
-
-const reignDataMap = new ObjectMap();
-
-// 3. CHỈ SỐ CƠ BẢN
-Events.on(ClientLoadEvent, () => {
-    let reign = UnitTypes.reign;
-    if(reign != null){
-        reign.health = 72000; // Tăng 200% máu tối đa
-        reign.armor = 90;     // Giáp 90
-    }
+Events.on(ContentInitEvent, () => {
+    antikeiBlock = Vars.content.block("newex-antikei");
 });
 
-// 4. VÒNG LẶP UPDATE HỆ THỐNG REIGN
-Events.run(Trigger.update, () => {
-    let activeReignsByTeam = new ObjectMap();
+function getTileKey(x, y) {
+    return (x & 0xFFFF) | ((y & 0xFFFF) << 16);
+}
 
-    Groups.unit.each(u => {
-        if(!u || u.dead || u.type != UnitTypes.reign) return;
+function checkMapHasAntikei() {
+    mapHasAntikei = false;
+    if (!antikeiBlock || Vars.world == null) return;
 
-        let teamId = u.team.id;
-
-        // KIỂM TRA ĐIỀU KIỆN REIGN DUY NHẤT
-        if(activeReignsByTeam.containsKey(teamId)){
-            let primaryReign = activeReignsByTeam.get(teamId);
-            if(primaryReign && !primaryReign.dead){
-                primaryReign.heal(primaryReign.maxHealth);
-                letterAEffect.at(primaryReign.x, primaryReign.y);
-                
-                // Con thứ 2 biến mất hoàn toàn
-                u.remove();
+    for (let x = 0; x < Vars.world.width(); x++) {
+        for (let y = 0; y < Vars.world.height(); y++) {
+            let tile = Vars.world.tile(x, y);
+            if (tile != null && tile.floor() === antikeiBlock) {
+                mapHasAntikei = true;
                 return;
             }
-        } else {
-            activeReignsByTeam.put(teamId, u);
         }
+    }
+}
 
-        // ĐÁNH DẤU LÀ CON DUY NHẤT VÀ KHỞI TẠO CÁC BIẾN BẤT TỬ (CHỈ 1 LẦN)
-        if(!reignDataMap.containsKey(u.id)){
-            reignDataMap.put(u.id, {
-                isUniquePrimary: true,
-                timerA: 0,
-                timerB: 0,
-                buffBTimer: 0,
-                
-                // Kỹ năng E (Dưới 30% HP) -> Bất tử 20s (Chỉ 1 lần)
-                usedImmuneE: false,
-                immuneETimer: 0,
-                
-                // Nội tại Bảo Hộ Chống Kill Tức Thì -> Bất tử 30s (Chỉ 1 lần)
-                usedInstantKillProtection: false,
-                instantKillImmuneTimer: 0,
-                
-                lastHealth: u.health
-            });
-        }
+function clearOresOnAntikei() {
+    if (!antikeiBlock || Vars.world == null) return;
 
-        let data = reignDataMap.get(u.id);
-
-        // NỘI TẠI MỚI: NẾU BỊ ĐỊCH TẤN CÔNG BẰNG ĐÒN KILL TỨC THÌ (SÁT THƯƠNG QUÁ LỚN HOẶC BỊ TRỪ SẠCH MÁU VỀ 0)
-        if(u.health <= 0 || (data.lastHealth - u.health > u.maxHealth * 0.9)){
-            if(!data.usedInstantKillProtection){
-                data.usedInstantKillProtection = true; // ĐÁNH DẤU ĐÃ DÙNG (CHỈ KÍCH HOẠT 1 LẦN)
-                data.instantKillImmuneTimer = 1800;    // 30 giây bất tử (1800 ticks)
-                u.health = u.maxHealth * 0.50;         // Hồi ngay 50% HP
-                letterEEffect.at(u.x, u.y);
-            }
-        }
-
-        // E. MÁU DƯỚI 30% -> BẤT TỬ 20S (CHỈ KÍCH HOẠT 1 LẦN)
-        if(u.healthf() < 0.30 && !data.usedImmuneE){
-            data.usedImmuneE = true;                   // ĐÁNH DẤU ĐÃ DÙNG (CHỈ KÍCH HOẠT 1 LẦN)
-            data.immuneETimer = 1200;                  // 20 giây bất tử (1200 ticks)
-            letterEEffect.at(u.x, u.y);
-        }
-
-        // XỬ LÝ CÁC ĐẠI TRẠNG THÁI BẤT TỬ
-        if(data.instantKillImmuneTimer > 0){
-            data.instantKillImmuneTimer--;
-            u.health = Math.max(u.health, data.lastHealth);
-        } else if(data.immuneETimer > 0){
-            data.immuneETimer--;
-            u.health = Math.max(u.health, data.lastHealth);
-        } else {
-            // ÉP SÁT THƯƠNG NHẬN VÀO: TỐI ĐA 500 DMG CHO MỖI LẦN TRỪ MÁU
-            if(u.health < data.lastHealth){
-                let rawDmg = data.lastHealth - u.health;
-                
-                // Khóa cứng lượng sát thương thực tế chỉ nhận tối đa 500 DMG
-                let finalDamageTaken = Math.min(500, rawDmg);
-                u.health = data.lastHealth - finalDamageTaken;
-            }
-        }
-        data.lastHealth = u.health;
-
-        // A. HỒI 70% MÁU MỖI 5 GIÂY
-        data.timerA++;
-        if(data.timerA >= 300){
-            data.timerA = 0;
-            u.heal(u.maxHealth * 0.70);
-            letterAEffect.at(u.x, u.y);
-        }
-
-        // B. MỖI 2S CÓ 60% TỈ LỆ TĂNG 5000% TỐC ĐỘ XẢ ĐẠN TRONG 2S
-        data.timerB++;
-        if(data.timerB >= 120){
-            data.timerB = 0;
-            if(Mathf.chance(0.60)){
-                data.buffBTimer = 120;
-                letterBEffect.at(u.x, u.y);
-            }
-        }
-
-        if(data.buffBTimer > 0){
-            data.buffBTimer--;
-            u.reloadMultiplier = 50.0;
-            if(u.mounts && u.mounts.length > 0){
-                for(let i = 0; i < u.mounts.length; i++){
-                    let mount = u.mounts[i];
-                    mount.reload = Math.max(0, mount.reload - 49 * Time.delta);
+    for (let x = 0; x < Vars.world.width(); x++) {
+        for (let y = 0; y < Vars.world.height(); y++) {
+            let tile = Vars.world.tile(x, y);
+            if (tile != null && tile.floor() === antikeiBlock) {
+                if (tile.overlay() != null && tile.overlay() != Blocks.air) {
+                    tile.setOverlay(Blocks.air);
                 }
             }
-        } else {
-            u.reloadMultiplier = 1.0;
         }
+    }
+}
 
-        // C. MÁU DƯỚI 50% -> TĂNG 500% DMG
-        if(u.healthf() < 0.50){
-            u.damageMultiplier = 5.0;
-            if(Mathf.chance(0.03)){
-                letterCEffect.at(u.x, u.y);
+function findNearestAntikeiFast(unit) {
+    let uTileX = unit.tileX();
+    let uTileY = unit.tileY();
+
+    for (let r = 1; r <= 20; r++) {
+        for (let dx = -r; dx <= r; dx++) {
+            let tile1 = Vars.world.tile(uTileX + dx, uTileY - r);
+            if (tile1 != null && tile1.floor() === antikeiBlock) return tile1;
+            let tile2 = Vars.world.tile(uTileX + dx, uTileY + r);
+            if (tile2 != null && tile2.floor() === antikeiBlock) return tile2;
+        }
+        for (let dy = -r + 1; dy <= r - 1; dy++) {
+            let tile1 = Vars.world.tile(uTileX - r, uTileY + dy);
+            if (tile1 != null && tile1.floor() === antikeiBlock) return tile1;
+            let tile2 = Vars.world.tile(uTileX + r, uTileY + dy);
+            if (tile2 != null && tile2.floor() === antikeiBlock) return tile2;
+        }
+    }
+    return null;
+}
+
+Events.on(WorldLoadEvent, () => {
+    checkMapHasAntikei();
+    if (mapHasAntikei) {
+        clearOresOnAntikei();
+    }
+});
+
+Events.run(Trigger.update, () => {
+    if (!antikeiBlock || Vars.state.isMenu()) return;
+
+    // KÉO CHUỘT TRONG MAP EDITOR ĐỂ ĐẶT HƯỚNG MŨI TÊN TỰ DO (KHÔNG DỰA VÀO LÕI)
+    if (Vars.state.isEditor() && (Core.input.keyDown(KeyCode.mouseLeft) || Core.input.isTouched())) {
+        let mouseVec = Core.camera.unproject(Core.input.mouse());
+        let currentTile = Vars.world.tileWorld(mouseVec.x, mouseVec.y);
+
+        if (currentTile != null && currentTile.floor() === antikeiBlock) {
+            if (lastEditorTile != null && (lastEditorTile.x !== currentTile.x || lastEditorTile.y !== currentTile.y)) {
+                // Hướng đi đúng theo đường kéo của tay người dùng
+                let dragAngle = Angles.angle(lastEditorTile.worldx(), lastEditorTile.worldy(), currentTile.worldx(), currentTile.worldy());
+                
+                let lastKey = getTileKey(lastEditorTile.x, lastEditorTile.y);
+                let currentKey = getTileKey(currentTile.x, currentTile.y);
+
+                flowDirectionMap.put(lastKey, java.lang.Float.valueOf(dragAngle));
+                flowDirectionMap.put(currentKey, java.lang.Float.valueOf(dragAngle));
+                mapHasAntikei = true;
+            } else {
+                // Nếu chỉ click 1 điểm mà chưa có hướng, mặc định cho hướng góc 0 độ
+                let currentKey = getTileKey(currentTile.x, currentTile.y);
+                if (!flowDirectionMap.containsKey(currentKey)) {
+                    flowDirectionMap.put(currentKey, java.lang.Float.valueOf(0));
+                }
+            }
+            lastEditorTile = currentTile;
+        } else {
+            lastEditorTile = null;
+        }
+    } else {
+        lastEditorTile = null;
+    }
+
+    if (!mapHasAntikei) return;
+
+    if (Vars.state.isPlaying() && Time.time % 60 == 0) {
+        clearOresOnAntikei();
+    }
+
+    // NHẤP CHUỘT GIỮA ĐỂ XOAY HƯỚNG MŨI TÊN THỦ CÔNG (Chỉ hoạt động trong Editor)
+    if (Vars.state.isEditor() && Core.input.keyTap(KeyCode.mouseMiddle)) {
+        let mouseVec = Core.camera.unproject(Core.input.mouse());
+        let tile = Vars.world.tileWorld(mouseVec.x, mouseVec.y);
+
+        if (tile != null && tile.floor() === antikeiBlock) {
+            let key = getTileKey(tile.x, tile.y);
+            let currentAngle = flowDirectionMap.containsKey(key) ? Number(flowDirectionMap.get(key)) : 0;
+            
+            let nextAngle = (currentAngle + 90) % 360;
+            flowDirectionMap.put(key, java.lang.Float.valueOf(nextAngle));
+        }
+    }
+
+    let playerTeam = Vars.player.team();
+
+    Groups.unit.each(unit => {
+        if (unit == null || !unit.isAdded() || unit.isFlying() || unit.team == playerTeam) return;
+
+        let currentTile = unit.tileOn();
+        if (currentTile == null) return;
+
+        let uTileX = unit.tileX();
+        let uTileY = unit.tileY();
+        let moveAngle = 0;
+
+        // DI CHUYỂN HOÀN TOÀN THEO HƯỚNG BẠN ĐÃ TẠO
+        if (currentTile.floor() === antikeiBlock) {
+            let currentKey = getTileKey(uTileX, uTileY);
+            let arrowDir = flowDirectionMap.get(currentKey);
+
+            if (arrowDir != null) {
+                moveAngle = Number(arrowDir);
+                unitLastAngles.put(unit.id, java.lang.Float.valueOf(moveAngle));
+            } else {
+                moveAngle = unit.rotation;
             }
         } else {
-            u.damageMultiplier = 1.0;
+            // RỜI KHỎI Ô ANTIKEI: Giữ nguyên hướng đi thẳng cũ
+            if (unitLastAngles.containsKey(unit.id)) {
+                moveAngle = Number(unitLastAngles.get(unit.id));
+
+                let checkX = unit.x + Angles.trnsx(moveAngle, 24);
+                let checkY = unit.y + Angles.trnsy(moveAngle, 24);
+                let futureTile = Vars.world.tileWorld(checkX, checkY);
+
+                if (futureTile == null || futureTile.floor() !== antikeiBlock) {
+                    let nearest = findNearestAntikeiFast(unit);
+                    if (nearest != null) {
+                        moveAngle = unit.angleTo(nearest.worldx(), nearest.worldy());
+                    }
+                }
+            } else {
+                let nearest = findNearestAntikeiFast(unit);
+                if (nearest != null) {
+                    moveAngle = unit.angleTo(nearest.worldx(), nearest.worldy());
+                } else {
+                    moveAngle = unit.rotation;
+                }
+            }
+        }
+
+        unit.vel.trns(moveAngle, unit.speed());
+
+        let range = unit.range ? unit.range() : 100;
+        let target = Units.closestTarget(unit.team, unit.x, unit.y, range);
+
+        if (target != null) {
+            unit.lookAt(target.x, target.y);
+            unit.aim(target.x, target.y);
+            unit.controlWeapons(true, true);
+        } else {
+            unit.lookAt(moveAngle);
+            unit.aim(unit.x + Angles.trnsx(moveAngle, 10), unit.y + Angles.trnsy(moveAngle, 10));
+            unit.controlWeapons(false, false);
         }
     });
 });
 
-// 5. D. 40% TỈ LỆ HỒI SINH & SPAWN 3 SCEPTER KHU BỊ HẠ GỤC
-Events.on(EventType.UnitDestroyEvent, event => {
-    let u = event.unit;
-    if(u && u.type == UnitTypes.reign){
-        let data = reignDataMap.get(u.id);
+// VẼ MŨI TÊN CHỈ ĐƯỜNG TRÊN CÁC Ô ANTIKEI (CHỈ HÀNH ĐỘNG TRONG EDITOR, ẨN KHI VÀO TRẬN ĐẤU)
+Events.run(Trigger.draw, () => {
+    if (!antikeiBlock || Vars.state.isMenu()) return;
 
-        if(data && data.isUniquePrimary){
-            if(Mathf.chance(0.40)){
-                let newReign = UnitTypes.reign.spawn(u.team, u.x, u.y);
-                newReign.heal(newReign.maxHealth);
-                letterDEffect.at(u.x, u.y);
+    // CHỈ VẼ MŨI TÊN KHI Ở TRONG EDITOR, NẾU LÀ MAP CHƠI BÌNH THƯỜNG THÌ TỰ ĐỘNG ẨN
+    if (!Vars.state.isEditor()) return;
 
-                for(let i = 0; i < 3; i++){
-                    UnitTypes.scepter.spawn(u.team, u.x + Mathf.range(24), u.y + Mathf.range(24));
-                }
-            }
-        }
-        reignDataMap.remove(u.id);
-    }
-});
+    Draw.z(Layer.floor + 0.1);
+    
+    let iterator = flowDirectionMap.entrySet().iterator();
+    while (iterator.hasNext()) {
+        let entry = iterator.next();
+        let key = entry.getKey();
+        let angleObj = entry.getValue();
 
-// 6. F. 20% TẤN CÔNG TẠO VỤ NỔ MÀU VÀNG TRẮNG NHẠT (1500 DMG)
-Events.on(EventType.UnitBulletDestroyEvent, event => {
-    let b = event.bullet;
-    if(b && b.owner && b.owner.type == UnitTypes.reign){
-        if(Mathf.chance(0.20)){
-            let isDoubleRange = Mathf.chance(0.50);
-            let baseRadius = 160;
-            let finalRadius = isDoubleRange ? baseRadius * 2 : baseRadius;
+        let x = key & 0xFFFF;
+        let y = (key >> 16) & 0xFFFF;
+        
+        let worldX = x * Vars.tilesize + Vars.tilesize / 2;
+        let worldY = y * Vars.tilesize + Vars.tilesize / 2;
 
-            Damage.damage(b.team, b.x, b.y, finalRadius, 1500);
+        if (Core.camera.bounds(Tmp.r1).contains(worldX, worldY)) {
+            let angle = Number(angleObj);
             
-            let fxExplosion = createIndeniterExplosionEffect(finalRadius);
-            fxExplosion.at(b.x, b.y);
-            Effect.shake(6, 6, b.x, b.y);
-
-            letterFEffect.at(b.x, b.y);
+            Draw.color(Pal.accent);
+            Lines.stroke(1.2);
+            
+            Lines.lineAngleCenter(worldX, worldY, angle, 4);
+            Lines.lineAngle(worldX + Angles.trnsx(angle, 2), worldY + Angles.trnsy(angle, 2), angle + 135, 2);
+            Lines.lineAngle(worldX + Angles.trnsx(angle, 2), worldY + Angles.trnsy(angle, 2), angle - 135, 2);
         }
     }
+
+    Draw.reset();
 });

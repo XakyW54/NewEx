@@ -177,11 +177,13 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
                 b1.add("[cyan]===(MK2)===[]").row();
                 let b1Text = vi ? "[white]• Tầm bắn: [green]+50%[]\n" +
                                    "• Sát thương nổ nòng Hỏa: [green]+50%[]\n" +
-                                   "• Tốc độ nạp đạn: [green]+20%[]\n\n" +
+                                   "• Tốc độ nạp đạn: [green]+20%[]\n" +
+                                   "• Bạo kích: [green]+10% Tỉ lệ | +30% ST Bạo kích[]\n\n" +
                                    "[lightgray]Kỹ năng đặc biệt: Cải Tiến Băng Hỏa — Nòng Băng đóng băng và xuyên 3 mục tiêu, nòng Hỏa gây nổ lan 120 DMG. Tăng mạnh khả năng khuếch đại sát thương theo HP đối thủ.[]"
                                 : "[white]• Range: [green]+50%[]\n" +
                                    "• Fire barrel splash DMG: [green]+50%[]\n" +
-                                   "• Reload speed: [green]+20%[]\n\n" +
+                                   "• Reload speed: [green]+20%[]\n" +
+                                   "• Critical: [green]+10% Rate | +30% Crit DMG[]\n\n" +
                                    "[lightgray]Special Skill: Enhanced Frostfire — Ice barrel freezes and pierces 3 targets, Fire barrel deals 120 splash DMG. Greatly amplifies DMG based on target HP.[]";
                 let b1D = b1.add(b1Text);
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
@@ -202,11 +204,13 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
                 b2.add("[purple]===(MK2B)===[]").row();
                 let b2Text = vi ? "[white]• Máu cấu trúc: [green]+150%[] (4,500 HP)\n" +
                                    "• Tầm bắn: [red]-30%[]\n" +
-                                   "• sát thương gốc: [green]+1000%[] / viên\n\n" +
+                                   "• sát thương gốc: [green]+1000%[] / viên\n" +
+                                   "• Bạo kích: [green]+10% Tỉ lệ | +30% ST Bạo kích[]\n\n" +
                                    "[lightgray]Kỹ năng đặc biệt: Cận Chiến Shotgun — Bắn tỏa chùm 20 viên đạn hỗn hợp Băng Hỏa cực đại, tối ưu diệt Boss tầm gần kèm cơ chế Xả-Hồi.[]"
                                 : "[white]• Health: [green]+150%[] (4,500 HP)\n" +
                                    "• Range: [red]-30%[]\n" +
-                                   "• Base Damage: [green]+1000%[] / bullet\n\n" +
+                                   "• Base Damage: [green]+1000%[] / bullet\n" +
+                                   "• Critical: [green]+10% Rate | +30% Crit DMG[]\n\n" +
                                    "[lightgray]Special Skill: Shotgun Melee — Fires a spread burst of 20 ultimate Frostfire bullets, optimized for close-range Boss killing with Burst-Cooldown mechanics.[]";
                 let b2D = b2.add(b2Text);
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
@@ -254,7 +258,9 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
                 descStr = vi ? "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
                                "[lightgray]Máu cấu trúc:[] [green]3,000 HP[]\n" +
                                "[lightgray]Tầm bắn hiệu dụng:[] [orange]260 pixel[]\n" +
-                               "[lightgray]sát thương gốc:[] [white]20 DMG / viên[]\n\n" +
+                               "[lightgray]Sát thương gốc:[] [white]20 DMG / viên[]\n" +
+                               "[lightgray]Tỉ lệ bạo kích:[] [yellow]5%[]\n" +
+                               "[lightgray]Sát thương bạo kích:[] [orange]150% (50% bonus)[]\n\n" +
                                "[cyan]⚡ CƠ CHẾ KỸ NĂNG ĐẶC BIỆT:[]\n" +
                                "• Băng Hỏa Song Nòng: Luân phiên bắn nòng trái (Đóng băng + Xuyên 3 mục tiêu) và nòng phải (Nổ lan 80 DMG).\n" +
                                "• Khuếch đại sát thương: Tăng +1% DMG cho mỗi 100 HP của mục tiêu khi HP > 100.\n" +
@@ -262,7 +268,9 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
                              : "[gold]⚡ BASE SPECS (MK1) ⚡[]\n" +
                                "[lightgray]Structure Health:[] [green]3,000 HP[]\n" +
                                "[lightgray]Effective Range:[] [orange]260 pixels[]\n" +
-                               "[lightgray]Base Damage:[] [white]20 DMG / bullet[]\n\n" +
+                               "[lightgray]Base Damage:[] [white]20 DMG / bullet[]\n" +
+                               "[lightgray]Crit Chance:[] [yellow]5%[]\n" +
+                               "[lightgray]Crit Damage:[] [orange]150% (50% bonus)[]\n\n" +
                                "[cyan]⚡ SPECIAL SKILL MECHANICS:[]\n" +
                                "• Dual Frostfire Barrels: Alternates firing left barrel (Freezing + Pierce 3) and right barrel (80 Splash DMG).\n" +
                                "• Damage Amplification: Adds +1% DMG for every 100 target HP when HP > 100.\n" +
@@ -272,7 +280,9 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
                 descStr = vi ? "[cyan]⚡ THÔNG SỐ NÂNG CẤP MK2 ⚡[]\n" +
                                "[lightgray]Máu cấu trúc:[] [green]3,000 HP[]\n" +
                                "[lightgray]Tầm bắn hiệu dụng:[] [orange]390 pixel (+50%)[]\n" +
-                               "[lightgray]sát thương gốc:[] [white]20 DMG / viên[]\n\n" +
+                               "[lightgray]Sát thương gốc:[] [white]20 DMG / viên[]\n" +
+                               "[lightgray]Tỉ lệ bạo kích:[] [yellow]15% (+10%)[]\n" +
+                               "[lightgray]Sát thương bạo kích:[] [orange]180% (+30%)[]\n\n" +
                                "[cyan]⚡ CƠ CHẾ KỸ NĂNG ĐẶC BIỆT:[]\n" +
                                "• Băng Hỏa Tăng Cường: Nỏ lan nòng Hỏa tăng lên 120 DMG / 32px.\n" +
                                "• Sát thương Trảm Tướng: Tăng +2% DMG cho mỗi 100 HP mục tiêu, cộng thêm +1% DMG mỗi 1,000 HP khi HP > 1,000.\n" +
@@ -280,7 +290,9 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
                              : "[cyan]⚡ UPGRADE SPECS MK2 ⚡[]\n" +
                                "[lightgray]Structure Health:[] [green]3,000 HP[]\n" +
                                "[lightgray]Effective Range:[] [orange]390 pixels (+50%)[]\n" +
-                               "[lightgray]Base Damage:[] [white]20 DMG / bullet[]\n\n" +
+                               "[lightgray]Base Damage:[] [white]20 DMG / bullet[]\n" +
+                               "[lightgray]Crit Chance:[] [yellow]15% (+10%)[]\n" +
+                               "[lightgray]Crit Damage:[] [orange]180% (+30%)[]\n\n" +
                                "[cyan]⚡ SPECIAL SKILL MECHANICS:[]\n" +
                                "• Enhanced Frostfire: Fire barrel splash DMG increased to 120 DMG / 32px.\n" +
                                "• Boss Executer Damage: Adds +2% DMG per 100 target HP, plus +1% DMG per 1,000 HP when HP > 1,000.\n" +
@@ -290,7 +302,9 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
                 descStr = vi ? "[purple]⚡ THÔNG SỐ NÂNG CẤP MK2B ⚡[]\n" +
                                "[lightgray]Máu cấu trúc:[] [green]4,500 HP (+150%)[]\n" +
                                "[lightgray]Tầm bắn hiệu dụng:[] [red]182 pixel (-30%)[]\n" +
-                               "[lightgray]sát thương gốc:[] [white]220 DMG / viên (+1000%)[]\n\n" +
+                               "[lightgray]Sát thương gốc:[] [white]220 DMG / viên (+1000%)[]\n" +
+                               "[lightgray]Tỉ lệ bạo kích:[] [yellow]15% (+10%)[]\n" +
+                               "[lightgray]Sát thương bạo kích:[] [orange]180% (+30%)[]\n\n" +
                                "[purple]🔥 CƠ CHẾ KỸ NĂNG ĐẶC BIỆT:[]\n" +
                                "• Cận chiến Shotgun: Bắn tỏa chùm 20 viên đạn hỗn hợp Băng Hỏa (2 đợt x 10 viên).\n" +
                                "• Sát thương Diệt Boss: Tăng +5% DMG cho mỗi 100 HP của mục tiêu khi HP > 100.\n" +
@@ -298,7 +312,9 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
                              : "[purple]⚡ UPGRADE SPECS MK2B ⚡[]\n" +
                                "[lightgray]Structure Health:[] [green]4,500 HP (+150%)[]\n" +
                                "[lightgray]Effective Range:[] [red]182 pixels (-30%)[]\n" +
-                               "[lightgray]Base Damage:[] [white]220 DMG / bullet (+1000%)[]\n\n" +
+                               "[lightgray]Base Damage:[] [white]220 DMG / bullet (+1000%)[]\n" +
+                               "[lightgray]Crit Chance:[] [yellow]15% (+10%)[]\n" +
+                               "[lightgray]Crit Damage:[] [orange]180% (+30%)[]\n\n" +
                                "[purple]🔥 SPECIAL SKILL MECHANICS:[]\n" +
                                "• Shotgun Melee: Fires a burst of 20 mixed Frostfire bullets (2 waves x 10 bullets).\n" +
                                "• Boss Killer Damage: Adds +5% DMG for every 100 target HP when HP > 100.\n" +
@@ -351,6 +367,14 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
             if (tier == 1 && targetHp > 1000) {
                 damageMultiplier += Math.floor((targetHp - 1000) / 1000) * 0.01;
             }
+        }
+
+        // --- CƠ CHẾ BẠO KÍCH (CRITICAL HIT) ---
+        let critChance = (tier > 0) ? 0.15 : 0.05;
+        let critMultiplier = (tier > 0) ? 1.80 : 1.50;
+        let isCrit = Mathf.chance(critChance);
+        if (isCrit) {
+            damageMultiplier *= critMultiplier;
         }
 
         this.barrelSide = !this.barrelSide;

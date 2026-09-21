@@ -1,0 +1,47 @@
+type: ItemTurret
+name: Aether Spiral
+description: Pháo T5 cao cấp sử dụng năng lượng xoắn ốc Golden Ratio. Bắn ra 4 đạn đuổi theo quỹ đạo xoắn tự nhiên, sau đó tự động chuyển sang chế độ tụ lực gom 4 nguồn năng lượng để công phá diện rộng. Tích hợp 4 ô trang bị nâng cấp chỉ số và kích hoạt hiệu ứng đặc biệt từ kho lưu trữ.
+size: 5
+health: 8500
+range: 320
+reload: 35
+rotateSpeed: 2.8
+shootCone: 15
+inaccuracy: 0
+coolantMultiplier: 1.2
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+}
+ammoTypes: {
+  surge-alloy: {
+    type: BasicBulletType
+    speed: 5.5
+    damage: 140
+    lifetime: 65
+  }
+  silicon: {
+    type: BasicBulletType
+    speed: 5.5
+    damage: 140
+    lifetime: 65
+  }
+}
+
+requirements: [
+  copper/1200
+  lead/1000
+  silicon/800
+  titanium/600
+  thorium/400
+  surge-alloy/250
+]
+
+consume: {
+  power: 24.0
+}
+
+category: turret
+research: foreshock
+targetAir: true
+targetGround: true

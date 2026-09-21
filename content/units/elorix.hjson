@@ -1,5 +1,6 @@
 type: legs
 name: Elorix
+description: "Đơn vị chân nhện di động cao cấp. Bắn 2 băng liên tiếp, mỗi băng xả 35 viên đạn tỏa ngẫu nhiên với tốc độ bay khác nhau và đa dạng hiệu ứng nguyên tố."
 
 speed: 0.8
 hitSize: 12
@@ -7,10 +8,14 @@ health: 5870
 armor: 4
 drag: 0.4
 faceTarget: true
-range: 180
+range: 323
 flying: false
 targetAir: true
+targetGround: true
 rotateSpeed: 3
+itemCapacity: 60
+
+# Cấu hình chân nhện
 legCount: 6
 legMaxLength: 1.1
 legMinLength: 0.6
@@ -33,20 +38,275 @@ immunities: [
 ]
 
 weapons: [
+  # --- Loại 1: Đạn Nổ (Blasted) - 5 viên x 2 băng ---
   {
-    name: leolyr-left-weapon
-    x: 9
-    y: 2
-    top: false
-    mirror: true      // Tự động tạo 2 nòng (Trái & Phải) cho phù hợp với JS
-    shootSound: minal
+    name: elorix-weapon
     reload: 180
-    inaccuracy: 4
+    x: 0
+    y: 0
+    mirror: false
+    top: false
+    rotate: true
+    shootSound: minal
+    shoot: {
+      type: ShootSpread
+      shots: 2          # Bắn 2 băng
+      shotDelay: 8      # Đố trễ giữa 2 băng
+      spread: 0.35
+    }
+    inaccuracy: 12.0
     bullet: {
       type: BasicBulletType
-      damage: 12
-      speed: 4
-      lifetime: 45
+      speed: 8.5
+      velocityRnd: 0.2  # Tốc độ ngẫu nhiên
+      damage: 15
+      width: 7
+      height: 18
+      lifetime: 38
+      frontColor: "ffab40"
+      backColor: "ff6d00"
+      trailColor: "ff6d00"
+      trailWidth: 1.5
+      trailLength: 5
+      splashDamage: 12
+      splashDamageRadius: 24
+      knockback: 1.2
+      status: blasted
+      statusDuration: 140
+      hitEffect: blastExplosion
+      despawnEffect: blastExplosion
+    }
+  }
+
+  # --- Loại 2: Đạn Tan Chảy (Melting) - 5 viên x 2 băng ---
+  {
+    name: elorix-weapon
+    reload: 180
+    x: 0
+    y: 0
+    mirror: false
+    top: false
+    rotate: true
+    shootSound: none
+    shoot: {
+      type: ShootSpread
+      shots: 2
+      shotDelay: 8
+      spread: 0.35
+    }
+    inaccuracy: 12.0
+    bullet: {
+      type: BasicBulletType
+      speed: 8.5
+      velocityRnd: 0.2
+      damage: 15
+      width: 7
+      height: 18
+      lifetime: 38
+      frontColor: "ffa726"
+      backColor: "f57c00"
+      trailColor: "f57c00"
+      trailWidth: 1.5
+      trailLength: 5
+      splashDamage: 12
+      splashDamageRadius: 24
+      status: melting
+      statusDuration: 140
+      hitEffect: melting
+      despawnEffect: melting
+    }
+  }
+
+  # --- Loại 3: Đạn Bốc Cháy (Burning) - 5 viên x 2 băng ---
+  {
+    name: elorix-weapon
+    reload: 180
+    x: 0
+    y: 0
+    mirror: false
+    top: false
+    rotate: true
+    shootSound: none
+    shoot: {
+      type: ShootSpread
+      shots: 2
+      shotDelay: 8
+      spread: 0.35
+    }
+    inaccuracy: 12.0
+    bullet: {
+      type: BasicBulletType
+      speed: 8.5
+      velocityRnd: 0.2
+      damage: 15
+      width: 7
+      height: 18
+      lifetime: 38
+      frontColor: "ff7043"
+      backColor: "d84315"
+      trailColor: "d84315"
+      trailWidth: 1.5
+      trailLength: 5
+      splashDamage: 12
+      splashDamageRadius: 24
+      status: burning
+      statusDuration: 140
+      hitEffect: fire
+      despawnEffect: fire
+    }
+  }
+
+  # --- Loại 4: Đạn Đóng Băng (Freezing) - 5 viên x 2 băng ---
+  {
+    name: elorix-weapon
+    reload: 180
+    x: 0
+    y: 0
+    mirror: false
+    top: false
+    rotate: true
+    shootSound: none
+    shoot: {
+      type: ShootSpread
+      shots: 2
+      shotDelay: 8
+      spread: 0.35
+    }
+    inaccuracy: 12.0
+    bullet: {
+      type: BasicBulletType
+      speed: 8.5
+      velocityRnd: 0.2
+      damage: 15
+      width: 7
+      height: 18
+      lifetime: 38
+      frontColor: "29b6f6"
+      backColor: "0288d1"
+      trailColor: "0288d1"
+      trailWidth: 1.5
+      trailLength: 5
+      splashDamage: 12
+      splashDamageRadius: 24
+      status: freezing
+      statusDuration: 140
+      hitEffect: freezing
+      despawnEffect: freezing
+    }
+  }
+
+  # --- Loại 5: Đạn Điện Giật (Shocked) - 5 viên x 2 băng ---
+  {
+    name: elorix-weapon
+    reload: 180
+    x: 0
+    y: 0
+    mirror: false
+    top: false
+    rotate: true
+    shootSound: none
+    shoot: {
+      type: ShootSpread
+      shots: 2
+      shotDelay: 8
+      spread: 0.35
+    }
+    inaccuracy: 12.0
+    bullet: {
+      type: BasicBulletType
+      speed: 8.5
+      velocityRnd: 0.2
+      damage: 15
+      width: 7
+      height: 18
+      lifetime: 38
+      frontColor: "e1bee7"
+      backColor: "ba68c8"
+      trailColor: "ba68c8"
+      trailWidth: 1.5
+      trailLength: 5
+      splashDamage: 12
+      splashDamageRadius: 24
+      status: shocked
+      statusDuration: 140
+      hitEffect: lightning
+      despawnEffect: lightning
+    }
+  }
+
+  # --- Loại 6: Đạn Làm Ướt (Wet) - 5 viên x 2 băng ---
+  {
+    name: elorix-weapon
+    reload: 180
+    x: 0
+    y: 0
+    mirror: false
+    top: false
+    rotate: true
+    shootSound: none
+    shoot: {
+      type: ShootSpread
+      shots: 2
+      shotDelay: 8
+      spread: 0.35
+    }
+    inaccuracy: 12.0
+    bullet: {
+      type: BasicBulletType
+      speed: 8.7
+      velocityRnd: 0.2
+      damage: 13
+      width: 6.5
+      height: 17
+      lifetime: 38
+      frontColor: "60a5fa"
+      backColor: "2563eb"
+      trailColor: "2563eb"
+      trailWidth: 1.4
+      trailLength: 5
+      splashDamage: 10
+      splashDamageRadius: 24
+      status: wet
+      statusDuration: 180
+      hitEffect: freezing
+      despawnEffect: freezing
+    }
+  }
+
+  # --- Loại 7: Đạn Ăn Mòn (Corroded) - 5 viên x 2 băng ---
+  {
+    name: elorix-weapon
+    reload: 180
+    x: 0
+    y: 0
+    mirror: false
+    top: false
+    rotate: true
+    shootSound: none
+    shoot: {
+      type: ShootSpread
+      shots: 2
+      shotDelay: 8
+      spread: 0.35
+    }
+    inaccuracy: 12.0
+    bullet: {
+      type: BasicBulletType
+      speed: 8.3
+      velocityRnd: 0.2
+      damage: 16
+      width: 7
+      height: 17
+      lifetime: 38
+      frontColor: "bef264"
+      backColor: "65a30d"
+      trailColor: "65a30d"
+      trailWidth: 1.5
+      trailLength: 6
+      splashDamage: 14
+      splashDamageRadius: 26
+      status: corroded
+      statusDuration: 160
     }
   }
 ]

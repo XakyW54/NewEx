@@ -144,13 +144,17 @@ const UniversalItemUI = {
                 }
             }), Styles.defaultb, () => {
                 if (currentItem != null) {
-                    let currentCore = build.team.core();
-                    if (currentCore != null) currentCore.items.add(currentItem, 1);
-                    build.equipSlots[slotIndex] = 0;
+                    let nextSlots = [build.equipSlots[0], build.equipSlots[1], build.equipSlots[2], build.equipSlots[3]];
+                    nextSlots[slotIndex] = 0;
+                    let newMask = (nextSlots[0] & 7) | ((nextSlots[1] & 7) << 3) | ((nextSlots[2] & 7) << 6) | ((nextSlots[3] & 7) << 9) | (1 << 15);
+                    build.configure(java.lang.Integer(newMask));
                     if (onConfigChange) onConfigChange();
                 } else {
                     this.showItemSelectionDialog(build, (selectedType) => {
-                        build.equipSlots[slotIndex] = selectedType;
+                        let nextSlots = [build.equipSlots[0], build.equipSlots[1], build.equipSlots[2], build.equipSlots[3]];
+                        nextSlots[slotIndex] = selectedType;
+                        let newMask = (nextSlots[0] & 7) | ((nextSlots[1] & 7) << 3) | ((nextSlots[2] & 7) << 6) | ((nextSlots[3] & 7) << 9) | (1 << 15);
+                        build.configure(java.lang.Integer(newMask));
                         if (onConfigChange) onConfigChange();
                     });
                 }
@@ -241,7 +245,6 @@ const UniversalItemUI = {
 
                 btn.clicked(() => {
                     if (hasItem) {
-                        core.items.remove(item, 1);
                         onSelect(this.getSlotTypeByItem(item));
                         dialog.hide();
                     } else {
@@ -267,7 +270,7 @@ Events.on(ContentInitEvent, () => {
 
         turretBlock.config(java.lang.Integer, packCons2((tile, value) => {
             if (tile != null && tile.setSlotConfig !== undefined) {
-                tile.setSlotConfig(value);
+                tile.handleEquipConfig(value);
             }
         }));
 
@@ -307,6 +310,50 @@ Events.on(ContentInitEvent, () => {
                     if (Number(this.equipSlots[i]) === Number(type)) count++;
                 }
                 return count;
+            },
+
+            handleEquipConfig(val) {
+                let mask = Number(val);
+                if ((mask & (1 << 15)) !== 0) {
+                    let core = this.team.core();
+                    for (let i = 0; i < 4; i++) {
+                        let newType = (mask >> (i * 3)) & 7;
+                        let oldType = Number(this.equipSlots[i]);
+                        if (oldType !== newType) {
+                            if (oldType !== 0 && core != null) {
+                                let oldItem = UniversalItemUI.getItemBySlotType(oldType);
+                                if (oldItem != null) core.items.add(oldItem, 1);
+                            }
+                            if (newType !== 0 && core != null) {
+                                let newItem = UniversalItemUI.getItemBySlotType(newType);
+                                if (newItem != null && core.items.has(newItem, 1)) {
+                                    core.items.remove(newItem, 1);
+                                    this.equipSlots[i] = newType;
+                                } else {
+                                    this.equipSlots[i] = 0;
+                                }
+                            } else {
+                                this.equipSlots[i] = 0;
+                            }
+                        }
+                    }
+                } else {
+                    let pos = Point2.unpack(mask);
+                    let destX = pos.x * Vars.tilesize;
+                    let destY = pos.y * Vars.tilesize;
+
+                    if (Mathf.dst(this.x, this.y, destX, destY) <= this.range()) {
+                        this.targetX = destX;
+                        this.targetY = destY;
+
+                        this.hasTargetSet = true;
+                        this.burstDelayTimer = Mathf.random(12, 120);
+                        this.burstQueue = 1;
+                        Fx.select.at(destX, destY);
+                    } else {
+                        Fx.smeltsmoke.at(destX, destY);
+                    }
+                }
             },
 
             setSlotConfig(val) {
@@ -406,7 +453,6 @@ Events.on(ContentInitEvent, () => {
                 table.add(topRowTable).center().padBottom(3).row();
 
                 UniversalItemUI.buildSlotUI(table, this, () => {
-                    this.configure(java.lang.Integer(this.getSlotConfig()));
                     this.deselect();
                 });
             },
@@ -416,21 +462,7 @@ Events.on(ContentInitEvent, () => {
             configured(builder, value) {
                 this.super$configured(builder, value);
                 if (typeof value === "number") {
-                    let pos = Point2.unpack(value);
-                    let destX = pos.x * Vars.tilesize;
-                    let destY = pos.y * Vars.tilesize;
-
-                    if (Mathf.dst(this.x, this.y, destX, destY) <= this.range()) {
-                        this.targetX = destX;
-                        this.targetY = destY;
-
-                        this.hasTargetSet = true;
-                        this.burstDelayTimer = Mathf.random(12, 120);
-                        this.burstQueue = 1;
-                        Fx.select.at(destX, destY);
-                    } else {
-                        Fx.smeltsmoke.at(destX, destY);
-                    }
+                    this.handleEquipConfig(value);
                 }
             },
 

@@ -15,6 +15,10 @@ Events.on(ContentInitEvent, () => {
         laserBrey.hasItems = true;
         laserBrey.itemCapacity = 100;
 
+        // Cache biến toàn cục để tránh truy vấn nhiều lần
+        let emeraliftBlocks = [];
+        let raykItem = null;
+
         laserBrey.buildType = () => extend(Building, {
             target1: null,
             target2: null,
@@ -26,31 +30,55 @@ Events.on(ContentInitEvent, () => {
             hasBuff: false,
             buffCount: 0,
 
+            // Biến đếm Cooldown tối ưu FPS/TPS
+            buffCheckTimer: 0,
+            targetSearchTimer: 0,
+            initialized: false,
+
+            // Dùng created() để khởi tạo thay vì override init() gây lỗi super$init
+            created() {
+                this.super$created();
+                if (emeraliftBlocks.length === 0) {
+                    EMERALIFT_NAMES.forEach(name => {
+                        let b = Vars.content.block(name);
+                        if (b != null) emeraliftBlocks.push(b);
+                    });
+                }
+                if (raykItem == null) {
+                    raykItem = Vars.content.item(RAYKSTONE_NAME);
+                }
+            },
+
             onDestroy() {
                 this.super$onDestroy();
+            },
+
+            isEmeraliftBlock(block) {
+                if (block == null) return false;
+                for (let i = 0; i < emeraliftBlocks.length; i++) {
+                    if (block === emeraliftBlocks[i]) return true;
+                }
+                return false;
             },
 
             checkEmeraldBuff() {
                 let rot = this.rotation & 3;
                 let count = 0;
+                let rSq = BUFF_RADIUS * BUFF_RADIUS;
 
                 for (let dx = -BUFF_RADIUS; dx <= BUFF_RADIUS; dx++) {
+                    let dxSq = dx * dx;
+                    let isFrontX = DIR_X[rot] !== 0 && Math.sign(dx) === DIR_X[rot];
+
                     for (let dy = -BUFF_RADIUS; dy <= BUFF_RADIUS; dy++) {
-                        if (dx * dx + dy * dy > BUFF_RADIUS * BUFF_RADIUS) continue;
+                        if (dxSq + dy * dy > rSq) continue;
 
-                        let checkX = this.tile.x + dx;
-                        let checkY = this.tile.y + dy;
+                        let isFrontY = DIR_Y[rot] !== 0 && Math.sign(dy) === DIR_Y[rot];
+                        if (isFrontX || isFrontY) continue;
 
-                        let isFront = false;
-                        if (DIR_X[rot] !== 0) isFront = Math.sign(dx) === DIR_X[rot];
-                        if (DIR_Y[rot] !== 0) isFront = Math.sign(dy) === DIR_Y[rot];
-
-                        if (isFront) continue;
-
-                        let neighborTile = Vars.world.tile(checkX, checkY);
+                        let neighborTile = Vars.world.tile(this.tile.x + dx, this.tile.y + dy);
                         if (neighborTile != null && neighborTile.build != null) {
-                            let bName = neighborTile.build.block.name;
-                            if (EMERALIFT_NAMES.some(name => bName === name || bName.endsWith("/" + name))) {
+                            if (this.isEmeraliftBlock(neighborTile.build.block)) {
                                 count++;
                             }
                         }
@@ -84,7 +112,6 @@ Events.on(ContentInitEvent, () => {
 
             findTargets() {
                 if (this.hasBuff) {
-                    // Mỗi tầng cộng dồn 20% phạm vi (Gốc 31 ô -> Bán kính 15 ô)
                     let baseRadius = 15;
                     let areaRadius = Math.floor(baseRadius * (1 + 0.20 * this.buffCount));
                     let targets = [];
@@ -103,7 +130,6 @@ Events.on(ContentInitEvent, () => {
                     this.target1 = targets.length > 0 ? targets[0] : null;
                     this.target2 = targets.length > 1 ? targets[1] : null;
                 } else {
-                    // Khoan thẳng mặc định
                     let rot = this.rotation & 3;
                     let dirX = DIR_X[rot];
                     let dirY = DIR_Y[rot];
@@ -150,9 +176,8 @@ Events.on(ContentInitEvent, () => {
                 this[itemTimerKey] -= progress;
 
                 if (this[itemTimerKey] <= 0) {
-                    let item = Vars.content.item(RAYKSTONE_NAME);
-                    if (item != null) {
-                        this.handleItem(this, item);
+                    if (raykItem != null) {
+                        this.handleItem(this, raykItem);
                     }
                     this[itemTimerKey] = 0;
                 }
@@ -175,7 +200,6 @@ Events.on(ContentInitEvent, () => {
                     let dropChance = this.hasBuff ? 0.60 : 0.40;
 
                     if (isVanilla && Mathf.chance(dropChance)) {
-                        let raykItem = Vars.content.item(RAYKSTONE_NAME);
                         if (raykItem != null) {
                             this.handleItem(this, raykItem);
                             try { Fx.itemTransfer.at(tx, ty, 0, raykItem, this); } catch(e) {}
@@ -197,16 +221,25 @@ Events.on(ContentInitEvent, () => {
             updateTile() {
                 if (this.efficiency <= 0 || !this.shouldConsume()) return;
 
-                this.checkEmeraldBuff();
+                // Tối ưu kiểm tra Buff (chỉ chạy mỗi 30 tick)
+                this.buffCheckTimer += Time.delta;
+                if (this.buffCheckTimer >= 30) {
+                    this.checkEmeraldBuff();
+                    this.buffCheckTimer = 0;
+                }
 
                 let liquidBoost = (this.liquids != null && this.liquids.currentAmount() > 0) ? 0.5 : 0;
                 let progress = this.delta() * this.efficiency * (1 + liquidBoost);
 
+                // Tối ưu tìm mục tiêu khi thiếu target (chờ 20 tick mới tìm lại)
                 if (!this.isMineable(this.target1) || !this.isMineable(this.target2)) {
-                    this.findTargets();
+                    this.targetSearchTimer += Time.delta;
+                    if (this.targetSearchTimer >= 20) {
+                        this.findTargets();
+                        this.targetSearchTimer = 0;
+                    }
                 }
 
-                // Tăng 50% tốc độ đào tường cho mỗi tầng khối buff
                 let vanillaSpeedMult = this.hasBuff ? (1.75 * (1 + 0.50 * this.buffCount)) : 1.75;
 
                 if (this.target1 != null) {
@@ -247,7 +280,6 @@ Events.on(ContentInitEvent, () => {
                 let lineColor = this.hasBuff ? Color.valueOf("#10b981") : Pal.accent;
 
                 if (this.hasBuff) {
-                    // Hiển thị phạm vi hình vuông đường nét xen kẽ (mỗi tầng +20%)
                     let totalTiles = Math.floor(31 * (1 + 0.20 * this.buffCount));
                     let size = totalTiles * 8;
                     Drawf.dashSquare(lineColor, this.x, this.y, size);
@@ -265,24 +297,22 @@ Events.on(ContentInitEvent, () => {
                 }
 
                 Draw.z(Layer.power + 1);
-                
-                // Hiển thị vòng tròn phạm vi nhận buff nét xen kẽ
                 Drawf.dashCircle(this.x, this.y, BUFF_RADIUS * 8, Color.valueOf("#10b981"));
 
+                let rSq = BUFF_RADIUS * BUFF_RADIUS;
                 for (let dx = -BUFF_RADIUS; dx <= BUFF_RADIUS; dx++) {
+                    let dxSq = dx * dx;
+                    let isFrontX = DIR_X[rot] !== 0 && Math.sign(dx) === DIR_X[rot];
+
                     for (let dy = -BUFF_RADIUS; dy <= BUFF_RADIUS; dy++) {
-                        if (dx * dx + dy * dy > BUFF_RADIUS * BUFF_RADIUS) continue;
+                        if (dxSq + dy * dy > rSq) continue;
 
-                        let isFront = false;
-                        if (DIR_X[rot] !== 0) isFront = Math.sign(dx) === DIR_X[rot];
-                        if (DIR_Y[rot] !== 0) isFront = Math.sign(dy) === DIR_Y[rot];
-
-                        if (isFront) continue;
+                        let isFrontY = DIR_Y[rot] !== 0 && Math.sign(dy) === DIR_Y[rot];
+                        if (isFrontX || isFrontY) continue;
 
                         let checkTile = Vars.world.tile(this.tile.x + dx, this.tile.y + dy);
                         if (checkTile != null && checkTile.build != null) {
-                            let bName = checkTile.build.block.name;
-                            if (EMERALIFT_NAMES.some(name => bName === name || bName.endsWith("/" + name))) {
+                            if (this.isEmeraliftBlock(checkTile.build.block)) {
                                 Lines.stroke(1.5, Color.valueOf("#10b981"));
                                 Lines.dashLine(this.x, this.y, checkTile.build.x, checkTile.build.y, 4);
                             }
@@ -297,10 +327,8 @@ Events.on(ContentInitEvent, () => {
 
                 if (this.items != null) {
                     let totalItems = this.items.total();
-                    
                     if (totalItems > 0) {
                         let storageRegion = Core.atlas.find("newex-storage", Core.atlas.find("storage"));
-
                         if (storageRegion != null && storageRegion.found()) {
                             let tier = Math.floor(totalItems / 10);
                             let calculatedSize = 4 + (tier * 1.2);
@@ -389,19 +417,18 @@ Events.run(Trigger.draw, () => {
         Drawf.dashLine(Pal.accent, startX - pX, startY - pY, startX - pX + dirX * range, startY - pY + dirY * range);
 
         Draw.z(Layer.power + 1);
-        
-        // Nét đứt xen kẽ ở chế độ xem trước đặt công trình
         Drawf.dashCircle(worldX, worldY, BUFF_RADIUS * 8, Color.valueOf("#10b981"));
 
+        let rSq = BUFF_RADIUS * BUFF_RADIUS;
         for (let dx = -BUFF_RADIUS; dx <= BUFF_RADIUS; dx++) {
+            let dxSq = dx * dx;
+            let isFrontX = DIR_X[rot] !== 0 && Math.sign(dx) === DIR_X[rot];
+
             for (let dy = -BUFF_RADIUS; dy <= BUFF_RADIUS; dy++) {
-                if (dx * dx + dy * dy > BUFF_RADIUS * BUFF_RADIUS) continue;
+                if (dxSq + dy * dy > rSq) continue;
 
-                let isFront = false;
-                if (DIR_X[rot] !== 0) isFront = Math.sign(dx) === DIR_X[rot];
-                if (DIR_Y[rot] !== 0) isFront = Math.sign(dy) === DIR_Y[rot];
-
-                if (isFront) continue;
+                let isFrontY = DIR_Y[rot] !== 0 && Math.sign(dy) === DIR_Y[rot];
+                if (isFrontX || isFrontY) continue;
 
                 let checkTile = Vars.world.tile(tileX + dx, tileY + dy);
                 if (checkTile != null && checkTile.build != null) {

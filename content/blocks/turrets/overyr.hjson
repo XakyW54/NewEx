@@ -18,6 +18,8 @@ requirements: [
   lead/200
   silicon/150
   titanium/100
+    obs/50
+  obsidis/120
 ]
 
 category: "turret"

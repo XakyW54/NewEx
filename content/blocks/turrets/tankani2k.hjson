@@ -104,11 +104,11 @@ shoot: {
 }
 researchCostMultiplier: 0.1
 requirements: [
-  copper/6400
-  lead/2100
-  titanium/1740
-plastanium/1250
-  silicon/1450
+  copper/1640
+  lead/1210
+  titanium/574
+plastanium/525
+  silicon/545
 ]
 category: turret
 research: Vendicum

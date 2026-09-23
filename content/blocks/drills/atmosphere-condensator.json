@@ -1,0 +1,59 @@
+{
+  "type": "GenericCrafter",
+  "name": " Máy đào Berry Byr",
+  "description": "Sử dụng từ trường cực mạnh để ngưng tụ bụi quặng thành tinh thể lai hiếm. Cơ chế hoạt động độc lập tại mọi địa hình, bắt buộc hấp thụ khí môi trường để cô đặc màu sắc sắc tố. Tốc độ cực chậm. Tỏa hương quả mọng.",  "size": 2,
+  "hasPower": true,
+  "hasItems": true,
+  "craftTime": 450,
+  "sound": "smelter",
+  "heatOutput": 0,
+  "consumes": {
+    "power": 50.0
+  },
+  "outputItem": {
+    "item": "berrybyr",
+    "amount": 1
+  },
+  "drawer": [
+    {
+      "type": "drawRegion"
+    },
+    {
+      "type": "drawLiquidOutputs"
+    },
+    {
+      "type": "drawParticles",
+      "color": "4187ff",
+      "alpha": 0.6,
+      "particleSize": 3,
+      "particles": 10,
+      "particleRad": 9,
+      "particleLife": 140
+    },
+    {
+      "type": "drawParticles",
+      "color": "7faeff",
+      "alpha": 0.6,
+      "particleSize": 1,
+      "particles": 20,
+      "particleRad": 10,
+      "particleLife": 120
+    },
+    {
+      "type": "drawParticles",
+      "color": "b879ff",
+      "alpha": 0.6,
+      "particleSize": 1,
+      "particles": 10,
+      "particleRad": 10,
+      "particleLife": 120
+    }
+  ],
+  "requirements": [
+    { "item": "copper", "amount": 2100 },
+    { "item": "lead", "amount": 1000 },
+        { "item": "obsidis", "amount": 100 }
+  ],
+  "category": "production",
+  "research": "laser-drill"
+}

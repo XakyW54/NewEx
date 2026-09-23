@@ -24,6 +24,7 @@ requirements: [
   lead/200
   silicon/150
   titanium/100
+  
 ]
 
 ammoTypes: {

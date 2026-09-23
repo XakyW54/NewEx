@@ -36,7 +36,7 @@ requirements: [
     thorium/9400
     surge-alloy/8700
     phase-fabric/7900
-    obs/4560
+    obs/14560
     obsidis/12000
 ]
 category: turret

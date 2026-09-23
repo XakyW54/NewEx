@@ -33,6 +33,8 @@ requirements: [
   copper/26
     lead/17
     titanium/50
+      obs/250
+  obsidis/420
 ]
 category: turret
 research: xylaon

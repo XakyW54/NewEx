@@ -1,4 +1,5 @@
 const RAYKSTONE_NAME = "newex-raykstone";
+const CORE_RAYKSTONE_NAME = "newex-core-raykstone";
 const EMERALIFT_NAMES = ["emeralift-wall", "newex-emeralift-wall"];
 const BREAK_TIME = 60 * 60;
 const BUFF_RADIUS = 5;
@@ -18,6 +19,7 @@ Events.on(ContentInitEvent, () => {
         // Cache biến toàn cục để tránh truy vấn nhiều lần
         let emeraliftBlocks = [];
         let raykItem = null;
+        let uraniumShardItem = null;
 
         laserBrey.buildType = () => extend(Building, {
             target1: null,
@@ -26,6 +28,8 @@ Events.on(ContentInitEvent, () => {
             timer2: 0,
             itemTimer1: 0,
             itemTimer2: 0,
+            shardTimer1: 0, // Bộ đếm 1 giây cho target 1
+            shardTimer2: 0, // Bộ đếm 1 giây cho target 2
             baseMaxTiles: 5,
             hasBuff: false,
             buffCount: 0,
@@ -46,6 +50,9 @@ Events.on(ContentInitEvent, () => {
                 }
                 if (raykItem == null) {
                     raykItem = Vars.content.item(RAYKSTONE_NAME);
+                }
+                if (uraniumShardItem == null) {
+                    uraniumShardItem = Vars.content.item("newex-uranilum-shard");
                 }
             },
 
@@ -100,14 +107,20 @@ Events.on(ContentInitEvent, () => {
                        (o != null && o.name === RAYKSTONE_NAME);
             },
 
+            isCoreRaykstone(tile) {
+                if (tile == null) return false;
+                let b = tile.block();
+                return b != null && b.name === CORE_RAYKSTONE_NAME;
+            },
+
             isVanillaWall(tile) {
                 if (tile == null) return false;
                 let b = tile.block();
-                return b != null && b.isStatic() && !b.synthetic() && b.name !== RAYKSTONE_NAME;
+                return b != null && b.isStatic() && !b.synthetic() && b.name !== RAYKSTONE_NAME && b.name !== CORE_RAYKSTONE_NAME;
             },
 
             isMineable(tile) {
-                return this.isRaykstone(tile) || this.isVanillaWall(tile);
+                return this.isRaykstone(tile) || this.isCoreRaykstone(tile) || this.isVanillaWall(tile);
             },
 
             findTargets() {
@@ -166,11 +179,27 @@ Events.on(ContentInitEvent, () => {
                 }
             },
 
-            handleMining(tile, itemTimerKey, progress) {
-                if (tile == null || !this.isRaykstone(tile)) return;
+            handleMining(tile, itemTimerKey, shardTimerKey, progress) {
+                if (tile == null) return;
 
+                // Xử lý đếm 1 giây (60 ticks) để quay 10% cơ hội ra newex-uranilum-shard
+                this[shardTimerKey] += progress;
+                if (this[shardTimerKey] >= 60) {
+                    this[shardTimerKey] %= 60; // Giữ lại phần dư
+                    if (uraniumShardItem != null && Mathf.chance(0.10)) {
+                        this.handleItem(this, uraniumShardItem);
+                        try { Fx.itemTransfer.at(tile.worldx(), tile.worldy(), 0, uraniumShardItem, this); } catch(e) {}
+                    }
+                }
+
+                let isRayk = this.isRaykstone(tile);
+                let isCore = this.isCoreRaykstone(tile);
+
+                if (!isRayk && !isCore) return;
+
+                // Với core-raykstone, thiết lập thời gian cố định 60 ticks (1 giây)
                 if (this[itemTimerKey] === 0) {
-                    this[itemTimerKey] = Mathf.random(60, 120);
+                    this[itemTimerKey] = isCore ? 60 : Mathf.random(60, 120);
                 }
 
                 this[itemTimerKey] -= progress;
@@ -188,6 +217,11 @@ Events.on(ContentInitEvent, () => {
 
                 if (Mathf.chance(0.25)) {
                     try { Fx.mine.at(tile.worldx(), tile.worldy()); } catch(e) {}
+                }
+
+                // Khối newex-core-raykstone sẽ không bao giờ bị phá hủy
+                if (this.isCoreRaykstone(tile)) {
+                    return progress;
                 }
 
                 if (this[timerKey] + progress >= BREAK_TIME) {
@@ -243,7 +277,7 @@ Events.on(ContentInitEvent, () => {
                 let vanillaSpeedMult = this.hasBuff ? (1.75 * (1 + 0.50 * this.buffCount)) : 1.75;
 
                 if (this.target1 != null) {
-                    this.handleMining(this.target1, "itemTimer1", progress);
+                    this.handleMining(this.target1, "itemTimer1", "shardTimer1", progress);
 
                     let targetProgress1 = this.isVanillaWall(this.target1) ? progress * vanillaSpeedMult : progress;
 
@@ -251,14 +285,16 @@ Events.on(ContentInitEvent, () => {
                     if (added === null) {
                         this.target1 = null;
                         this.itemTimer1 = 0;
+                        this.shardTimer1 = 0;
                     } else this.timer1 += added;
                 } else {
                     this.timer1 = 0;
                     this.itemTimer1 = 0;
+                    this.shardTimer1 = 0;
                 }
 
                 if (this.target2 != null) {
-                    this.handleMining(this.target2, "itemTimer2", progress);
+                    this.handleMining(this.target2, "itemTimer2", "shardTimer2", progress);
 
                     let targetProgress2 = this.isVanillaWall(this.target2) ? progress * vanillaSpeedMult : progress;
 
@@ -266,10 +302,12 @@ Events.on(ContentInitEvent, () => {
                     if (added === null) {
                         this.target2 = null;
                         this.itemTimer2 = 0;
+                        this.shardTimer2 = 0;
                     } else this.timer2 += added;
                 } else {
                     this.timer2 = 0;
                     this.itemTimer2 = 0;
+                    this.shardTimer2 = 0;
                 }
 
                 this.dumpAccumulate();

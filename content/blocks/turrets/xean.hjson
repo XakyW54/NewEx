@@ -1,0 +1,132 @@
+name: "Xean"
+description: "Tháp pháo ma thuật công nghệ cao (MagicTech). Sử dụng nhiều loại tài nguyên làm đạn với sát thương tăng dần. Tự động tích nộ để phóng Laser áp chế toàn bản đồ."
+type: ItemTurret
+size: 4
+health: 3800
+reload: 45
+range: 320
+maxAmmo: 60
+inaccuracy: 2
+rotateSpeed: 4.5
+shootSound: aetherod1
+category: turret
+configurable: false
+
+requirements: [
+  copper/500
+  lead/450
+  silicon/400
+  titanium/300
+  thorium/250
+  surge-alloy/150
+]
+
+ammoTypes: {
+  copper: {
+    type: BasicBulletType
+    speed: 7.0
+    damage: 120
+    splashDamage: 50
+    splashDamageRadius: 28
+    width: 10
+    height: 20
+    lifetime: 46
+    frontColor: "d99d73"
+    backColor: "9c6949"
+    trailColor: "d99d73"
+    trailWidth: 2.0
+    trailLength: 8
+  }
+  lead: {
+    type: BasicBulletType
+    speed: 7.5
+    damage: 160
+    splashDamage: 75
+    splashDamageRadius: 30
+    width: 11
+    height: 22
+    lifetime: 43
+    frontColor: "8c7fa9"
+    backColor: "5c527e"
+    trailColor: "8c7fa9"
+    trailWidth: 2.2
+    trailLength: 9
+  }
+  silicon: {
+    type: BasicBulletType
+    speed: 8.5
+    damage: 210
+    splashDamage: 100
+    splashDamageRadius: 32
+    width: 12
+    height: 24
+    lifetime: 38
+    homingPower: 0.08
+    homingRange: 120
+    frontColor: "53565e"
+    backColor: "313338"
+    trailColor: "808080"
+    trailWidth: 2.5
+    trailLength: 10
+  }
+  titanium: {
+    type: BasicBulletType
+    speed: 9.5
+    damage: 280
+    splashDamage: 140
+    splashDamageRadius: 36
+    width: 13
+    height: 26
+    lifetime: 34
+    frontColor: "a4b8da"
+    backColor: "5c73a2"
+    trailColor: "a4b8da"
+    trailWidth: 2.8
+    trailLength: 11
+  }
+  thorium: {
+    type: BasicBulletType
+    speed: 9.0
+    damage: 380
+    splashDamage: 200
+    splashDamageRadius: 40
+    width: 15
+    height: 28
+    lifetime: 36
+    frontColor: "f9a3c7"
+    backColor: "cb5282"
+    trailColor: "f9a3c7"
+    trailWidth: 3.2
+    trailLength: 12
+  }
+  phase-fabric: {
+    type: BasicBulletType
+    speed: 11.0
+    damage: 490
+    splashDamage: 260
+    splashDamageRadius: 44
+    width: 16
+    height: 30
+    lifetime: 30
+    frontColor: "fcd37f"
+    backColor: "d49842"
+    trailColor: "fcd37f"
+    trailWidth: 3.5
+    trailLength: 14
+  }
+  surge-alloy: {
+    type: BasicBulletType
+    speed: 12.0
+    damage: 650
+    splashDamage: 350
+    splashDamageRadius: 50
+    width: 18
+    height: 32
+    lifetime: 27
+    frontColor: "ffffff"
+    backColor: "f3e979"
+    trailColor: "f3e979"
+    trailWidth: 4.0
+    trailLength: 16
+  }
+}

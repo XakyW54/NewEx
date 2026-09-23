@@ -52,7 +52,9 @@ requirements: [
   lead/120
   graphite/80
   silicon/100
-  titanium/75
+  titanium/175
+  obs/50
+  obsidis/120
 ]
 
 category: turret

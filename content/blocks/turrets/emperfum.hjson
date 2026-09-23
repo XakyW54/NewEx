@@ -37,6 +37,9 @@ requirements: [
   thorium/5200
   silicon/5000
   surge-alloy/2900
+  starlight/20
+    obs/550
+  obsidis/720
 ]
 category: turret
 research: blixalum

@@ -25,7 +25,6 @@
     { "item": "obs", "amount": 100 },
         { "item": "uranilum-shard", "amount": 600 },
             { "item": "uranilum", "amount": 1400 }
-              "research": "comduik",
   ],
   "ambientSound": "techloop",
   "ambientSoundVolume": 0.5,

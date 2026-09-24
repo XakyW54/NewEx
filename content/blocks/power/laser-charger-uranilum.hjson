@@ -1,0 +1,39 @@
+{
+  "type": "GenericCrafter",
+  "name": "laser-charger-uranilum",
+  "health": 650,
+  "size": 5,
+  "hasPower": true,
+  "hasItems": true,
+  "itemCapacity": 10,
+  "craftTime": 60,
+  "category": "power",
+              "research": "comduik",
+  "consumes": {
+    "power": 16.666667,
+    "items": {
+      "items": [
+        "newex-uranilum/5"
+      ]
+    }
+  },
+  "requirements": [
+    { "item": "lead", "amount": 450 },
+    { "item": "silicon", "amount": 250 },
+    { "item": "titanium", "amount": 200 },
+    { "item": "thorium", "amount": 150 },
+    { "item": "obs", "amount": 100 },
+        { "item": "uranilum-shard", "amount": 600 },
+            { "item": "uranilum", "amount": 1400 }
+              "research": "comduik",
+  ],
+  "ambientSound": "techloop",
+  "ambientSoundVolume": 0.5,
+  "drawer": {
+    "type": "DrawMulti",
+    "drawers": [
+      { "type": "DrawDefault" },
+      { "type": "DrawGlowRegion", "color": "66B1FFFF" }
+    ]
+  }
+}

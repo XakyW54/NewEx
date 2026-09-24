@@ -182,33 +182,40 @@ Events.on(ContentInitEvent, () => {
             handleMining(tile, itemTimerKey, shardTimerKey, progress) {
                 if (tile == null) return;
 
-                // Xử lý đếm 1 giây (60 ticks) để quay 10% cơ hội ra newex-uranilum-shard
+                let isRayk = this.isRaykstone(tile);
+                let isCore = this.isCoreRaykstone(tile);
+                let isVanilla = this.isVanillaWall(tile);
+
+                // --- 1. Xử lý nhận newex-uranilum-shard: Mỗi 1 giây (60 ticks) có 10% cơ hội ---
                 this[shardTimerKey] += progress;
                 if (this[shardTimerKey] >= 60) {
-                    this[shardTimerKey] %= 60; // Giữ lại phần dư
+                    this[shardTimerKey] %= 60;
                     if (uraniumShardItem != null && Mathf.chance(0.10)) {
                         this.handleItem(this, uraniumShardItem);
                         try { Fx.itemTransfer.at(tile.worldx(), tile.worldy(), 0, uraniumShardItem, this); } catch(e) {}
                     }
                 }
 
-                let isRayk = this.isRaykstone(tile);
-                let isCore = this.isCoreRaykstone(tile);
+                // --- 2. Xử lý nhận raykItem: Mỗi 1 giây (60 ticks) đào ra item ---
+                this[itemTimerKey] += progress;
+                if (this[itemTimerKey] >= 60) {
+                    this[itemTimerKey] %= 60;
 
-                if (!isRayk && !isCore) return;
-
-                // Với core-raykstone, thiết lập thời gian cố định 60 ticks (1 giây)
-                if (this[itemTimerKey] === 0) {
-                    this[itemTimerKey] = isCore ? 60 : Mathf.random(60, 120);
-                }
-
-                this[itemTimerKey] -= progress;
-
-                if (this[itemTimerKey] <= 0) {
                     if (raykItem != null) {
-                        this.handleItem(this, raykItem);
+                        // Khối Raykstone & Core Raykstone luôn cấp 1 item mỗi giây
+                        if (isRayk || isCore) {
+                            this.handleItem(this, raykItem);
+                            try { Fx.itemTransfer.at(tile.worldx(), tile.worldy(), 0, raykItem, this); } catch(e) {}
+                        } 
+                        // Khối Tường Vanilla có tỉ lệ rớt item mỗi giây tùy theo buff
+                        else if (isVanilla) {
+                            let dropChance = this.hasBuff ? 0.60 : 0.40;
+                            if (Mathf.chance(dropChance)) {
+                                this.handleItem(this, raykItem);
+                                try { Fx.itemTransfer.at(tile.worldx(), tile.worldy(), 0, raykItem, this); } catch(e) {}
+                            }
+                        }
                     }
-                    this[itemTimerKey] = 0;
                 }
             },
 
@@ -227,18 +234,9 @@ Events.on(ContentInitEvent, () => {
                 if (this[timerKey] + progress >= BREAK_TIME) {
                     let tx = tile.worldx();
                     let ty = tile.worldy();
-                    let isVanilla = this.isVanillaWall(tile);
 
+                    // Phá hủy khối khi đủ thời gian đào vỡ
                     tile.setBlock(Blocks.air);
-
-                    let dropChance = this.hasBuff ? 0.60 : 0.40;
-
-                    if (isVanilla && Mathf.chance(dropChance)) {
-                        if (raykItem != null) {
-                            this.handleItem(this, raykItem);
-                            try { Fx.itemTransfer.at(tx, ty, 0, raykItem, this); } catch(e) {}
-                        }
-                    }
 
                     try {
                         Fx.smallExplosion.at(tx, ty);
@@ -334,7 +332,7 @@ Events.on(ContentInitEvent, () => {
                     Drawf.dashLine(lineColor, startX - pX, startY - pY, startX - pX + dirX * range, startY - pY + dirY * range);
                 }
 
-                Draw.z(Layer.power + 1);
+                Draw.z(Layer.turret + 2);
                 Drawf.dashCircle(this.x, this.y, BUFF_RADIUS * 8, Color.valueOf("#10b981"));
 
                 let rSq = BUFF_RADIUS * BUFF_RADIUS;
@@ -361,6 +359,8 @@ Events.on(ContentInitEvent, () => {
             },
 
             draw() {
+                // Đặt Layer của khối hiển thị ở mức Layer.turret (ngang tầm tháp pháo/cao hơn tường) khi vẽ
+                Draw.z(Layer.turret);
                 this.super$draw();
 
                 if (this.items != null) {
@@ -372,7 +372,7 @@ Events.on(ContentInitEvent, () => {
                             let calculatedSize = 4 + (tier * 1.2);
                             let size = Math.min(calculatedSize, 16);
 
-                            Draw.z(Layer.block + 0.1);
+                            Draw.z(Layer.turret + 0.1);
                             Draw.rect(storageRegion, this.x, this.y, size, size);
                         }
                     }
@@ -393,7 +393,7 @@ Events.on(ContentInitEvent, () => {
                 let laserColor = this.hasBuff ? Color.valueOf("#10b981") : Color.valueOf("#ffd37f");
                 let pulse = Mathf.absin(Time.time, 4, 0.2);
 
-                Draw.z(Layer.power + 1);
+                Draw.z(Layer.turret + 1);
 
                 if (this.target1 != null) {
                     let endLineX = this.target1.worldx();
@@ -454,7 +454,7 @@ Events.run(Trigger.draw, () => {
         Drawf.dashLine(Pal.accent, startX + pX, startY + pY, startX + pX + dirX * range, startY + pY + dirY * range);
         Drawf.dashLine(Pal.accent, startX - pX, startY - pY, startX - pX + dirX * range, startY - pY + dirY * range);
 
-        Draw.z(Layer.power + 1);
+        Draw.z(Layer.turret + 2);
         Drawf.dashCircle(worldX, worldY, BUFF_RADIUS * 8, Color.valueOf("#10b981"));
 
         let rSq = BUFF_RADIUS * BUFF_RADIUS;

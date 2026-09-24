@@ -3,7 +3,6 @@ const packCons = (func) => new Cons({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 
 const isEn = () => Core.settings.getString("locale").startsWith("en");
-const customNoneFx = new Effect(0, e => {});
 
 const ItemStats = {
     "copper": { damage: 0.05, desc: isEn() ? "[stat]+5% Dmg[]" : "[stat]+5% Sát thương[]" },
@@ -14,48 +13,59 @@ const ItemStats = {
     "starlight": { critChance: 0.05, critMultiplier: 0.15, desc: isEn() ? "[stat]+5% Crit | +15% CritDmg\nExecute targets below 5% HP (+1000 Copper)[]" : "[stat]+5% Bạo | +15% ST Bạo\nKết liễu mục tiêu <5% HP (+1000 Đồng)[]" }
 };
 
-const executeFx = new Effect(25, e => {
-    Draw.color(Pal.accent, Color.white, e.fin());
-    Lines.stroke(e.fout() * 3.0);
-    Lines.circle(e.x, e.y, e.finpow() * 25.0);
-    
-    Draw.color(Color.gold);
-    for (let i = 0; i < 4; i++) {
-        let angle = i * 90 + 45;
-        Lines.lineAngle(e.x, e.y, angle, e.finpow() * 20.0);
-    }
-});
+function applyDamageWithStarlight(owner, target, baseDamage) {
+    if (target == null || target.dead) return;
 
-function applyDamageWithStarlight(sourceBuild, targetUnit, baseDmg) {
-    if (targetUnit == null || !targetUnit.isValid() || targetUnit.dead) return;
+    let finalDamage = baseDamage;
 
-    let critChance = sourceBuild.getCritChance ? sourceBuild.getCritChance() : 0.0;
-    let critDmgMult = sourceBuild.getCritMultiplier ? sourceBuild.getCritMultiplier() : 1.0;
-    let hasStarlightPassive = sourceBuild.hasStarlightPassive ? sourceBuild.hasStarlightPassive() : false;
-
-    let finalDmg = baseDmg;
-    if (Mathf.chance(critChance)) {
-        finalDmg *= critDmgMult;
+    if (owner != null && typeof owner.getCritChance === "function") {
+        let critChance = owner.getCritChance();
+        if (Mathf.chance(critChance)) {
+            finalDamage *= owner.getCritMultiplier();
+        }
     }
 
-    targetUnit.damage(finalDmg);
+    target.damage(finalDamage);
 
-    if (hasStarlightPassive && targetUnit.isValid() && !targetUnit.dead) {
-        if (targetUnit.health <= targetUnit.maxHealth * 0.05) {
-            targetUnit.kill();
-            executeFx.at(targetUnit.x, targetUnit.y);
-
-            let core = sourceBuild.team.core();
+    if (owner != null && typeof owner.hasStarlightPassive === "function" && owner.hasStarlightPassive()) {
+        if (target.health / target.maxHealth <= 0.05) {
+            target.kill();
+            let core = owner.team.core();
             if (core != null) {
                 let copperItem = Vars.content.getByName(ContentType.item, "copper") || Items.copper;
-                if (copperItem != null) {
-                    core.items.add(copperItem, 1000);
-                    Call.label("+1000 Copper", 1.5, targetUnit.x, targetUnit.y);
-                }
+                if (copperItem != null) core.items.add(copperItem, 1000);
             }
         }
     }
 }
+
+const absorbEnergyFx = new Effect(20, e => {
+    Draw.color(Color.cyan, Color.white, e.fout());
+    Lines.stroke(1.8 * e.fout());
+    Mathf.rand.setSeed(e.id);
+    let len = Mathf.rand.random(4, 12);
+    let angle = Mathf.rand.random(360);
+    Lines.lineAngle(e.x, e.y, angle, len * e.fin());
+    Fill.circle(e.x, e.y, 1.5 * e.fout());
+});
+
+const muzzleSparkFx = new Effect(15, e => {
+    Draw.color(Color.white, Color.cyan, e.fout());
+    Lines.stroke(1.5 * e.fout());
+    Mathf.rand.setSeed(e.id);
+    for(let i = 0; i < 3; i++){
+        let len = Mathf.rand.random(6, 16) * e.fin();
+        let ang = e.rotation + Mathf.rand.range(20);
+        Lines.lineAngle(e.x, e.y, ang, len);
+    }
+});
+
+const customShootFx = new Effect(20, e => {
+    Draw.color(Color.cyan, Color.white, e.fout());
+    Lines.stroke(2.5 * e.fout());
+    Lines.circle(e.x, e.y, 18 * e.fin());
+    Lines.lineAngle(e.x, e.y, e.rotation, 15 * e.fout());
+});
 
 const UniversalItemUI = {
     buildSlotUI(table, build, onConfigChange) {
@@ -207,19 +217,6 @@ const acidCorrosionEffect = new Effect(30, cons(e => {
         let angle = Mathf.rand.random(360);
         let size = Mathf.rand.random(1, 4) * e.fout();
         Lines.circle(e.x + Angles.trnsx(angle, len), e.y + Angles.trnsy(angle, len), size);
-    }
-}));
-
-const normalHitFx = new Effect(25, cons(e => {
-    Draw.color(Color.sky, Color.white, e.fin());
-    Lines.stroke(2.5 * e.fout());
-    Lines.circle(e.x, e.y, 16 * e.fin());
-    
-    for(let i = 0; i < 8; i++){
-        let ang = i * 45 + Mathf.randomSeed(e.id + i, 360);
-        let len = 24 * e.fin();
-        Lines.lineAngle(e.x, e.y, ang, 4 * e.fout());
-        Draw.rect("particle", e.x + Mathf.cosDeg(ang) * len, e.y + Mathf.sinDeg(ang) * len, 4 * e.fout(), 4 * e.fout());
     }
 }));
 
@@ -386,7 +383,7 @@ const createAetherStarBullet = (frontCol, backCol, hitEf, statusEff) => {
         init(){
             this.super$init();
             this.speed = 5.5;
-            this.damage = 215; // Chỉnh sửa: Sát thương gốc 215
+            this.damage = 215;
             this.lifetime = 65;
             this.hitEffect = hitEf;
             this.despawnEffect = hitEf;
@@ -433,7 +430,7 @@ const aetherDarkVoidBullet = extend(BasicBulletType, {
     init(){
         this.super$init();
         this.speed = 6.0;
-        this.damage = 215; // Chỉnh sửa: Sát thương gốc 215
+        this.damage = 215;
         this.lifetime = 65;
         this.hitEffect = darkVoidHitFx;
         this.despawnEffect = darkVoidHitFx;
@@ -463,12 +460,12 @@ const aetherDarkVoidBullet = extend(BasicBulletType, {
     }
 });
 
-const aetherNormalBlasted  = createAetherStarBullet(Color.valueOf("#ffab40"), Color.valueOf("#ff6d00"), Fx.blastExplosion, StatusEffects.blasted);
-const aetherNormalMelting  = createAetherStarBullet(Color.valueOf("#ffa726"), Color.valueOf("#f57c00"), Fx.melting, StatusEffects.melting);
-const aetherNormalBurning  = createAetherStarBullet(Color.valueOf("#ff7043"), Color.valueOf("#d84315"), Fx.fire, StatusEffects.burning);
-const aetherNormalFreezing = createAetherStarBullet(Color.valueOf("#29b6f6"), Color.valueOf("#0288d1"), Fx.freezing, StatusEffects.freezing);
-const aetherNormalShocked  = createAetherStarBullet(Color.valueOf("#e1bee7"), Color.valueOf("#ba68c8"), Fx.lightning, StatusEffects.shocked);
-const aetherNormalWet      = createAetherStarBullet(Color.valueOf("#60a5fa"), Color.valueOf("#2563eb"), Fx.freezing, StatusEffects.wet);
+const aetherNormalBlasted  = createAetherStarBullet(Color.valueOf("#ffab40"), Color.valueOf("#ff6d00"), darkVoidHitFx, StatusEffects.blasted);
+const aetherNormalMelting  = createAetherStarBullet(Color.valueOf("#ffa726"), Color.valueOf("#f57c00"), darkVoidHitFx, StatusEffects.melting);
+const aetherNormalBurning  = createAetherStarBullet(Color.valueOf("#ff7043"), Color.valueOf("#d84315"), darkVoidHitFx, StatusEffects.burning);
+const aetherNormalFreezing = createAetherStarBullet(Color.valueOf("#29b6f6"), Color.valueOf("#0288d1"), darkVoidHitFx, StatusEffects.freezing);
+const aetherNormalShocked  = createAetherStarBullet(Color.valueOf("#e1bee7"), Color.valueOf("#ba68c8"), darkVoidHitFx, StatusEffects.shocked);
+const aetherNormalWet      = createAetherStarBullet(Color.valueOf("#60a5fa"), Color.valueOf("#2563eb"), darkVoidHitFx, StatusEffects.wet);
 const aetherNormalCorroded = createAetherStarBullet(Color.valueOf("#bef264"), Color.valueOf("#65a30d"), acidCorrosionEffect, StatusEffects.corroded);
 
 const aetherNormalBulletPool = [
@@ -483,12 +480,11 @@ const aetherNormalBulletPool = [
 
 const normalBullet = aetherNormalBlasted;
 
-// Trạng thái 2: gây 500% sát thương gốc (215 * 5 = 1075)
 const chargedBulletState2 = extend(BasicBulletType, {
     init(){
         this.super$init();
         this.speed = 8.0;
-        this.damage = 1075; // Chỉnh sửa: Trạng thái 2 gây 500% dmg gốc
+        this.damage = 1075;
         this.lifetime = 50;
         this.splashDamage = 450;
         this.splashDamageRadius = 40;
@@ -515,12 +511,11 @@ const chargedBulletState2 = extend(BasicBulletType, {
     }
 });
 
-// Trạng thái 3: gây 850% sát thương gốc (215 * 8.5 = 1827.5)
 const chargedBulletState3 = extend(BasicBulletType, {
     init(){
         this.super$init();
         this.speed = 8.0;
-        this.damage = 1827.5; // Chỉnh sửa: Trạng thái 3 gây 850% dmg gốc
+        this.damage = 1827.5;
         this.lifetime = 50;
         this.splashDamage = 450;
         this.splashDamageRadius = 40;
@@ -547,8 +542,29 @@ const chargedBulletState3 = extend(BasicBulletType, {
     }
 });
 
+function updateAetherSpiralVisibility() {
+    const aetherTurret = Vars.content.block("newex-aether-spiral") || Vars.content.block("aether-spiral");
+    if (!Vars.player || !aetherTurret) return;
+
+    let playerTeam = Vars.player.team();
+    let maxAllowed = playerTeam.cores().size;
+
+    let currentCount = 0;
+    Groups.build.each(b => {
+        if (b.block === aetherTurret && b.team === playerTeam) {
+            currentCount++;
+        }
+    });
+
+    if (currentCount < maxAllowed) {
+        aetherTurret.buildVisibility = BuildVisibility.shown;
+    } else {
+        aetherTurret.buildVisibility = BuildVisibility.hidden;
+    }
+}
+
 Events.on(ContentInitEvent, () => {
-    let aetherSpiral = Vars.content.block("newex-aether-spiral");
+    let aetherSpiral = Vars.content.block("newex-aether-spiral") || Vars.content.block("aether-spiral");
 
     if(aetherSpiral != null){
         aetherSpiral.configurable = true;
@@ -580,6 +596,16 @@ Events.on(ContentInitEvent, () => {
             state2ShotIndex: 0,
             state2MoveTimer: 0,
             state2MoveDuration: 10,
+
+            customRecoil: 0,
+            orbVisualRadius: 0,
+
+            rotateSpeed: 5.0,
+
+            created() {
+                this.super$created();
+                return this;
+            },
 
             getSlotType(slotIdx) { return Number(this.equipSlots[slotIdx]); },
 
@@ -724,18 +750,68 @@ Events.on(ContentInitEvent, () => {
                 ];
             },
 
+            applyRecoil(amount) {
+                this.customRecoil = Math.min(6.0, this.customRecoil + amount);
+            },
+
             updateTile(){
                 this.super$updateTile();
 
+                let isDirectControlled = this.isControlled() || this.logicControlled();
+                let targetAngle = this.rotation;
+
+                if (isDirectControlled) {
+                    let u = this.unit;
+                    if (u != null) {
+                        targetAngle = this.angleTo(u.aimX, u.aimY);
+                        if (this.isShooting && this.reloadCounter <= 0 && this.hasAmmo()) {
+                            this.shoot(this.peekAmmo());
+                        }
+                    }
+                }
+
+                if (this.hasAmmo()) {
+                    this.rotation = Angles.moveToward(this.rotation, targetAngle, this.rotateSpeed * Time.delta);
+                }
+
                 let dt = Time.delta * this.getSpeedMultiplier();
+
+                this.customRecoil = Mathf.lerpDelta(this.customRecoil, 0, 0.12);
+
+                let targetOrbRadius = 0;
+                let maxOrbRadius = 9.0;
+                let midOrbRadius = 6.0;
+
+                if(this.chargeState === 0){
+                    targetOrbRadius = (this.normalShotCount / 5.0) * maxOrbRadius;
+                } else if(this.chargeState === 1){
+                    let shotsDone = Mathf.clamp(this.chargeShotCount, 0, 3);
+                    targetOrbRadius = maxOrbRadius - (shotsDone / 3.0) * (maxOrbRadius - midOrbRadius);
+                } else if(this.chargeState === 2){
+                    let shotsDone = Mathf.clamp(this.state2ShotIndex, 0, 4);
+                    targetOrbRadius = midOrbRadius - (shotsDone / 4.0) * midOrbRadius;
+                }
+
+                this.orbVisualRadius = Mathf.lerpDelta(this.orbVisualRadius, targetOrbRadius, 0.08);
+
+                let orbX = this.x - Mathf.cosDeg(this.rotation) * 5;
+                let orbY = this.y - Mathf.sinDeg(this.rotation) * 5;
 
                 if(this.chargeState === 1){
                     this.chargeTimer += dt;
                     let muzzleX = this.x + Mathf.cosDeg(this.rotation) * this.convergenceDistance;
                     let muzzleY = this.y + Mathf.sinDeg(this.rotation) * this.convergenceDistance;
 
+                    if(Mathf.chanceDelta(0.6)){
+                        let randAng = Mathf.rand.random(360);
+                        let randDist = Mathf.rand.random(8, 20);
+                        let px = orbX + Angles.trnsx(randAng, randDist);
+                        let py = orbY + Angles.trnsy(randAng, randDist);
+                        absorbEnergyFx.at(px, py);
+                    }
+
                     if(Mathf.chanceDelta(0.4)){
-                        Fx.sparkShoot.at(muzzleX, muzzleY, this.rotation, Color.cyan);
+                        muzzleSparkFx.at(muzzleX, muzzleY, this.rotation);
                     }
 
                     if(this.chargeTimer >= this.chargeDuration){
@@ -755,6 +831,12 @@ Events.on(ContentInitEvent, () => {
                     } else if(this.state2SubStage === 1){
                         this.state2MoveTimer += dt;
 
+                        if(Mathf.chanceDelta(0.5)){
+                            let ang = Mathf.rand.random(360);
+                            let len = Mathf.rand.random(10, 25);
+                            absorbEnergyFx.at(orbX + Angles.trnsx(ang, len), orbY + Angles.trnsy(ang, len));
+                        }
+
                         if(this.state2MoveTimer >= this.state2MoveDuration){
                             let muzzleX = this.x + Mathf.cosDeg(this.rotation) * this.convergenceDistance;
                             let muzzleY = this.y + Mathf.sinDeg(this.rotation) * this.convergenceDistance;
@@ -762,13 +844,13 @@ Events.on(ContentInitEvent, () => {
                             let lightningX = muzzleX + Mathf.cosDeg(this.rotation) * 5;
                             let lightningY = muzzleY + Mathf.sinDeg(this.rotation) * 5;
 
-                            // Chỉnh sửa: Sử dụng loại đạn của Trạng thái 3
                             this.spawnCustomBullet(chargedBulletState3, muzzleX, muzzleY, this.rotation);
-                            
+                            this.applyRecoil(5.0);
+
                             state3ShockwaveFx.at(muzzleX, muzzleY, this.rotation);
                             lightningAroundTurretFx.at(lightningX, lightningY);
                             Effect.shake(6, 8, this.x, this.y);
-                            Fx.shootBigColor.at(muzzleX, muzzleY, this.rotation, Color.cyan);
+                            customShootFx.at(muzzleX, muzzleY, this.rotation);
 
                             this.state2ShotIndex++;
                             this.state2MoveTimer = 0;
@@ -840,13 +922,13 @@ Events.on(ContentInitEvent, () => {
                     this.spawnCustomBullet(randRight, this.x, this.y, this.rotation - spreadAngle);
                 }
 
-                Fx.shootBigColor.at(this.x, this.y, this.rotation, Color.sky);
+                customShootFx.at(this.x, this.y, this.rotation);
             },
 
             finishChargeAndShoot(targetX, targetY){
                 mergeEnergyFx.at(targetX, targetY);
-                // Chỉnh sửa: Sử dụng loại đạn của Trạng thái 2
                 this.spawnCustomBullet(chargedBulletState2, targetX, targetY, this.rotation);
+                this.applyRecoil(4.0);
 
                 distortedShockwaveFx.at(targetX, targetY, this.rotation);
                 Effect.shake(6, 8, this.x, this.y);
@@ -870,10 +952,39 @@ Events.on(ContentInitEvent, () => {
                 let cos = Mathf.cos(rad);
                 let sin = Mathf.sin(rad);
 
+                let topRegion = Core.atlas.find("newex-aether-spiral-top");
+                if(topRegion.found){
+                    let recoilPx = this.customRecoil;
+                    let drawOffset = 10 - recoilPx;
+                    let drawX = this.x + cos * drawOffset;
+                    let drawY = this.y + sin * drawOffset;
+
+                    Draw.z(Layer.turret + 0.1);
+                    Draw.rect(topRegion, drawX, drawY, this.rotation - 90);
+                }
+
+                let muzzleX = this.x + Mathf.cosDeg(this.rotation) * this.convergenceDistance;
+                let muzzleY = this.y + Mathf.sinDeg(this.rotation) * this.convergenceDistance;
+
+                let orbX = this.x - cos * 5;
+                let orbY = this.y - sin * 5;
+
+                if(this.orbVisualRadius > 0.2){
+                    Draw.z(Layer.bullet + 0.9);
+                    
+                    Draw.color(Color.cyan);
+                    Draw.alpha(0.6 + 0.2 * Mathf.sin(Time.time * 0.1));
+                    Fill.circle(orbX, orbY, this.orbVisualRadius * 1.25);
+
+                    Draw.color(Color.white);
+                    Draw.alpha(0.9);
+                    Fill.circle(orbX, orbY, this.orbVisualRadius * 0.65);
+
+                    Draw.reset();
+                }
+
                 if(this.chargeState === 1){
                     let progress = Mathf.clamp(this.chargeTimer / this.chargeDuration);
-                    let muzzleX = this.x + Mathf.cosDeg(this.rotation) * this.convergenceDistance;
-                    let muzzleY = this.y + Mathf.sinDeg(this.rotation) * this.convergenceDistance;
 
                     let offsets = [
                         {x: 0, y: this.cornerOffset},
@@ -899,8 +1010,6 @@ Events.on(ContentInitEvent, () => {
 
                 if(this.chargeState === 2){
                     let faceCorners = this.getFaceCorners();
-                    let muzzleX = this.x + Mathf.cosDeg(this.rotation) * this.convergenceDistance;
-                    let muzzleY = this.y + Mathf.sinDeg(this.rotation) * this.convergenceDistance;
 
                     Draw.z(Layer.bullet + 1);
 
@@ -936,4 +1045,49 @@ Events.on(ContentInitEvent, () => {
             }
         });
     }
+});
+
+Events.on(WorldLoadEvent, event => {
+    Time.run(10, () => {
+        updateAetherSpiralVisibility();
+    });
+});
+
+Events.on(BlockBuildEndEvent, event => {
+    updateAetherSpiralVisibility();
+});
+
+Events.on(BlockDestroyEvent, event => {
+    const aetherTurret = Vars.content.block("newex-aether-spiral") || Vars.content.block("aether-spiral");
+    if (!aetherTurret) return;
+
+    let destroyedTile = event.tile;
+    if (!destroyedTile || !destroyedTile.build) return;
+
+    let destroyedBuild = destroyedTile.build;
+    let victimTeam = destroyedBuild.team;
+
+    if (destroyedBuild.block instanceof CoreBlock) {
+        let teamData = victimTeam.data();
+        let maxAllowed = teamData.cores.size - 1;
+        if (maxAllowed < 0) maxAllowed = 0;
+
+        let teamTurrets = [];
+        Groups.build.each(b => {
+            if (b.block === aetherTurret && b.team === victimTeam) {
+                teamTurrets.push(b);
+            }
+        });
+
+        if (teamTurrets.length > maxAllowed) {
+            let toDestroy = teamTurrets.length - maxAllowed;
+            for (let i = 0; i < toDestroy; i++) {
+                let lastTurret = teamTurrets.pop();
+                Call.sendMessage("[red]Đội " + victimTeam.name + " bị mất Lõi! Pháo Aether Spiral thừa đã tự hủy![]");
+                lastTurret.kill();
+            }
+        }
+    }
+
+    updateAetherSpiralVisibility();
 });

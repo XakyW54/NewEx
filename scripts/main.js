@@ -5,6 +5,12 @@ require("fix-save");
 
  
 
+
+
+require("uranilum-reactor");
+require("laser-charger-uranilum");
+
+
  
  
 require("dor");

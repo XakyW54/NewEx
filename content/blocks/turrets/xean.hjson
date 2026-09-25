@@ -11,7 +11,10 @@ rotateSpeed: 4.5
 shootSound: aetherod1
 category: turret
 configurable: false
-
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+}
 requirements: [
   copper/500
   lead/450

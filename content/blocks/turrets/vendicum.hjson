@@ -27,7 +27,6 @@ unitSort: closest
 drawer: {
   type: DrawTurret
   basePrefix: reinforced-
-  
 }
   "smokeEffect": [
     {

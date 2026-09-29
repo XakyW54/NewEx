@@ -64,13 +64,13 @@ const circleOut = new Effect(45, 500, packCons(e => {
     Lines.circle(e.x, e.y, currentRad * 0.85);
 }));
 
-const createBlixalumBullet = (baseDmg, splashDmg, splashRad, bulletColor) => {
+const createBlixalumBullet = (baseDmg, splashDmg, splashRad, bulletColor, lifetimeVal) => {
     return extend(BasicBulletType, {
         speed: 2.2, 
         damage: baseDmg, 
         width: 12, 
         height: 28, 
-        lifetime: 60, 
+        lifetime: lifetimeVal, 
         frontColor: bulletColor, 
         backColor: Color.white,
         hitEffect: circleOut, 
@@ -95,13 +95,13 @@ const createBlixalumBullet = (baseDmg, splashDmg, splashRad, bulletColor) => {
     });
 };
 
-const blixalumMK1Bullet = createBlixalumBullet(250, 875, 64, Color.valueOf("#00ddff"));
-const blixalumMK2Bullet = createBlixalumBullet(250, 875, 80, Color.valueOf("#00ffffff"));
-const blixalumMK2BBullet = createBlixalumBullet(300, 150, 48, Color.valueOf("#eaff00"));
+const blixalumMK1Bullet = createBlixalumBullet(625, 875, 64, Color.valueOf("#00ddff"), 120);
+const blixalumMK2Bullet = createBlixalumBullet(625, 875, 80, Color.valueOf("#00ffffff"), 120);
+const blixalumMK2BBullet = createBlixalumBullet(750, 150, 48, Color.valueOf("#eaff00"), 120);
 
 const blixalumLaser = extend(LaserBulletType, {
-    damage: 150, 
-    length: 220, 
+    damage: 1375, 
+    length: 442, 
     width: 8.0, 
     lifetime: 16,
     colors: [Color.valueOf("#a1ff9a").cpy().mul(0.3), Color.valueOf("#b1ffae"), Color.white]
@@ -153,7 +153,7 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
 
     getTier() { return this.tierState == null ? 0 : this.tierState; },
     setTier(val) { this.tierState = val; this.chargeTimer = 0; this.isCharged = false; this.laserTimer = 0; },
-    range() { return (this.getTier() == 1) ? 340 : 260; },
+    range() { return (this.getTier() == 1) ? 578 : 442; },
 
     buildConfiguration(table) {
         table.clear(); 
@@ -205,15 +205,15 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                 b1.background(Styles.black6); 
                 b1.margin(12);
                 b1.add("[cyan]===(MK2)===[]").row();
-                let b1Text = vi ? "[white]• Tầm bắn: [green]+30%[] (340 px)\n" +
+                let b1Text = vi ? "[white]• Tầm bắn: [green]578 px[]\n" +
                                    "• Tốc độ bắn tối đa: [green]+200%[]\n" +
                                    "• Bán kính nổ lan: [green]+25%[] (80 px)\n" +
-                                   "• Bạo kích: [yellow]50% Tỉ lệ | 100% ST Bạo kích[]\n\n" +
+                                   "• Bạo kích: [yellow]80% Tỉ lệ | 120% ST Bạo kích[]\n\n" +
                                    "[lightgray]Kỹ năng đặc biệt: Tần Tốc Thông Minh — Tự động quét từ trường xung quanh và gia tăng tốc độ hỏa lực đột biến theo mật độ kẻ địch trong tầm bắn.[]"
-                                : "[white]• Range: [green]+30%[] (340 px)\n" +
+                                : "[white]• Range: [green]578 px[]\n" +
                                    "• Max Fire Rate: [green]+200%[]\n" +
                                    "• Splash Damage Radius: [green]+25%[] (80 px)\n" +
-                                   "• Critical: [yellow]50% Rate | 100% Crit DMG[]\n\n" +
+                                   "• Critical: [yellow]80% Rate | 120% Crit DMG[]\n\n" +
                                    "[lightgray]Special Skill: Smart Speed Frequency — Automatically scans surrounding magnetic fields and surges firing speed according to enemy density within range.[]";
                 let b1D = b1.add(b1Text);
                 b1D.width(340).get().setWrap(true); 
@@ -241,15 +241,15 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                 b2.background(Styles.black6); 
                 b2.margin(12);
                 b2.add("[purple]===(MK2B)===[]").row();
-                let b2Text = vi ? "[white]• Sát thương gốc: [green]+20%[] (300 DMG)\n" +
+                let b2Text = vi ? "[white]• Sát thương gốc: [green]750 DMG[]\n" +
                                    "• Bán kính nổ lan: [red]-25%[] (48 px)\n" +
                                    "• Tốc độ bắn tối đa: [red]-20%[]\n" +
-                                   "• Bạo kích: [yellow]50% Tỉ lệ | 100% ST Bạo kích[]\n\n" +
+                                   "• Bạo kích: [yellow]80% Tỉ lệ | 120% ST Bạo kích[]\n\n" +
                                    "[lightgray]Kỹ năng đặc biệt: Bảo Táp Laser — Tích tụ ma trận lõi năng lượng và tự động kích hoạt phóng 4 tia Laser hội tụ thiêu rụi mục tiêu mỗi 5 giây.[]"
-                                : "[white]• Base Damage: [green]+20%[] (300 DMG)\n" +
+                                : "[white]• Base Damage: [green]750 DMG[]\n" +
                                    "• Splash Damage Radius: [red]-25%[] (48 px)\n" +
                                    "• Max Fire Rate: [red]-20%[]\n" +
-                                   "• Critical: [yellow]50% Rate | 100% Crit DMG[]\n\n" +
+                                   "• Critical: [yellow]80% Rate | 120% Crit DMG[]\n\n" +
                                    "[lightgray]Special Skill: Laser Tempest — Charges core energy matrix and automatically fires 4 focused Laser beams to incinerate targets every 5 seconds.[]";
                 let b2D = b2.add(b2Text);
                 b2D.width(340).get().setWrap(true); 
@@ -300,21 +300,21 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                 title += "[yellow](MK1)[]";
                 descStr = vi ? "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
                                "[lightgray]Máu cấu trúc:[] [green]3,500 HP[]\n" +
-                               "[lightgray]Tầm bắn hiệu dụng:[] [orange]260 pixel[]\n" +
-                               "[lightgray]Sát thương gốc:[] [white]250 DMG / phát bắn[]\n" +
+                               "[lightgray]Tầm bắn hiệu dụng:[] [orange]442 pixel[]\n" +
+                               "[lightgray]Sát thương gốc:[] [white]625 DMG / phát bắn[]\n" +
                                "[lightgray]Sát thương nổ lan:[] [white]875 DMG (64 px)[]\n" +
-                               "[lightgray]Tỉ lệ bạo kích:[] [yellow]50%[]\n" +
-                               "[lightgray]Sát thương bạo kích:[] [orange]200% (100% bonus)[]\n\n" +
+                               "[lightgray]Tỉ lệ bạo kích:[] [yellow]80%[]\n" +
+                               "[lightgray]Sát thương bạo kích:[] [orange]220% (120% bonus)[]\n\n" +
                                "[cyan]⚡ CƠ CHẾ KỸ NĂNG ĐẶC BIỆT:[]\n" +
                                "• Tích Năng Lượng Từ Trường: Cần 2 giây nạp sạc trước khi xả đạn xung kích.\n" +
                                "• Tốc hỏa thích ứng: Tự động tăng +10% tốc độ bắn với mỗi kẻ địch xuất hiện trong tầm bắn (tối đa +100%)."
                              : "[gold]⚡ BASE SPECS (MK1) ⚡[]\n" +
                                "[lightgray]Structure Health:[] [green]3,500 HP[]\n" +
-                               "[lightgray]Effective Range:[] [orange]260 pixels[]\n" +
-                               "[lightgray]Base Damage:[] [white]250 DMG / shot[]\n" +
+                               "[lightgray]Effective Range:[] [orange]442 pixels[]\n" +
+                               "[lightgray]Base Damage:[] [white]625 DMG / shot[]\n" +
                                "[lightgray]Splash Damage:[] [white]875 DMG (64 px)[]\n" +
-                               "[lightgray]Crit Chance:[] [yellow]50%[]\n" +
-                               "[lightgray]Crit Damage:[] [orange]200% (100% bonus)[]\n\n" +
+                               "[lightgray]Crit Chance:[] [yellow]80%[]\n" +
+                               "[lightgray]Crit Damage:[] [orange]220% (120% bonus)[]\n\n" +
                                "[cyan]⚡ SPECIAL SKILL MECHANICS:[]\n" +
                                "• Magnetic Energy Charge: Requires 2s charging time before releasing shockwave bullets.\n" +
                                "• Adaptive Fire Rate: Automatically increases +10% fire rate per enemy within range (max +100%).";
@@ -322,21 +322,21 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                 title += vi ? "[cyan]THÔNG SỐ NÂNG CẤP MK2[]" : "[cyan]UPGRADE SPECS MK2[]";
                 descStr = vi ? "[cyan]⚡ THÔNG SỐ NÂNG CẤP MK2 ⚡[]\n" +
                                "[lightgray]Máu cấu trúc:[] [green]3,500 HP[]\n" +
-                               "[lightgray]Tầm bắn hiệu dụng:[] [orange]340 pixel (+30%)[]\n" +
-                               "[lightgray]Sát thương gốc:[] [white]250 DMG / phát bắn[]\n" +
+                               "[lightgray]Tầm bắn hiệu dụng:[] [orange]578 pixel[]\n" +
+                               "[lightgray]Sát thương gốc:[] [white]625 DMG / phát bắn[]\n" +
                                "[lightgray]Sát thương nổ lan:[] [white]875 DMG (80 px) (+25%)[]\n" +
-                               "[lightgray]Tỉ lệ bạo kích:[] [yellow]50%[]\n" +
-                               "[lightgray]Sát thương bạo kích:[] [orange]200% (100% bonus)[]\n\n" +
+                               "[lightgray]Tỉ lệ bạo kích:[] [yellow]80%[]\n" +
+                               "[lightgray]Sát thương bạo kích:[] [orange]220% (120% bonus)[]\n\n" +
                                "[cyan]⚡ CƠ CHẾ KỸ NĂNG ĐẶC BIỆT:[]\n" +
                                "• Mở Rộng Tần Tốc Thông Minh: Cải tiến lõi từ trường tối ưu tần suất quét tự động.\n" +
                                "• Tốc hỏa đột biến: Tăng +10% tốc độ bắn cho mỗi kẻ địch trong tầm bắn (tối đa +300%)."
                              : "[cyan]⚡ UPGRADE SPECS MK2 ⚡[]\n" +
                                "[lightgray]Structure Health:[] [green]3,500 HP[]\n" +
-                               "[lightgray]Effective Range:[] [orange]340 pixels (+30%)[]\n" +
-                               "[lightgray]Base Damage:[] [white]250 DMG / shot[]\n" +
+                               "[lightgray]Effective Range:[] [orange]578 pixels[]\n" +
+                               "[lightgray]Base Damage:[] [white]625 DMG / shot[]\n" +
                                "[lightgray]Splash Damage:[] [white]875 DMG (80 px) (+25%)[]\n" +
-                               "[lightgray]Crit Chance:[] [yellow]50%[]\n" +
-                               "[lightgray]Crit Damage:[] [orange]200% (100% bonus)[]\n\n" +
+                               "[lightgray]Crit Chance:[] [yellow]80%[]\n" +
+                               "[lightgray]Crit Damage:[] [orange]220% (120% bonus)[]\n\n" +
                                "[cyan]⚡ SPECIAL SKILL MECHANICS:[]\n" +
                                "• Smart Frequency Expansion: Enhanced magnetic core optimizing auto-scan frequency.\n" +
                                "• Fire Rate Surge: Increases +10% fire rate per enemy in range (max +300%).";
@@ -344,24 +344,24 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                 title += vi ? "[purple]THÔNG SỐ NÂNG CẤP MK2B[]" : "[purple]UPGRADE SPECS MK2B[]";
                 descStr = vi ? "[purple]⚡ THÔNG SỐ NÂNG CẤP MK2B ⚡[]\n" +
                                "[lightgray]Máu cấu trúc:[] [green]3,500 HP[]\n" +
-                               "[lightgray]Tầm bắn hiệu dụng:[] [red]260 pixel[]\n" +
-                               "[lightgray]Sát thương gốc:[] [white]300 DMG / phát bắn (+20%)[]\n" +
+                               "[lightgray]Tầm bắn hiệu dụng:[] [red]442 pixel[]\n" +
+                               "[lightgray]Sát thương gốc:[] [white]750 DMG / phát bắn[]\n" +
                                "[lightgray]Sát thương nổ lan:[] [white]150 DMG (48 px) (-25%)[]\n" +
-                               "[lightgray]Tỉ lệ bạo kích:[] [yellow]50%[]\n" +
-                               "[lightgray]Sát thương bạo kích:[] [orange]200% (100% bonus)[]\n\n" +
+                               "[lightgray]Tỉ lệ bạo kích:[] [yellow]80%[]\n" +
+                               "[lightgray]Sát thương bạo kích:[] [orange]220% (120% bonus)[]\n\n" +
                                "[purple]🔥 CƠ CHẾ KỸ NĂNG ĐẶC BIỆT:[]\n" +
                                "• Bảo Táp Laser Đột Phá: Hợp nhất ma trận lõi năng lượng laser phá hủy cơ động.\n" +
-                               "• Xung kích phụ: Mỗi 5 giây nạp sạc sẽ tự động bắn 4 tia Laser (150 DMG/tia) dội thẳng vào mục tiêu."
+                               "• Xung kích phụ: Mỗi 5 giây nạp sạc sẽ tự động bắn 4 tia Laser (375 DMG/tia) dội thẳng vào mục tiêu."
                              : "[purple]⚡ UPGRADE SPECS MK2B ⚡[]\n" +
                                "[lightgray]Structure Health:[] [green]3,500 HP[]\n" +
-                               "[lightgray]Effective Range:[] [red]260 pixels[]\n" +
-                               "[lightgray]Base Damage:[] [white]300 DMG / shot (+20%)[]\n" +
+                               "[lightgray]Effective Range:[] [red]442 pixels[]\n" +
+                               "[lightgray]Base Damage:[] [white]750 DMG / shot[]\n" +
                                "[lightgray]Splash Damage:[] [white]150 DMG (48 px) (-25%)[]\n" +
-                               "[lightgray]Crit Chance:[] [yellow]50%[]\n" +
-                               "[lightgray]Crit Damage:[] [orange]200% (100% bonus)[]\n\n" +
+                               "[lightgray]Crit Chance:[] [yellow]80%[]\n" +
+                               "[lightgray]Crit Damage:[] [orange]220% (120% bonus)[]\n\n" +
                                "[purple]🔥 SPECIAL SKILL MECHANICS:[]\n" +
                                "• Laser Tempest Breakthrough: Merges mobile laser core matrix for heavy fire.\n" +
-                               "• Auxiliary Impulse: Every 5s charge automatically fires 4 Laser beams (150 DMG/beam) directly into targets.";
+                               "• Auxiliary Impulse: Every 5s charge automatically fires 4 Laser beams (375 DMG/beam) directly into targets.";
             }
 
             let dialog = extend(BaseDialog, title, {});
@@ -436,10 +436,9 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
         let localY = -5;
         let offsets = [8, 3, -3, -8];
 
-        // --- CƠ CHẾ BẠO KÍCH CHO LASER ---
         let laserDmgMult = 1.0;
-        if (Mathf.chance(0.5)) {
-            laserDmgMult = 2.0; // 100% bonus damage
+        if (Mathf.chance(0.80)) {
+            laserDmgMult = 2.20; 
         }
 
         for (let i = 0; i < 4; i++) {
@@ -456,10 +455,9 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
         let spawnX = this.x + Angles.trnsx(this.rotation, 8);
         let spawnY = this.y + Angles.trnsy(this.rotation, 8);
 
-        // --- CƠ CHẾ BẠO KÍCH (CRITICAL HIT) ---
         let damageMultiplier = 1.0;
-        if (Mathf.chance(0.5)) { // 50% Tỉ lệ bạo kích
-            damageMultiplier = 2.0; // +100% Sát thương bạo kích (Tổng 200% DMG)
+        if (Mathf.chance(0.80)) {
+            damageMultiplier = 2.20;
         }
 
         let finalDmg = selectedBullet.damage * damageMultiplier;

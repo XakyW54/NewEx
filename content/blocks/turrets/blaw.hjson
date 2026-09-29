@@ -4,7 +4,7 @@ description: "Pháo Blaw: Pháo hai nòng sử dụng đạn Băng và Hỏa kha
 health: 380
 size: 2
 reload: 20
-range: 176
+range: 442
 inaccuracy: 2
 targetAir: true
 targetGround: true
@@ -32,9 +32,9 @@ drawer: {
 
 researchCostMultiplier: 0.1
 requirements: [
-  copper/740
-  lead/600
-  graphite/150
+  copper/74
+  lead/60
+  graphite/15
 ]
 category: turret
 research: newex

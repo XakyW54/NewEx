@@ -4,7 +4,7 @@ description: "Pháo Blixalum: Pháo điện từ sử dụng đạn năng lượ
 health: 3800
 size: 3
 reload: 20
-range: 276
+range: 442
 inaccuracy: 2
 targetAir: tru3
 targetGround: true
@@ -31,10 +31,10 @@ drawer: {
 
 researchCostMultiplier: 0.1
 requirements: [
-  copper/2240
-  lead/ 1100
-  titanium/4300
-  silicon/400
+  copper/224
+  lead/ 110
+  titanium/430
+  silicon/40
 ]
 category: turret
 research: blaw

@@ -1,6 +1,6 @@
 name: Reguilater
 description: Pháo Reguilater: tháp pháo đầu tiên tự động hóa bắn được địch trên không vẫn mặt đất, nó sẽ ngắm mục tiêu 1 lúc để tích lũy sức mạnh và bắn ra tia laser cực mạnh và ngẫu nhiên sức mạnh.
-health: 2500
+health: 5200
 size: 3
 range: 260
 inaccuracy: 2

@@ -196,11 +196,11 @@ function makeReguBuild() {
                     let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                     b2.add("[purple]===(MK2B)===[]").row();
                     let b2Text = en ?
-                        "[white]• Structure Health: [green]250,000 HP[]\n" +
+                        "[white]• Structure Health: [green]5,200 HP[]\n" +
                         "• Range: [red]-30%[]\n" +
                         "• Base Damage: [green]+500%[]\n\n" +
                         "[lightgray]Special Skill: Destructive Saturation Circuit — Automatically splits sub-laser chains (up to 6 rays) to incinerate nearby targets upon hit.[]" :
-                        "[white]• Máu cấu trúc: [green]250,000 HP[]\n" +
+                        "[white]• Máu cấu trúc: [green]5,200 HP[]\n" +
                         "• Tầm bắn: [red]-30%[]\n" +
                         "• sát thương gốc: [green]+500%[]\n\n" +
                         "[lightgray]Kỹ năng đặc biệt: Mạch Bão Hòa Hủy Diệt — Tự động phân tách chuỗi liên laser phụ (tối đa 6 tia) thiêu rụi mục tiêu lân cận khi đánh trúng kẻ địch.[]";
@@ -212,7 +212,7 @@ function makeReguBuild() {
                             core.items.remove(Items.thorium, reguReqMK3.thorium);
                             core.items.remove(Items.titanium, reguReqMK3.titanium);
                             this.setTier(3);
-                            this.health = 250000;   
+                            this.health = 5200;   
                             Fx.bigShockwave.at(this.x, this.y); dialog.hide(); this.deselect();
                         } else {
                             Vars.ui.showInfo(en ? "[red]Not enough resources for MK2B branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]");
@@ -243,7 +243,7 @@ function makeReguBuild() {
                     title += "[yellow](MK1)[]";
                     descStr = en ?
                         "[gold]⚡ BASIC STATS (MK1) ⚡[]\n" +
-                        "[lightgray]Structure Health:[] [green]250,000[]\n" +
+                        "[lightgray]Structure Health:[] [green]5,200[]\n" +
                         "[lightgray]Effective Range:[] [orange]280 pixels[] (35 Tiles)\n" +
                         "[lightgray]Base Damage:[] [yellow]120 DMG / shot[]\n" +
                         "[lightgray]Power Required:[] [gainsboro]12.00 units/sec[]\n\n" +
@@ -252,7 +252,7 @@ function makeReguBuild() {
                         "• Barrel rotation speed continuously increases while tracking targets.\n" +
                         "• Damage increases linearly up to +100% during sustained firing." :
                         "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                        "[lightgray]Máu cấu trúc:[] [green]250,000[]\n" +
+                        "[lightgray]Máu cấu trúc:[] [green]5,200[]\n" +
                         "[lightgray]Tầm bắn hiệu dụng:[] [orange]280 pixel[] (35 Ô)\n" +
                         "[lightgray]sát thương gốc:[] [yellow]120 DMG / phát bắn[]\n" +
                         "[lightgray]Năng lượng yêu cầu:[] [gainsboro]12.00 đơn vị/giây[]\n\n" +
@@ -265,7 +265,7 @@ function makeReguBuild() {
                     title += en ? "[cyan]MK2 UPGRADE STATS[]" : "[cyan]THÔNG SỐ NÂNG CẤP MK2[]";
                     descStr = en ?
                         "[cyan]⚡ MK2 UPGRADE STATS ⚡[]\n" +
-                        "[lightgray]Structure Health:[] [green]250,000[]\n" +
+                        "[lightgray]Structure Health:[] [green]5,200[]\n" +
                         "[lightgray]Effective Range:[] [orange]420 pixels (+50%)[]\n" +
                         "[lightgray]Base Damage:[] [yellow]300 DMG / shot (+150%)[]\n" +
                         "[lightgray]Power Required:[] [gainsboro]12.00 units/sec[]\n\n" +
@@ -274,7 +274,7 @@ function makeReguBuild() {
                         "• Triggers high-speed Burst-Shot rate.\n" +
                         "• Automatically accumulates orange particles, unlocking Crit chance dealing double damage." :
                         "[cyan]⚡ THÔNG SỐ NÂNG CẤP MK2 ⚡[]\n" +
-                        "[lightgray]Máu cấu trúc:[] [green]250,000[]\n" +
+                        "[lightgray]Máu cấu trúc:[] [green]5,200[]\n" +
                         "[lightgray]Tầm bắn hiệu dụng:[] [orange]420 pixel (+50%)[]\n" +
                         "[lightgray]sát thương gốc:[] [yellow]300 DMG / phát bắn (+150%)[]\n" +
                         "[lightgray]Năng lượng yêu cầu:[] [gainsboro]12.00 đơn vị/giây[]\n\n" +
@@ -287,7 +287,7 @@ function makeReguBuild() {
                     title += en ? "[purple]MK2B UPGRADE STATS[]" : "[purple]THÔNG SỐ NÂNG CẤP MK2B[]";
                     descStr = en ?
                         "[purple]⚡ MK2B UPGRADE STATS ⚡[]\n" +
-                        "[lightgray]Structure Health:[] [green]250,000[]\n" +
+                        "[lightgray]Structure Health:[] [green]5,200[]\n" +
                         "[lightgray]Effective Range:[] [red]280 pixels (-30%)[]\n" +
                         "[lightgray]Base Damage:[] [pink]720 DMG / shot (+500%)[]\n" +
                         "[lightgray]Power Required:[] [gainsboro]12.00 units/sec[]\n\n" +
@@ -296,7 +296,7 @@ function makeReguBuild() {
                         "• On hitting primary target, splits sub-laser chains (up to 6 rays) burning nearby enemies.\n" +
                         "• Sacrifices firing range to focus maximum destructive density at close range." :
                         "[purple]⚡ THÔNG SỐ NÂNG CẤP MK2B ⚡[]\n" +
-                        "[lightgray]Máu cấu trúc:[] [green]250,000[]\n" +
+                        "[lightgray]Máu cấu trúc:[] [green]5,200[]\n" +
                         "[lightgray]Tầm bắn hiệu dụng:[] [red]280 pixel (-30%)[]\n" +
                         "[lightgray]sát thương gốc:[] [pink]720 DMG / phát bắn (+500%)[]\n" +
                         "[lightgray]Năng lượng yêu cầu:[] [gainsboro]12.00 đơn vị/giây[]\n\n" +
@@ -532,7 +532,7 @@ function makeReguBuild() {
  
 const reguilater = extend(PowerTurret, "reguilater", {});
 
-reguilater.health = 250000;         
+reguilater.health = 5200;         
 reguilater.size = 4;                
 reguilater.range = 280;             
 reguilater.reload = 9999;           

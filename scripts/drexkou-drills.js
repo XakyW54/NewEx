@@ -1,5 +1,9 @@
-const globalLockedTiles = new Set();
+const globalLockedTiles = new ObjectSet();
 const isEn = () => Core.settings.getString("locale").startsWith("en");
+
+function getTileKey(x, y) {
+    return (x << 16) | (y & 0xFFFF);
+}
 
 Events.on(ContentInitEvent, () => {
     const drexkouDrill = Vars.content.block("newex-drexkou-drills");
@@ -22,6 +26,7 @@ Events.on(ContentInitEvent, () => {
             range: 200,
             cachedTiles: [],  
             sallowyrTimer: 0,
+            retargetTimer: 0,
 
             getTileDrop(t) {
                 if (t == null) return null;
@@ -126,8 +131,8 @@ Events.on(ContentInitEvent, () => {
 
             releaseTarget() {
                 if (this.targetTile != null) {
-                    let key = this.targetTile.x + "," + this.targetTile.y;
-                    globalLockedTiles.delete(key);
+                    let key = getTileKey(this.targetTile.x, this.targetTile.y);
+                    globalLockedTiles.remove(key);
                     this.targetTile = null;
                 }
             },
@@ -135,7 +140,7 @@ Events.on(ContentInitEvent, () => {
             setTarget(tile) {
                 this.releaseTarget();
                 if (tile != null) {
-                    let key = tile.x + "," + tile.y;
+                    let key = getTileKey(tile.x, tile.y);
                     globalLockedTiles.add(key);
                     this.targetTile = tile;
                 }
@@ -143,9 +148,10 @@ Events.on(ContentInitEvent, () => {
 
             isValidTarget(tile) {
                 if (tile == null) return false;
+                if (this.selectedItem == null) return false;
                 
                 let drop = this.getTileDrop(tile);
-                if (drop == null) return false;
+                if (drop == null || drop !== this.selectedItem) return false;
 
                 if (tile.build != null) {
                     let name = tile.block().name;
@@ -157,12 +163,8 @@ Events.on(ContentInitEvent, () => {
                     return false;
                 }
 
-                if (this.selectedItem != null && drop !== this.selectedItem) {
-                    return false;
-                }
-
-                let key = tile.x + "," + tile.y;
-                if (globalLockedTiles.has(key) && this.targetTile !== tile) {
+                let key = getTileKey(tile.x, tile.y);
+                if (globalLockedTiles.contains(key) && this.targetTile !== tile) {
                     return false;
                 }
 
@@ -170,77 +172,20 @@ Events.on(ContentInitEvent, () => {
             },
 
             findTarget() {
-                if (this.cachedTiles.length === 0) {
+                if (this.selectedItem == null || this.cachedTiles.length === 0) {
                     this.setTarget(null);
                     return;
                 }
 
-                let bestObsTile = null;
-                let candidateTiles = [];
-
-                let obsOre = Vars.content.block("newex-ore-obs");
-                let core = this.team.core();
-
-                let obsItem = obsOre != null ? obsOre.itemDrop : null;
-                let isObsFullInCore = false;
-
-                if (core != null && obsItem != null) {
-                    if (core.items.get(obsItem) >= core.storageCapacity) {
-                        isObsFullInCore = true;
-                    }
-                }
- 
                 for (let i = 0; i < this.cachedTiles.length; i++) {
                     let t = this.cachedTiles[i];
-                    
                     if (this.isValidTarget(t)) {
-                        if (this.selectedItem != null) {
-                            this.setTarget(t);
-                            return;
-                        }
-
-                        if (t.overlay() === obsOre || t.floor() === obsOre) {
-                            if (!isObsFullInCore) {
-                                bestObsTile = t;
-                                break;
-                            } else {
-                                candidateTiles.push(t);
-                            }
-                        } else {
-                            candidateTiles.push(t);
-                        }
+                        this.setTarget(t);
+                        return;
                     }
                 }
 
-                if (bestObsTile != null) {
-                    this.setTarget(bestObsTile);
-                    return;
-                }
-
-                if (candidateTiles.length > 0) {
-                    let bestTile = candidateTiles[0];
-
-                    if (core != null) {
-                        let minAmount = Infinity;
-
-                        for (let i = 0; i < candidateTiles.length; i++) {
-                            let t = candidateTiles[i];
-                            let item = this.getTileDrop(t);
-                            
-                            if (item != null) {
-                                let amountInCore = core.items.get(item);
-                                if (amountInCore < minAmount) {
-                                    minAmount = amountInCore;
-                                    bestTile = t;
-                                }
-                            }
-                        }
-                    }
-
-                    this.setTarget(bestTile);
-                } else {
-                    this.setTarget(null);
-                }
+                this.setTarget(null);
             },
 
             buildConfiguration(table) {
@@ -259,14 +204,14 @@ Events.on(ContentInitEvent, () => {
                     dialog.cont.margin(15);
                     
                     let infoText = isEn() ?
-                        "[cyan]● Select Resource:[ ] Tap resource icons to force drill targeting. If unselected, automatically selects the scarcest core resource.\n\n" +
+                        "[cyan]● Select Resource:[ ] Tap resource icons to select drill target. The drill will only operate after a resource is selected.\n\n" +
                         "[yellow]● Speed Boost Mechanics:[ ]\n" +
                         "  - [white]Water Supply:[ ] Increases mining speed by [green]+50%[ ].\n" +
                         "  - [white]Cryofluid Supply:[ ] Increases mining speed by [green]+100%[ ].\n" +
                         "  - [white]Sallowyr Item Absorption:[ ] Absorbs 1 [accent]Sallowyr[ ] to boost mining efficiency by [orange]+500%[ ] for [stat]10 seconds[ ].\n\n" +
                         "[lightgray]Note: Combine liquid supply with Sallowyr to maximize drill speed![ ]"
                         :
-                        "[cyan]● Chọn tài nguyên:[ ] Bấm vào các biểu tượng tài nguyên bên cạnh để bắt buộc máy tập trung khoan loại quặng đó. Nếu không chọn, máy sẽ tự động chọn quặng thiếu nhất trong Lõi.\n\n" +
+                        "[cyan]● Chọn tài nguyên:[ ] Bấm vào các biểu tượng tài nguyên bên cạnh để bắt đầu khai thác. Máy chỉ hoạt động sau khi người chơi chủ động chọn tài nguyên.\n\n" +
                         "[yellow]● Cơ chế Tăng Tốc độ Khoan:[ ]\n" +
                         "  - [white]Cấp Nước (Water):[ ] Tăng [green]+50%[ ] tốc độ khai thác.\n" +
                         "  - [white]Cấp Chất làm lạnh (Cryofluid):[ ] Tăng [green]+100%[ ] tốc độ khai thác.\n" +
@@ -332,10 +277,16 @@ Events.on(ContentInitEvent, () => {
                         this.dump();
                     }
 
-                    if (this.efficiency > 0) {
+                    if (this.efficiency > 0 && this.selectedItem != null) {
                         if (!this.isValidTarget(this.targetTile)) {
-                            this.releaseTarget();
-                            this.findTarget();
+                            this.retargetTimer += Time.delta;
+                            if (this.retargetTimer >= 20) {
+                                this.retargetTimer = 0;
+                                this.releaseTarget();
+                                this.findTarget();
+                            }
+                        } else {
+                            this.retargetTimer = 0;
                         }
 
                         if (this.targetTile != null) {
@@ -417,19 +368,18 @@ Events.on(ContentInitEvent, () => {
 
                     if (showGlowParticles) {
                         let laserAngle = Angles.angle(tx, ty, this.x, this.y);
-                        
-                        let perpX = Mathf.cosDeg(laserAngle + 90);
-                        let perpY = Mathf.sinDeg(laserAngle + 90);
+                        let cosA = Mathf.cosDeg(laserAngle + 90);
+                        let sinA = Mathf.sinDeg(laserAngle + 90);
 
-                        for (let i = 0; i < 4; i++) {
-                            let progress = ((Time.time * 0.025 + i * 0.25) % 1.0);
+                        for (let i = 0; i < 2; i++) {
+                            let progress = ((Time.time * 0.025 + i * 0.5) % 1.0);
                             let baseX = Mathf.lerp(tx, this.x, progress);
                             let baseY = Mathf.lerp(ty, this.y, progress);
 
                             let offset = Mathf.sin(Time.time * 0.15 + i * 2.0) * 6.0;
 
-                            let px = baseX + perpX * offset;
-                            let py = baseY + perpY * offset;
+                            let px = baseX + cosA * offset;
+                            let py = baseY + sinA * offset;
 
                             let particleSpin = Time.time * 6.0 + i * 90;
 

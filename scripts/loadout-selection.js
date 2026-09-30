@@ -14,6 +14,8 @@
 
     let turretList = new Seq();
     let selectedTurrets = new Seq();
+    let customWaveBtn = null;
+    let lastSkipTime = 0;
 
     function loadTurretsFromFolder() {
         turretList.clear();
@@ -80,7 +82,6 @@
         });
     }
 
-    // --- HÀM ĐỌC VÀ HIỂN THỊ FILE README.MD ---
     function showReadmeDialog() {
         let readmeContent = "Không tìm thấy file README.md trong mod.";
         let mod = Vars.mods.getMod(CURRENT_MOD_NAME);
@@ -212,8 +213,11 @@
         if (turretList.isEmpty()) loadTurretsFromFolder();
 
         const dialog = new BaseDialog("Cài Đặt Mod Newex");
-        const content = dialog.cont;
-        content.clear();
+        const mainContent = dialog.cont;
+        mainContent.clear();
+
+        let content = new Table();
+        content.top().margin(10);
 
         // --- 1. GIỚI HẠN THÁP PHÁO ---
         content.add("[accent]-- GIỚI HẠN THÁP PHÁO --[]").row();
@@ -234,21 +238,38 @@
         }).width(240).pad(8).get();
         content.row();
 
-        // --- 2. Ô NHẬP TỶ LỆ TĂNG MÁU (GIỚI HẠN 0 -> 999) ---
-        content.add("[accent]-- TĂNG MÁU ĐỊCH THEO TỪNG WAVE --[]").padTop(10).row();
-        content.add("% Máu tăng thêm trên mỗi Wave (Tối đa 999%):").padBottom(4).row();
-
-        let currentHp = Core.settings.getInt("newex-hp-per-wave-percent", 10);
+        // --- 2. TĂNG CHỈ SỐ MÁU & SÁT THƯƠNG ĐỊCH ---
+        content.add("[accent]-- CHỈ SỐ ĐỊCH THEO TỪNG WAVE --[]").padTop(10).row();
         
+        // Tăng Máu
+        content.add("% Máu tăng thêm trên mỗi Wave:").padBottom(4).row();
+        let currentHp = Core.settings.getInt("newex-hp-per-wave-percent", 10);
         let hpFieldTable = new Table();
         let hpField = hpFieldTable.field(currentHp.toString(), text => {}).width(120).get();
         hpField.setFilter(TextField.TextFieldFilter.digitsOnly);
         hpField.setMaxLength(3);
         hpFieldTable.add("% / Wave").padLeft(8);
-
         content.add(hpFieldTable).pad(5).row();
 
-        // --- 3. CHẾ ĐỘ HIỂN THỊ THANH MÁU ---
+        // Tăng Sát Thương
+        content.add("% Sát thương tăng thêm trên mỗi Wave:").padBottom(4).padTop(6).row();
+        let currentDmg = Core.settings.getInt("newex-dmg-per-wave-percent", 10);
+        let dmgFieldTable = new Table();
+        let dmgField = dmgFieldTable.field(currentDmg.toString(), text => {}).width(120).get();
+        dmgField.setFilter(TextField.TextFieldFilter.digitsOnly);
+        dmgField.setMaxLength(3);
+        dmgFieldTable.add("% / Wave").padLeft(8);
+        content.add(dmgFieldTable).pad(5).row();
+
+        // --- 3. CÀI ĐẶT THỜI GIAN KÍCH HOẠT WAVE ---
+        content.add("[accent]-- QUẢN LÝ WAVE --[]").padTop(10).row();
+        let fastWaveEnabled = Core.settings.getBool("newex-allow-fast-wave", false);
+        let btnFastWave = new TextButton("Bật Nút Gọi Wave Thủ Công", Styles.togglet);
+        btnFastWave.getLabel().setFontScale(0.85);
+        btnFastWave.setChecked(fastWaveEnabled);
+        content.add(btnFastWave).size(250, 48).pad(5).row();
+
+        // --- 4. CHẾ ĐỘ HIỂN THỊ THANH MÁU ---
         content.add("[accent]-- CHẾ ĐỘ HIỂN THỊ THANH MÁU (HP) --[]").padTop(10).row();
 
         let currentHpStyle = Core.settings.getString("newex-hp-style", "show-hp");
@@ -280,7 +301,7 @@
 
         content.add(tableHp).row();
 
-        // --- 4. LOGIC UNIT VANILLA BUFF ---
+        // --- 5. LOGIC UNIT VANILLA BUFF ---
         content.add("[accent]-- LOGIC UNIT VANILLA BUFF --[]").padTop(10).row();
 
         let unitsEnabled = Core.settings.getBool("newex-logic-support-units", true);
@@ -291,7 +312,7 @@
 
         content.add(btnUnits).size(220, 48).pad(5).row();
 
-        // --- 5. NÚT XEM THÔNG TIN README.MD ---
+        // --- 6. NÚT XEM THÔNG TIN README.MD ---
         content.add("[accent]-- THÔNG TIN CHI TIẾT --[]").padTop(10).row();
         content.button("Xem README / Update Log", Icon.info, () => {
             showReadmeDialog();
@@ -302,18 +323,17 @@
             let newValue = Math.floor(slider.getValue());
             Core.settings.put("newex-max-turrets", java.lang.Integer(newValue));
 
-            let parsedHp = 0;
-            try {
-                parsedHp = parseInt(hpField.getText());
-                if (isNaN(parsedHp)) parsedHp = 0;
-            } catch(e) {
-                parsedHp = 0;
-            }
-
+            let parsedHp = parseInt(hpField.getText()) || 0;
             if (parsedHp > 999) parsedHp = 999;
             if (parsedHp < 0) parsedHp = 0;
-
             Core.settings.put("newex-hp-per-wave-percent", java.lang.Integer(parsedHp));
+
+            let parsedDmg = parseInt(dmgField.getText()) || 0;
+            if (parsedDmg > 999) parsedDmg = 999;
+            if (parsedDmg < 0) parsedDmg = 0;
+            Core.settings.put("newex-dmg-per-wave-percent", java.lang.Integer(parsedDmg));
+
+            Core.settings.put("newex-allow-fast-wave", java.lang.Boolean(btnFastWave.isChecked()));
 
             let selectedStyle = "off";
             if (btnShowHp.isChecked()) selectedStyle = "show-hp";
@@ -326,8 +346,68 @@
             dialog.hide();
         }).size(170, 45).padTop(12);
 
+        let scrollPane = new ScrollPane(content);
+        scrollPane.setFadeScrollBars(false);
+        mainContent.add(scrollPane).grow().row();
+
         dialog.addCloseButton();
         dialog.show();
+    }
+
+    // --- LOGIC XỬ LÝ BUFF MÁU VÀ SÁT THƯƠNG ĐỊCH THEO WAVE ---
+    function applyEnemyBuffs(unit) {
+        if (unit == null || unit.team == Vars.state.rules.defaultTeam) return;
+
+        let wave = Vars.state.wave;
+        if (wave <= 1) return;
+
+        let hpPercent = Core.settings.getInt("newex-hp-per-wave-percent", 10);
+        let dmgPercent = Core.settings.getInt("newex-dmg-per-wave-percent", 10);
+
+        // Tính toán Hệ số nhân dựa trên Wave hiện tại (Wave 2 bắt đầu tính 1 lần buff)
+        let hpMultiplier = 1 + ((wave - 1) * (hpPercent / 100));
+        let dmgMultiplier = 1 + ((wave - 1) * (dmgPercent / 100));
+
+        if (hpMultiplier > 1) {
+            unit.maxHealth = unit.maxHealth * hpMultiplier;
+            unit.health = unit.maxHealth;
+        }
+
+        if (dmgMultiplier > 1) {
+            unit.damageMultiplier = (unit.damageMultiplier || 1) * dmgMultiplier;
+        }
+    }
+
+    // Lắng nghe khi có bất kỳ Unit nào được sinh ra trên bản đồ
+    Events.on(UnitCreateEvent, event => {
+        if (event.unit != null) {
+            applyEnemyBuffs(event.unit);
+        }
+    });
+
+    // --- TẠO NÚT GỌI WAVE RIÊNG TRÊN GIAO DIỆN (UI) ---
+    function buildCustomWaveButton() {
+        if (customWaveBtn != null) return;
+
+        customWaveBtn = new Table();
+        customWaveBtn.bottom().right().margin(10);
+
+        let btn = customWaveBtn.button("Gọi Wave", Icon.play, () => {
+            let currentTime = Time.millis();
+            if (currentTime - lastSkipTime >= 400) {
+                lastSkipTime = currentTime;
+                if (Vars.logic != null && Vars.state.isGame()) {
+                    // Ép buộc sinh Wave mới ngay lập tức
+                    Vars.logic.skipWave();
+                }
+            }
+        }).size(130, 48).get();
+
+        btn.getLabel().setFontScale(0.85);
+
+        if (Vars.ui != null && Vars.ui.hudGroup != null) {
+            Vars.ui.hudGroup.addChild(customWaveBtn);
+        }
     }
 
     Events.on(ClientLoadEvent, event => {
@@ -340,7 +420,30 @@
         } catch(e) {}
     });
 
+    Events.run(Trigger.update, () => {
+        let isEnabled = Core.settings.getBool("newex-allow-fast-wave", false);
+        let inGame = Vars.state != null && Vars.state.isGame();
+
+        if (isEnabled && inGame) {
+            if (customWaveBtn == null) {
+                buildCustomWaveButton();
+            }
+            if (customWaveBtn != null) {
+                customWaveBtn.visible = true;
+            }
+        } else {
+            if (customWaveBtn != null) {
+                customWaveBtn.visible = false;
+            }
+        }
+    });
+
     Events.on(WorldLoadEvent, event => {
+        if (customWaveBtn != null) {
+            customWaveBtn.remove();
+            customWaveBtn = null;
+        }
+
         if (turretList.isEmpty()) loadTurretsFromFolder();
 
         if (isFullSelection()) {

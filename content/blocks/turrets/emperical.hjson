@@ -1,0 +1,45 @@
+type: ItemTurret
+
+localizedName: Emperical
+description: "Fire energy orbs, lasers, and missiles; unleash lightning strikes; and pull in enemies."
+
+health: 9300
+size: 4
+configurable: true
+logicConfigurable: true
+
+reload: 30
+range: 360
+
+recoil: 0
+
+consumes: {
+    power: 111.1
+}
+
+requirements: [
+    silicon/800
+    copper/1400
+    surge-alloy/240
+    plastanium/550
+    obsidis/950
+]
+
+shootSound: none
+ammoTypes: {
+    surge-alloy: {
+        damage: 10
+        speed: 5
+        lifetime: 60
+        width: 10
+        height: 10
+    }
+}
+
+category: turret
+research: newex
+
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+}

@@ -4,7 +4,6 @@ const packProv = (func) => new Prov({ get: func });
 
 const isEn = () => Core.settings.getString("locale").startsWith("en");
 
-// Đã giảm 90% chi phí tài nguyên nâng cấp
 const reqMK2 = { copper: 200, lead: 200, titanium: 0 };
 const reqMK2B = { copper: 200, lead: 200, titanium: 100 };
 const reqMK3 = { copper: 400, lead: 400, titanium: 200 };
@@ -20,7 +19,6 @@ const BERSERK_TIME_MK1 = 300;
 const BERSERK_TIME_MK2 = 360;  
 const BERSERK_TIME_MK3 = 486;  
 
-// Đã điều chỉnh lifetime khớp chính xác với Range / Speed
 const dorNormalBullet = extend(BasicBulletType, {
     speed: 7, damage: 12, width: 7, height: 18, lifetime: 42.86,
     frontColor: Color.valueOf("#e0f7fa"), backColor: Color.valueOf("#00bcd4"),
@@ -105,7 +103,6 @@ const laserBulletB3 = extend(LaserBulletType, {
     hitEffect: Fx.hitLaserColor, chargeEffect: Fx.lancerLaserCharge, smokeEffect: Fx.smoke
 });
 
-
 let dor = extend(ItemTurret, "dor", {
     squareSprite: false
 });
@@ -124,7 +121,6 @@ dor.config(java.lang.Integer, packCons2((tile, value) => {
     }
 }));
 
-
 dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
     chargeTimer: 0,
     berserkTimer: 0,
@@ -136,9 +132,16 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
     burstShotsFired: 0,
     customReloadTimer: 0,
 
+    paidCopper: 0,
+    paidLead: 0,
+    paidTitanium: 0,
+
     getTier(){ return this.tierState == null ? 0 : this.tierState; },
     setTier(val){ 
         this.tierState = val;
+        this.paidCopper = 0;
+        this.paidLead = 0;
+        this.paidTitanium = 0;
         if(val == 0) this.health = 1450;
         if(val == 1) this.health = 1885;
         if(val == 2) this.health = 2610;  
@@ -146,6 +149,43 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
         if(val == 4) this.health = 2871;  
         if(val == 5) this.health = 3915;  
         this.maxHealth = this.health;
+    },
+
+    processPartialUpgrade(targetTier, reqObj){
+        let core = this.team.core();
+        if(core == null) return false;
+
+        let reqC = reqObj.copper || 0;
+        let reqL = reqObj.lead || 0;
+        let reqT = reqObj.titanium || 0;
+
+        let remC = reqC - this.paidCopper;
+        let remL = reqL - this.paidLead;
+        let remT = reqT - this.paidTitanium;
+
+        let inv = core.items;
+        let takeC = Math.min(inv.get(Items.copper), Math.max(0, remC));
+        let takeL = Math.min(inv.get(Items.lead), Math.max(0, remL));
+        let takeT = Math.min(inv.get(Items.titanium), Math.max(0, remT));
+
+        if(takeC > 0) { core.items.remove(Items.copper, takeC); this.paidCopper += takeC; }
+        if(takeL > 0) { core.items.remove(Items.lead, takeL); this.paidLead += takeL; }
+        if(takeT > 0) { core.items.remove(Items.titanium, takeT); this.paidTitanium += takeT; }
+
+        if(this.paidCopper >= reqC && this.paidLead >= reqL && this.paidTitanium >= reqT){
+            if(targetTier == 1 || targetTier == 3) Fx.upgradeCore.at(this.x, this.y);
+            else Fx.bigShockwave.at(this.x, this.y);
+            Fx.mineHuge.at(this.x, this.y);
+            Effect.shake(6, 6, this.x, this.y);
+            
+            if(Vars.net.active()){
+                Call.tileConfig(Vars.player, this, java.lang.Integer(targetTier));
+            } else {
+                this.configure(java.lang.Integer(targetTier));
+            }
+            return true;
+        }
+        return false;
     },
 
     range(){
@@ -167,31 +207,32 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                 let dialog = extend(BaseDialog, isEn() ? "Dor Turret Upgrade Center" : "Trung tâm nâng cấp pháo Dor", {});
                 
                 let reqCell = dialog.cont.label(packProv(() => {
-                    let core = this.team.core();
-                    if(core == null) return isEn() ? "[red]Team Core Not Found![]" : "[red]Không tìm thấy Lõi Đội![]";
-                    let inv = core.items;
-                    
-                    let c = inv.get(Items.copper), l = inv.get(Items.lead), t = inv.get(Items.titanium);
-                    
+                    let cMK2 = Math.max(0, reqMK2.copper - this.paidCopper);
+                    let lMK2 = Math.max(0, reqMK2.lead - this.paidLead);
+
+                    let cMK2B = Math.max(0, reqMK2B.copper - this.paidCopper);
+                    let lMK2B = Math.max(0, reqMK2B.lead - this.paidLead);
+                    let tMK2B = Math.max(0, reqMK2B.titanium - this.paidTitanium);
+
                     if(isEn()){
-                        return "[yellow]CORE RESOURCE REQUIREMENTS:[]\n" +
+                        return "[yellow]CORE RESOURCE REQUIREMENTS FOR UPGRADE:[]\n" +
                                "[cyan]MK2 Branch:[]\n" +
-                               " • Copper: " + (c >= reqMK2.copper ? "[green]" : "[red]") + c + "[] / " + reqMK2.copper + "\n" +
-                               " • Lead: " + (l >= reqMK2.lead ? "[green]" : "[red]") + l + "[] / " + reqMK2.lead + "\n" +
-                               "[purple]MK2B Variant:[]\n" +
-                               " • Copper: " + (c >= reqMK2B.copper ? "[green]" : "[red]") + c + "[] / " + reqMK2B.copper + "\n" +
-                               " • Lead: " + (l >= reqMK2B.lead ? "[green]" : "[red]") + l + "[] / " + reqMK2B.lead + "\n" +
-                               " • Titanium: " + (t >= reqMK2B.titanium ? "[green]" : "[red]") + t + "[] / " + reqMK2B.titanium;
+                               " • Copper: [green]" + cMK2 + "[]\n" +
+                               " • Lead: [green]" + lMK2 + "[]\n" +
+                               "[purple]MK2B Branch:[]\n" +
+                               " • Copper: [green]" + cMK2B + "[]\n" +
+                               " • Lead: [green]" + lMK2B + "[]\n" +
+                               " • Titanium: [green]" + tMK2B + "[]";
                     }
 
-                    return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
-                           "[cyan]Nhánh Cấu Hình MK2:[]\n" +
-                           " • Đồng: " + (c >= reqMK2.copper ? "[green]" : "[red]") + c + "[] / " + reqMK2.copper + "\n" +
-                           " • Chì: " + (l >= reqMK2.lead ? "[green]" : "[red]") + l + "[] / " + reqMK2.lead + "\n" +
-                           "[purple]Nhánh Biến Thể MK2B:[]\n" +
-                           " • Đồng: " + (c >= reqMK2B.copper ? "[green]" : "[red]") + c + "[] / " + reqMK2B.copper + "\n" +
-                           " • Chì: " + (l >= reqMK2B.lead ? "[green]" : "[red]") + l + "[] / " + reqMK2B.lead + "\n" +
-                           " • Titan: " + (t >= reqMK2B.titanium ? "[green]" : "[red]") + t + "[] / " + reqMK2B.titanium;
+                    return "[yellow]YÊU CẦU TÀI NGUYÊN NÂNG CẤP:[]\n" +
+                           "[cyan]Nhánh MK2:[]\n" +
+                           " • Đồng: [green]" + cMK2 + "[]\n" +
+                           " • Chì: [green]" + lMK2 + "[]\n" +
+                           "[purple]Nhánh MK2B:[]\n" +
+                           " • Đồng: [green]" + cMK2B + "[]\n" +
+                           " • Chì: [green]" + lMK2B + "[]\n" +
+                           " • Titan: [green]" + tMK2B + "[]";
                 }));
                 
                 reqCell.width(360).get().setWrap(true);
@@ -203,41 +244,35 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                 b1.add("[cyan]===(MK2)===[]").row();
                 let b1D = b1.add(isEn() ?
-                                 "Advanced pulse charging circuit upgrade:\n" +
-                                 " [white]• [green]+30% HP[] (1,885) and [green]+30% Range[] (390 px).[]\n" +
-                                 " [white]• Normal bullets gain [yellow]+75% Damage[] (21.00).\n" +
-                                 " [white]• Fast 0.8s charge, unleash bursts of [sky]20 bullets/salvo[].[]" :
-                                 "Nâng cấp mạch sạc xung điện cao cấp:\n" +
-                                 " [white]• Tăng [green]+30% Máu[] (1,885) và mở rộng [green]+30% Tầm bắn[] (390 px).[]\n" +
-                                 " [white]• Đạn thường tăng [yellow]+75% Sát thương[] (21.00).\n" +
-                                 " [white]• Sạc tốc độ cao 0.8s, xả đạn tỏa [sky]20 viên/loạt[].[]");
+                                 "[white]• Health: [green]+30%[] ([green]1,885[] HP)\n" +
+                                 "• Range: [green]+30%[] ([orange]390[] px)\n" +
+                                 "• Base Damage: [green]+75%[] ([yellow]21[] DMG/bullet)\n\n" +
+                                 "[lightgray]Special Ability: Pulse Charge Core — Charges in [orange]0.8s[] to unleash [yellow]20[] spray bullets. Triggering [yellow]2[] bursts activates Berserk Mode Lvl 2 for [orange]6s[] (x[yellow]2.6[] Fire Rate).[]" :
+                                 "[white]• Máu cấu trúc: [green]+30%[] ([green]1,885[] HP)\n" +
+                                 "• Tầm bắn: [green]+30%[] ([orange]390[] px)\n" +
+                                 "• Sát thương gốc: [green]+75%[] ([yellow]21[] DMG/viên)\n\n" +
+                                 "[lightgray]Kỹ năng đặc biệt: Mạch Tích Xung Điện — Tích sạc [orange]0.8s[] xả loạt [yellow]20[] viên đạn tỏa. Bắn đủ [yellow]2[] đợt kích hoạt Điên Cường Cấp 2 trong [orange]6[] giây (x[yellow]2.6[] tốc bắn).[]");
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
-                b1.button(isEn() ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => {
-                    let core = this.team.core();
-                    if(core != null && core.items.get(Items.copper) >= reqMK2.copper && core.items.get(Items.lead) >= reqMK2.lead){
-                        core.items.remove(Items.copper, reqMK2.copper); core.items.remove(Items.lead, reqMK2.lead);
-                        Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
-                        this.configure(java.lang.Integer(1)); dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfo(isEn() ? "[red]Not enough resources for MK2![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]"); }
+                b1.button(isEn() ? "[green]UPGRADE MK2[]" : "[green]NÂNG CẤP MK2[]", packRun(() => {
+                    let done = this.processPartialUpgrade(1, reqMK2);
+                    if(done){ dialog.hide(); this.deselect(); }
                 })).size(180, 38);
 
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                 b2.add("[purple]===(MK2B)===[]").row();
                 let b2D = b2.add(isEn() ?
-                                 "Convert to raw gravity core cycle system:\n" +
-                                 " [white]• Maximum [green]+80% HP[] (2,610).\n" +
-                                 " [white]• Fires [orange]3 consecutive Lasers[], followed by [pink]100 Homing Heavy Bullets[].[]" :
-                                 "Chuyển đổi sang lõi cấu trúc trọng lực thô tuần hoàn:\n" +
-                                 " [white]• Tăng cực đại [green]+80% Máu[] (2,610).\n" +
-                                 " [white]• Bắn [orange]3 phát Laser[] liên tiếp, sau đó xả [pink]100 viên Trọng Đạn[] tự dẫn đường.[]");
+                                 "[white]• Health: [green]+80%[] ([green]2,610[] HP)\n" +
+                                 "• Range: [red]-20%[] ([orange]240[] px)\n" +
+                                 "• Base Damage: [yellow]27[] DMG/bullet\n\n" +
+                                 "[lightgray]Special Ability: Gravity Core Cycle — Fires [yellow]3[] consecutive Gravity Lasers ([yellow]18[] DMG, pierces [orange]240[]px), followed by [yellow]100[] Homing Heavy Bullets.[]" :
+                                 "[white]• Máu cấu trúc: [green]+80%[] ([green]2,610[] HP)\n" +
+                                 "• Tầm bắn: [red]-20%[] ([orange]240[] px)\n" +
+                                 "• Sát thương gốc: [yellow]27[] DMG/viên\n\n" +
+                                 "[lightgray]Kỹ năng đặc biệt: Tuần Hoàn Lõi Trọng Lực — Bắn [yellow]3[] phát Laser Trọng Lực liên tiếp ([yellow]18[] DMG, xuyên thấu [orange]240[]px), sau đó xả [yellow]100[] viên Trọng Đạn tự dẫn đường.[]");
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
-                b2.button(isEn() ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => {
-                    let core = this.team.core();
-                    if(core != null && core.items.get(Items.copper) >= reqMK2B.copper && core.items.get(Items.lead) >= reqMK2B.lead && core.items.get(Items.titanium) >= reqMK2B.titanium){
-                        core.items.remove(Items.copper, reqMK2B.copper); core.items.remove(Items.lead, reqMK2B.lead); core.items.remove(Items.titanium, reqMK2B.titanium);
-                        Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
-                        this.configure(java.lang.Integer(2)); dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfo(isEn() ? "[red]Not enough resources for MK2B![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
+                b2.button(isEn() ? "[orange]UPGRADE MK2B[]" : "[orange]NÂNG CẤP MK2B[]", packRun(() => {
+                    let done = this.processPartialUpgrade(2, reqMK2B);
+                    if(done){ dialog.hide(); this.deselect(); }
                 })).size(180, 38);
 
                 branchesTable.add(b1).width(340); branchesTable.row();
@@ -254,23 +289,21 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                 let dialog = extend(BaseDialog, isEn() ? "Dor MK3 Evolution Center" : "Trung tâm tiến hóa MK3 - Dor", {});
 
                 let reqCell = dialog.cont.label(packProv(() => {
-                    let core = this.team.core();
-                    if(core == null) return isEn() ? "[red]Team Core Not Found![]" : "[red]Không tìm thấy Lõi Đội![]";
-                    let inv = core.items;
-                    
-                    let c = inv.get(Items.copper), l = inv.get(Items.lead), t = inv.get(Items.titanium);
+                    let cMK3 = Math.max(0, reqMK3.copper - this.paidCopper);
+                    let lMK3 = Math.max(0, reqMK3.lead - this.paidLead);
+                    let tMK3 = Math.max(0, reqMK3.titanium - this.paidTitanium);
 
                     if(isEn()){
-                        return "[yellow]MK3 EVOLUTION RESOURCE REQUIREMENTS:[]\n" +
-                               " • Copper: " + (c >= reqMK3.copper ? "[green]" : "[red]") + c + "[] / " + reqMK3.copper + "\n" +
-                               " • Lead: " + (l >= reqMK3.lead ? "[green]" : "[red]") + l + "[] / " + reqMK3.lead + "\n" +
-                               " • Titanium: " + (t >= reqMK3.titanium ? "[green]" : "[red]") + t + "[] / " + reqMK3.titanium;
+                        return "[yellow]CORE RESOURCE REQUIREMENTS FOR MK3:[]\n" +
+                               " • Copper: [green]" + cMK3 + "[]\n" +
+                               " • Lead: [green]" + lMK3 + "[]\n" +
+                               " • Titanium: [green]" + tMK3 + "[]";
                     }
 
-                    return "[yellow]YÊU CẦU TÀI NGUYÊN TIẾN HÓA MK3:[]\n" +
-                           " • Đồng: " + (c >= reqMK3.copper ? "[green]" : "[red]") + c + "[] / " + reqMK3.copper + "\n" +
-                           " • Chì: " + (l >= reqMK3.lead ? "[green]" : "[red]") + l + "[] / " + reqMK3.lead + "\n" +
-                           " • Titan: " + (t >= reqMK3.titanium ? "[green]" : "[red]") + t + "[] / " + reqMK3.titanium;
+                    return "[yellow]YÊU CẦU TÀI NGUYÊN NÂNG CẤP MK3:[]\n" +
+                           " • Đồng: [green]" + cMK3 + "[]\n" +
+                           " • Chì: [green]" + lMK3 + "[]\n" +
+                           " • Titan: [green]" + tMK3 + "[]";
                 }));
 
                 reqCell.width(360).get().setWrap(true); reqCell.get().setAlignment(Align.left);
@@ -278,15 +311,19 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
 
                 let b3 = new Table(); b3.background(Styles.black6); b3.margin(12);
                 b3.add("[gold]===(MK3 EVOLUTION)===[]").row();
-                let b3D = b3.add(isEn() ? "All stats increased by [gold]+35%[] over MK2." : "Toàn bộ thông số tăng trưởng [gold]+35%[] so với MK2.");
+                let b3D = b3.add(isEn() ?
+                                 "[white]• Health: [green]+35%[] ([green]2,545[] HP)\n" +
+                                 "• Range: [green]+35%[] ([orange]526.5[] px)\n" +
+                                 "• Base Damage: [green]+35%[] ([yellow]28.35[] DMG/bullet)\n\n" +
+                                 "[lightgray]Special Ability: Ultimate Rampage Burst — Spread storm of [yellow]27[] bullets/salvo ([yellow]34.42[] DMG). Triggers Ultimate Rampage state for [orange]8.1s[] (x[yellow]3.51[] Fire Rate).[]" :
+                                 "[white]• Máu cấu trúc: [green]+35%[] ([green]2,545[] HP)\n" +
+                                 "• Tầm bắn: [green]+35%[] ([orange]526.5[] px)\n" +
+                                 "• Sát thương gốc: [green]+35%[] ([yellow]28.35[] DMG/viên)\n\n" +
+                                 "[lightgray]Kỹ năng đặc biệt: Bão Nộ Tối Thượng — Bão đạn tỏa [yellow]27[] viên/loạt ([yellow]34.42[] DMG). Kích hoạt Cuồng Báo Tối Thượng kéo dài [orange]8.1[] giây (x[yellow]3.51[] tốc bắn).[]");
                 b3D.width(340).get().setWrap(true); b3D.get().setAlignment(Align.left); b3.row();
-                b3.button(isEn() ? "[gold]ACTIVATE MK3[]" : "[gold]KÍCH HOẠT MK3[]", packRun(() => {
-                    let core = this.team.core();
-                    if(core != null && core.items.get(Items.copper) >= reqMK3.copper && core.items.get(Items.lead) >= reqMK3.lead && core.items.get(Items.titanium) >= reqMK3.titanium){
-                        core.items.remove(Items.copper, reqMK3.copper); core.items.remove(Items.lead, reqMK3.lead); core.items.remove(Items.titanium, reqMK3.titanium);
-                        Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(8, 8, this.x, this.y);
-                        this.configure(java.lang.Integer(3)); dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfo(isEn() ? "[red]Not enough resources for MK3![]" : "[red]Không đủ tài nguyên nâng cấp MK3![]"); }
+                b3.button(isEn() ? "[gold]UPGRADE MK3[]" : "[gold]NÂNG CẤP MK3[]", packRun(() => {
+                    let done = this.processPartialUpgrade(3, reqMK3);
+                    if(done){ dialog.hide(); this.deselect(); }
                 })).size(180, 38);
 
                 dialog.cont.add(b3).width(360);
@@ -297,33 +334,27 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                 let dialog = extend(BaseDialog, isEn() ? "MK2B Branch Evolution Center" : "Trung tâm Rẽ Nhánh Tiến Hóa MK2B", {});
 
                 let reqCell = dialog.cont.label(packProv(() => {
-                    let core = this.team.core();
-                    if(core == null) return isEn() ? "[red]Team Core Not Found![]" : "[red]Không tìm thấy Lõi Đội![]";
-                    let inv = core.items;
-                    
-                    let c = inv.get(Items.copper), l = inv.get(Items.lead), t = inv.get(Items.titanium);
+                    let cMK2B1 = Math.max(0, reqMK2B1.copper - this.paidCopper);
+                    let lMK2B1 = Math.max(0, reqMK2B1.lead - this.paidLead);
+                    let tMK2B1 = Math.max(0, reqMK2B1.titanium - this.paidTitanium);
+
+                    let cMK3B = Math.max(0, reqMK3B.copper - this.paidCopper);
+                    let lMK3B = Math.max(0, reqMK3B.lead - this.paidLead);
+                    let tMK3B = Math.max(0, reqMK3B.titanium - this.paidTitanium);
 
                     if(isEn()){
-                        return "[yellow]RESOURCE REQUIREMENTS (CHOOSE 1 OF 2):[]\n" +
+                        return "[yellow]RESOURCE REQUIREMENTS FOR EVOLUTION:[]\n" +
                                "[purple]MK2B1 Config:[]\n" +
-                               " • Copper: " + (c >= reqMK2B1.copper ? "[green]" : "[red]") + c + "[] / " + reqMK2B1.copper +
-                               " | Lead: " + (l >= reqMK2B1.lead ? "[green]" : "[red]") + l + "[] / " + reqMK2B1.lead +
-                               " | Titanium: " + (t >= reqMK2B1.titanium ? "[green]" : "[red]") + t + "[] / " + reqMK2B1.titanium + "\n" +
+                               " • Copper: [green]" + cMK2B1 + "[] | Lead: [green]" + lMK2B1 + "[] | Titanium: [green]" + tMK2B1 + "[]\n" +
                                "[pink]Ultimate MK3B:[]\n" +
-                               " • Copper: " + (c >= reqMK3B.copper ? "[green]" : "[red]") + c + "[] / " + reqMK3B.copper +
-                               " | Lead: " + (l >= reqMK3B.lead ? "[green]" : "[red]") + l + "[] / " + reqMK3B.lead +
-                               " | Titanium: " + (t >= reqMK3B.titanium ? "[green]" : "[red]") + t + "[] / " + reqMK3B.titanium;
+                               " • Copper: [green]" + cMK3B + "[] | Lead: [green]" + lMK3B + "[] | Titanium: [green]" + tMK3B + "[]";
                     }
 
-                    return "[yellow]YÊU CẦU TÀI NGUYÊN (CHỌN 1 TRONG 2 NHÁNH):[]\n" +
+                    return "[yellow]YÊU CẦU TÀI NGUYÊN NÂNG CẤP:[]\n" +
                            "[purple]Cấu Hình MK2B1:[]\n" +
-                           " • Đồng: " + (c >= reqMK2B1.copper ? "[green]" : "[red]") + c + "[] / " + reqMK2B1.copper +
-                           " | Chì: " + (l >= reqMK2B1.lead ? "[green]" : "[red]") + l + "[] / " + reqMK2B1.lead +
-                           " | Titan: " + (t >= reqMK2B1.titanium ? "[green]" : "[red]") + t + "[] / " + reqMK2B1.titanium + "\n" +
-                           "[pink]Cấu Hình Tối Thượng MK3B:[]\n" +
-                           " • Đồng: " + (c >= reqMK3B.copper ? "[green]" : "[red]") + c + "[] / " + reqMK3B.copper +
-                           " | Chì: " + (l >= reqMK3B.lead ? "[green]" : "[red]") + l + "[] / " + reqMK3B.lead +
-                           " | Titan: " + (t >= reqMK3B.titanium ? "[green]" : "[red]") + t + "[] / " + reqMK3B.titanium;
+                           " • Đồng: [green]" + cMK2B1 + "[] | Chì: [green]" + lMK2B1 + "[] | Titan: [green]" + tMK2B1 + "[]\n" +
+                           "[pink]Cấu Hình MK3B:[]\n" +
+                           " • Đồng: [green]" + cMK3B + "[] | Chì: [green]" + lMK3B + "[] | Titan: [green]" + tMK3B + "[]";
                 }));
 
                 reqCell.width(360).get().setWrap(true); reqCell.get().setAlignment(Align.left);
@@ -334,39 +365,35 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                 let b4 = new Table(); b4.background(Styles.black6); b4.margin(12);
                 b4.add("[purple]===(BRANCH 1: MK2B1)===[]").row();
                 let b4D = b4.add(isEn() ?
-                                 " [white]• [green]+10% Stats[] (HP: 2,871, Range: 264 px).\n" +
-                                 " [white]• Fires [orange]2 Parallel Lasers[] simultaneously.\n" +
-                                 " [white]• Rapid barrage of [pink]200 Homing Bullets[]." :
-                                 " [white]• Tăng [green]+10% chỉ số[] (Máu: 2,871 HP, Tầm: 264 px).\n" +
-                                 " [white]• Bắn [orange]2 tia Laser song song[] cùng lúc.\n" +
-                                 " [white]• Xả gấp đôi lên [pink]200 viên Trọng Đạn[] liên hoàn.");
+                                 "[white]• Health: [green]+10%[] ([green]2,871[] HP)\n" +
+                                 "• Range: [green]+10%[] ([orange]264[] px)\n" +
+                                 "• Base Damage: [green]+10%[] ([yellow]29.7[] DMG/bullet)\n\n" +
+                                 "[lightgray]Special Ability: Dual Laser Barrage — Fires [yellow]2[] parallel Lasers ([yellow]19.8[] DMG) simultaneously, followed by a double storm of [yellow]200[] Homing Heavy Bullets.[]" :
+                                 "[white]• Máu cấu trúc: [green]+10%[] ([green]2,871[] HP)\n" +
+                                 "• Tầm bắn: [green]+10%[] ([orange]264[] px)\n" +
+                                 "• Sát thương gốc: [green]+10%[] ([yellow]29.7[] DMG/viên)\n\n" +
+                                 "[lightgray]Kỹ năng đặc biệt: Bão Laser Kép — Bắn [yellow]2[] tia Laser song song cùng lúc ([yellow]19.8[] DMG), sau đó xả nhân đôi lên [yellow]200[] viên Trọng Đạn tự dẫn đường.[]");
                 b4D.width(340).get().setWrap(true); b4D.get().setAlignment(Align.left); b4.row();
-                b4.button(isEn() ? "[purple]SELECT MK2B1[]" : "[purple]CHỌN MK2B1[]", packRun(() => {
-                    let core = this.team.core();
-                    if(core != null && core.items.get(Items.copper) >= reqMK2B1.copper && core.items.get(Items.lead) >= reqMK2B1.lead && core.items.get(Items.titanium) >= reqMK2B1.titanium){
-                        core.items.remove(Items.copper, reqMK2B1.copper); core.items.remove(Items.lead, reqMK2B1.lead); core.items.remove(Items.titanium, reqMK2B1.titanium);
-                        Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(8, 8, this.x, this.y);
-                        this.configure(java.lang.Integer(4)); dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfo(isEn() ? "[red]Not enough resources for MK2B1![]" : "[red]Không đủ tài nguyên cho MK2B1![]"); }
+                b4.button(isEn() ? "[purple]UPGRADE MK2B1[]" : "[purple]NÂNG CẤP MK2B1[]", packRun(() => {
+                    let done = this.processPartialUpgrade(4, reqMK2B1);
+                    if(done){ dialog.hide(); this.deselect(); }
                 })).size(180, 38);
 
                 let b5 = new Table(); b5.background(Styles.black6); b5.margin(12);
                 b5.add("[pink]===(BRANCH 2: ULTIMATE MK3B)===[]").row();
                 let b5D = b5.add(isEn() ?
-                                 " [white]• [green]+50% Stats[] (HP: 3,915, Range: 360 px).\n" +
-                                 " [white]• Wide Supercharged Lasers.\n" +
-                                 " [white]• Replaces burst shots with [magenta]100-bullet Shotgun Storm Salvo[] (FPS Optimized)." :
-                                 " [white]• Tăng [green]+50% chỉ số[] (Máu: 3,915 HP, Tầm: 360 px).\n" +
-                                 " [white]• Laser Siêu Tải chùm rộng.\n" +
-                                 " [white]• Chuyển đạn xả lẻ thành [magenta]Loạt Shotgun Chùm Bão Tỏa 100 viên[] (đã tối ưu FPS).");
+                                 "[white]• Health: [green]+50%[] ([green]3,915[] HP)\n" +
+                                 "• Range: [green]+50%[] ([orange]360[] px)\n" +
+                                 "• Shotgun Damage: [green]+200%[] ([yellow]81[] DMG/bullet)\n\n" +
+                                 "[lightgray]Special Ability: Extreme Gravity Storm — Fires [yellow]3[] wide Supercharged Lasers ([yellow]27[] DMG). Replaces single bursts with a [yellow]100[]-bullet Shotgun Storm Salvo (FPS Optimized).[]" :
+                                 "[white]• Máu cấu trúc: [green]+50%[] ([green]3,915[] HP)\n" +
+                                 "• Tầm bắn: [green]+50%[] ([orange]360[] px)\n" +
+                                 "• Sát thương Shotgun: [green]+200%[] ([yellow]81[] DMG/viên)\n\n" +
+                                 "[lightgray]Kỹ năng đặc biệt: Bão Cực Hạn Trọng Lực — Bắn [yellow]3[] đợt Laser Siêu Tải chùm rộng ([yellow]27[] DMG). Chuyển đạn xả lẻ thành loạt Shotgun Bão Tỏa [yellow]100[] viên (Đã tối ưu FPS).[]");
                 b5D.width(340).get().setWrap(true); b5D.get().setAlignment(Align.left); b5.row();
-                b5.button(isEn() ? "[pink]SELECT MK3B[]" : "[pink]CHỌN MK3B[]", packRun(() => {
-                    let core = this.team.core();
-                    if(core != null && core.items.get(Items.copper) >= reqMK3B.copper && core.items.get(Items.lead) >= reqMK3B.lead && core.items.get(Items.titanium) >= reqMK3B.titanium){
-                        core.items.remove(Items.copper, reqMK3B.copper); core.items.remove(Items.lead, reqMK3B.lead); core.items.remove(Items.titanium, reqMK3B.titanium);
-                        Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(12, 12, this.x, this.y);
-                        this.configure(java.lang.Integer(5)); dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfo(isEn() ? "[red]Not enough resources for MK3B![]" : "[red]Không đủ tài nguyên cho MK3B![]"); }
+                b5.button(isEn() ? "[pink]UPGRADE MK3B[]" : "[pink]NÂNG CẤP MK3B[]", packRun(() => {
+                    let done = this.processPartialUpgrade(5, reqMK3B);
+                    if(done){ dialog.hide(); this.deselect(); }
                 })).size(180, 38);
 
                 branchesTable.add(b4).width(340); branchesTable.row();
@@ -380,99 +407,93 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
             })).size(50, 40).tooltip(isEn() ? "Select evolution branch for MK2B" : "Lựa chọn nhánh nâng cấp cho MK2B");
         } else {
             table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
-                Vars.ui.showInfo(isEn() ? "[scarlet]DOR SYSTEM HAS REACHED MAX EVOLUTION LEVEL![]" : "[scarlet]HỆ THỐNG DOR ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA CẤP CAO![]");
+                Vars.ui.showInfo(isEn() ? "[red]DOR SYSTEM HAS REACHED MAX EVOLUTION LEVEL![]" : "[red]HỆ THỐNG DOR ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA CẤP CAO![]");
             })).size(50, 40).tooltip(isEn() ? "Reached max level of branch" : "Đã đạt cấp tối đa của nhánh");
         }
 
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
             let currentTier = this.getTier();
-            let title = isEn() ? " Dor Turret Stats: " : " Thông số pháo Dor: ";
+            let title = isEn() ? "Dor Turret Stats: " : "Thông số pháo Dor: ";
             let descStr = "";
 
             if (currentTier == 0) {
                 title += "[yellow](MK1)[]";
                 descStr = isEn() ? 
-                          "[gold]⚡ BASE STATS (MK1) ⚡[]\n" +
-                          "[lightgray]Turret HP:[] [green]1,450[] | [lightgray]Range:[] [orange]300 px[]\n\n" +
-                          "[cyan]🔥 BURST MECHANIC:[]\n" +
-                          "• Normal shot: [white]12.00 Damage[]\n" +
-                          "• Charges for 1.0s (60 ticks) -> Fires 10 spread bullets (21.00 DMG)\n" +
-                          "• Fire 3 spread bursts -> Activates [red]Berserk State[] for 5s (x1.5 Fire Rate)." :
-                          "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]1,450[] | [lightgray]Tầm bắn:[] [orange]300 px[]\n\n" +
-                          "[cyan]🔥 CƠ CHẾ NỘ XẢ ĐẠN THƯỜNG:[]\n" +
-                          "• Bắn thường: [white]Sát thương 12.00[]\n" +
-                          "• Tích sạc 1.0s (60 ticks) -> Xả loạt 10 viên đạn tỏa (21.00 đm)\n" +
-                          "• Bắn đủ 3 đợt tỏa -> Kích hoạt [red]Trạng thái Điên Cường[] trong 5 giây (x1.5 tốc bắn).";
+                          "[yellow]⚡ BASE STATS (MK1) ⚡[]\n" +
+                          "[white]Turret HP: [green]1,450[]\n" +
+                          "Range: [orange]300[] px\n" +
+                          "Base Damage: [yellow]12[] DMG/bullet[]\n\n" +
+                          "[lightgray]Special Ability: Pulse Charge Burst — Normal shots deal [yellow]12[] DMG. Charges for [orange]1.0s[] to fire [yellow]10[] spread bullets ([yellow]21[] DMG). Firing [yellow]3[] bursts activates Berserk State for [orange]5s[] (x[yellow]1.5[] Fire Rate).[]" :
+                          "[yellow]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
+                          "[white]Máu tháp pháo: [green]1,450[]\n" +
+                          "Tầm bắn: [orange]300[] px\n" +
+                          "Sát thương gốc: [yellow]12[] DMG/viên[]\n\n" +
+                          "[lightgray]Kỹ năng đặc biệt: Tích Sạc Tỏa Đạn — Bắn thường gây [yellow]12[] DMG. Tích sạc [orange]1.0s[] xả loạt [yellow]10[] viên đạn tỏa ([yellow]21[] DMG). Bắn đủ [yellow]3[] đợt kích hoạt Trạng Thái Điên Cường trong [orange]5[] giây (x[yellow]1.5[] tốc bắn).[]";
             } else if (currentTier == 1) {
                 title += "[cyan](MK2)[]";
                 descStr = isEn() ? 
                           "[cyan]⚡ UPGRADE STATS (MK2) ⚡[]\n" +
-                          "[lightgray]Turret HP:[] [green]1,885 (+30%)[] | [lightgray]Range:[] [orange]390 px (+30%)[]\n\n" +
-                          "[cyan]🔥 ENHANCED BURST MECHANIC:[]\n" +
-                          "• Normal shot: [white]21.00 Damage (+75%)[]\n" +
-                          "• Charges quickly in 0.8s -> Fires 20 spread bullets (25.50 DMG)\n" +
-                          "• Fire 2 spread bursts -> Activates [red]Berserk Lvl 2[] for 6s (x2.6 Fire Rate)." :
+                          "[white]Turret HP: [green]1,885[] ([green]+30%[])\n" +
+                          "Range: [orange]390[] px ([green]+30%[])\n" +
+                          "Base Damage: [yellow]21[] DMG/bullet ([green]+75%[])[]\n\n" +
+                          "[lightgray]Special Ability: Enhanced Pulse Charge — Fast [orange]0.8s[] charge fires [yellow]20[] spread bullets ([yellow]25.5[] DMG). Firing [yellow]2[] bursts activates Berserk Lvl 2 for [orange]6s[] (x[yellow]2.6[] Fire Rate).[]" :
                           "[cyan]⚡ THÔNG SỐ NÂNG CẤP (MK2) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]1,885 (+30%)[] | [lightgray]Tầm bắn:[] [orange]390 px (+30%)[]\n\n" +
-                          "[cyan]🔥 CƠ CHẾ NỘ TĂNG CƯỜNG:[]\n" +
-                          "• Bắn thường: [white]Sát thương 21.00 (+75%)[]\n" +
-                          "• Tích sạc nhanh 0.8s -> Xả loạt 20 viên đạn tỏa (25.50 đm)\n" +
-                          "• Bắn đủ 2 đợt tỏa -> Kích hoạt [red]Điên Cường Cấp 2[] trong 6 giây (x2.6 tốc bắn).";
+                          "[white]Máu tháp pháo: [green]1,885[] ([green]+30%[])\n" +
+                          "Tầm bắn: [orange]390[] px ([green]+30%[])\n" +
+                          "Sát thương gốc: [yellow]21[] DMG/viên ([green]+75%[])[]\n\n" +
+                          "[lightgray]Kỹ năng đặc biệt: Tích Sạc Tăng Cường — Tích sạc [orange]0.8s[] xả loạt [yellow]20[] viên đạn tỏa ([yellow]25.5[] DMG). Bắn đủ [yellow]2[] đợt kích hoạt Điên Cường Cấp 2 trong [orange]6[] giây (x[yellow]2.6[] tốc bắn).[]";
             } else if (currentTier == 2) {
                 title += "[purple](MK2B)[]";
                 descStr = isEn() ? 
                           "[purple]⚡ GRAVITY STATS (MK2B) ⚡[]\n" +
-                          "[lightgray]Turret HP:[] [green]2,610 (+80%)[] | [lightgray]Range:[] [red]240 px[]\n\n" +
-                          "[purple]🔥 GRAVITY CYCLE MECHANIC:[]\n" +
-                          "• Fires 3 consecutive [orange]Gravity Lasers[] (18.00 DMG, pierces 240px).\n" +
-                          "• Immediately follows with [pink]100 Homing Bullets[] (27.00 DMG/bullet)." :
+                          "[white]Turret HP: [green]2,610[] ([green]+80%[])\n" +
+                          "Range: [orange]240[] px ([red]-20%[])\n" +
+                          "Base Damage: [yellow]27[] DMG/bullet[]\n\n" +
+                          "[lightgray]Special Ability: Gravity Cycle Mode — Fires [yellow]3[] Gravity Lasers ([yellow]18[] DMG, [orange]240[]px piercing), followed immediately by [yellow]100[] Homing Heavy Bullets ([yellow]27[] DMG/bullet).[]" :
                           "[purple]⚡ THÔNG SỐ TRỌNG LỰC (MK2B) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]2,610 (+80%)[] | [lightgray]Tầm bắn:[] [red]240 px[]\n\n" +
-                          "[purple]🔥 CƠ CHẾ TUẦN HOÀN TRỌNG LỰC:[]\n" +
-                          "• Bắn 3 phát [orange]Laser Trọng Lực[] liên tiếp (18.00 đm, xuyên thấu 240px).\n" +
-                          "• Ngay sau đó xả liên hoàn [pink]100 viên Trọng Đạn[] tự dẫn đường (27.00 đm/viên).";
+                          "[white]Máu tháp pháo: [green]2,610[] ([green]+80%[])\n" +
+                          "Tầm bắn: [orange]240[] px ([red]-20%[])\n" +
+                          "Sát thương gốc: [yellow]27[] DMG/viên[]\n\n" +
+                          "[lightgray]Kỹ năng đặc biệt: Chế Độ Tuần Hoàn Trọng Lực — Bắn [yellow]3[] phát Laser Trọng Lực ([yellow]18[] DMG, xuyên thấu [orange]240[]px), sau đó xả [yellow]100[] viên Trọng Đạn tự dẫn đường ([yellow]27[] DMG/viên).[]";
             } else if (currentTier == 3) {
                 title += "[gold](MK3)[]";
                 descStr = isEn() ? 
                           "[gold]⚡ EVOLUTION STATS (MK3) ⚡[]\n" +
-                          "[lightgray]Turret HP:[] [green]2,545 (+35% vs MK2)[] | [lightgray]Range:[] [orange]526.5 px (+35% vs MK2)[]\n\n" +
-                          "[gold]🔥 ULTIMATE BURST MECHANIC:[]\n" +
-                          "• Normal shot: [white]28.35 Damage[]\n" +
-                          "• Spread storm of [yellow]27 bullets/salvo[] (34.42 DMG/bullet)\n" +
-                          "• [red]Ultimate Rampage[] state lasts 8.1s (x3.51 Fire Rate)." :
+                          "[white]Turret HP: [green]2,545[] ([green]+35%[])\n" +
+                          "Range: [orange]526.5[] px ([green]+35%[])\n" +
+                          "Base Damage: [yellow]28.35[] DMG/bullet[]\n\n" +
+                          "[lightgray]Special Ability: Ultimate Burst Storm — Fires spread storm of [yellow]27[] bullets/salvo ([yellow]34.42[] DMG). Ultimate Rampage state lasts [orange]8.1s[] (x[yellow]3.51[] Fire Rate).[]" :
                           "[gold]⚡ THÔNG SỐ TIẾN HÓA (MK3) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]2,545 (+35% MK2)[] | [lightgray]Tầm bắn:[] [orange]526.5 px (+35% MK2)[]\n\n" +
-                          "[gold]🔥 CƠ CHẾ SIÊU NỘ TỐI THƯỢNG:[]\n" +
-                          "• Bắn thường: [white]Sát thương 28.35[]\n" +
-                          "• Bão đạn tỏa [yellow]27 viên/loạt[] (34.42 đm/viên)\n" +
-                          "• Trạng thái [red]Cuồng Báo Tối Thượng[] kéo dài 8.1 giây (x3.51 tốc bắn).";
+                          "[white]Máu tháp pháo: [green]2,545[] ([green]+35%[])\n" +
+                          "Tầm bắn: [orange]526.5[] px ([green]+35%[])\n" +
+                          "Sát thương gốc: [yellow]28.35[] DMG/viên[]\n\n" +
+                          "[lightgray]Kỹ năng đặc biệt: Bão Siêu Nộ Tối Thượng — Bão đạn tỏa [yellow]27[] viên/loạt ([yellow]34.42[] DMG). Trạng thái Cuồng Báo Tối Thượng kéo dài [orange]8.1[] giây (x[yellow]3.51[] tốc bắn).[]";
             } else if (currentTier == 4) {
                 title += "[purple](MK2B1)[]";
                 descStr = isEn() ? 
                           "[purple]⚡ CONFIGURATION STATS (MK2B1) ⚡[]\n" +
-                          "[lightgray]Turret HP:[] [green]2,871 (+10% vs MK2B)[] | [lightgray]Range:[] [orange]264 px (+10% vs MK2B)[]\n\n" +
-                          "[purple]🔥 BREAKTHROUGH MECHANIC:[]\n" +
-                          "• [orange]Dual Laser Fire:[] Fires 2 parallel Lasers (19.80 DMG each, 264px long).\n" +
-                          "• [pink]Double Bullet Storm:[] Fires a furious stream of [pink]200 Homing Bullets[] (29.70 DMG/bullet)." :
+                          "[white]Turret HP: [green]2,871[] ([green]+10%[])\n" +
+                          "Range: [orange]264[] px ([green]+10%[])\n" +
+                          "Base Damage: [yellow]29.7[] DMG/bullet[]\n\n" +
+                          "[lightgray]Special Ability: Dual Breakthrough Mode — Fires [yellow]2[] parallel Lasers ([yellow]19.8[] DMG). Releases a double storm of [yellow]200[] Homing Heavy Bullets ([yellow]29.7[] DMG/bullet).[]" :
                           "[purple]⚡ THÔNG SỐ CẤU HÌNH (MK2B1) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]2,871 (+10% MK2B)[] | [lightgray]Tầm bắn:[] [orange]264 px (+10% MK2B)[]\n\n" +
-                          "[purple]🔥 CƠ CHẾ ĐỘT PHÁ CẤU HÌNH:[]\n" +
-                          "• [orange]Bắn Laser Kép:[] Phát ra 2 tia Laser song song cùng lúc (19.80 đm/tia, dài 264px).\n" +
-                          "• [pink]Bão Đạn Nhân Đôi:[] Xả bão đạn cuồng bạo [pink]200 viên Trọng Đạn[] liên hoàn tự dẫn đường (29.70 đm/viên).";
+                          "[white]Máu tháp pháo: [green]2,871[] ([green]+10%[])\n" +
+                          "Tầm bắn: [orange]264[] px ([green]+10%[])\n" +
+                          "Sát thương gốc: [yellow]29.7[] DMG/viên[]\n\n" +
+                          "[lightgray]Kỹ năng đặc biệt: Chế Độ Đột Phá Kép — Bắn [yellow]2[] tia Laser song song ([yellow]19.8[] DMG). Xả bão đạn nhân đôi [yellow]200[] viên Trọng Đạn tự dẫn đường ([yellow]29.7[] DMG/viên).[]";
             } else if (currentTier == 5) {
                 title += "[pink](MK3B)[]";
                 descStr = isEn() ? 
-                          "[pink]👑 ULTIMATE STATS (MK3B) 👑[]\n" +
-                          "[lightgray]Turret HP:[] [green]3,915 (+50% vs MK2B)[] | [lightgray]Range:[] [orange]360 px (+50% vs MK2B)[]\n\n" +
-                          "[pink]🔥 EXTREME GRAVITY MODE:[]\n" +
-                          "• Fires 3 bursts of wide Supercharged Lasers (27.00 DMG, 360px long).\n" +
-                          "• Replaces single bursts with [magenta]Shotgun Storm Salvos (FPS Optimized)[] (81.00 DMG/bullet) covering huge areas." :
-                          "[pink]👑 THÔNG SỐ TỐI THƯỢNG (MK3B) 👑[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]3,915 (+50% MK2B)[] | [lightgray]Tầm bắn:[] [orange]360 px (+50% MK2B)[]\n\n" +
-                          "[pink]🔥 CHẾ ĐỘ CỰC HẠN TRỌNG LỰC:[]\n" +
-                          "• Bắn ra 3 đợt Laser Siêu Tải chùm rộng (27.00 đm, dài 360px).\n" +
-                          "• Chuyển đổi đạn xả lẻ thành [magenta]Loạt Shotgun Bão Tỏa (Đã tối ưu FPS)[] (81.00 đm/viên) dội thẳng diện rộng cực đại.";
+                          "[pink]⚡ ULTIMATE STATS (MK3B) ⚡[]\n" +
+                          "[white]Turret HP: [green]3,915[] ([green]+50%[])\n" +
+                          "Range: [orange]360[] px ([green]+50%[])\n" +
+                          "Shotgun Damage: [yellow]81[] DMG/bullet[]\n\n" +
+                          "[lightgray]Special Ability: Extreme Gravity Mode — Fires [yellow]3[] wide Supercharged Lasers ([yellow]27[] DMG). Replaces burst shots with [yellow]100[]-bullet Shotgun Storm Salvos (FPS Optimized).[]" :
+                          "[pink]⚡ THÔNG SỐ TỐI THƯỢNG (MK3B) ⚡[]\n" +
+                          "[white]Máu tháp pháo: [green]3,915[] ([green]+50%[])\n" +
+                          "Tầm bắn: [orange]360[] px ([green]+50%[])\n" +
+                          "Sát thương Shotgun: [yellow]81[] DMG/viên[]\n\n" +
+                          "[lightgray]Kỹ năng đặc biệt: Chế Độ Cực Hạn Trọng Lực — Bắn [yellow]3[] đợt Laser Siêu Tải chùm rộng ([yellow]27[] DMG). Chuyển đạn xả lẻ thành Loạt Shotgun Bão Tỏa [yellow]100[] viên (Đã tối ưu FPS).[]";
             }
 
             let dialog = extend(BaseDialog, title, {});
@@ -630,11 +651,18 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
     },
 
     write(write){
-        this.super$write(write); write.b(this.getTier()); 
+        this.super$write(write); 
+        write.b(this.getTier()); 
+        write.i(this.paidCopper);
+        write.i(this.paidLead);
+        write.i(this.paidTitanium);
     },
     read(read, revision){
         this.super$read(read, revision); 
         this.setTier(read.b()); 
+        this.paidCopper = read.i();
+        this.paidLead = read.i();
+        this.paidTitanium = read.i();
         this.chargeTimer = 0; this.berserkTimer = 0; this.superShotCount = 0;
         this.laserCount = 0; this.burstTimer = 0; this.burstShotsFired = 0; this.customReloadTimer = 0;
     }

@@ -1,14 +1,14 @@
 print("LYVERVON SYSTEM CORE - BREATHING HALO ENERGY UPDATE");
 
-const lightningColor = Color.valueOf("7fd4ff");
+const greenColor = Color.valueOf("7fd4ff");
 const lyvervonColor = Color.valueOf("#a488ff");
 const deadZone = 80;
 
-const arcmotLightningEffect = new Effect(14, e => {
+const arcmotgreenEffect = new Effect(14, e => {
     if(!(e.data instanceof Seq)) return;
     const points = e.data;
     let thickness = e.rotation > 0 ? e.rotation : 2.8;
-    Draw.color(lightningColor, Color.white, e.fin());
+    Draw.color(greenColor, Color.white, e.fin());
     Lines.stroke(thickness * e.fout());
     for(let i = 0; i < points.size - 1; i++){
         let a = points.get(i);
@@ -18,7 +18,7 @@ const arcmotLightningEffect = new Effect(14, e => {
 });
 
 const sonicShockwaveEffect = new Effect(45, e => {
-    Draw.color(lightningColor);
+    Draw.color(greenColor);
     Lines.stroke(2.5 * e.fout());
     Lines.circle(e.x, e.y, e.fin() * 32);
     Draw.alpha(e.fout() * 0.4);
@@ -72,10 +72,11 @@ const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
- const reqMK2 = { titanium: 120, thorium: 500 };
-const reqMK3 = { copper: 800, plastanium: 290 };
+// Yêu cầu tài nguyên nâng cấp
+const reqMK2 = { copper: 120, silicon: 250 };
+const reqMK3 = { copper: 200, lead: 290 };
 
-function createLightningStandard(x1, y1, x2, y2, thickness){
+function creategreenStandard(x1, y1, x2, y2, thickness){
     let dst = Mathf.dst(x1, y1, x2, y2);
     let segs = Math.max(4, Math.floor(dst / 7));
     let points = new Seq();
@@ -95,10 +96,10 @@ function createLightningStandard(x1, y1, x2, y2, thickness){
         points.add(new Vec2(px + Tmp.v1.x, py + Tmp.v1.y));
     }
     points.add(new Vec2(x2, y2));
-    arcmotLightningEffect.at((x1 + x2) / 2, (y1 + y2) / 2, thickness, points);
+    arcmotgreenEffect.at((x1 + x2) / 2, (y1 + y2) / 2, thickness, points);
 }
 
-function createLightningChaos(x1, y1, x2, y2, thickness){
+function creategreenChaos(x1, y1, x2, y2, thickness){
     let dst = Mathf.dst(x1, y1, x2, y2);
     let segs = Math.max(5, Math.floor(dst / 5)); 
     let points = new Seq();
@@ -119,7 +120,7 @@ function createLightningChaos(x1, y1, x2, y2, thickness){
         points.add(new Vec2(px + Tmp.v1.x, py + Tmp.v1.y));
     }
     points.add(new Vec2(x2, y2));
-    arcmotLightningEffect.at((x1 + x2) / 2, (y1 + y2) / 2, thickness, points);
+    arcmotgreenEffect.at((x1 + x2) / 2, (y1 + y2) / 2, thickness, points);
 }
 
 function findSubTarget(x, y, range, excludeSeq, team){
@@ -194,7 +195,6 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
     
     placed(){
         this.super$placed();
- 
         this.setTier(this.getTier());
     },
 
@@ -232,21 +232,21 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
         }
 
         if(tier == 1){
-            if(target && !target.dead) target.damage(10);
-            createLightningStandard(this.x, this.y, endX, endY, 2.8);
-            Fx.hitLancer.at(endX, endY, lightningColor);
+            if(target && !target.dead) target.damage(510);
+            creategreenStandard(this.x, this.y, endX, endY, 2.8);
+            Fx.hitLancer.at(endX, endY, greenColor);
             Effect.shake(2, 2, endX, endY);
         } 
         else if(tier == 2){
-            let baseDamage = 8;
+            let baseDamage = 408;
             let finalDamage = baseDamage * (1 + this.damageBonus / 100);
             
             let thicknessProgress = this.damageBonus / 1499;
-            let lightningThickness = 2.8 * (1 + (thicknessProgress * 0.5));
+            let greenThickness = 2.8 * (1 + (thicknessProgress * 0.5));
             let rangeSub = 180;
 
             if(target && !target.dead) target.damage(finalDamage);
-            createLightningStandard(this.x, this.y, endX, endY, lightningThickness);
+            creategreenStandard(this.x, this.y, endX, endY, greenThickness);
 
             if(target && !target.dead){
                 let turretId = this.id;
@@ -260,7 +260,7 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                 let applySubCharge = (targetUnit) => {
                     targetUnit.damage(subDamage);
                     let charge = currentSubBonus + 40;
-                    if(charge >= 500){
+                    if(charge >= 100){
                         turretChargeMap.put(turretId, 0);
                         sonicShockwaveEffect.at(targetUnit.x, targetUnit.y);
                     } else {
@@ -271,45 +271,45 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                 let targetB = findSubTarget(target.x, target.y, rangeSub, excludeList, this.team);
                 if(targetB != null){
                     excludeList.add(targetB); applySubCharge(targetB);
-                    createLightningStandard(target.x, target.y, targetB.x, targetB.y, subThickness);
+                    creategreenStandard(target.x, target.y, targetB.x, targetB.y, subThickness);
                     
                     let targetC = findSubTarget(targetB.x, targetB.y, rangeSub, excludeList, this.team);
                     if(targetC != null){
                         excludeList.add(targetC); applySubCharge(targetC);
-                        createLightningStandard(targetB.x, targetB.y, targetC.x, targetC.y, subThickness);
+                        creategreenStandard(targetB.x, targetB.y, targetC.x, targetC.y, subThickness);
                         
                         let targetD = findSubTarget(targetC.x, targetC.y, rangeSub, excludeList, this.team);
                         if(targetD != null){
                             excludeList.add(targetD); applySubCharge(targetD);
-                            createLightningStandard(targetC.x, targetC.y, targetD.x, targetD.y, subThickness);
+                            creategreenStandard(targetC.x, targetC.y, targetD.x, targetD.y, subThickness);
                             
                             let targetE = findSubTarget(targetD.x, targetD.y, rangeSub, excludeList, this.team);
                             if(targetE != null){
                                 excludeList.add(targetE); applySubCharge(targetE);
-                                createLightningStandard(targetD.x, targetD.y, targetE.x, targetE.y, subThickness);
+                                creategreenStandard(targetD.x, targetD.y, targetE.x, targetE.y, subThickness);
 
                                 let extraTargets = findHighHpTargetsForMK2(targetE.x, targetE.y, rangeSub, excludeList, this.team, 5);
                                 for(let i = 0; i < extraTargets.size; i++) {
                                     let extraTarget = extraTargets.get(i);
                                     applySubCharge(extraTarget);
-                                    createLightningStandard(targetE.x, targetE.y, extraTarget.x, extraTarget.y, subThickness * 0.9);
-                                    Fx.hitLancer.at(extraTarget.x, extraTarget.y, lightningColor);
+                                    creategreenStandard(targetE.x, targetE.y, extraTarget.x, extraTarget.y, subThickness * 0.9);
+                                    Fx.hitLancer.at(extraTarget.x, extraTarget.y, greenColor);
                                 }
                             }
                         }
                     }
                 }
             }
-            Fx.hitLancer.at(endX, endY, lightningColor);
+            Fx.hitLancer.at(endX, endY, greenColor);
             let shakeIntensity = 2 + (finalDamage / 500);
             Effect.shake(shakeIntensity, shakeIntensity, endX, endY);
         } 
         else if(tier == 3){
             let thicknessProgressMK3 = this.damageBonus / 1499;
-            let lightningThicknessMK3 = 3.5 * (1 + (thicknessProgressMK3 * 0.5));
+            let greenThicknessMK3 = 3.5 * (1 + (thicknessProgressMK3 * 0.5));
 
-            if(target && !target.dead) target.damage(12);
-            createLightningStandard(this.x, this.y, endX, endY, lightningThicknessMK3);
+            if(target && !target.dead) target.damage(612);
+            creategreenStandard(this.x, this.y, endX, endY, greenThicknessMK3);
             Fx.hitLancer.at(endX, endY, lyvervonColor);
             Effect.shake(3, 3, endX, endY);
         }
@@ -322,39 +322,38 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
 
         if(tier == 1) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-                let dialogTitle = en ? "Lyvervon Turret Upgrade Center" : "Trung tâm nâng cấp pháo Lyvervon";
+                let dialogTitle = en ? "Lyvervon Upgrade Center" : "Trung tâm nâng cấp pháo Lyvervon";
                 let dialog = extend(BaseDialog, dialogTitle, {});
                 
                 let reqCell = dialog.cont.label(packProv(() => {
                     let core = this.team.core();
                     if(core == null) return en ? "[red]Team Core Not Found![]" : "[red]Không tìm thấy Lõi Đội![]";
-                    let currentTitanium = core.items.get(Items.titanium);
-                    let currentThorium = core.items.get(Items.thorium);
                     let currentCopper = core.items.get(Items.copper);
-                    let currentPlastanium = core.items.get(Items.plastanium);
+                    let currentSilicon = core.items.get(Items.silicon);
+                    let currentLead = core.items.get(Items.lead);
                     
-                    let titColor1 = currentTitanium >= reqMK2.titanium ? "[green]" : "[red]";
-                    let thoColor1 = currentThorium >= reqMK2.thorium ? "[green]" : "[red]";
+                    let copColor1 = currentCopper >= reqMK2.copper ? "[green]" : "[red]";
+                    let silColor1 = currentSilicon >= reqMK2.silicon ? "[green]" : "[red]";
                     
                     let copColor2 = currentCopper >= reqMK3.copper ? "[green]" : "[red]"; 
-                    let plaColor2 = currentPlastanium >= reqMK3.plastanium ? "[green]" : "[red]";
+                    let leaColor2 = currentLead >= reqMK3.lead ? "[green]" : "[red]";
                     
                     if (en) {
-                        return "[yellow]CORE STORAGE REQUIREMENTS:[]\n" +
+                        return "[yellow]CORE RESOURCE REQUIREMENTS:[]\n" +
                                "[cyan]MK2 Branch:[]\n" +
-                               " • Titanium: " + titColor1 + currentTitanium + "[] / " + reqMK2.titanium + "\n" +
-                               " • Thorium: " + thoColor1 + currentThorium + "[] / " + reqMK2.thorium + "\n" +
-                               "[purple]MK2b Branch:[]\n" +
+                               " • Copper: " + copColor1 + currentCopper + "[] / " + reqMK2.copper + "\n" +
+                               " • Silicon: " + silColor1 + currentSilicon + "[] / " + reqMK2.silicon + "\n" +
+                               "[purple]MK2B Branch:[]\n" +
                                " • Copper: " + copColor2 + currentCopper + "[] / " + reqMK3.copper + "\n" +
-                               " • Plastanium: " + plaColor2 + currentPlastanium + "[] / " + reqMK3.plastanium;
+                               " • Lead: " + leaColor2 + currentLead + "[] / " + reqMK3.lead;
                     } else {
                         return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
                                "[cyan]Nhánh MK2:[]\n" +
-                               " • Titanium: " + titColor1 + currentTitanium + "[] / " + reqMK2.titanium + "\n" +
-                               " • Thorium: " + thoColor1 + currentThorium + "[] / " + reqMK2.thorium + "\n" +
-                               "[purple]Nhánh MK2b:[]\n" +
-                               " • Copper: " + copColor2 + currentCopper + "[] / " + reqMK3.copper + "\n" +
-                               " • Plastanium: " + plaColor2 + currentPlastanium + "[] / " + reqMK3.plastanium;
+                               " • Đồng: " + copColor1 + currentCopper + "[] / " + reqMK2.copper + "\n" +
+                               " • Silicon: " + silColor1 + currentSilicon + "[] / " + reqMK2.silicon + "\n" +
+                               "[purple]Nhánh MK2B:[]\n" +
+                               " • Đồng: " + copColor2 + currentCopper + "[] / " + reqMK3.copper + "\n" +
+                               " • Chì: " + leaColor2 + currentLead + "[] / " + reqMK3.lead;
                     }
                 }));
                 
@@ -367,51 +366,47 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                 b1.add("[cyan]===(MK2)===[]").row();
                 let b1Text = en ?
-                    "Continuous conduction optimization module:\n" +
-                    " [white]• Structure increased to [green]2,950 HP[] (+73.5%).[]\n" +
-                    " [white]• Effective range expanded to [green]350 tiles[] (+16.6%).[]\n" +
-                    " [white]• Power usage increased to [orange]1,200 u/s[] (+1100%).[]\n" +
-                    " [white]• Charged lightning scales up to [yellow]+1499%[] potency with chain explosion launching 5 sub-bolts at highest HP units." :
-                    "Mô-đun tối ưu hóa chuỗi dẫn mạch liên tục:\n" +
-                    " [white]• Tăng trưởng kết cấu lên [green]2,950 HP[] (Tăng +73.5%).[]\n" +
-                    " [white]• Tầm hiệu dụng mở rộng đạt [green]350 ô[] (Mở rộng +16.6%).[]\n" +
-                    " [white]• Tải điện bắn tăng mạnh chạm mốc [orange]1,200 đv/s[] (+1100%).[]\n" +
-                    " [white]• Tia điện tích tụ tăng tiến uy lực cực đại [yellow]+1499%[] kèm hiệu ứng chuỗi truyền nổ phóng 5 tia phụ quét đơn vị máu cao nhất.";
+                    "[white]• Health: [green]+73.5%[] (2,950 HP)\n" +
+                    "• Range: [green]+16.6%[] (350 px)\n" +
+                    "• Power Usage: [orange]+1100%[] (1,200/s)\n\n" +
+                    "[lightgray]Special Ability: Chain green Discharge — Continuous firing increases damage up to +1499%. green chains across up to 5 targets, triggering Sonic Shockwaves at max charge.[]" :
+                    "[white]• Máu cấu trúc: [green]+73.5%[] (2,950 HP)\n" +
+                    "• Tầm bắn: [green]+16.6%[] (350 px)\n" +
+                    "• Tiêu thụ điện: [orange]+1100%[] (1,200/s)\n\n" +
+                    "[lightgray]Kỹ năng đặc biệt: Chuỗi Điện Truyền Dẫn — Bắn liên tục tăng tiến sát thương lên tới +1499%. Sét tự động nảy qua 5 mục tiêu và kích nổ xung Sonic khi tích đủ điểm.[]";
                 let b1D = b1.add(b1Text);
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                 b1.button(en ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => {
                     let core = this.team.core();
-                    if(core != null && core.items.get(Items.titanium) >= reqMK2.titanium && core.items.get(Items.thorium) >= reqMK2.thorium){
-                        core.items.remove(Items.titanium, reqMK2.titanium); core.items.remove(Items.thorium, reqMK2.thorium);
+                    if(core != null && core.items.get(Items.copper) >= reqMK2.copper && core.items.get(Items.silicon) >= reqMK2.silicon){
+                        core.items.remove(Items.copper, reqMK2.copper); core.items.remove(Items.silicon, reqMK2.silicon);
                         Fx.upgradeCore.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
                         this.configure(java.lang.Integer(2)); 
                         dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfo(en ? "[red]Not enough resources for MK2 branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]"); }
+                    } else { Vars.ui.showInfo(en ? "[red]Not enough resources for MK2![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                 })).size(180, 38);
 
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                 b2.add("[purple]===(MK2B)===[]").row();
                 let b2Text = en ?
-                    "Extreme Chaos storm resonance core:\n" +
-                    " [white]• Structure max reinforced to [green]3,600 HP[] (+111.7%).[]\n" +
-                    " [white]• Sweeping range expanded to [green]380 tiles[] (+26.6%).[]\n" +
-                    " [white]• Power usage balanced at [orange]850 u/s[] (+750%).[]\n" +
-                    " [white]• Accumulates [purple]5 pts/sec[] while firing. At 25 pts triggers [red]Dual Simultaneous Explosion[] releasing [orange]13 wide Chaos lightning bolts[]." :
-                    "Lõi cộng hưởng bão điện Chaos hỗn mang cực đại:\n" +
-                    " [white]• Gia cố kết cấu tối đa lên [green]3,600 HP[] (Tăng mạnh +111.7%).[]\n" +
-                    " [white]• Tầm bắn càn quét đẩy lên ngưỡng [green]380 ô[] (Mở rộng +26.6%).[]\n" +
-                    " [white]• Tải điện dung hòa tối ưu ở mức [orange]850 đv/s[] (+750%).[]\n" +
-                    " [white]• Tích lũy [purple]5 điểm/giây[] duy trì bắn. Đạt 25 điểm kích nổ [red]Kép Đồng Thời[] giải phóng [orange]13 luồng sét Chaos[] gãy khúc diện rộng.";
+                    "[white]• Health: [green]+111.7%[] (3,600 HP)\n" +
+                    "• Range: [green]+26.6%[] (380 px)\n" +
+                    "• Power Usage: [orange]+750%[] (850/s)\n\n" +
+                    "[lightgray]Special Ability: Dual Chaos Explosion — Charges 5 pts/sec while firing. Reaching max charge triggers simultaneous explosions at both turret and target, releasing 13 Chaos green bolts.[]" :
+                    "[white]• Máu cấu trúc: [green]+111.7%[] (3,600 HP)\n" +
+                    "• Tầm bắn: [green]+26.6%[] (380 px)\n" +
+                    "• Tiêu thụ điện: [orange]+750%[] (850/s)\n\n" +
+                    "[lightgray]Kỹ năng đặc biệt: Kích Nổ Kép Chaos — Bắn duy trì nạp 5 điểm/giây. Đạt mốc kích nổ đồng thời tại tâm pháo và mục tiêu, tung 13 luồng sét Chaos diện rộng.[]";
                 let b2D = b2.add(b2Text);
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
-                b2.button(en ? "[orange]ACTIVATE MK2b[]" : "[orange]KÍCH HOẠT MK2b[]", packRun(() => {
+                b2.button(en ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                     let core = this.team.core();
-                    if(core != null && core.items.get(Items.copper) >= reqMK3.copper && core.items.get(Items.plastanium) >= reqMK3.plastanium){
-                        core.items.remove(Items.copper, reqMK3.copper); core.items.remove(Items.plastanium, reqMK3.plastanium);
+                    if(core != null && core.items.get(Items.copper) >= reqMK3.copper && core.items.get(Items.lead) >= reqMK3.lead){
+                        core.items.remove(Items.copper, reqMK3.copper); core.items.remove(Items.lead, reqMK3.lead);
                         Fx.bigShockwave.at(this.x, this.y); Effect.shake(6, 6, this.x, this.y);
                         this.configure(java.lang.Integer(3)); 
                         dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfo(en ? "[red]Not enough resources for MK2b branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2b![]"); }
+                    } else { Vars.ui.showInfo(en ? "[red]Not enough resources for MK2B![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
                 })).size(180, 38);
 
                 branchesTable.add(b1).width(340); branchesTable.row();
@@ -422,79 +417,95 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                 scroll.setScrollingDisabled(true, false);
                 dialog.cont.add(scroll).maxHeight(400);
                 dialog.addCloseButton(); dialog.show();
-            })).size(50, 40).tooltip(en ? "Evolve Lyvervon turret" : "Tiến hóa tháp pháo Lyvervon");
+            })).size(50, 40).tooltip(en ? "Upgrade Lyvervon turret" : "Nâng cấp tháp pháo Lyvervon");
         } else {
             table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
-                Vars.ui.showInfo(en ? "[scarlet]LYVERVON SYSTEM HAS REACHED MAX EVOLUTION TIER![]" : "[scarlet]HỆ THỐNG LYVERVON ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]");
-            })).size(50, 40).tooltip(en ? "Reached max tier" : "Đã đạt cấp tối đa");
+                Vars.ui.showInfo(en ? "[scarlet]LYVERVON HAS REACHED MAX EVOLUTION LEVEL![]" : "[scarlet]HỆ THỐNG LYVERVON ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]");
+            })).size(50, 40).tooltip(en ? "Max level reached" : "Đã đạt cấp tối đa");
         }
 
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-            let title = en ? " Lyvervon Turret Stats: " : " Thông số pháo Lyvervon: ";
+            let title = en ? "📊 LYVERVON STATS: " : "📊 THÔNG SỐ PHÁO LYVERVON: ";
             let descStr = "";
             let currentTier = this.getTier();
 
             if (currentTier == 1) {
-                title += "[yellow](MK1)[]";
+                title += en ? "[yellow]Base Config (MK1)[]" : "[yellow]Cấu hình gốc (MK1)[]";
                 descStr = en ?
-                    "[gold]⚡ BASIC STATS (MK1) ⚡[]\n" +
-                    "[lightgray]Turret Health:[] [green]1,700 HP[] (4x4 Size)\n" +
-                    "[lightgray]Raw Damage:[] [purple]10 units / lightning pulse[]\n" +
-                    "[lightgray]Default Range:[] [orange]300 tiles[] | [green]Fire Rate: 0.1s/shot[]\n" +
-                    "[lightgray]Power Required:[] [lightning]100 power / sec[] (Capacity: 5000)\n" +
-                    "[lightgray]Deadzone:[] [scarlet]80 tiles around turret center[]\n" +
-                    "[lightgray]Target Priority:[] Scans [lightgray]Ground[] targets only" :
-                    "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                    "[lightgray]Máu tháp pháo:[] [green]1,700 HP[] (Quy cách 4x4)\n" +
-                    "[lightgray]Sát thương thô:[] [purple]10 đơn vị / xung sấm sét[]\n" +
-                    "[lightgray]Tầm bắn mặc định:[] [orange]300 ô[] | [green]Tốc độ xả: 0.1s/phát[]\n" +
-                    "[lightgray]Yêu cầu năng lượng:[] [lightning]100 điện / giây[] (Trữ lượng: 5000)\n" +
-                    "[lightgray]Vùng mù (Deadzone):[] [scarlet]80 ô xung quanh tâm pháo[]\n" +
-                    "[lightgray]Mục tiêu ưu tiên:[] Chỉ quét mục tiêu [lightgray]Mặt Đất[]";
+                          "[gold]⚡ BASE STATS (MK1) ⚡[]\n" +
+                          "[lightgray]Turret HP:[] [green]1,700[]\n" +
+                          "[gray]📐 Block Size:[] [white]4x4[]\n" +
+                          "[lightgray]Effective Range:[] [orange]300 px[]\n" +
+                          "[lightgray]Base Beam Damage:[] [purple]510 DMG / pulse[]\n" +
+                          "[green] Fire Rate:[] [white]0.1s / shot[]\n" +
+                          "[green] Power Usage:[] [white]100 / sec[]\n" +
+                          "[scarlet] Deadzone Radius:[] [white]80 px[]\n\n" +
+                          "[sky]⚡ SYSTEM MECHANIC:[]\n" +
+                          "• [lightgray]Targeting:[] Only locks onto [lightgray]Ground[] targets outside the deadzone.\n" +
+                          "• [lightgray]Energy Core:[] Internal battery holds up to 5,000 units." :
+                          "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]1,700[]\n" +
+                          "[gray]📐 Kích thước khối:[] [white]4x4[]\n" +
+                          "Tầm bắn hiệu dụng:[] [orange]300 pixel[]\n" +
+                          "[lightgray]Sát thương gốc:[] [purple]510 DMG / xung[]\n" +
+                          "[green] Tốc độ xả đạn:[] [white]0.1s / phát[]\n" +
+                          "[green] Tiêu thụ điện:[] [white]100 / giây[]\n" +
+                          "[scarlet] Vùng mù (Deadzone):[] [white]80 pixel[]\n\n" +
+                          "[sky]⚡ CƠ CHẾ HOẠT ĐỘNG:[]\n" +
+                          "• [lightgray]Khóa mục tiêu:[] Chỉ tấn công kẻ địch [lightgray]Mặt Đất[] nằm ngoài vùng mù.\n" +
+                          "• [lightgray]Lõi năng lượng:[] Trữ lượng pin nội bộ tối đa 5,000 đơn vị.";
             } 
             else if (currentTier == 2) {
-                title += "[cyan](MK2)[]";
+                title += en ? "[cyan]STANDARD CONFIG (MK2)[]" : "[cyan]CẤU HÌNH TIÊU CHUẨN (MK2)[]";
                 descStr = en ?
-                    "[cyan]⚡ EVOLUTION STATS (MK2) ⚡[]\n" +
-                    "[lightgray]Turret Health:[] [green]2,950 HP[] [lime](+73.5%)[]\n" +
-                    "[lightgray]Effective Range:[] [orange]350 tiles[] [lime](+16.6%)[]\n" +
-                    "[lightgray]Base Damage:[] [purple]8 units / pulse[]\n" +
-                    "[lightgray]Power Required:[] [lightning]1,200 power / sec[] [red](+1100%)[]\n\n" +
-                    "[sky]⚡ ACCELERATION MODULE & CHAIN LIGHTNING:[]\n" +
-                    "• [lightgray]Circuit Charge:[] Firing charge progression increases damage up to [yellow]+1499%[], enlarging main beam width by [orange]150%[].\n" +
-                    "• [lightgray]Multi-Target Algorithm:[] Lightning chains across 5 enemies [lightgray]A -> B -> C -> D -> E[] within [lightgray]180[] tiles.\n" +
-                    "• [lightgray]Sonic Finish Shockwave:[] Each chain link deals 70% current damage. At final target (E), triggers a sonic shockwave launching [orange]5 sub-bolts[] into 5 highest HP targets." :
-                    "[cyan]⚡ THÔNG SỐ TIẾN HÓA (MK2) ⚡[]\n" +
-                    "[lightgray]Máu tháp pháo:[] [green]2,950 HP[] [lime](+73.5%)[]\n" +
-                    "[lightgray]Tầm bắn hiệu dụng:[] [orange]350 ô[] [lime](+16.6%)[]\n" +
-                    "[lightgray]Sát thương nền:[] [purple]8 đơn vị / xung kích[]\n" +
-                    "[lightgray]Yêu cầu năng lượng:[] [lightning]1,200 điện / giây[] [red](+1100%)[]\n\n" +
-                    "[sky]⚡ MÔ-ĐUN TĂNG TIẾN & CHUỖI SÈT TRUYỀN DẪN:[]\n" +
-                    "• [lightgray]Gia tốc sạc mạch:[] Tiến trình tích lũy tăng tiến hỏa lực liên tục tối đa đạt [yellow]1499%[] uy lực, đồng thời phình đại kích cỡ tia điện chính lên [orange]150%[].\n" +
-                    "• [lightgray]Thuật toán truyền đa mục tiêu:[] Sét tự động nối mạch tuần tự qua 5 kẻ địch [lightgray]A -> B -> C -> D -> E[] trong tầm tỏa [lightgray]180[] ô.\n" +
-                    "• [lightgray]Xung kích Sonic kết liễu:[] Mỗi nấc truyền gây 70% sát thương hiện tại. Tại vị trí đích cuối (E), kích hoạt sóng chấn nổ diện rộng và phóng thêm [orange]5 tia phụ[] ghim thẳng vào 5 mục tiêu có HP cao nhất.";
+                          "[cyan]⚡ BASE STATS (MK2) ⚡[]\n" +
+                          "[lightgray]Turret HP:[] [green]2,950 [lime](+73.5%)[]\n" +
+                          "[gray]📐 Block Size:[] [white]4x4[]\n" +
+                          "[lightgray]Effective Range:[] [orange]350 px [lime](+16.6%)[]\n" +
+                          "[lightgray]Base Beam Damage:[] [purple]408 DMG / pulse[]\n" +
+                          "[green] Power Usage:[] [orange]1,200 / sec [red](+1100%)[]\n" +
+                          "[green] Max Charge Boost:[] [yellow]Up to +1499% DMG[]\n\n" +
+                          "[sky]⚡ CHAIN green MECHANIC:[]\n" +
+                          "• [lightgray]Damage Ramp-up:[] Continuous firing boosts damage up to [yellow]+1499%[] and expands beam size by [orange]+150%[].\n" +
+                          "• [lightgray]Multi-Chain:[] green chains sequentially through 5 targets within [lightgray]180 px[].\n" +
+                          "• [lightgray]Sonic Finish:[] Chain links deal 70% DMG. Reaching 100 pts triggers a sonic shockwave launching 5 sub-bolts at high HP targets." :
+                          "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]2,950 [lime](+73.5%)[]\n" +
+                          "[gray]📐 Kích thước khối:[] [white]4x4[]\n" +
+                          "Tầm bắn hiệu dụng:[] [orange]350 pixel [lime](+16.6%)[]\n" +
+                          "[lightgray]Sát thương gốc:[] [purple]408 DMG / xung[]\n" +
+                          "[green] Tiêu thụ điện:[] [orange]1,200 / giây [red](+1100%)[]\n" +
+                          "[green] Gia tốc tích tụ:[] [yellow]Tối đa +1499% Sát thương[]\n\n" +
+                          "[sky]⚡ CƠ CHẾ CHUỖI SÉT TRUYỀN DẪN:[]\n" +
+                          "• [lightgray]Tăng tiến hỏa lực:[] Duy trì bắn liên tục tăng hỏa lực lên đến [yellow]+1499%[] và phình to tia sét [orange]+150%[].\n" +
+                          "• [lightgray]Nảy chuỗi:[] Tự động nối mạch qua 5 mục tiêu liên tiếp trong bán kính [lightgray]180 pixel[].\n" +
+                          "• [lightgray]Xung Sonic:[] Tia phụ gây 70% DMG. Đạt 100 điểm kích nổ sóng chấn phóng thêm 5 tia phụ ghim vào kẻ địch máu cao.";
             } 
             else if (currentTier == 3) {
-                title += "[purple](MK2b)[]";
+                title += en ? "[purple]CHAOS EXPLOSION VARIANT (MK2B)[]" : "[purple]BIẾN THỂ KÍCH NỔ CHAOS (MK2B)[]";
                 descStr = en ?
-                    "[purple]⚡ ULTIMATE STATS (MK2b) ⚡[]\n" +
-                    "[lightgray]Turret Health:[] [green]3,600 HP[] [lime](+111.7%)[]\n" +
-                    "[lightgray]Effective Range:[] [orange]380 tiles[] [lime](+26.6%)[]\n" +
-                    "[lightgray]Base Beam Damage:[] [purple]12 units / shot[]\n" +
-                    "[lightgray]Power Required:[] [lightning]850 power / sec[] [red](+750%)[]\n\n" +
-                    "[scarlet]💥 DUAL CONCENTRIC CHAOS EXPLOSION MECHANIC:[]\n" +
-                    "• [lightgray]Point Accumulation:[] Automatically charges [green]5 pts / sec[] during continuous firing.\n" +
-                    "• [lightgray]Dual Explosion:[] Reaching [yellow]25/25 pts[] triggers destructive simultaneous explosions at both [yellow]Turret Center[] and [yellow]Target Position[].\n" +
-                    "• [lightgray]Chaos Bolts:[] Each epicenter deals 2.5x damage, spawning [orange]13 Chaos sub-bolts[] sweeping a 45-tile radius." :
-                    "[purple]⚡ THÔNG SỐ TỐI THƯỢNG (MK2b) ⚡[]\n" +
-                    "[lightgray]Máu tháp pháo:[] [green]3,600 HP[] [lime](+111.7%)[]\n" +
-                    "[lightgray]Tầm bắn hiệu dụng:[] [orange]380 ô[] [lime](+26.6%)[]\n" +
-                    "[lightgray]Sát thương gốc tia:[] [purple]12 đơn vị / phát bắn[]\n" +
-                    "[lightgray]Yêu cầu năng lượng:[] [lightning]850 điện / giây[] [red](+750%)[]\n\n" +
-                    "[scarlet]💥 CƠ CHẾ KÍCH NỔ ĐỒNG TÂM KÉP BÃO ĐIỆN (CHAOS):[]\n" +
-                    "• [lightgray]Chu kỳ nạp điểm:[] Tự động tích lũy [green]5 điểm / giây[] khi duy trì xả xích sét ổn định vào mục tiêu.\n" +
-                    "• [lightgray]Bùng nổ đồng tâm kép:[] Khi năng lượng chạm ngưỡng sạc [yellow]25/25 điểm[], pháo tự giải phóng chuỗi phản ứng kích nổ hủy diệt đồng thời tại cả [yellow]Tâm tháp pháo[] và [yellow]Vị trí kẻ địch bị khóa[].\n" +
-                    "• [lightgray]Luồng sét hỗn mang:[] Mỗi chấn tâm vụ nổ gây sát thương gấp 2.5 lần, bung ra [orange]13 luồng sét phụ cấu trúc Chaos[] gãy khúc biên độ rộng càn quét bán kính 45 ô xung quanh.";
+                          "[purple]⚡ BASE STATS (MK2B) ⚡[]\n" +
+                          "[lightgray]Turret HP:[] [green]3,600 [lime](+111.7%)[]\n" +
+                          "[gray]📐 Block Size:[] [white]4x4[]\n" +
+                          "[lightgray]Effective Range:[] [orange]380 px [lime](+26.6%)[]\n" +
+                          "[lightgray]Base Beam Damage:[] [purple]612 DMG / pulse[]\n" +
+                          "[green] Power Usage:[] [orange]850 / sec [red](+750%)[]\n" +
+                          "[green] Explosion Cycle:[] [pink]Every 5 pts (1 sec)[]\n\n" +
+                          "[purple]🔥 DUAL CHAOS EXPLOSION MECHANIC:[]\n" +
+                          "• [lightgray]Charge Speed:[] Automatically gains [green]5 pts / sec[] while continuously firing.\n" +
+                          "• [lightgray]Dual Detonation:[] Reaching 5 pts triggers dual explosions at both [yellow]Turret Center[] and [yellow]Target Position[].\n" +
+                          "• [lightgray]Chaos Scatter:[] Each blast deals 1,530 DMG (2.5x) and releases [orange]13 Chaos sub-bolts[] within a 45 px radius." :
+                          "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]3,600 [lime](+111.7%)[]\n" +
+                          "[gray]📐 Kích thước khối:[] [white]4x4[]\n" +
+                          "Tầm bắn hiệu dụng:[] [orange]380 pixel [lime](+26.6%)[]\n" +
+                          "[lightgray]Sát thương gốc:[] [purple]612 DMG / xung[]\n" +
+                          "[green] Tiêu thụ điện:[] [orange]850 / giây [red](+750%)[]\n" +
+                          "[green] Chu kỳ kích nổ:[] [pink]Mỗi 5 điểm (1 giây)[]\n\n" +
+                          "[purple]🔥 CƠ CHẾ KÍCH NỔ KÉP CHAOS:[]\n" +
+                          "• [lightgray]Tốc độ nạp điểm:[] Tự động tích [green]5 điểm / giây[] khi duy trì xả đạn liên tục.\n" +
+                          "• [lightgray]Nổ đồng thời:[] Đạt 5 điểm tự động kích nổ đồng thời tại [yellow]Tâm tháp pháo[] và [yellow]Kẻ địch bị khóa[].\n" +
+                          "• [lightgray]Sét Chaos gãy khúc:[] Mỗi tâm nổ gây 1,530 DMG (gấp 2.5 lần) và tỏa ra [orange]13 tia sét Chaos[] bán kính 45 pixel.";
             }
 
             let dialog = extend(BaseDialog, title, {});
@@ -505,7 +516,7 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
             scroll.setScrollingDisabled(true, false);
             dialog.cont.add(scroll).maxHeight(400);
             dialog.addCloseButton(); dialog.show();
-        })).size(50, 40).tooltip(en ? "View detailed system status" : "Xem chi tiết thông số trạng thái hệ thống");
+        })).size(50, 40).tooltip(en ? "View detailed stats" : "Xem thông số chi tiết hệ thống");
     },
 
     findTarget(){
@@ -559,10 +570,10 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                 this.mk3ChargePoints += 5;
                 this.mk3Timer = 0;
 
-                if(this.mk3ChargePoints >= 25){
+                if(this.mk3ChargePoints >= 5){
                     this.mk3ChargePoints = 0; 
-                    let mainDamageMK3 = 12; 
-                    let explosionDamage = mainDamageMK3 * 2.5; 
+                    let mainDamageMK3 = 612;
+                    let explosionDamage = mainDamageMK3 * 2.5;
                     
                     let targetX = this.target.x; let targetY = this.target.y;
                     let turretX = this.x; let turretY = this.y;
@@ -581,10 +592,10 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                         let subEnemy = Units.closestTarget(this.team, extX, extY, 45, u => !u.dead && !u.type.flying, b => !b.dead);
                         if(subEnemy != null){
                             subEnemy.damage(explosionDamage * 0.4); 
-                            createLightningChaos(targetX, targetY, subEnemy.x, subEnemy.y, 2.5);
+                            creategreenChaos(targetX, targetY, subEnemy.x, subEnemy.y, 2.5);
                             Fx.hitLancer.at(subEnemy.x, subEnemy.y, lyvervonColor);
                         } else {
-                            createLightningChaos(targetX, targetY, extX, extY, 2.0);
+                            creategreenChaos(targetX, targetY, extX, extY, 2.0);
                         }
                     }
 
@@ -601,10 +612,10 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                         let subEnemy = Units.closestTarget(this.team, extX, extY, 45, u => !u.dead && !u.type.flying && Mathf.dst(this.x, this.y, u.x, u.y) >= deadZone, b => !b.dead);
                         if(subEnemy != null){
                             subEnemy.damage(explosionDamage * 0.4); 
-                            createLightningChaos(turretX, turretY, subEnemy.x, subEnemy.y, 2.5);
+                            creategreenChaos(turretX, turretY, subEnemy.x, subEnemy.y, 2.5);
                             Fx.hitLancer.at(subEnemy.x, subEnemy.y, lyvervonColor);
                         } else {
-                            createLightningChaos(turretX, turretY, extX, extY, 2.0);
+                            creategreenChaos(turretX, turretY, extX, extY, 2.0);
                         }
                     }
                 }
@@ -633,7 +644,7 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                     Fx.smoke.at(this.x + Mathf.range(2), this.y + Mathf.range(2));
                 }
                 
-                let fxColor = (tier == 3) ? lyvervonColor : lightningColor;
+                let fxColor = (tier == 3) ? lyvervonColor : greenColor;
                 let currentZoom = Interp.pow3Out.apply(0, 1, this.zoomAnimation);
                 let pulse = Vars.state.isPaused() ? 0 : Mathf.absin(Time.time, 4, 3.5);
                 let haloRadius = (14.0 + pulse) * currentZoom;
@@ -655,7 +666,7 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                 Draw.reset();
             }
 
-            let ballColor = (tier == 3) ? lyvervonColor : lightningColor;
+            let ballColor = (tier == 3) ? lyvervonColor : greenColor;
             let currentBallSize = Interp.pow3Out.apply(0, 1, this.zoomAnimation);
             
             let baseRadius = 2.0 * currentBallSize; 
@@ -686,7 +697,7 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
         if(tier == 3 && this.mk3ChargePoints > 0){
             Draw.z(Layer.effect + 10);
             let barWidth = 28;
-            let progress = this.mk3ChargePoints / 25;
+            let progress = this.mk3ChargePoints / 5;
             Draw.color(Color.black, 0.5); Lines.stroke(3);
             Lines.line(this.x - barWidth / 2, this.y - 22, this.x + barWidth / 2, this.y - 22);
             Draw.color(lyvervonColor); Lines.stroke(2);

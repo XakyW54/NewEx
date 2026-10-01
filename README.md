@@ -3,6 +3,20 @@
 
 
 -------------------------------------------
+> Điều chỉnh cân bằng bản 0.7.10:
++ Pháo Lyvervon:
+   - Tăng 100% chi phí xây dựng.
+   - Sát thương gốc: Tăng 5000% sát thương gốc ở tất cả các cấp.
+   - Nhánh MK2:
+     * Yêu cầu nâng cấp: 120 Copper + 250 Silicon (thay vì 120 Titanium + 500 Thorium).
+     * Xung kích Sonic kết liễu (Sonic Finish Shockwave): Kích nổ ngay khi điểm sạc đạt 100 (thay vì 500).
+   - Nhánh MK2b:
+     * Yêu cầu nâng cấp: 200 Copper + 290 Lead (thay vì 800 Copper + 290 Plastanium).
+     * Kích nổ Kép Đồng Thời (Dual Simultaneous Explosion): Giải phóng năng lượng và kích nổ ngay khi thanh năng lượng đạt 5/5 điểm (thay vì 25/25 điểm).
+
+
+
+-------------------------------------------
 > Điều chỉnh cân bằng bản 0.7.8:
 + Pháo Xylaon (Tối ưu hiệu năng & Cân bằng lại):
    - Sát thương đạn gốc: Tăng bù đắp (Graphite: 20 > 35, Copper: 12 > 22, MK2: 26 > 50, MK2B: 13 > 32).

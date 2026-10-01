@@ -16,39 +16,14 @@ const customHitLancer = new Effect(20, e => {
     Lines.circle(e.x, e.y, e.fin() * 14);
 });
 
-const customUpgradeCore = new Effect(30, e => {
-    Draw.color(Color.cyan, Color.white, e.fin());
-    Lines.stroke(e.fout() * 3);
-    Lines.circle(e.x, e.y, e.fin() * 30);
-});
-
-const customMineHuge = new Effect(25, e => {
-    Draw.color(Color.gold, Color.white, e.fin());
-    Lines.stroke(e.fout() * 2.5);
-    Lines.circle(e.x, e.y, e.fin() * 20);
-});
-
-const customBigShockwave = new Effect(35, e => {
-    Draw.color(Color.purple, Color.white, e.fin());
-    Lines.stroke(e.fout() * 4);
-    Lines.circle(e.x, e.y, e.fin() * 45);
-});
-
+const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
 const isEn = () => Core.settings.getString("locale").startsWith("en");
 
-const reqMK2 = {
-    titanium: 400,
-    silicon: 400
-};
-
-const reqMK2B = {
-    titanium: 500,
-    silicon: 400,
-    plastanium: 200
-};
+const reqMK2 = { titanium: 400, silicon: 400, plastanium: 0 };
+const reqMK2B = { titanium: 500, silicon: 400, plastanium: 200 };
 
 const overheatCapTable = [60 * 9, 60 * 8, 60 * 8];
 const cooldownCapTable = [60 * 4, 60 * 3, 60 * 1.5]; 
@@ -173,6 +148,12 @@ xylaon.ammo(
     Items.copper, xylaonCopperBullet
 );
 
+xylaon.config(java.lang.Integer, packCons2((tile, value) => {
+    if (tile != null && tile.setTier !== undefined) {
+        tile.setTier(value);
+    }
+}));
+
 xylaon.addBar("heat", e => new Bar(
     new Prov({
         get: function(){
@@ -218,11 +199,57 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
     thermalstate: 0,
     tierState: 0, 
 
+    paidTitanium: 0,
+    paidSilicon: 0,
+    paidPlastanium: 0,
+
     getTier(){ return this.tierState == null ? 0 : this.tierState; },
     setTier(val){ 
         this.tierState = val;
+        this.paidTitanium = 0;
+        this.paidSilicon = 0;
+        this.paidPlastanium = 0;
+        if(val == 0) this.health = 2400;
         if(val == 1) this.health = 3120;
         if(val == 2) this.health = 3750;
+        this.maxHealth = this.health;
+    },
+
+    processPartialUpgrade(targetTier, reqObj){
+        let core = this.team.core();
+        if(core == null) return false;
+
+        let reqT = reqObj.titanium || 0;
+        let reqS = reqObj.silicon || 0;
+        let reqP = reqObj.plastanium || 0;
+
+        let remT = reqT - this.paidTitanium;
+        let remS = reqS - this.paidSilicon;
+        let remP = reqP - this.paidPlastanium;
+
+        let inv = core.items;
+        let takeT = Math.min(inv.get(Items.titanium), Math.max(0, remT));
+        let takeS = Math.min(inv.get(Items.silicon), Math.max(0, remS));
+        let takeP = Math.min(inv.get(Items.plastanium), Math.max(0, remP));
+
+        if(takeT > 0) { core.items.remove(Items.titanium, takeT); this.paidTitanium += takeT; }
+        if(takeS > 0) { core.items.remove(Items.silicon, takeS); this.paidSilicon += takeS; }
+        if(takeP > 0) { core.items.remove(Items.plastanium, takeP); this.paidPlastanium += takeP; }
+
+        if(this.paidTitanium >= reqT && this.paidSilicon >= reqS && this.paidPlastanium >= reqP){
+            if(targetTier == 1) Fx.upgradeCore.at(this.x, this.y);
+            else Fx.bigShockwave.at(this.x, this.y);
+            Fx.mineHuge.at(this.x, this.y);
+            Effect.shake(5, 5, this.x, this.y);
+            
+            if(Vars.net.active()){
+                Call.tileConfig(Vars.player, this, java.lang.Integer(targetTier));
+            } else {
+                this.configure(java.lang.Integer(targetTier));
+            }
+            return true;
+        }
+        return false;
     },
 
     range(){
@@ -241,38 +268,32 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                 let dialog = extend(BaseDialog, isEn() ? "Xylaon Upgrade Center" : "Trung tâm nâng cấp pháo Xylaon", {});
 
                 let reqCell = dialog.cont.label(packProv(() => {
-                    let core = this.team.core();
-                    if(core == null) return isEn() ? "[red]Team Core Not Found![]" : "[red]Không tìm thấy Lõi Đội![]";
-                    let currenttitanium = core.items.get(Items.titanium);
-                    let currentsilicon = core.items.get(Items.silicon);
-                    let currentplastanium = core.items.get(Items.plastanium);
+                    let needMK2_T = Math.max(0, reqMK2.titanium - this.paidTitanium);
+                    let needMK2_S = Math.max(0, reqMK2.silicon - this.paidSilicon);
                     
-                    let titColor1 = currenttitanium >= reqMK2.titanium ? "[green]" : "[red]";
-                    let silColor1 = currentsilicon >= reqMK2.silicon ? "[green]" : "[red]";
-                    
-                    let titColor2 = currenttitanium >= reqMK2B.titanium ? "[green]" : "[red]";
-                    let silColor2 = currentsilicon >= reqMK2B.silicon ? "[green]" : "[red]";
-                    let plaColor2 = currentplastanium >= reqMK2B.plastanium ? "[green]" : "[red]";
-                    
+                    let needMK2B_T = Math.max(0, reqMK2B.titanium - this.paidTitanium);
+                    let needMK2B_S = Math.max(0, reqMK2B.silicon - this.paidSilicon);
+                    let needMK2B_P = Math.max(0, reqMK2B.plastanium - this.paidPlastanium);
+
                     if(isEn()){
-                        return "[yellow]CORE RESOURCE REQUIREMENTS:[]\n" +
+                        return "[yellow]RESOURCE REQUIREMENTS FOR UPGRADE:[]\n" +
                                "[cyan]MK2 Branch:[]\n" +
-                               " • Titanium: " + titColor1 + currenttitanium + "[] / " + reqMK2.titanium + "\n" +
-                               " • Silicon: " + silColor1 + currentsilicon + "[] / " + reqMK2.silicon + "\n" +
+                               " • Titanium: [green]" + needMK2_T + "[]\n" +
+                               " • Silicon: [green]" + needMK2_S + "[]\n" +
                                "[purple]MK2B Branch:[]\n" +
-                               " • Titanium: " + titColor2 + currenttitanium + "[] / " + reqMK2B.titanium + "\n" +
-                               " • Silicon: " + silColor2 + currentsilicon + "[] / " + reqMK2B.silicon + "\n" +
-                               " • Plastanium: " + plaColor2 + currentplastanium + "[] / " + reqMK2B.plastanium;
+                               " • Titanium: [green]" + needMK2B_T + "[]\n" +
+                               " • Silicon: [green]" + needMK2B_S + "[]\n" +
+                               " • Plastanium: [green]" + needMK2B_P + "[]";
                     }
 
-                    return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
+                    return "[yellow]YÊU CẦU TÀI NGUYÊN NÂNG CẤP:[]\n" +
                            "[cyan]Nhánh MK2:[]\n" +
-                           " • Titan: " + titColor1 + currenttitanium + "[] / " + reqMK2.titanium + "\n" +
-                           " • Silicon: " + silColor1 + currentsilicon + "[] / " + reqMK2.silicon + "\n" +
+                           " • Titan: [green]" + needMK2_T + "[]\n" +
+                           " • Silicon: [green]" + needMK2_S + "[]\n" +
                            "[purple]Nhánh MK2B:[]\n" +
-                           " • Titan: " + titColor2 + currenttitanium + "[] / " + reqMK2B.titanium + "\n" +
-                           " • Silicon: " + silColor2 + currentsilicon + "[] / " + reqMK2B.silicon + "\n" +
-                           " • Nhựa: " + plaColor2 + currentplastanium + "[] / " + reqMK2B.plastanium;
+                           " • Titan: [green]" + needMK2B_T + "[]\n" +
+                           " • Silicon: [green]" + needMK2B_S + "[]\n" +
+                           " • Nhựa Plastanium: [green]" + needMK2B_P + "[]";
                 }));
                 
                 reqCell.width(360).get().setWrap(true);
@@ -286,20 +307,16 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                 let b1D = b1.add(isEn() ?
                                  "[white]• Health: [green]+30%[] (3,120 HP)\n" +
                                  "• Range: [green]+29.5%[] (544 px)\n" +
-                                 "• Base Damage: [green]+30%[] (26 DMG/bullet)\n\n" +
-                                 "[lightgray]Special Ability: Accelerated Semiconductor Cooling — Attack speed increases up to +450% based on heat buildup, while reducing cooldown lock time down to 3.0s.[]" :
+                                 "• Base Damage: [green]+30%[] (26 DMG/bullet)[]\n\n" +
+                                 "[gray]Special Ability: Accelerated Semiconductor Cooling — Attack speed increases up to [green]+450%[] based on heat buildup, while reducing cooldown lock time down to 3.0s.[]" :
                                  "[white]• Máu cấu trúc: [green]+30%[] (3,120 HP)\n" +
                                  "• Tầm bắn: [green]+29.5%[] (544 px)\n" +
-                                 "• sát thương gốc: [green]+30%[] (26 DMG/viên)\n\n" +
-                                 "[lightgray]Kỹ năng đặc biệt: Tản Nhiệt Bán Dẫn Gia Tốc — Tốc độ xả đạn gia tăng tối đa +450% theo nhiệt tích lũy, đồng thời giảm thời gian khóa xả nhiệt xuống chỉ còn 3.0 giây.[]");
+                                 "• Sát thương gốc: [green]+30%[] (26 DMG/viên)[]\n\n" +
+                                 "[gray]Kỹ năng đặc biệt: Tản Nhiệt Bán Dẫn Gia Tốc — Tốc độ xả đạn gia tăng tối đa [green]+450%[] theo nhiệt tích lũy, đồng thời giảm thời gian khóa xả nhiệt xuống chỉ còn 3.0 giây.[]");
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
-                b1.button(isEn() ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => {
-                    let core = this.team.core();
-                    if(core != null && core.items.get(Items.titanium) >= reqMK2.titanium && core.items.get(Items.silicon) >= reqMK2.silicon){
-                        core.items.remove(Items.titanium, reqMK2.titanium); core.items.remove(Items.silicon, reqMK2.silicon);
-                        customUpgradeCore.at(this.x, this.y); customMineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
-                        this.setTier(1); dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfo(isEn() ? "[red]Not enough resources for MK2![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]"); }
+                b1.button(isEn() ? "[green]UPGRADE MK2[]" : "[green]NÂNG CẤP MK2[]", packRun(() => {
+                    let done = this.processPartialUpgrade(1, reqMK2);
+                    if(done){ dialog.hide(); this.deselect(); }
                 })).size(180, 38);
 
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
@@ -307,20 +324,16 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                 let b2D = b2.add(isEn() ?
                                  "[white]• Health: [green]+56.25%[] (3,750 HP)\n" +
                                  "• Range: [red]-30%[] (294 px)\n" +
-                                 "• Base Damage: [red]-35%[] (13 DMG/bullet)\n\n" +
-                                 "[lightgray]Special Ability: Cyclic Super-Impulse Burst — Accelerated fire rate hits a explosive +999%, automatically triggering ultra-fast 1.5s cooling to maintain relentless close-range firepower.[]" :
+                                 "• Base Damage: [red]-35%[] (13 DMG/bullet)[]\n\n" +
+                                 "[gray]Special Ability: Cyclic Super-Impulse Burst — Accelerated fire rate hits an explosive [green]+999%[], automatically triggering ultra-fast 1.5s cooling to maintain relentless close-range firepower.[]" :
                                  "[white]• Máu cấu trúc: [green]+56.25%[] (3,750 HP)\n" +
                                  "• Tầm bắn: [red]-30%[] (294 px)\n" +
-                                 "• sát thương gốc: [red]-35%[] (13 DMG/viên)\n\n" +
-                                 "[lightgray]Kỹ năng đặc biệt: Siêu Xung Bùng Nổ Chu Kỳ Tốc Độ — Tốc độ bắn gia tốc chạm mốc bùng nổ +999%, tự động kích hoạt xả nhiệt cực nhanh chỉ trong 1.5 giây để duy trì mật độ hỏa lực tầm gần liên tục.[]");
+                                 "• Sát thương gốc: [red]-35%[] (13 DMG/viên)[]\n\n" +
+                                 "[gray]Kỹ năng đặc biệt: Siêu Xung Bùng Nổ Chu Kỳ Tốc Độ — Tốc độ bắn gia tốc chạm mốc bùng nổ [green]+999%[], tự động kích hoạt xả nhiệt cực nhanh chỉ trong 1.5 giây để duy trì mật độ hỏa lực tầm gần liên tục.[]");
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
-                b2.button(isEn() ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => {
-                    let core = this.team.core();
-                    if(core != null && core.items.get(Items.titanium) >= reqMK2B.titanium && core.items.get(Items.silicon) >= reqMK2B.silicon && core.items.get(Items.plastanium) >= reqMK2B.plastanium){
-                        core.items.remove(Items.titanium, reqMK2B.titanium); core.items.remove(Items.silicon, reqMK2B.silicon); core.items.remove(Items.plastanium, reqMK2B.plastanium);
-                        customBigShockwave.at(this.x, this.y); customMineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
-                        this.setTier(2); dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfo(isEn() ? "[red]Not enough resources for MK2B![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
+                b2.button(isEn() ? "[orange]UPGRADE MK2B[]" : "[orange]NÂNG CẤP MK2B[]", packRun(() => {
+                    let done = this.processPartialUpgrade(2, reqMK2B);
+                    if(done){ dialog.hide(); this.deselect(); }
                 })).size(180, 38);
 
                 branchesTable.add(b1).width(340); branchesTable.row();
@@ -334,94 +347,58 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
             })).size(50, 40).tooltip(isEn() ? "Upgrade Xylaon turret" : "Nâng cấp tháp pháo Xylaon");
         } else {
             table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
-                Vars.ui.showInfo(isEn() ? "[scarlet]XYLAON HAS REACHED MAX EVOLUTION LEVEL![]" : "[scarlet]HỆ THỐNG XYLAON ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]");
+                Vars.ui.showInfo(isEn() ? "[red]XYLAON HAS REACHED MAX EVOLUTION LEVEL![]" : "[red]HỆ THỐNG XYLAON ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]");
             })).size(50, 40).tooltip(isEn() ? "Max level reached" : "Đã đạt cấp tối đa");
         }
 
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-            let title = isEn() ? "📊 XYLAON STATS: " : "📊 THÔNG SỐ PHÁO XYLAON: ";
+            let title = isEn() ? "Xylaon Turret Stats: " : "Thông số pháo Xylaon: ";
             let descStr = "";
             let currentTier = this.getTier();
 
             if (currentTier == 0) {
-                title += isEn() ? "[yellow]Base Config (MK1)[]" : "[yellow]Cấu hình gốc (MK1)[]";
+                title += "[yellow](MK1)[]";
                 descStr = isEn() ? 
-                          "[gold]⚡ BASE STATS (MK1) ⚡[]\n" +
-                          "[lightgray]Turret HP:[] [green]2,400[]\n" +
-                          "[gray]📐 Block Size:[] [white]4x4[]\n" +
-                          "[lightgray]Effective Range:[] [orange]420 px[]\n" +
-                          "[lightgray]Base Damage (Graphite):[] [white]20.00 DMG/bullet[]\n" +
-                          "[lightgray]Base Damage (Copper):[] [white]12.00 DMG/bullet[]\n" +
-                          "[gold]Critical Hit:[] [yellow]50% Chance / 180% Damage[]\n" +
-                          "[lightning] Base Reload Time:[] [white]20 ticks[]\n\n" +
-                          "[sky]⚡ THERMAL MECHANIC:[]\n" +
-                          "• [lightgray]Overheat:[] Each shot builds [red]1%[] heat. At [red]540 heat points[], the core enters protective overload.\n" +
-                          "• [lightgray]System Lock:[] During overload, the turret completely stops for [yellow]4.0s[] to cool down.\n" +
-                          "• [lightgray]Accelerated Fire (AS):[] Continuous firing up to [cyan]3.0s[] grants up to [cyan]+350%[] base attack speed." :
-                          "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]2,400[]\n" +
-                          "[gray]📐 Kích thước khối:[] [white]4x4[]\n" +
-                          "Tầm bắn hiệu dụng:[] [orange]420 pixel[]\n" +
-                          "[lightgray]Sát thương gốc (Graphite):[] [white]20.00 DMG/viên[]\n" +
-                          "[lightgray]Sát thương gốc (Copper):[] [white]12.00 DMG/viên[]\n" +
-                          "[gold]Bạo kích:[] [yellow]50% Tỉ lệ / 180% Sát thương[]\n" +
-                          "[lightning] Thời gian hồi đạn gốc:[] [white]20 ticks[]\n\n" +
-                          "[sky]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
-                          "• [lightgray]Quá nhiệt (Overheat):[] Mỗi phát bắn tích lũy [red]1%[] nhiệt lượng. Khi đạt ngưỡng [red]540 điểm[] nhiệt, lõi sẽ rơi vào trạng thái quá tải bảo vệ.\n" +
-                          "• [lightgray]Đóng băng hệ thống:[] Khi quá tải, pháo ngừng hoạt động hoàn toàn trong [yellow]4.0 giây[] để xả hoàn toàn thanh nhiệt.\n" +
-                          "• [lightgray]Gia tốc hỏa lực (AS):[] Nhiệt lượng tích lũy liên tục trong [cyan]3.0 giây[] sẽ kích hoạt tối đa [cyan]+350%[] tốc độ bắn cơ bản.";
+                          "[yellow]⚡ BASE STATS (MK1) ⚡[]\n" +
+                          "[white]Turret HP: 2,400\n" +
+                          "Range: 420 px\n" +
+                          "Base Damage (Graphite): 20 DMG/bullet\n" +
+                          "Base Damage (Copper): 12 DMG/bullet[]\n\n" +
+                          "[gray]Special Ability: Thermal Circuit System — Each shot builds 1% heat (540 max). Overheat forces a 4.0s cooling shutdown. Sustained firing for 3.0s grants up to [green]+350%[] attack speed.[]" :
+                          "[yellow]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
+                          "[white]Máu tháp pháo: 2,400\n" +
+                          "Tầm bắn: 420 px\n" +
+                          "Sát thương gốc (Graphite): 20 DMG/viên\n" +
+                          "Sát thương gốc (Chì/Đồng): 12 DMG/viên[]\n\n" +
+                          "[gray]Kỹ năng đặc biệt: Hệ Thống Nhiệt Mạch — Mỗi phát bắn tích lũy 1% nhiệt lượng (tối đa 540 điểm). Quá nhiệt sẽ khóa pháo 4.0 giây để làm mát. Duy trì bắn liên tục trong 3.0 giây gia tăng tối đa [green]+350%[] tốc độ bắn.[]";
             } 
             else if (currentTier == 1) {
-                title += isEn() ? "[cyan]STANDARD CONFIG (MK2)[]" : "[cyan]CẤU HÌNH TIÊU CHUẨN (MK2)[]";
+                title += "[cyan](MK2)[]";
                 descStr = isEn() ? 
-                          "[cyan]⚡ BASE STATS (MK2) ⚡[]\n" +
-                          "[lightgray]Turret HP:[] [green]3,120 [lime](+30%)[]\n" +
-                          "[gray]📐 Block Size:[] [white]4x4[]\n" +
-                          "[lightgray]Effective Range:[] [orange]544 px [lime](+29.5%)[]\n" +
-                          "[lightgray]Base Damage:[] [white]26.00 DMG/bullet [lime](+30%)[]\n" +
-                          "[gold]Critical Hit:[] [yellow]50% Chance / 180% Damage[]\n" +
-                          "[lightning] Max Attack Speed:[] [yellow]Up to +450%[]\n\n" +
-                          "[lime]⚡ THERMAL MECHANIC:[]\n" +
-                          "• [lightgray]Enhanced Overheat:[] Max heat capacity set to [red]480 points[] (1% per shot).\n" +
-                          "• [lightgray]Shorter Cooldown:[] Cooling system lock duration reduced to [yellow]3.0s[] [lime](-25%)].\n" +
-                          "• [lightgray]Accelerated Fire (AS):[] Sustained firing for [cyan]3.0s[] reaches peak speed of [cyan]+450%[]." :
-                          "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]3,120 [lime](+30%)[]\n" +
-                          "[gray]📐 Kích thước khối:[] [white]4x4[]\n" +
-                          "Tầm bắn hiệu dụng:[] [orange]544 pixel [lime](+29.5%)[]\n" +
-                          "[lightgray]sát thương gốc:[] [white]26.00 DMG/viên [lime](+30%)[]\n" +
-                          "[gold]Bạo kích:[] [yellow]50% Tỉ lệ / 180% Sát thương[]\n" +
-                          "[lightning] Tốc độ bắn gia tốc:[] [yellow]Tối đa +450%[]\n\n" +
-                          "[lime]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
-                          "• [lightgray]Quá nhiệt nâng cao:[] Giới hạn chịu nhiệt tối đa đạt [red]480 điểm[] (Mỗi phát tích 1%).\n" +
-                          "• [lightgray]Rút ngắn xả tải:[] Thời gian khóa hệ thống làm mát giảm xuống còn [yellow]3.0 giây[] [lime](Giảm -25%)[].\n" +
-                          "• [lightgray]Gia tốc hỏa lực (AS):[] Duy trì bắn liên tục trong [cyan]3.0 giây[] để đạt mốc gia tốc cực đại [cyan]+450%[].";
+                          "[cyan]⚡ UPGRADE STATS (MK2) ⚡[]\n" +
+                          "[white]Turret HP: 3,120 ([green]+30%[])\n" +
+                          "Range: 544 px ([green]+29.5%[])\n" +
+                          "Base Damage: 26 DMG/bullet ([green]+30%[])[]\n\n" +
+                          "[gray]Special Ability: Enhanced Semiconductor Cooling — Max heat reduced to 480 points. Cooling system lock duration reduced to 3.0s. Peak attack speed increased to [green]+450%[].[]" :
+                          "[cyan]⚡ THÔNG SỐ NÂNG CẤP (MK2) ⚡[]\n" +
+                          "[white]Máu tháp pháo: 3,120 ([green]+30%[])\n" +
+                          "Tầm bắn: 544 px ([green]+29.5%[])\n" +
+                          "Sát thương gốc: 26 DMG/viên ([green]+30%[])[]\n\n" +
+                          "[gray]Kỹ năng đặc biệt: Tản Nhiệt Tăng Cường — Giới hạn chịu nhiệt giảm còn 480 điểm. Thời gian khóa xả nhiệt rút ngắn còn 3.0 giây. Tốc độ bắn gia tốc cực đại đạt [green]+450%[].[]";
             } 
             else if (currentTier == 2) {
-                title += isEn() ? "[purple]SUPER-IMPULSE VARIANT (MK2B)[]" : "[purple]BIẾN THỂ SIÊU XUNG (MK2B)[]";
+                title += "[purple](MK2B)[]";
                 descStr = isEn() ? 
-                          "[purple]⚡ BASE STATS (MK2B) ⚡[]\n" +
-                          "[lightgray]Turret HP:[] [green]3,750 [lime](+56.25%)[]\n" +
-                          "[gray]📐 Block Size:[] [white]4x4[]\n" +
-                          "[lightgray]Effective Range:[] [red]294 px (-30%)[]\n" +
-                          "[lightgray]Base Damage:[] [white]13.00 DMG/bullet [red](-35%)[]\n" +
-                          "[gold]Critical Hit:[] [yellow]50% Chance / 180% Damage[]\n" +
-                          "[lightning] Burst Attack Speed:[] [pink]Up to +999%[]\n\n" +
-                          "[purple]🔥 THERMAL MECHANIC:[]\n" +
-                          "• [lightgray]Ultra-short Cycle:[] Heat cap of [red]480 points[], fire rate ramps up to an insane [red]+999%[].\n" +
-                          "• [lightgray]Ultra Jet Cooling:[] System lock time to fully flush heat drops to only [green]1.5s[] [lime](-62.5%)].\n" +
-                          "• [lightgray]Accelerated Fire (AS):[] Reaches extreme [pink]+999%[] speed after just [cyan]3.0s[] of continuous firing." :
-                          "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]3,750 [lime](+56.25%)[]\n" +
-                          "[gray]📐 Kích thước khối:[] [white]4x4[]\n" +
-                          "Tầm bắn hiệu dụng:[] [red]294 pixel (-30%)[]\n" +
-                          "[lightgray]sát thương gốc:[] [white]13.00 DMG/viên [red](-35%)[]\n" +
-                          "[gold]Bạo kích:[] [yellow]50% Tỉ lệ / 180% Sát thương[]\n" +
-                          "[lightning] Tốc độ bắn bùng nổ:[] [pink]Tối đa +999%[]\n\n" +
-                          "[purple]🔥 CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
-                          "• [lightgray]Chu kỳ siêu ngắn:[] Giới hạn chịu nhiệt [red]480 điểm[], xả đạn bùng nổ chạm ngưỡng kinh hoàng [red]+999%[] tốc độ bắn.\n" +
-                          "• [lightgray]Siêu làm mát phản lực:[] Thời gian khóa hệ thống để xả sập sàn toàn bộ nhiệt lượng giảm cực hạn chỉ còn [green]1.5 giây[] [lime](Giảm -62.5%)].\n" +
-                          "• [lightgray]Gia tốc hỏa lực (AS):[] Đạt mốc gia tốc điên rồ [pink]+999%[] chỉ sau [cyan]3.0 giây[] duy trì hỏa lực liên tục.";
+                          "[purple]⚡ SUPER-IMPULSE STATS (MK2B) ⚡[]\n" +
+                          "[white]Turret HP: 3,750 ([green]+56.25%[])\n" +
+                          "Range: 294 px ([red]-30%[])\n" +
+                          "Base Damage: 13 DMG/bullet ([red]-35%[])[]\n\n" +
+                          "[gray]Special Ability: Cyclic Super-Impulse System — Reaches an explosive [green]+999%[] fire rate. System lock duration to flush heat is reduced to an extreme 1.5s for continuous close-range output.[]" :
+                          "[purple]⚡ THÔNG SỐ SIÊU XUNG (MK2B) ⚡[]\n" +
+                          "[white]Máu tháp pháo: 3,750 ([green]+56.25%[])\n" +
+                          "Tầm bắn: 294 px ([red]-30%[])\n" +
+                          "Sát thương gốc: 13 DMG/viên ([red]-35%[])[]\n\n" +
+                          "[gray]Kỹ năng đặc biệt: Hệ Thống Siêu Xung Chu Kỳ — Tốc độ bắn gia tốc bùng nổ lên mốc [green]+999%[]. Thời gian khóa xả sạch nhiệt giảm cực hạn xuống còn 1.5 giây giúp duy trì hỏa lực tầm gần liên tục.[]";
             }
 
             let dialog = extend(BaseDialog, title, {});
@@ -434,6 +411,8 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
             dialog.addCloseButton(); dialog.show();
         })).size(50, 40).tooltip(isEn() ? "View detailed stats" : "Xem thông số chi tiết hệ thống");
     },
+
+    config() { return java.lang.Integer(this.getTier()); },
 
     update(){
         let tier = this.getTier();
@@ -486,10 +465,16 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
         this.super$write(write); 
         write.f(this.thermalstate != null ? this.thermalstate : 0); 
         write.b(this.getTier()); 
+        write.i(this.paidTitanium);
+        write.i(this.paidSilicon);
+        write.i(this.paidPlastanium);
     },
     read(read, revision){ 
         this.super$read(read, revision); 
         this.thermalstate = read.f(); 
         this.setTier(read.b()); 
+        this.paidTitanium = read.i();
+        this.paidSilicon = read.i();
+        this.paidPlastanium = read.i();
     }
 });

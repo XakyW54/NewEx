@@ -379,7 +379,6 @@ const EmpericalLaser = extend(LaserBulletType, {
     },
 
     hitTile(b, tile, health) {
-        this.super$hitTile(b, tile, health);
         let target = (tile && tile.build) ? tile.build : tile;
         if (target) handleCustomHit(b, target, target.x, target.y);
     }
@@ -398,7 +397,6 @@ const EmpericalLightning = extend(LightningBulletType, {
     },
 
     hitTile(b, tile, health) {
-        this.super$hitTile(b, tile, health);
         let target = (tile && tile.build) ? tile.build : tile;
         if (target) handleCustomHit(b, target, target.x, target.y);
     }

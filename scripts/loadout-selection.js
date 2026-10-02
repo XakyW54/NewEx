@@ -14,8 +14,20 @@
 
     let turretList = new Seq();
     let selectedTurrets = new Seq();
-    let customWaveBtn = null;
+    let customWaveContainer = null;
+    let waveBtnAdded = false;
     let lastSkipTime = 0;
+
+    let btnX = Core.settings.getFloat("newex-wave-btn-x", 200);
+    let btnY = Core.settings.getFloat("newex-wave-btn-y", 200);
+
+    let autoFpsSavedEffects = true;
+    let isFpsThrottled = false;
+
+    // Biến quản lý NewMode
+    let isPlayingNewMode = false;
+    let currentMapName = "[redces]ᑈᐴᐾᐶᒅ";
+    const NEWMODE_SLOT_NAME = "NewEx_NewMode_Save";
 
     function loadTurretsFromFolder() {
         turretList.clear();
@@ -80,6 +92,308 @@
                 block.buildVisibility = BuildVisibility.hidden;
             }
         });
+    }
+
+    function triggerNextWave() {
+        let currentTime = Time.millis();
+        if (currentTime - lastSkipTime >= 400) {
+            lastSkipTime = currentTime;
+            if (Vars.state != null && Vars.state.isGame()) {
+                if (Vars.logic != null) {
+                    Vars.logic.runWave();
+                }
+            }
+        }
+    }
+
+    function applyFpsOptimizationLevel(percent) {
+        Core.settings.put("newex-fps-opt-percent", java.lang.Integer(percent));
+        
+        if (percent >= 90) {
+            Core.settings.put("effects", java.lang.Boolean(false));
+            Core.settings.put("destroyedblocks", java.lang.Boolean(false));
+            Core.settings.put("bloom", java.lang.Boolean(false));
+            Core.settings.put("hits", java.lang.Boolean(false));
+        } else if (percent >= 50) {
+            Core.settings.put("effects", java.lang.Boolean(false));
+            Core.settings.put("destroyedblocks", java.lang.Boolean(false));
+            Core.settings.put("bloom", java.lang.Boolean(false));
+            Core.settings.put("hits", java.lang.Boolean(true));
+        } else if (percent >= 20) {
+            Core.settings.put("effects", java.lang.Boolean(true));
+            Core.settings.put("destroyedblocks", java.lang.Boolean(false));
+            Core.settings.put("bloom", java.lang.Boolean(true));
+            Core.settings.put("hits", java.lang.Boolean(true));
+        } else {
+            Core.settings.put("effects", java.lang.Boolean(true));
+            Core.settings.put("destroyedblocks", java.lang.Boolean(true));
+            Core.settings.put("bloom", java.lang.Boolean(true));
+            Core.settings.put("hits", java.lang.Boolean(true));
+        }
+    }
+
+    function centerWaveButton() {
+        if (customWaveContainer != null) {
+            let screenW = Core.graphics.getWidth();
+            let screenH = Core.graphics.getHeight();
+            let containerW = customWaveContainer.getWidth() || 160;
+            let containerH = customWaveContainer.getHeight() || 40;
+
+            btnX = (screenW - containerW) / 2;
+            btnY = (screenH - containerH) / 2;
+
+            customWaveContainer.setPosition(btnX, btnY);
+
+            Core.settings.put("newex-wave-btn-x", java.lang.Float(btnX));
+            Core.settings.put("newex-wave-btn-y", java.lang.Float(btnY));
+        }
+    }
+
+    function injectWaveButtonToHUD() {
+        if (waveBtnAdded) return;
+
+        if (Vars.ui != null && Vars.ui.hudGroup != null) {
+            let container = new Table();
+            container.setPosition(btnX, btnY);
+
+            let topBar = new Table();
+            topBar.setBackground(Tex.whiteui);
+            topBar.setColor(Color.black);
+
+            let btnWave = new TextButton("Gọi Quái Wave", Styles.cleart);
+            btnWave.getLabel().setFontScale(0.8);
+            btnWave.setBackground(Tex.whiteui);
+            btnWave.setColor(Color.valueOf("4a4a4a"));
+
+            let btnToggleExpand = new TextButton("v", Styles.cleart);
+            btnToggleExpand.getLabel().setFontScale(0.8);
+            btnToggleExpand.setBackground(Tex.whiteui);
+            btnToggleExpand.setColor(Color.valueOf("3a3a3a"));
+
+            topBar.add(btnWave).size(130, 38).pad(2);
+            topBar.add(btnToggleExpand).size(30, 38).pad(2);
+
+            container.add(topBar).row();
+
+            let expandTable = new Table();
+            expandTable.setBackground(Tex.whiteui);
+            expandTable.setColor(Color.valueOf("222222"));
+            expandTable.visible = false;
+            expandTable.margin(6);
+
+            let currentFpsOpt = Core.settings.getInt("newex-fps-opt-percent", 0);
+            let optLabel = expandTable.add("Tối ưu FPS: " + currentFpsOpt + "%").fontScale(0.75).get();
+            expandTable.row();
+
+            let fpsSlider = expandTable.slider(0, 100, 1, currentFpsOpt, value => {
+                let val = Math.floor(value);
+                optLabel.setText("Tối ưu FPS: " + val + "%");
+                applyFpsOptimizationLevel(val);
+            }).width(150).pad(4).get();
+            expandTable.row();
+
+            let autoFpsBtn = new TextButton("Tự ẩn effect & Slow motion x0.8 khi FPS < 20", Styles.togglet);
+            autoFpsBtn.getLabel().setFontScale(0.65);
+            autoFpsBtn.setChecked(Core.settings.getBool("newex-auto-low-fps", true));
+            autoFpsBtn.clicked(() => {
+                Core.settings.put("newex-auto-low-fps", java.lang.Boolean(autoFpsBtn.isChecked()));
+            });
+            expandTable.add(autoFpsBtn).size(150, 36).pad(2).row();
+
+            container.add(expandTable).padTop(2).row();
+
+            let isDragging = false;
+            let dragOffsetX = 0;
+            let dragOffsetY = 0;
+
+            function addDragAndClick(buttonActor, onClickAction) {
+                buttonActor.addListener(extend(InputListener, {
+                    touchDown(event, x, y, pointer, button) {
+                        isDragging = false;
+                        dragOffsetX = x;
+                        dragOffsetY = y;
+                        return true;
+                    },
+                    touchDragged(event, x, y, pointer) {
+                        if (Math.abs(x - dragOffsetX) > 5 || Math.abs(y - dragOffsetY) > 5) {
+                            isDragging = true;
+                        }
+
+                        if (isDragging) {
+                            let rawX = container.x + x - dragOffsetX;
+                            let rawY = container.y + y - dragOffsetY;
+
+                            let maxX = Math.max(0, Core.graphics.getWidth() - container.getWidth());
+                            let maxY = Math.max(0, Core.graphics.getHeight() - container.getHeight());
+
+                            let newX = Mathf.clamp(rawX, 0, maxX);
+                            let newY = Mathf.clamp(rawY, 0, maxY);
+
+                            container.setPosition(newX, newY);
+
+                            btnX = newX;
+                            btnY = newY;
+                            Core.settings.put("newex-wave-btn-x", java.lang.Float(btnX));
+                            Core.settings.put("newex-wave-btn-y", java.lang.Float(btnY));
+                        }
+                    },
+                    touchUp(event, x, y, pointer, button) {
+                        if (!isDragging) {
+                            onClickAction();
+                        }
+                        isDragging = false;
+                    }
+                }));
+            }
+
+            addDragAndClick(btnWave, () => {
+                triggerNextWave();
+            });
+
+            addDragAndClick(btnToggleExpand, () => {
+                expandTable.visible = !expandTable.visible;
+                btnToggleExpand.setText(expandTable.visible ? "^" : "v");
+            });
+
+            Vars.ui.hudGroup.addChild(container);
+            
+            customWaveContainer = container;
+            waveBtnAdded = true;
+        }
+    }
+
+    // ================= CHẾ ĐỘ MỚI: NEW MODE =================
+    function getNewModeSlot() {
+        let slots = Vars.control.saves.getSaveSlots();
+        return slots.find(s => s.name === NEWMODE_SLOT_NAME);
+    }
+
+    function isSlotValid(slot) {
+        return slot != null && slot.file != null && slot.file.exists();
+    }
+
+    function showNewModeDialog() {
+        const dialog = new BaseDialog("NewMode - Chọn Màn Chơi");
+        dialog.setFillParent(true);
+
+        const content = dialog.cont;
+        content.clear();
+
+        content.add("[accent]CHỌN BẢN ĐỒ NEWMODE[]").pad(10).fontScale(1.2).row();
+
+        let mapTable = new Table();
+        mapTable.top().margin(10);
+
+        let mapName = "redces";
+        let slot = getNewModeSlot();
+        let hasSave = isSlotValid(slot);
+
+        let mapCard = new Table(Tex.button);
+        mapCard.margin(12);
+
+        mapCard.add("[white]Map: [redces]ᑈᐴᐾᐶᒅ[]").left().row();
+        if (hasSave) {
+            let titleText = "Save File";
+            try {
+                if (slot.getDialogTitle) {
+                    titleText = slot.getDialogTitle();
+                } else if (slot.getName) {
+                    titleText = slot.getName();
+                }
+            } catch(e) {}
+            mapCard.add("[yellow]Có dữ liệu lưu từ trận trước (" + titleText + ")[]").left().padBottom(6).row();
+        } else {
+            mapCard.add("[gray]Màn chơi mới (Chưa có Save)[]").left().padBottom(6).row();
+        }
+
+        let btnText = hasSave ? "Tiếp Tục Chơi" : "Bắt Đầu Chơi";
+        mapCard.button(btnText, Styles.flatTogglet, () => {
+            dialog.hide();
+            startNewModeMap(mapName);
+        }).size(180, 45).pad(4);
+
+        if (hasSave) {
+            mapCard.button("Xóa Save & Chơi Mới", Styles.flatTogglet, () => {
+                slot.delete();
+                Vars.ui.showInfo("Đã xóa dữ liệu lưu của NewMode!");
+                dialog.hide();
+                showNewModeDialog();
+            }).size(200, 45).pad(4);
+        }
+
+        mapTable.add(mapCard).growX().pad(6).row();
+
+        let scrollPane = new ScrollPane(mapTable);
+        content.add(scrollPane).grow().row();
+
+        dialog.addCloseButton();
+        dialog.show();
+    }
+
+    function startNewModeMap(mapName) {
+        isPlayingNewMode = true;
+        currentMapName = "[redces]ᑈᐴᐾᐶᒅ";
+
+        let slot = getNewModeSlot();
+
+        // 1. Tải Save nếu file hợp lệ
+        if (isSlotValid(slot)) {
+            try {
+                slot.load();
+                Vars.state.set(GameState.State.playing);
+                Vars.ui.showInfoToast("Đã tải lại trận đấu NewMode thành công!", 2);
+                return;
+            } catch (e) {
+                Log.err("Lỗi load save NewMode, tạo lại trận mới: " + e);
+            }
+        }
+
+        // 2. Tải trực tiếp map redces.msav từ mod
+        let mod = Vars.mods.getMod(CURRENT_MOD_NAME);
+        if (mod != null && mod.root != null) {
+            let mapFile = mod.root.child("maps").child(mapName + ".msav");
+            if (mapFile.exists()) {
+                let map = MapIO.createMap(mapFile, true);
+
+                Vars.logic.reset();
+                Vars.world.loadMap(map);
+                Vars.state.rules = map.applyRules(Gamemode.survival);
+                Vars.logic.play();
+
+                // Tạo Save Slot chính thức và lưu dữ liệu map mới khởi tạo
+                let newSlot = Vars.control.saves.addSave(NEWMODE_SLOT_NAME);
+                newSlot.save();
+
+                Vars.ui.showInfoToast("Đã khởi tạo màn chơi [redces]ᑈᐴᐾᐶᒅ!", 2);
+                return;
+            }
+        }
+
+        Vars.ui.showInfo("Không tìm thấy file maps/" + mapName + ".msav trong thư mục mod!");
+    }
+
+    function saveNewModeGame() {
+        if (!isPlayingNewMode || !Vars.state.isGame()) return;
+        try {
+            let slot = getNewModeSlot();
+            if (slot == null) {
+                slot = Vars.control.saves.addSave(NEWMODE_SLOT_NAME);
+            }
+            slot.save();
+            Vars.ui.showInfoToast("[accent]Đã tự động lưu trận NewMode![]", 2);
+        } catch (e) {
+            Log.err("Lỗi Save NewMode: " + e);
+        }
+    }
+
+    function deleteNewModeSave() {
+        if (isPlayingNewMode) {
+            let slot = getNewModeSlot();
+            if (slot != null) {
+                slot.delete();
+            }
+            isPlayingNewMode = false;
+        }
     }
 
     function showReadmeDialog() {
@@ -219,7 +533,7 @@
         let content = new Table();
         content.top().margin(10);
 
-        // --- 1. GIỚI HẠN THÁP PHÁO ---
+        // 1. GIỚI HẠN THÁP PHÁO
         content.add("[accent]-- GIỚI HẠN THÁP PHÁO --[]").row();
         content.add("Số lượng tháp pháo chọn mỗi trận:").padBottom(5).row();
 
@@ -238,10 +552,28 @@
         }).width(240).pad(8).get();
         content.row();
 
-        // --- 2. TĂNG CHỈ SỐ MÁU & SÁT THƯƠNG ĐỊCH ---
-        content.add("[accent]-- CHỈ SỐ ĐỊCH THEO TỪNG WAVE --[]").padTop(10).row();
+        // 2. MỨC ĐỘ TỐI ƯU FPS & ĐỒ HỌA TÙY CHỈNH
+        content.add("[accent]-- TỐI ƯU FPS / ĐỒ HỌA --[]").padTop(10).row();
+        content.add("Mức độ cắt giảm hiệu ứng (1%):").padBottom(4).row();
         
-        // Tăng Máu
+        let currentFpsOpt = Core.settings.getInt("newex-fps-opt-percent", 0);
+        let fpsLabel = content.add(currentFpsOpt + "%").fontScale(1.2).get();
+        content.row();
+
+        let fpsSlider = content.slider(0, 100, 1, currentFpsOpt, value => {
+            let val = Math.floor(value);
+            fpsLabel.setText(val + "%");
+        }).width(240).pad(8).get();
+        content.row();
+
+        let autoFpsState = Core.settings.getBool("newex-auto-low-fps", true);
+        let btnAutoFps = new TextButton("Tự ẩn effect & Slow motion x0.8 khi FPS < 20", Styles.togglet);
+        btnAutoFps.getLabel().setFontScale(0.8);
+        btnAutoFps.setChecked(autoFpsState);
+        content.add(btnAutoFps).size(280, 48).pad(4).row();
+
+        // 3. CHỈ SỐ ĐỊCH THEO TỪNG WAVE
+        content.add("[accent]-- CHỈ SỐ ĐỊCH THEO TỪNG WAVE --[]").padTop(10).row();
         content.add("% Máu tăng thêm trên mỗi Wave:").padBottom(4).row();
         let currentHp = Core.settings.getInt("newex-hp-per-wave-percent", 10);
         let hpFieldTable = new Table();
@@ -251,25 +583,15 @@
         hpFieldTable.add("% / Wave").padLeft(8);
         content.add(hpFieldTable).pad(5).row();
 
-        // Tăng Sát Thương
-        content.add("% Sát thương tăng thêm trên mỗi Wave:").padBottom(4).padTop(6).row();
-        let currentDmg = Core.settings.getInt("newex-dmg-per-wave-percent", 10);
-        let dmgFieldTable = new Table();
-        let dmgField = dmgFieldTable.field(currentDmg.toString(), text => {}).width(120).get();
-        dmgField.setFilter(TextField.TextFieldFilter.digitsOnly);
-        dmgField.setMaxLength(3);
-        dmgFieldTable.add("% / Wave").padLeft(8);
-        content.add(dmgFieldTable).pad(5).row();
+        // 4. QUẢN LÝ NÚT GỌI WAVE
+        content.add("[accent]-- QUẢN LÝ NÚT GỌI WAVE --[]").padTop(10).row();
+        let showWaveBtn = Core.settings.getBool("newex-show-wave-btn", true);
+        let btnShowWave = new TextButton("Hiển thị nút Gọi Wave trên màn hình\n[gray](Phím tắt PC: Shift + N)[]", Styles.togglet);
+        btnShowWave.getLabel().setFontScale(0.85);
+        btnShowWave.setChecked(showWaveBtn);
+        content.add(btnShowWave).size(280, 54).pad(5).row();
 
-        // --- 3. CÀI ĐẶT THỜI GIAN KÍCH HOẠT WAVE ---
-        content.add("[accent]-- QUẢN LÝ WAVE --[]").padTop(10).row();
-        let fastWaveEnabled = Core.settings.getBool("newex-allow-fast-wave", false);
-        let btnFastWave = new TextButton("Bật Nút Gọi Wave Thủ Công", Styles.togglet);
-        btnFastWave.getLabel().setFontScale(0.85);
-        btnFastWave.setChecked(fastWaveEnabled);
-        content.add(btnFastWave).size(250, 48).pad(5).row();
-
-        // --- 4. CHẾ ĐỘ HIỂN THỊ THANH MÁU ---
+        // 5. CHẾ ĐỘ HIỂN THỊ THANH MÁU (HP)
         content.add("[accent]-- CHẾ ĐỘ HIỂN THỊ THANH MÁU (HP) --[]").padTop(10).row();
 
         let currentHpStyle = Core.settings.getString("newex-hp-style", "show-hp");
@@ -301,7 +623,7 @@
 
         content.add(tableHp).row();
 
-        // --- 5. LOGIC UNIT VANILLA BUFF ---
+        // 6. LOGIC UNIT VANILLA BUFF
         content.add("[accent]-- LOGIC UNIT VANILLA BUFF --[]").padTop(10).row();
 
         let unitsEnabled = Core.settings.getBool("newex-logic-support-units", true);
@@ -312,28 +634,27 @@
 
         content.add(btnUnits).size(220, 48).pad(5).row();
 
-        // --- 6. NÚT XEM THÔNG TIN README.MD ---
+        // 7. THÔNG TIN CHI TIẾT
         content.add("[accent]-- THÔNG TIN CHI TIẾT --[]").padTop(10).row();
         content.button("Xem README / Update Log", Icon.info, () => {
             showReadmeDialog();
         }).size(240, 48).pad(5).row();
 
-        // --- LƯU CÀI ĐẶT ---
         content.button("Lưu Cài Đặt", () => {
             let newValue = Math.floor(slider.getValue());
             Core.settings.put("newex-max-turrets", java.lang.Integer(newValue));
+
+            let optVal = Math.floor(fpsSlider.getValue());
+            applyFpsOptimizationLevel(optVal);
+            
+            Core.settings.put("newex-auto-low-fps", java.lang.Boolean(btnAutoFps.isChecked()));
 
             let parsedHp = parseInt(hpField.getText()) || 0;
             if (parsedHp > 999) parsedHp = 999;
             if (parsedHp < 0) parsedHp = 0;
             Core.settings.put("newex-hp-per-wave-percent", java.lang.Integer(parsedHp));
 
-            let parsedDmg = parseInt(dmgField.getText()) || 0;
-            if (parsedDmg > 999) parsedDmg = 999;
-            if (parsedDmg < 0) parsedDmg = 0;
-            Core.settings.put("newex-dmg-per-wave-percent", java.lang.Integer(parsedDmg));
-
-            Core.settings.put("newex-allow-fast-wave", java.lang.Boolean(btnFastWave.isChecked()));
+            Core.settings.put("newex-show-wave-btn", java.lang.Boolean(btnShowWave.isChecked()));
 
             let selectedStyle = "off";
             if (btnShowHp.isChecked()) selectedStyle = "show-hp";
@@ -354,7 +675,6 @@
         dialog.show();
     }
 
-    // --- LOGIC XỬ LÝ BUFF MÁU VÀ SÁT THƯƠNG ĐỊCH THEO WAVE ---
     function applyEnemyBuffs(unit) {
         if (unit == null || unit.team == Vars.state.rules.defaultTeam) return;
 
@@ -362,58 +682,52 @@
         if (wave <= 1) return;
 
         let hpPercent = Core.settings.getInt("newex-hp-per-wave-percent", 10);
-        let dmgPercent = Core.settings.getInt("newex-dmg-per-wave-percent", 10);
-
-        // Tính toán Hệ số nhân dựa trên Wave hiện tại (Wave 2 bắt đầu tính 1 lần buff)
         let hpMultiplier = 1 + ((wave - 1) * (hpPercent / 100));
-        let dmgMultiplier = 1 + ((wave - 1) * (dmgPercent / 100));
 
         if (hpMultiplier > 1) {
             unit.maxHealth = unit.maxHealth * hpMultiplier;
             unit.health = unit.maxHealth;
         }
-
-        if (dmgMultiplier > 1) {
-            unit.damageMultiplier = (unit.damageMultiplier || 1) * dmgMultiplier;
-        }
     }
 
-    // Lắng nghe khi có bất kỳ Unit nào được sinh ra trên bản đồ
     Events.on(UnitCreateEvent, event => {
         if (event.unit != null) {
             applyEnemyBuffs(event.unit);
         }
     });
 
-    // --- TẠO NÚT GỌI WAVE RIÊNG TRÊN GIAO DIỆN (UI) ---
-    function buildCustomWaveButton() {
-        if (customWaveBtn != null) return;
-
-        customWaveBtn = new Table();
-        customWaveBtn.bottom().right().margin(10);
-
-        let btn = customWaveBtn.button("Gọi Wave", Icon.play, () => {
-            let currentTime = Time.millis();
-            if (currentTime - lastSkipTime >= 400) {
-                lastSkipTime = currentTime;
-                if (Vars.logic != null && Vars.state.isGame()) {
-                    // Ép buộc sinh Wave mới ngay lập tức
-                    Vars.logic.skipWave();
-                }
-            }
-        }).size(130, 48).get();
-
-        btn.getLabel().setFontScale(0.85);
-
-        if (Vars.ui != null && Vars.ui.hudGroup != null) {
-            Vars.ui.hudGroup.addChild(customWaveBtn);
+    // Xóa Save khi Thua trận
+    Events.on(GameOverEvent, event => {
+        if (isPlayingNewMode) {
+            deleteNewModeSave();
         }
-    }
+    });
+
+    // Lưu trận đấu khi người chơi thoát ra Menu
+    Events.on(StateChangeEvent, event => {
+        if (event.from === GameState.State.playing && event.to === GameState.State.menu) {
+            if (isPlayingNewMode) {
+                saveNewModeGame();
+            }
+        }
+    });
+
+    // Tự động lưu mỗi khi sang Wave mới
+    Events.on(WaveEvent, event => {
+        if (isPlayingNewMode && Vars.state.isGame()) {
+            saveNewModeGame();
+        }
+    });
 
     Events.on(ClientLoadEvent, event => {
         loadTurretsFromFolder();
+        applyFpsOptimizationLevel(Core.settings.getInt("newex-fps-opt-percent", 0));
 
         try {
+            Vars.ui.menufrag.addButton("NewMode", Icon.play, () => {
+                showNewModeDialog();
+            });
+
             Vars.ui.menufrag.addButton("Cài đặt Newex", Icon.settings, () => {
                 showConfigDialog();
             });
@@ -421,27 +735,73 @@
     });
 
     Events.run(Trigger.update, () => {
-        let isEnabled = Core.settings.getBool("newex-allow-fast-wave", false);
         let inGame = Vars.state != null && Vars.state.isGame();
 
-        if (isEnabled && inGame) {
-            if (customWaveBtn == null) {
-                buildCustomWaveButton();
+        if (inGame) {
+            let autoLowFpsEnabled = Core.settings.getBool("newex-auto-low-fps", true);
+            if (autoLowFpsEnabled) {
+                let currentFps = Core.graphics.getFramesPerSecond();
+                
+                if (currentFps < 20 && !isFpsThrottled) {
+                    autoFpsSavedEffects = Core.settings.getBool("effects", true);
+                    Core.settings.put("effects", java.lang.Boolean(false));
+                    
+                    Time.setDeltaProvider(() => Math.min(Core.graphics.getDeltaTime() * 60, 3) * 0.8);
+                    
+                    isFpsThrottled = true;
+                } else if (currentFps > 45 && isFpsThrottled) {
+                    Core.settings.put("effects", java.lang.Boolean(autoFpsSavedEffects));
+                    
+                    Time.setDeltaProvider(() => Math.min(Core.graphics.getDeltaTime() * 60, 3));
+                    
+                    isFpsThrottled = false;
+                }
             }
-            if (customWaveBtn != null) {
-                customWaveBtn.visible = true;
+
+            let shiftPressed = Core.input.keyDown(KeyCode.shiftLeft) || Core.input.keyDown(KeyCode.shiftRight);
+            if (shiftPressed && Core.input.keyTap(KeyCode.n)) {
+                let currentState = Core.settings.getBool("newex-show-wave-btn", true);
+                let newState = !currentState;
+                Core.settings.put("newex-show-wave-btn", java.lang.Boolean(newState));
+                
+                if (newState) {
+                    Vars.ui.showInfoToast("Đã hiện nút Gọi Wave", 1.5);
+                    centerWaveButton();
+                } else {
+                    Vars.ui.showInfoToast("Đã ẩn nút Gọi Wave", 1.5);
+                }
+            }
+
+            let isVisible = Core.settings.getBool("newex-show-wave-btn", true);
+
+            if (isVisible) {
+                if (!waveBtnAdded) {
+                    injectWaveButtonToHUD();
+                }
+                if (customWaveContainer != null) {
+                    customWaveContainer.visible = true;
+                }
+            } else {
+                if (customWaveContainer != null) {
+                    customWaveContainer.visible = false;
+                }
             }
         } else {
-            if (customWaveBtn != null) {
-                customWaveBtn.visible = false;
+            if (isFpsThrottled) {
+                Time.setDeltaProvider(() => Math.min(Core.graphics.getDeltaTime() * 60, 3));
+                isFpsThrottled = false;
+            }
+            if (customWaveContainer != null) {
+                customWaveContainer.visible = false;
             }
         }
     });
 
     Events.on(WorldLoadEvent, event => {
-        if (customWaveBtn != null) {
-            customWaveBtn.remove();
-            customWaveBtn = null;
+        waveBtnAdded = false;
+        if (customWaveContainer != null) {
+            customWaveContainer.remove();
+            customWaveContainer = null;
         }
 
         if (turretList.isEmpty()) loadTurretsFromFolder();

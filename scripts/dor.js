@@ -153,7 +153,10 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
 
     processPartialUpgrade(targetTier, reqObj){
         let core = this.team.core();
-        if(core == null) return false;
+        if(core == null) {
+            Vars.ui.showInfo(isEn() ? "[red]Team Core Not Found![]" : "[red]Không tìm thấy Lõi Đội![]");
+            return false;
+        }
 
         let reqC = reqObj.copper || 0;
         let reqL = reqObj.lead || 0;
@@ -164,9 +167,30 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
         let remT = reqT - this.paidTitanium;
 
         let inv = core.items;
-        let takeC = Math.min(inv.get(Items.copper), Math.max(0, remC));
-        let takeL = Math.min(inv.get(Items.lead), Math.max(0, remL));
-        let takeT = Math.min(inv.get(Items.titanium), Math.max(0, remT));
+        let curC = inv.get(Items.copper);
+        let curL = inv.get(Items.lead);
+        let curT = inv.get(Items.titanium);
+
+        let cColor = curC >= remC ? "[green]" : "[red]";
+        let lColor = curL >= remL ? "[green]" : "[red]";
+        let tColor = curT >= remT ? "[green]" : "[red]";
+
+        let scanMsg = "";
+        if(isEn()){
+            scanMsg = "[yellow]SINGLE SCAN - CORE ITEMS VS REQUIRED:[]\n";
+            if(reqC > 0) scanMsg += " • Copper: " + cColor + curC + "[] / " + remC + "\n";
+            if(reqL > 0) scanMsg += " • Lead: " + lColor + curL + "[] / " + remL + "\n";
+            if(reqT > 0) scanMsg += " • Titanium: " + tColor + curT + "[] / " + remT + "\n";
+        } else {
+            scanMsg = "[yellow]KẾT QUẢ QUÉT LÕI - TÀI NGUYÊN / YÊU CẦU:[]\n";
+            if(reqC > 0) scanMsg += " • Đồng: " + cColor + curC + "[] / " + remC + "\n";
+            if(reqL > 0) scanMsg += " • Chì: " + lColor + curL + "[] / " + remL + "\n";
+            if(reqT > 0) scanMsg += " • Titan: " + tColor + curT + "[] / " + remT + "\n";
+        }
+
+        let takeC = Math.min(curC, Math.max(0, remC));
+        let takeL = Math.min(curL, Math.max(0, remL));
+        let takeT = Math.min(curT, Math.max(0, remT));
 
         if(takeC > 0) { core.items.remove(Items.copper, takeC); this.paidCopper += takeC; }
         if(takeL > 0) { core.items.remove(Items.lead, takeL); this.paidLead += takeL; }
@@ -184,8 +208,10 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                 this.configure(java.lang.Integer(targetTier));
             }
             return true;
+        } else {
+            Vars.ui.showInfo(scanMsg + (isEn() ? "\n[red]Not enough resources in Core![]" : "\n[red]Thiếu tài nguyên trong Lõi![]"));
+            return false;
         }
-        return false;
     },
 
     range(){
@@ -215,7 +241,7 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                     let tMK2B = Math.max(0, reqMK2B.titanium - this.paidTitanium);
 
                     if(isEn()){
-                        return "[yellow]CORE RESOURCE REQUIREMENTS FOR UPGRADE:[]\n" +
+                        return "[yellow]REQUIRED UPGRADE COST:[]\n" +
                                "[cyan]MK2 Branch:[]\n" +
                                " • Copper: [green]" + cMK2 + "[]\n" +
                                " • Lead: [green]" + lMK2 + "[]\n" +
@@ -294,7 +320,7 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                     let tMK3 = Math.max(0, reqMK3.titanium - this.paidTitanium);
 
                     if(isEn()){
-                        return "[yellow]CORE RESOURCE REQUIREMENTS FOR MK3:[]\n" +
+                        return "[yellow]REQUIRED MK3 UPGRADE COST:[]\n" +
                                " • Copper: [green]" + cMK3 + "[]\n" +
                                " • Lead: [green]" + lMK3 + "[]\n" +
                                " • Titanium: [green]" + tMK3 + "[]";
@@ -343,7 +369,7 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                     let tMK3B = Math.max(0, reqMK3B.titanium - this.paidTitanium);
 
                     if(isEn()){
-                        return "[yellow]RESOURCE REQUIREMENTS FOR EVOLUTION:[]\n" +
+                        return "[yellow]REQUIRED EVOLUTION COST:[]\n" +
                                "[purple]MK2B1 Config:[]\n" +
                                " • Copper: [green]" + cMK2B1 + "[] | Lead: [green]" + lMK2B1 + "[] | Titanium: [green]" + tMK2B1 + "[]\n" +
                                "[pink]Ultimate MK3B:[]\n" +

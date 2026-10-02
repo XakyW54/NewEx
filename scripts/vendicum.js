@@ -4,7 +4,7 @@ const packProv = (func) => new Prov({ get: func });
 
 const isEn = () => Core.settings.getString("locale").startsWith("en");
 
-const reqMK2 = { titanium: 500, silicon: 300 };
+const reqMK2 = { titanium: 500, silicon: 300, plastanium: 0 };
 const reqMK2B = { titanium: 800, silicon: 400, plastanium: 200 }; 
 
 const lossPerShotMK1 = 0.01; 
@@ -67,7 +67,7 @@ const bulletSlashEffect = new Effect(15, e => {
     Draw.reset();
 });
 
- const vendicumBullet = extend(BasicBulletType, {
+const vendicumBullet = extend(BasicBulletType, {
     speed: 8, damage: 67.5, lifetime: 48, width: 11, height: 16, 
     frontColor: Color.white, backColor: Color.valueOf("#e0b080"),
     textType: "vendicumBullet",
@@ -79,7 +79,7 @@ const bulletSlashEffect = new Effect(15, e => {
     trailChance: 0.20
 });
 
- const vendicumMK2Bullet = extend(BasicBulletType, {
+const vendicumMK2Bullet = extend(BasicBulletType, {
     speed: 10, damage: 97.5, lifetime: 45, width: 13, height: 20, 
     frontColor: Color.white, backColor: Color.valueOf("#ffaa66"),
     pierce: true, pierceCap: 5, pierceBuilding: true, knockback: 1.4, impact: true,
@@ -90,7 +90,7 @@ const bulletSlashEffect = new Effect(15, e => {
     trailChance: 0.40
 });
 
- const vendicumMK2BBullet = extend(BasicBulletType, {
+const vendicumMK2BBullet = extend(BasicBulletType, {
     speed: 9, damage: 183.75, lifetime: 50, width: 5, height: 64, 
     frontColor: Color.white, backColor: Color.valueOf("#831006"),
     trailEffect: Fx.disperseTrail, trailChance: 0.40, 
@@ -102,7 +102,7 @@ const bulletSlashEffect = new Effect(15, e => {
     despawnEffect: Fx.disperseTrail
 });
 
- const vendicum = extend(ItemTurret, "vendicum", {
+const vendicum = extend(ItemTurret, "vendicum", {
     configurable: true
 });
 
@@ -139,6 +139,10 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
     tierState: 0, 
     customRecoil: 0.0,
 
+    paidTitanium: 0,
+    paidSilicon: 0,
+    paidPlastanium: 0,
+
     peekAmmo(){
         let tier = this.getTier();
         if(tier == 1) return vendicumMK2Bullet;
@@ -149,10 +153,50 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
     getTier(){ return this.tierState == null ? 0 : this.tierState; },
     setTier(val){ 
         this.tierState = val;
+        this.paidTitanium = 0;
+        this.paidSilicon = 0;
+        this.paidPlastanium = 0;
         if(val == 0) { this.health = 1200; }
         if(val == 1) { this.health = 1800; }
         if(val == 2) { this.health = 1600; }
         this.maxHealth = this.health;
+    },
+
+    processPartialUpgrade(targetTier, reqObj){
+        let core = this.team.core();
+        if(core == null) return false;
+
+        let reqT = reqObj.titanium || 0;
+        let reqS = reqObj.silicon || 0;
+        let reqP = reqObj.plastanium || 0;
+
+        let remT = reqT - this.paidTitanium;
+        let remS = reqS - this.paidSilicon;
+        let remP = reqP - this.paidPlastanium;
+
+        let inv = core.items;
+        let takeT = Math.min(inv.get(Items.titanium), Math.max(0, remT));
+        let takeS = Math.min(inv.get(Items.silicon), Math.max(0, remS));
+        let takeP = Math.min(inv.get(Items.plastanium), Math.max(0, remP));
+
+        if(takeT > 0) { core.items.remove(Items.titanium, takeT); this.paidTitanium += takeT; }
+        if(takeS > 0) { core.items.remove(Items.silicon, takeS); this.paidSilicon += takeS; }
+        if(takeP > 0) { core.items.remove(Items.plastanium, takeP); this.paidPlastanium += takeP; }
+
+        if(this.paidTitanium >= reqT && this.paidSilicon >= reqS && this.paidPlastanium >= reqP){
+            if(targetTier == 1) Fx.upgradeCore.at(this.x, this.y);
+            else Fx.bigShockwave.at(this.x, this.y);
+            Fx.mineHuge.at(this.x, this.y);
+            Effect.shake(4, 4, this.x, this.y);
+            
+            if(Vars.net.active()){
+                Call.tileConfig(Vars.player, this, java.lang.Integer(targetTier));
+            } else {
+                this.configure(java.lang.Integer(targetTier));
+            }
+            return true;
+        }
+        return false;
     },
 
     range(){
@@ -171,38 +215,32 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                 let dialog = extend(BaseDialog, isEn() ? "Vendicum Upgrade Center" : "Trung tâm nâng cấp pháo Vendicum", {});
                 
                 let reqCell = dialog.cont.label(packProv(() => {
-                    let core = this.team.core();
-                    if(core == null) return isEn() ? "[red]Team Core Not Found![]" : "[red]Không tìm thấy Lõi Đội![]";
-                    let currentTitanium = core.items.get(Items.titanium);
-                    let currentSilicon = core.items.get(Items.silicon);
-                    let currentPlastanium = core.items.get(Items.plastanium);
+                    let tMK2 = Math.max(0, reqMK2.titanium - this.paidTitanium);
+                    let sMK2 = Math.max(0, reqMK2.silicon - this.paidSilicon);
 
-                    let titColor1 = currentTitanium >= reqMK2.titanium ? "[green]" : "[red]";
-                    let silColor1 = currentSilicon >= reqMK2.silicon ? "[green]" : "[red]";
-                    
-                    let titColor2 = currentTitanium >= reqMK2B.titanium ? "[green]" : "[red]";
-                    let silColor2 = currentSilicon >= reqMK2B.silicon ? "[green]" : "[red]";
-                    let plaColor2 = currentPlastanium >= reqMK2B.plastanium ? "[green]" : "[red]";
+                    let tMK2B = Math.max(0, reqMK2B.titanium - this.paidTitanium);
+                    let sMK2B = Math.max(0, reqMK2B.silicon - this.paidSilicon);
+                    let pMK2B = Math.max(0, reqMK2B.plastanium - this.paidPlastanium);
 
                     if(isEn()){
-                        return "[yellow]CORE RESOURCE REQUIREMENTS:[]\n" +
+                        return "[yellow]RESOURCE REQUIREMENTS FOR UPGRADE:[]\n" +
                                "[cyan]MK2 Branch:[]\n" +
-                               " • Titanium: " + titColor1 + currentTitanium + "[] / " + reqMK2.titanium + "\n" +
-                               " • Silicon: " + silColor1 + currentSilicon + "[] / " + reqMK2.silicon + "\n" +
+                               " • Titanium: [green]" + tMK2 + "[]\n" +
+                               " • Silicon: [green]" + sMK2 + "[]\n" +
                                "[purple]MK2B Branch:[]\n" +
-                               " • Titanium: " + titColor2 + currentTitanium + "[] / " + reqMK2B.titanium + "\n" +
-                               " • Silicon: " + silColor2 + currentSilicon + "[] / " + reqMK2B.silicon + "\n" +
-                               " • Plastanium: " + plaColor2 + currentPlastanium + "[] / " + reqMK2B.plastanium;
+                               " • Titanium: [green]" + tMK2B + "[]\n" +
+                               " • Silicon: [green]" + sMK2B + "[]\n" +
+                               " • Plastanium: [green]" + pMK2B + "[]";
                     }
 
-                    return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
+                    return "[yellow]YÊU CẦU TÀI NGUYÊN NÂNG CẤP:[]\n" +
                            "[cyan]Nhánh MK2:[]\n" +
-                           " • Titan: " + titColor1 + currentTitanium + "[] / " + reqMK2.titanium + "\n" +
-                           " • Silicon: " + silColor1 + currentSilicon + "[] / " + reqMK2.silicon + "\n" +
+                           " • Titan: [green]" + tMK2 + "[]\n" +
+                           " • Silicon: [green]" + sMK2 + "[]\n" +
                            "[purple]Nhánh MK2B:[]\n" +
-                           " • Titan: " + titColor2 + currentTitanium + "[] / " + reqMK2B.titanium + "\n" +
-                           " • Silicon: " + silColor2 + currentSilicon + "[] / " + reqMK2B.silicon + "\n" +
-                           " • Nhựa: " + plaColor2 + currentPlastanium + "[] / " + reqMK2B.plastanium;
+                           " • Titan: [green]" + tMK2B + "[]\n" +
+                           " • Silicon: [green]" + sMK2B + "[]\n" +
+                           " • Nhựa Plastanium: [green]" + pMK2B + "[]";
                 }));
                 
                 reqCell.width(360).get().setWrap(true);
@@ -220,17 +258,12 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                                 "[lightgray]Special Ability: Penetrating Magnetic Acceleration — Expands pierce cap to 5 enemy targets or structures, built-in supercharge circuit reduces full energy recharge time to 3.0s.[]" :
                                 "[white]• Máu cấu trúc: [green]+50%[] (1,800 HP)\n" +
                                 "• Tầm bắn: [green]+31.25%[] (420 px)\n" +
-                                "• sát thương gốc: [green]+44.4%[] (97.5 DMG)\n\n" +
+                                "• Sát thương gốc: [green]+44.4%[] (97.5 DMG)\n\n" +
                                 "[lightgray]Kỹ năng đặc biệt: Gia Tốc Từ Tính Xuyên Thấu — Đạn mở rộng khả năng xuyên qua tối đa 5 mục tiêu kẻ địch hoặc công trình, tích hợp mạch siêu sạc giúp rút ngắn thời gian hồi đầy năng lượng xuống 3.0 giây.[]");
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
-                b1.button(isEn() ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => {
-                    let core = this.team.core();
-                    if(core != null && core.items.get(Items.titanium) >= reqMK2.titanium && core.items.get(Items.silicon) >= reqMK2.silicon){
-                        core.items.remove(Items.titanium, reqMK2.titanium); core.items.remove(Items.silicon, reqMK2.silicon);
-                        Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(4, 4, this.x, this.y);
-                        this.configure(java.lang.Integer(1)); 
-                        dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfo(isEn() ? "[red]Not enough resources for MK2![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]"); }
+                b1.button(isEn() ? "[green]UPGRADE MK2[]" : "[green]NÂNG CẤP MK2[]", packRun(() => {
+                    let done = this.processPartialUpgrade(1, reqMK2);
+                    if(done){ dialog.hide(); this.deselect(); }
                 })).size(180, 38);
 
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
@@ -242,17 +275,12 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                                 "[lightgray]Special Ability: Homing Heat-Seeking Impulse — Removes piercing to integrate smart sensors that automatically steer towards nearby targets, saving 70% energy per shot.[]" :
                                 "[white]• Máu cấu trúc: [green]+33.3%[] (1,600 HP)\n" +
                                 "• Tầm bắn: [green]+12.5%[] (360 px)\n" +
-                                "• sát thương gốc: [green]+172.2%[] (183.75 DMG)\n\n" +
+                                "• Sát thương gốc: [green]+172.2%[] (183.75 DMG)\n\n" +
                                 "[lightgray]Kỹ năng đặc biệt: Xung Kích Tầm Nhiệt Truy Đuổi — Loại bỏ xuyên thấu để tích hợp chip cảm biến thông minh tự động bẻ lái truy đuổi mục tiêu xung quanh, tiết kiệm 70% năng lượng mỗi phát bắn.[]");
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
-                b2.button(isEn() ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => {
-                    let core = this.team.core();
-                    if(core != null && core.items.get(Items.titanium) >= reqMK2B.titanium && core.items.get(Items.silicon) >= reqMK2B.silicon && core.items.get(Items.plastanium) >= reqMK2B.plastanium){
-                        core.items.remove(Items.titanium, reqMK2B.titanium); core.items.remove(Items.silicon, reqMK2B.silicon); core.items.remove(Items.plastanium, reqMK2B.plastanium);
-                        Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(4, 4, this.x, this.y);
-                        this.configure(java.lang.Integer(2)); 
-                        dialog.hide(); this.deselect();
-                    } else { Vars.ui.showInfo(isEn() ? "[red]Not enough resources for MK2B![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
+                b2.button(isEn() ? "[orange]UPGRADE MK2B[]" : "[orange]NÂNG CẤP MK2B[]", packRun(() => {
+                    let done = this.processPartialUpgrade(2, reqMK2B);
+                    if(done){ dialog.hide(); this.deselect(); }
                 })).size(180, 38);
 
                 branchesTable.add(b1).width(340); branchesTable.row();
@@ -289,7 +317,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                           "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
                           "[lightgray]Máu tháp pháo:[] [green]1,200[]\n" +
                           "[lightgray]Tầm bắn hiệu dụng:[] [orange]320 pixel[]\n" +
-                          "[lightgray]sát thương gốc:[] [yellow]67.50 DMG[]\n" +
+                          "[lightgray]Sát thương gốc:[] [yellow]67.50 DMG[]\n" +
                           "[lightgray]Khả năng xuyên thấu:[] [white]3 mục tiêu[]\n\n" +
                           "[sky]⚡ CƠ CHẾ NĂNG LƯỢNG TIÊU HAO:[]\n" +
                           "• [lightgray]Tiêu hao (Energy Loss):[] Mỗi phát bắn làm tiêu trừ [red]1.0%[] năng lượng tích lũy của lõi. Sát thương đầu ra tỷ lệ thuận với lượng điện tích hiện có.\n" +
@@ -309,7 +337,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                           "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
                           "[lightgray]Máu tháp pháo:[] [green]1,800 [lime](+50%)[]\n" +
                           "[lightgray]Tầm bắn hiệu dụng:[] [orange]420 pixel [lime](+31.2%)[]\n" +
-                          "[lightgray]sát thương gốc:[] [yellow]97.50 DMG [lime](+44.4%)[]\n" +
+                          "[lightgray]Sát thương gốc:[] [yellow]97.50 DMG [lime](+44.4%)[]\n" +
                           "[lightgray]Khả năng xuyên thấu:[] [yellow]5 mục tiêu [lime](+2 mục tiêu)[]\n\n" +
                           "[lime]⚡ CƠ CHẾ NĂNG LƯỢNG TIÊU HAO:[]\n" +
                           "• [lightgray]Tối ưu tiêu hao:[] Giảm thiểu mức tiêu hao năng lượng xuống chỉ còn [red]0.5%[] cho mỗi phát bắn (Giảm -50%).\n" +
@@ -329,7 +357,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                           "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
                           "[lightgray]Máu tháp pháo:[] [green]1,600 [lime](+33.3%)[]\n" +
                           "[lightgray]Tầm bắn hiệu dụng:[] [orange]360 pixel [lime](+12.5%)[]\n" +
-                          "[lightgray]sát thương gốc:[] [red]183.75 DMG (+172.2%)[]\n" +
+                          "[lightgray]Sát thương gốc:[] [red]183.75 DMG (+172.2%)[]\n" +
                           "[lightgray]Khả năng xuyên thấu:[] [red]Không (Mất khả năng xuyên)[]\n\n" +
                           "[purple]🔥 CƠ CHẾ NĂNG LƯỢNG TIÊU HAO:[]\n" +
                           "• [lightgray]Mạch định vị:[] Đổi khả năng xuyên lấy cảm biến tích hợp, đạn [pink]tự động bẻ lái tìm mục tiêu[] trong phạm vi 200 pixel.\n" +
@@ -429,11 +457,17 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
     write(write){ 
         this.super$write(write); 
         write.b(this.getTier()); 
+        write.i(this.paidTitanium);
+        write.i(this.paidSilicon);
+        write.i(this.paidPlastanium);
         write.f(this.energyState != null ? this.energyState : 1.0); 
     },
     read(read, revision){ 
         this.super$read(read, revision); 
         this.setTier(read.b()); 
+        this.paidTitanium = read.i();
+        this.paidSilicon = read.i();
+        this.paidPlastanium = read.i();
         if(revision >= 1) this.energyState = read.f(); 
         this.customRecoil = 0.0;
     }

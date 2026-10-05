@@ -155,28 +155,6 @@ require("flasallow-factory");
 
 
 
-require("dagger-aura");
-require("crawler-dash");
-require("vela");
-require("flare");
-require("nova");
-require("atrax");
-require("mace");
-require("fortress");
-require("scepter");
-require("reign");
-require("horizon");
-require("zenith");
-require("antumbra");
-require("eclipse-buff");
-require("pulsar-lightning");
-require("quasar");
-require("corvus");
-require("spiroct");
-require("arkyid");
-require("toxopid");
-require("poly");
-require("mega");
 
 
 require("endyr");

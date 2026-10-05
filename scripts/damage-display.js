@@ -35,6 +35,18 @@ Events.on(StateChangeEvent, e => {
     clearAllCache();
 });
 
+// Xóa cache của unit ngay khi bị tiêu diệt để tránh phình bộ nhớ
+Events.on(UnitDestroyEvent, e => {
+    if (e.unit == null) return;
+    let id = e.unit.id;
+    entityHpCache.remove(id);
+    let data = entityDamageCache.get(id);
+    if (data) {
+        if (data.popup) damagePopups.remove(data.popup);
+        entityDamageCache.remove(id);
+    }
+});
+
 function isZoomedTooFar() {
     return Core.camera.width > 1024;
 }
@@ -65,45 +77,43 @@ function formatPopupText(amount, isHeal) {
     return Math.abs(amount) >= 1000 ? "[scarlet]💥 " + str + "[]" : "[orange]" + str + "[]";
 }
 
-function findEatsukiPopup(entityId) {
-    for (let i = 0; i < damagePopups.size; i++) {
-        let p = damagePopups.get(i);
-        if (p.entityId === entityId && p.type === "eatsuki") return p;
-    }
-    return null;
-}
-
 function addEatsukiDamage(entity, damage, hitSize) {
     if (damage < 0.1) return;
     let id = entity.id;
     let data = entityDamageCache.get(id);
 
     if (!data) {
-        data = { total: 0, idle: 0 };
+        data = { total: 0, idle: 0, popup: null };
         entityDamageCache.put(id, data);
     }
 
     data.total += damage;
     data.idle = 0;
+    
+    // Đã tối ưu: Tạo sẵn chuỗi hiển thị 1 lần khi có sát thương, tránh tạo chuỗi trong Draw loop
+    let formattedText = "[scarlet]" + formatNumber(data.total) + "[]";
 
-    let popup = findEatsukiPopup(id);
-    if (popup === null) {
-        damagePopups.add({
+    if (data.popup === null || !damagePopups.contains(data.popup)) {
+        let popup = {
             type: "eatsuki",
             entityId: id,
             x: entity.x,
             y: entity.y,
             hitSize: hitSize,
             total: data.total,
+            formattedText: formattedText,
             life: 45.0,
             maxLife: 45.0
-        });
+        };
+        data.popup = popup;
+        damagePopups.add(popup);
     } else {
-        popup.x = entity.x;
-        popup.y = entity.y;
-        popup.hitSize = hitSize;
-        popup.total = data.total;
-        popup.life = 45.0;
+        data.popup.x = entity.x;
+        data.popup.y = entity.y;
+        data.popup.hitSize = hitSize;
+        data.popup.total = data.total;
+        data.popup.formattedText = formattedText;
+        data.popup.life = 45.0;
     }
 }
 
@@ -153,13 +163,14 @@ Events.run(Trigger.update, () => {
         entityHpCache.put(id, u.health);
     }));
 
+    // Tối ưu hóa: Dùng removeIndex thay vì remove theo Object để tăng tốc độ mảng
     for (let i = damagePopups.size - 1; i >= 0; i--) {
         let popup = damagePopups.get(i);
 
         if (popup.type === "eatsuki") {
             let data = entityDamageCache.get(popup.entityId);
             if (!data) {
-                damagePopups.remove(i);
+                damagePopups.removeIndex(i);
                 continue;
             }
             data.idle += Time.delta;
@@ -168,18 +179,15 @@ Events.run(Trigger.update, () => {
 
             if (data.idle >= 90.0 || popup.life <= 0) {
                 entityDamageCache.remove(popup.entityId);
-                damagePopups.remove(i);
+                damagePopups.removeIndex(i);
             }
         } else if (popup.type === "popup") {
             popup.life -= Time.delta;
             if (popup.life <= 0) {
-                damagePopups.remove(i);
+                damagePopups.removeIndex(i);
             }
         }
     }
-
-    if (entityHpCache.size > 1500) entityHpCache.clear();
-    if (entityDamageCache.size > 800) entityDamageCache.clear();
 });
 
 Events.run(Trigger.draw, () => {
@@ -198,13 +206,14 @@ Events.run(Trigger.draw, () => {
             let fadeOut = popup.life / popup.maxLife;
             let curX = popup.x;
             let curY = popup.y + (popup.hitSize / 2) + 12;
-            let text = "[scarlet]" + formatNumber(popup.total) + "[]";
 
             font.getData().setScale(0.32);
             tempColor.set(Color.white);
             tempColor.a = fadeOut * fadeOut;
             font.setColor(tempColor);
-            font.draw(text, curX, curY, Align.center);
+            
+            // Tối ưu: Lấy trực tiếp chuỗi đã pre-format sẵn
+            font.draw(popup.formattedText, curX, curY, Align.center);
         } else if (mode === "popup" && popup.type === "popup") {
             let progress = (popup.maxLife - popup.life) / popup.maxLife;
             let fadeOut = popup.life / popup.maxLife;

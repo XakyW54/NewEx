@@ -1,10 +1,9 @@
- 
-
 (function() {
     const smoothHpMap = new ObjectMap();
     const smoothShieldMap = new ObjectMap();
     const lastHpMap = new ObjectMap();
     const lastDamageTimeMap = new ObjectMap();
+    const formattedTextMap = new ObjectMap(); // Bộ đệm cache chuỗi máu để giảm tải tính toán chuỗi mỗi frame
 
      function formatHP(value) {
         let val = Math.max(0, Math.floor(value));
@@ -23,6 +22,7 @@
         smoothShieldMap.clear();
         lastHpMap.clear();
         lastDamageTimeMap.clear();
+        formattedTextMap.clear();
     }
 
     Events.on(WorldLoadEvent, clearHpCache);
@@ -38,6 +38,7 @@
         smoothShieldMap.remove(id);
         lastHpMap.remove(id);
         lastDamageTimeMap.remove(id);
+        formattedTextMap.remove(id);
     });
 
     Events.run(Trigger.draw, () => {
@@ -71,6 +72,7 @@
              if (timeDiff > 300) {
                 smoothHpMap.remove(id);
                 smoothShieldMap.remove(id);
+                formattedTextMap.remove(id);
                 return;
             }
 
@@ -137,9 +139,17 @@
                 font.getData().setScale(fontScale);
                 font.setColor(hpColor);
 
-                let curStr = formatHP(smoothHpVal);
-                let maxStr = formatHP(maxHp);
-                let fullText = curStr + " / " + maxStr;
+                // Tối ưu hóa: Sử dụng cache chuỗi để tránh gọi formatHP và cộng chuỗi liên tục mỗi frame
+                let cachedData = formattedTextMap.get(id);
+                let fullText;
+                if (!cachedData || Math.abs(cachedData.hp - smoothHpVal) > 5) {
+                    let curStr = formatHP(smoothHpVal);
+                    let maxStr = formatHP(maxHp);
+                    fullText = curStr + " / " + maxStr;
+                    formattedTextMap.put(id, { hp: smoothHpVal, text: fullText });
+                } else {
+                    fullText = cachedData.text;
+                }
 
                 let textY = baseY + (barHeight / 2) + 4.5;
                 font.draw(fullText, centerX, textY, 0, Align.center, false);
@@ -147,7 +157,6 @@
                 font.getData().setScale(oldX, oldY);
                 Draw.reset();
             }
-
  
             else if (currentHpStyle === "hp") {
                 let hpPercent = Math.floor(realHpPercent);

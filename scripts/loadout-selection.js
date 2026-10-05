@@ -24,6 +24,23 @@
     let autoFpsSavedEffects = true;
     let isFpsThrottled = false;
 
+    // Cache Settings để tối ưu hiệu năng (Tránh gọi Core.settings liên tục trong update/events)
+    let autoLowFpsSetting = true;
+    let showWaveBtnSetting = true;
+    let hpPerWavePercentSetting = 10;
+    let fpsOptPercentSetting = 0;
+
+    function reloadCachedSettings() {
+        autoLowFpsSetting = Core.settings.getBool("newex-auto-low-fps", true);
+        showWaveBtnSetting = Core.settings.getBool("newex-show-wave-btn", true);
+        hpPerWavePercentSetting = Core.settings.getInt("newex-hp-per-wave-percent", 10);
+        fpsOptPercentSetting = Core.settings.getInt("newex-fps-opt-percent", 0);
+    }
+
+    // Delta Providers cố định tránh tạo object GC liên tục
+    const normalDeltaProvider = () => Math.min(Core.graphics.getDeltaTime() * 60, 3);
+    const slowDeltaProvider = () => Math.min(Core.graphics.getDeltaTime() * 60, 3) * 0.8;
+
     // Biến quản lý NewMode
     let isPlayingNewMode = false;
     let currentMapName = "[redces]ᑈᐴᐾᐶᒅ";
@@ -108,6 +125,7 @@
 
     function applyFpsOptimizationLevel(percent) {
         Core.settings.put("newex-fps-opt-percent", java.lang.Integer(percent));
+        fpsOptPercentSetting = percent;
         
         if (percent >= 90) {
             Core.settings.put("effects", java.lang.Boolean(false));
@@ -181,22 +199,23 @@
             expandTable.visible = false;
             expandTable.margin(6);
 
-            let currentFpsOpt = Core.settings.getInt("newex-fps-opt-percent", 0);
+            let currentFpsOpt = fpsOptPercentSetting;
             let optLabel = expandTable.add("Tối ưu FPS: " + currentFpsOpt + "%").fontScale(0.75).get();
             expandTable.row();
 
-            let fpsSlider = expandTable.slider(0, 100, 1, currentFpsOpt, value => {
+            expandTable.slider(0, 100, 1, currentFpsOpt, value => {
                 let val = Math.floor(value);
                 optLabel.setText("Tối ưu FPS: " + val + "%");
                 applyFpsOptimizationLevel(val);
-            }).width(150).pad(4).get();
-            expandTable.row();
+            }).width(150).pad(4).row();
 
             let autoFpsBtn = new TextButton("Tự ẩn effect & Slow motion x0.8 khi FPS < 20", Styles.togglet);
             autoFpsBtn.getLabel().setFontScale(0.65);
-            autoFpsBtn.setChecked(Core.settings.getBool("newex-auto-low-fps", true));
+            autoFpsBtn.setChecked(autoLowFpsSetting);
             autoFpsBtn.clicked(() => {
-                Core.settings.put("newex-auto-low-fps", java.lang.Boolean(autoFpsBtn.isChecked()));
+                let checked = autoFpsBtn.isChecked();
+                Core.settings.put("newex-auto-low-fps", java.lang.Boolean(checked));
+                autoLowFpsSetting = checked;
             });
             expandTable.add(autoFpsBtn).size(150, 36).pad(2).row();
 
@@ -336,7 +355,6 @@
 
         let slot = getNewModeSlot();
 
-        // 1. Tải Save nếu file hợp lệ
         if (isSlotValid(slot)) {
             try {
                 slot.load();
@@ -348,7 +366,6 @@
             }
         }
 
-        // 2. Tải trực tiếp map redces.msav từ mod
         let mod = Vars.mods.getMod(CURRENT_MOD_NAME);
         if (mod != null && mod.root != null) {
             let mapFile = mod.root.child("maps").child(mapName + ".msav");
@@ -360,7 +377,6 @@
                 Vars.state.rules = map.applyRules(Gamemode.survival);
                 Vars.logic.play();
 
-                // Tạo Save Slot chính thức và lưu dữ liệu map mới khởi tạo
                 let newSlot = Vars.control.saves.addSave(NEWMODE_SLOT_NAME);
                 newSlot.save();
 
@@ -556,7 +572,7 @@
         content.add("[accent]-- TỐI ƯU FPS / ĐỒ HỌA --[]").padTop(10).row();
         content.add("Mức độ cắt giảm hiệu ứng (1%):").padBottom(4).row();
         
-        let currentFpsOpt = Core.settings.getInt("newex-fps-opt-percent", 0);
+        let currentFpsOpt = fpsOptPercentSetting;
         let fpsLabel = content.add(currentFpsOpt + "%").fontScale(1.2).get();
         content.row();
 
@@ -566,18 +582,16 @@
         }).width(240).pad(8).get();
         content.row();
 
-        let autoFpsState = Core.settings.getBool("newex-auto-low-fps", true);
         let btnAutoFps = new TextButton("Tự ẩn effect & Slow motion x0.8 khi FPS < 20", Styles.togglet);
         btnAutoFps.getLabel().setFontScale(0.8);
-        btnAutoFps.setChecked(autoFpsState);
+        btnAutoFps.setChecked(autoLowFpsSetting);
         content.add(btnAutoFps).size(280, 48).pad(4).row();
 
         // 3. CHỈ SỐ ĐỊCH THEO TỪNG WAVE
         content.add("[accent]-- CHỈ SỐ ĐỊCH THEO TỪNG WAVE --[]").padTop(10).row();
         content.add("% Máu tăng thêm trên mỗi Wave:").padBottom(4).row();
-        let currentHp = Core.settings.getInt("newex-hp-per-wave-percent", 10);
         let hpFieldTable = new Table();
-        let hpField = hpFieldTable.field(currentHp.toString(), text => {}).width(120).get();
+        let hpField = hpFieldTable.field(hpPerWavePercentSetting.toString(), text => {}).width(120).get();
         hpField.setFilter(TextField.TextFieldFilter.digitsOnly);
         hpField.setMaxLength(3);
         hpFieldTable.add("% / Wave").padLeft(8);
@@ -585,10 +599,9 @@
 
         // 4. QUẢN LÝ NÚT GỌI WAVE
         content.add("[accent]-- QUẢN LÝ NÚT GỌI WAVE --[]").padTop(10).row();
-        let showWaveBtn = Core.settings.getBool("newex-show-wave-btn", true);
         let btnShowWave = new TextButton("Hiển thị nút Gọi Wave trên màn hình\n[gray](Phím tắt PC: Shift + N)[]", Styles.togglet);
         btnShowWave.getLabel().setFontScale(0.85);
-        btnShowWave.setChecked(showWaveBtn);
+        btnShowWave.setChecked(showWaveBtnSetting);
         content.add(btnShowWave).size(280, 54).pad(5).row();
 
         // 5. CHẾ ĐỘ HIỂN THỊ THANH MÁU (HP)
@@ -623,18 +636,7 @@
 
         content.add(tableHp).row();
 
-        // 6. LOGIC UNIT VANILLA BUFF
-        content.add("[accent]-- LOGIC UNIT VANILLA BUFF --[]").padTop(10).row();
-
-        let unitsEnabled = Core.settings.getBool("newex-logic-support-units", true);
-
-        let btnUnits = new TextButton("Bật Buff Units Vanilla", Styles.togglet);
-        btnUnits.getLabel().setFontScale(0.85);
-        btnUnits.setChecked(unitsEnabled);
-
-        content.add(btnUnits).size(220, 48).pad(5).row();
-
-        // 7. THÔNG TIN CHI TIẾT
+        // 6. THÔNG TIN CHI TIẾT
         content.add("[accent]-- THÔNG TIN CHI TIẾT --[]").padTop(10).row();
         content.button("Xem README / Update Log", Icon.info, () => {
             showReadmeDialog();
@@ -661,7 +663,9 @@
             else if (btnHp.isChecked()) selectedStyle = "hp";
 
             Core.settings.put("newex-hp-style", selectedStyle);
-            Core.settings.put("newex-logic-support-units", java.lang.Boolean(btnUnits.isChecked()));
+
+            // Cập nhật lại bộ nhớ đệm ngay khi lưu
+            reloadCachedSettings();
 
             Vars.ui.showInfo("Đã lưu cài đặt Newex thành công!");
             dialog.hide();
@@ -681,11 +685,13 @@
         let wave = Vars.state.wave;
         if (wave <= 1) return;
 
-        let hpPercent = Core.settings.getInt("newex-hp-per-wave-percent", 10);
+        let hpPercent = hpPerWavePercentSetting;
+        if (hpPercent <= 0) return;
+
         let hpMultiplier = 1 + ((wave - 1) * (hpPercent / 100));
 
         if (hpMultiplier > 1) {
-            unit.maxHealth = unit.maxHealth * hpMultiplier;
+            unit.maxHealth *= hpMultiplier;
             unit.health = unit.maxHealth;
         }
     }
@@ -721,7 +727,8 @@
 
     Events.on(ClientLoadEvent, event => {
         loadTurretsFromFolder();
-        applyFpsOptimizationLevel(Core.settings.getInt("newex-fps-opt-percent", 0));
+        reloadCachedSettings();
+        applyFpsOptimizationLevel(fpsOptPercentSetting);
 
         try {
             Vars.ui.menufrag.addButton("NewMode", Icon.play, () => {
@@ -738,33 +745,29 @@
         let inGame = Vars.state != null && Vars.state.isGame();
 
         if (inGame) {
-            let autoLowFpsEnabled = Core.settings.getBool("newex-auto-low-fps", true);
-            if (autoLowFpsEnabled) {
+            if (autoLowFpsSetting) {
                 let currentFps = Core.graphics.getFramesPerSecond();
                 
                 if (currentFps < 20 && !isFpsThrottled) {
                     autoFpsSavedEffects = Core.settings.getBool("effects", true);
                     Core.settings.put("effects", java.lang.Boolean(false));
                     
-                    Time.setDeltaProvider(() => Math.min(Core.graphics.getDeltaTime() * 60, 3) * 0.8);
-                    
+                    Time.setDeltaProvider(slowDeltaProvider);
                     isFpsThrottled = true;
                 } else if (currentFps > 45 && isFpsThrottled) {
                     Core.settings.put("effects", java.lang.Boolean(autoFpsSavedEffects));
                     
-                    Time.setDeltaProvider(() => Math.min(Core.graphics.getDeltaTime() * 60, 3));
-                    
+                    Time.setDeltaProvider(normalDeltaProvider);
                     isFpsThrottled = false;
                 }
             }
 
             let shiftPressed = Core.input.keyDown(KeyCode.shiftLeft) || Core.input.keyDown(KeyCode.shiftRight);
             if (shiftPressed && Core.input.keyTap(KeyCode.n)) {
-                let currentState = Core.settings.getBool("newex-show-wave-btn", true);
-                let newState = !currentState;
-                Core.settings.put("newex-show-wave-btn", java.lang.Boolean(newState));
+                showWaveBtnSetting = !showWaveBtnSetting;
+                Core.settings.put("newex-show-wave-btn", java.lang.Boolean(showWaveBtnSetting));
                 
-                if (newState) {
+                if (showWaveBtnSetting) {
                     Vars.ui.showInfoToast("Đã hiện nút Gọi Wave", 1.5);
                     centerWaveButton();
                 } else {
@@ -772,9 +775,7 @@
                 }
             }
 
-            let isVisible = Core.settings.getBool("newex-show-wave-btn", true);
-
-            if (isVisible) {
+            if (showWaveBtnSetting) {
                 if (!waveBtnAdded) {
                     injectWaveButtonToHUD();
                 }
@@ -788,7 +789,7 @@
             }
         } else {
             if (isFpsThrottled) {
-                Time.setDeltaProvider(() => Math.min(Core.graphics.getDeltaTime() * 60, 3));
+                Time.setDeltaProvider(normalDeltaProvider);
                 isFpsThrottled = false;
             }
             if (customWaveContainer != null) {

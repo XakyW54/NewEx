@@ -62,7 +62,6 @@ drawer: {
 requirements: [
   copper/440
   lead/230
-plastanium/105
   silicon/105
 ]
 category: turret

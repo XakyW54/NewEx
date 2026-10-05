@@ -2,7 +2,7 @@ const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
- function isEn() {
+function isEn() {
     return Core.settings.getString("locale", "en") === "en" || Core.settings.getString("locale", "").startsWith("en");
 }
 
@@ -101,7 +101,6 @@ function trI(key) {
     return "";
 }
 
- 
 if (typeof global !== "undefined") {
     if (!global.bemodStacks) global.bemodStacks = {};
     if (!global.cornerBuffedTurrets) global.cornerBuffedTurrets = {};
@@ -115,7 +114,7 @@ function getBemodStatus() {
 const reqMK2 = { titanium: 500, silicon: 300 };
 const reqMK2B = { titanium: 800, silicon: 400, plastanium: 200 }; 
 const reqSpecial = { copper: 4000, lead: 4000, silicon: 4000 };
- 
+
 const bulletCircleTrailFx = new Effect(12, cons(e => {
     Draw.z(Layer.bullet - 0.01);
 
@@ -136,12 +135,10 @@ const bulletCircleTrailFx = new Effect(12, cons(e => {
     Draw.reset();
 }));
 
- 
 const buffTurretPulseFx = new Effect(40, cons(e => {
     Draw.z(Layer.effect + 0.05);
 
     let col = Color.valueOf("#00ffcc");
-    
     let targetSize = (e.data != null && typeof e.data === "number") ? e.data : 16;
     let baseRadius = (targetSize * (2 / 3)) / 2; 
 
@@ -160,7 +157,7 @@ const buffTurretPulseFx = new Effect(40, cons(e => {
 
     Draw.reset();
 }));
- 
+
 const hel = new Effect(35, cons(e => {
     Draw.z(Layer.effect + 0.01);
 
@@ -203,7 +200,7 @@ const hel = new Effect(35, cons(e => {
 
     Draw.reset();
 }));
- 
+
 function createExplosionEffect(radius, colorHex) {
     let col = colorHex ? Color.valueOf(colorHex) : Color.valueOf("#ff3300");
     return new Effect(50, cons(e => {
@@ -250,7 +247,7 @@ const fxPerk4 = createExplosionEffect(75);
 const fxPerk5 = createExplosionEffect(150, "#00ffcc");
 const fxPerk6 = createExplosionEffect(200, "#ff0055");
 const fxCornerTurret = createExplosionEffect(50, "#ffaa00");
- 
+
 const perk5ShotgunBullet = extend(BasicBulletType, {
     speed: 11,
     damage: 18,
@@ -265,7 +262,7 @@ const perk5ShotgunBullet = extend(BasicBulletType, {
     hitEffect: Fx.hitBulletSmall,
     despawnEffect: Fx.hitBulletSmall
 });
- 
+
 function triggerBemodExplosion(building, targetUnit, perkTier, isMK2, isSubExplosion, isCornerTurret) {
     if (targetUnit == null || !targetUnit.isValid()) return;
 
@@ -408,7 +405,7 @@ function triggerBemodExplosion(building, targetUnit, perkTier, isMK2, isSubExplo
         }
     }
 }
- 
+
 function createCustomBulletType(baseProperties) {
     return extend(BasicBulletType, Object.assign({}, baseProperties, {
         hitEntity(b, other, initialHealth) {
@@ -419,7 +416,7 @@ function createCustomBulletType(baseProperties) {
         }
     }));
 }
- 
+
 const indeniterBullet = createCustomBulletType({
     speed: 8, damage: 9, lifetime: 35, width: 16, height: 16, 
     frontColor: Color.white, backColor: Color.valueOf("#ff6b35"),
@@ -444,7 +441,7 @@ const indeniterMK2BBullet = createCustomBulletType({
     trailEffect: bulletCircleTrailFx,
     trailInterval: 2
 });
- 
+
 const indeniter = extend(ItemTurret, "indeniter", {
     configurable: true
 });
@@ -622,7 +619,7 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
             this.shootingVisual = Mathf.approach(this.shootingVisual, 0.0, visualSpeed);
         }
 
-            let activeShooting = (this.isShooting || this.isBursting) && this.hasAmmo();
+        let activeShooting = (this.isShooting || this.isBursting) && this.hasAmmo();
         let chargeSpeed = activeShooting ? 0.1 * Time.delta : 0.08 * Time.delta;
         this.energyCharge = Mathf.approach(this.energyCharge, activeShooting ? 1.0 : 0.0, chargeSpeed);
 
@@ -687,235 +684,231 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
         }
     },
 
-buildConfiguration(table) {
-    table.clear(); 
-    table.row();
+    buildConfiguration(table) {
+        table.clear(); 
+        table.row();
 
-      table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-        let dialog = extend(BaseDialog, trI("dialog_title"), {});
-        
-           let reqCell = dialog.cont.label(packProv(() => {
-            let core = this.team.core();
-            if (core == null) return trI("no_core");
-            let cCop = core.items.get(Items.copper);
-            let cLea = core.items.get(Items.lead);
-            let cTit = core.items.get(Items.titanium);
-            let cSil = core.items.get(Items.silicon);
-            let cPla = core.items.get(Items.plastanium);
-
-            let copCol = cCop >= reqSpecial.copper ? "[green]" : "[red]";
-            let leaCol = cLea >= reqSpecial.lead ? "[green]" : "[red]";
-            let silColSp = cSil >= reqSpecial.silicon ? "[green]" : "[red]";
-
-            let titColor1 = cTit >= reqMK2.titanium ? "[green]" : "[red]";
-            let silColor1 = cSil >= reqMK2.silicon ? "[green]" : "[red]";
+        table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
+            let dialog = extend(BaseDialog, trI("dialog_title"), {});
             
-            let titColor2 = cTit >= reqMK2B.titanium ? "[green]" : "[red]";
-            let silColor2 = cSil >= reqMK2B.silicon ? "[green]" : "[red]";
-            let plaColor2 = cPla >= reqMK2B.plastanium ? "[green]" : "[red]";
-
-            return trI("req_core") +
-                   trI("req_sp") + copCol + cCop + "[]/4000" + trI("req_lead") + leaCol + cLea + "[]/4000 | Silicon: " + silColSp + cSil + "[]/4000\n" +
-                   trI("req_mk2") + titColor1 + cTit + "[]/" + reqMK2.titanium + " | Silicon: " + silColor1 + cSil + "[]/" + reqMK2.silicon + "\n" +
-                   trI("req_mk2b") + titColor2 + cTit + "[]/" + reqMK2B.titanium + " | Silicon: " + silColor2 + cSil + "[]/" + reqMK2B.silicon + trI("req_plast") + plaColor2 + cPla + "[]/" + reqMK2B.plastanium;
-        }));
-        
-        reqCell.width(380).get().setWrap(true);
-        reqCell.get().setAlignment(Align.left);
-        dialog.cont.row(); 
-        dialog.cont.add().height(10).row();
-
-        let branchesTable = new Table();
- 
-        let spBox = new Table(); 
-        spBox.background(Styles.black6); 
-        spBox.margin(12);
-        spBox.add(trI("sp_title")).row();
-
-        let currentPerk = this.getPerkTier();
-        let tier = this.getTier();
-
-        if (currentPerk == 0) {
-            let spD = spBox.add(trI("sp_desc"));
-            spD.width(360).get().setWrap(true); 
-            spD.get().setAlignment(Align.left); 
-            spBox.row();
-
-            spBox.button(trI("btn_roll"), packRun(() => {
+            let reqCell = dialog.cont.label(packProv(() => {
                 let core = this.team.core();
-                if (core != null && core.items.get(Items.copper) >= 4000 && core.items.get(Items.lead) >= 4000 && core.items.get(Items.silicon) >= 4000) {
-                    core.items.remove(Items.copper, 4000); 
-                    core.items.remove(Items.lead, 4000); 
-                    core.items.remove(Items.silicon, 4000);
- 
-                    let rand = Mathf.random(100);
-                    let resultPerk = 3; 
+                if (core == null) return trI("no_core");
+                let cCop = core.items.get(Items.copper);
+                let cLea = core.items.get(Items.lead);
+                let cTit = core.items.get(Items.titanium);
+                let cSil = core.items.get(Items.silicon);
+                let cPla = core.items.get(Items.plastanium);
 
-                    if (rand < 1.0) {
-                        resultPerk = 5; 
-                    } else if (rand < 2.0) {
-                        resultPerk = 6; 
-                    } else if (rand < 2.0 + 19.6) {
-                        resultPerk = 1;
-                    } else if (rand < 2.0 + 19.6 + 29.4) {
-                        resultPerk = 2;
-                    } else if (rand < 2.0 + 19.6 + 29.4 + 19.6) {
-                        resultPerk = 3;
-                    } else {
-                        resultPerk = 4;
+                let copCol = cCop >= reqSpecial.copper ? "[green]" : "[red]";
+                let leaCol = cLea >= reqSpecial.lead ? "[green]" : "[red]";
+                let silColSp = cSil >= reqSpecial.silicon ? "[green]" : "[red]";
+
+                let titColor1 = cTit >= reqMK2.titanium ? "[green]" : "[red]";
+                let silColor1 = cSil >= reqMK2.silicon ? "[green]" : "[red]";
+                
+                let titColor2 = cTit >= reqMK2B.titanium ? "[green]" : "[red]";
+                let silColor2 = cSil >= reqMK2B.silicon ? "[green]" : "[red]";
+                let plaColor2 = cPla >= reqMK2B.plastanium ? "[green]" : "[red]";
+
+                return trI("req_core") +
+                       trI("req_sp") + copCol + cCop + "[]/4000" + trI("req_lead") + leaCol + cLea + "[]/4000 | Silicon: " + silColSp + cSil + "[]/4000\n" +
+                       trI("req_mk2") + titColor1 + cTit + "[]/" + reqMK2.titanium + " | Silicon: " + silColor1 + cSil + "[]/" + reqMK2.silicon + "\n" +
+                       trI("req_mk2b") + titColor2 + cTit + "[]/" + reqMK2B.titanium + " | Silicon: " + silColor2 + cSil + "[]/" + reqMK2B.silicon + trI("req_plast") + plaColor2 + cPla + "[]/" + reqMK2B.plastanium;
+            }));
+            
+            reqCell.width(380).get().setWrap(true);
+            reqCell.get().setAlignment(Align.left);
+            dialog.cont.row(); 
+            dialog.cont.add().height(10).row();
+
+            let branchesTable = new Table();
+    
+            let spBox = new Table(); 
+            spBox.background(Styles.black6); 
+            spBox.margin(12);
+            spBox.add(trI("sp_title")).row();
+
+            let currentPerk = this.getPerkTier();
+            let tier = this.getTier();
+
+            if (currentPerk == 0) {
+                let spD = spBox.add(trI("sp_desc"));
+                spD.width(360).get().setWrap(true); 
+                spD.get().setAlignment(Align.left); 
+                spBox.row();
+
+                spBox.button(trI("btn_roll"), packRun(() => {
+                    let core = this.team.core();
+                    if (core != null && core.items.get(Items.copper) >= 4000 && core.items.get(Items.lead) >= 4000 && core.items.get(Items.silicon) >= 4000) {
+                        core.items.remove(Items.copper, 4000); 
+                        core.items.remove(Items.lead, 4000); 
+                        core.items.remove(Items.silicon, 4000);
+    
+                        let rand = Mathf.random(100);
+                        let resultPerk = 3; 
+
+                        if (rand < 1.0) {
+                            resultPerk = 5; 
+                        } else if (rand < 2.0) {
+                            resultPerk = 6; 
+                        } else if (rand < 2.0 + 19.6) {
+                            resultPerk = 1;
+                        } else if (rand < 2.0 + 19.6 + 29.4) {
+                            resultPerk = 2;
+                        } else if (rand < 2.0 + 19.6 + 29.4 + 19.6) {
+                            resultPerk = 3;
+                        } else {
+                            resultPerk = 4;
+                        }
+
+                        this.setPerkTier(resultPerk);
+                        this.configure(10 + resultPerk); 
+
+                        Fx.upgradeCore.at(this.x, this.y); 
+                        Effect.shake(6, 6, this.x, this.y);
+
+                        let perkName = "";
+                        if (resultPerk == 1) perkName = isEn() ? "[yellow]PERK 1[]" : "[yellow]PHÚC LỢI 1[]";
+                        else if (resultPerk == 2) perkName = isEn() ? "[orange]PERK 2[]" : "[orange]PHÚC LỢI 2[]";
+                        else if (resultPerk == 3) perkName = isEn() ? "[cyan]PERK 3[]" : "[cyan]PHÚC LỢI 3[]";
+                        else if (resultPerk == 4) perkName = isEn() ? "[purple]PERK 4[]" : "[purple]PHÚC LỢI 4[]";
+                        else if (resultPerk == 5) perkName = isEn() ? "[green]★ PERK 5 (1% SUPER RARE) ★[]" : "[green]★ PHÚC LỢI 5 (1% SIÊU HIẾM) ★[]";
+                        else perkName = isEn() ? "[red]★ PERK 6 (1% SUPER RARE) ★[]" : "[red]★ PHÚC LỢI 6 (1% SIÊU HIẾM) ★[]";
+
+                        Vars.ui.showInfo(trI("won") + perkName);
+
+                        dialog.hide(); 
+                        this.deselect();
+                    } else { 
+                        Vars.ui.showInfo(trI("no_res_sp")); 
                     }
+                })).size(300, 40);
+            } else {
+                let perkText = "";
+                if (currentPerk == 1) perkText = trI("active_p1");
+                if (currentPerk == 2) perkText = trI("active_p2");
+                if (currentPerk == 3) perkText = trI("active_p3");
+                if (currentPerk == 4) perkText = trI("active_p4");
+                if (currentPerk == 5) perkText = trI("active_p5");
+                if (currentPerk == 6) perkText = trI("active_p6");
 
-                    this.setPerkTier(resultPerk);
-                    this.configure(10 + resultPerk); 
+                let spD = spBox.add(perkText);
+                spD.width(360).get().setWrap(true); 
+                spD.get().setAlignment(Align.left);
+            }
 
-                    Fx.upgradeCore.at(this.x, this.y); 
-                    Effect.shake(6, 6, this.x, this.y);
-
-                    let perkName = "";
-                    if (resultPerk == 1) perkName = isEn() ? "[yellow]PERK 1[]" : "[yellow]PHÚC LỢI 1[]";
-                    else if (resultPerk == 2) perkName = isEn() ? "[orange]PERK 2[]" : "[orange]PHÚC LỢI 2[]";
-                    else if (resultPerk == 3) perkName = isEn() ? "[cyan]PERK 3[]" : "[cyan]PHÚC LỢI 3[]";
-                    else if (resultPerk == 4) perkName = isEn() ? "[purple]PERK 4[]" : "[purple]PHÚC LỢI 4[]";
-                    else if (resultPerk == 5) perkName = isEn() ? "[green]★ PERK 5 (1% SUPER RARE) ★[]" : "[green]★ PHÚC LỢI 5 (1% SIÊU HIẾM) ★[]";
-                    else perkName = isEn() ? "[red]★ PERK 6 (1% SUPER RARE) ★[]" : "[red]★ PHÚC LỢI 6 (1% SIÊU HIẾM) ★[]";
-
-                    Vars.ui.showInfo(trI("won") + perkName);
-
-                    dialog.hide(); 
-                    this.deselect();
-                } else { 
-                    Vars.ui.showInfo(trI("no_res_sp")); 
-                }
-            })).size(300, 40);
-        } else {
-            let perkText = "";
-            if (currentPerk == 1) perkText = trI("active_p1");
-            if (currentPerk == 2) perkText = trI("active_p2");
-            if (currentPerk == 3) perkText = trI("active_p3");
-            if (currentPerk == 4) perkText = trI("active_p4");
-            if (currentPerk == 5) perkText = trI("active_p5");
-            if (currentPerk == 6) perkText = trI("active_p6");
-
-            let spD = spBox.add(perkText);
-            spD.width(360).get().setWrap(true); 
-            spD.get().setAlignment(Align.left);
-        }
-
-        branchesTable.add(spBox).width(360); 
-        branchesTable.row();
-        branchesTable.add().height(12).row();
- 
-        if (tier == 0) {
-            let b1 = new Table(); 
-            b1.background(Styles.black6); 
-            b1.margin(12);
-            b1.add("[cyan]===(MK2)===[]").row();
-            let b1D = b1.add(trI("mk2_desc"));
-            b1D.width(340).get().setWrap(true); 
-            b1D.get().setAlignment(Align.left); 
-            b1.row();
-            b1.button(trI("mk2_btn"), packRun(() => {
-                let core = this.team.core();
-                if (core != null && core.items.get(Items.titanium) >= reqMK2.titanium && core.items.get(Items.silicon) >= reqMK2.silicon) {
-                    core.items.remove(Items.titanium, reqMK2.titanium); 
-                    core.items.remove(Items.silicon, reqMK2.silicon);
-                    
-                    this.setTier(1);
-                    this.configure(1); 
-
-                    Fx.upgradeCore.at(this.x, this.y); 
-                    Fx.mineHuge.at(this.x, this.y); 
-                    Effect.shake(4, 4, this.x, this.y);
-
-                    dialog.hide(); 
-                    this.deselect();
-                } else { 
-                    Vars.ui.showInfo(trI("no_res_mk2")); 
-                }
-            })).size(180, 38);
-
-            let b2 = new Table(); 
-            b2.background(Styles.black6); 
-            b2.margin(12);
-            b2.add("[purple]===(MK2B)===[]").row();
-            let b2D = b2.add(trI("mk2b_desc"));
-            b2D.width(340).get().setWrap(true); 
-            b2D.get().setAlignment(Align.left); 
-            b2.row();
-            b2.button(trI("mk2b_btn"), packRun(() => {
-                let core = this.team.core();
-                if (core != null && core.items.get(Items.titanium) >= reqMK2B.titanium && core.items.get(Items.silicon) >= reqMK2B.silicon && core.items.get(Items.plastanium) >= reqMK2B.plastanium) {
-                    core.items.remove(Items.titanium, reqMK2B.titanium); 
-                    core.items.remove(Items.silicon, reqMK2B.silicon); 
-                    core.items.remove(Items.plastanium, reqMK2B.plastanium);
-                    
-                    this.setTier(2);
-                    this.configure(2); 
-
-                    Fx.bigShockwave.at(this.x, this.y); 
-                    Fx.mineHuge.at(this.x, this.y); 
-                    Effect.shake(4, 4, this.x, this.y);
-
-                    dialog.hide(); 
-                    this.deselect();
-                } else { 
-                    Vars.ui.showInfo(trI("no_res_mk2b")); 
-                }
-            })).size(180, 38);
-
-            branchesTable.add(b1).width(360); 
+            branchesTable.add(spBox).width(360); 
             branchesTable.row();
             branchesTable.add().height(12).row();
-            branchesTable.add(b2).width(360);
-        } else {
-            let statusLabel = (tier == 1) ? trI("status_mk2") : trI("status_mk2b");
-            branchesTable.add(statusLabel).row();
-        }
+    
+            if (tier == 0) {
+                let b1 = new Table(); 
+                b1.background(Styles.black6); 
+                b1.margin(12);
+                b1.add("[cyan]===(MK2)===[]").row();
+                let b1D = b1.add(trI("mk2_desc"));
+                b1D.width(340).get().setWrap(true); 
+                b1D.get().setAlignment(Align.left); 
+                b1.row();
+                b1.button(trI("mk2_btn"), packRun(() => {
+                    let core = this.team.core();
+                    if (core != null && core.items.get(Items.titanium) >= reqMK2.titanium && core.items.get(Items.silicon) >= reqMK2.silicon) {
+                        core.items.remove(Items.titanium, reqMK2.titanium); 
+                        core.items.remove(Items.silicon, reqMK2.silicon);
+                        
+                        this.setTier(1);
+                        this.configure(1); 
 
-        let scroll = new ScrollPane(branchesTable);
-        scroll.setScrollingDisabled(true, false);
-        dialog.cont.add(scroll).maxHeight(420);
-        dialog.addCloseButton(); 
-        dialog.show();
-    })).size(50, 40).tooltip(trI("dialog_title"));
+                        Fx.upgradeCore.at(this.x, this.y); 
+                        Fx.mineHuge.at(this.x, this.y); 
+                        Effect.shake(4, 4, this.x, this.y);
 
- 
-    table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-        let title = trI("info_title");
-        let descStr = "";
-        let currentTier = this.getTier();
+                        dialog.hide(); 
+                        this.deselect();
+                    } else { 
+                        Vars.ui.showInfo(trI("no_res_mk2")); 
+                    }
+                })).size(180, 38);
 
-        if (currentTier == 0) descStr = trI("info_mk1");
-        else if (currentTier == 1) descStr = trI("info_mk2");
-        else if (currentTier == 2) descStr = trI("info_mk2b");
+                let b2 = new Table(); 
+                b2.background(Styles.black6); 
+                b2.margin(12);
+                b2.add("[purple]===(MK2B)===[]").row();
+                let b2D = b2.add(trI("mk2b_desc"));
+                b2D.width(340).get().setWrap(true); 
+                b2D.get().setAlignment(Align.left); 
+                b2.row();
+                b2.button(trI("mk2b_btn"), packRun(() => {
+                    let core = this.team.core();
+                    if (core != null && core.items.get(Items.titanium) >= reqMK2B.titanium && core.items.get(Items.silicon) >= reqMK2B.silicon && core.items.get(Items.plastanium) >= reqMK2B.plastanium) {
+                        core.items.remove(Items.titanium, reqMK2B.titanium); 
+                        core.items.remove(Items.silicon, reqMK2B.silicon); 
+                        core.items.remove(Items.plastanium, reqMK2B.plastanium);
+                        
+                        this.setTier(2);
+                        this.configure(2); 
 
-        let perk = this.getPerkTier();
-        if (perk > 0) {
-            descStr += trI("info_perk_header");
-            if (perk == 1) descStr += trI("info_p1");
-            if (perk == 2) descStr += trI("info_p2");
-            if (perk == 3) descStr += trI("info_p3");
-            if (perk == 4) descStr += trI("info_p4");
-            if (perk == 5) descStr += trI("info_p5");
-            if (perk == 6) descStr += trI("info_p6");
-        }
+                        Fx.bigShockwave.at(this.x, this.y); 
+                        Fx.mineHuge.at(this.x, this.y); 
+                        Effect.shake(4, 4, this.x, this.y);
 
-        let dialog = extend(BaseDialog, title, {});
-        let infoTable = new Table();
-        let cell = infoTable.add(descStr).width(360);
-        cell.get().setWrap(true); 
-        cell.get().setAlignment(Align.left);
+                        dialog.hide(); 
+                        this.deselect();
+                    } else { 
+                        Vars.ui.showInfo(trI("no_res_mk2b")); 
+                    }
+                })).size(180, 38);
 
-        let scroll = new ScrollPane(infoTable);
-        scroll.setScrollingDisabled(true, false);
-        dialog.cont.add(scroll).maxHeight(400);
-        dialog.addCloseButton(); 
-        dialog.show();
-    })).size(50, 40).tooltip(isEn() ? "View detailed system stats" : "Xem thông số chi tiết hệ thống");
-},
- 
+                branchesTable.add(b1).width(360); 
+                branchesTable.row();
+                branchesTable.add().height(12).row();
+                branchesTable.add(b2).width(360);
+            } else {
+                let statusLabel = (tier == 1) ? trI("status_mk2") : trI("status_mk2b");
+                branchesTable.add(statusLabel).row();
+            }
 
+            let scroll = new ScrollPane(branchesTable);
+            scroll.setScrollingDisabled(true, false);
+            dialog.cont.add(scroll).maxHeight(420);
+            dialog.addCloseButton(); 
+            dialog.show();
+        })).size(50, 40).tooltip(trI("dialog_title"));
 
+        table.button(Icon.info, Styles.cleari, 40, packRun(() => {
+            let title = trI("info_title");
+            let descStr = "";
+            let currentTier = this.getTier();
+
+            if (currentTier == 0) descStr = trI("info_mk1");
+            else if (currentTier == 1) descStr = trI("info_mk2");
+            else if (currentTier == 2) descStr = trI("info_mk2b");
+
+            let perk = this.getPerkTier();
+            if (perk > 0) {
+                descStr += trI("info_perk_header");
+                if (perk == 1) descStr += trI("info_p1");
+                if (perk == 2) descStr += trI("info_p2");
+                if (perk == 3) descStr += trI("info_p3");
+                if (perk == 4) descStr += trI("info_p4");
+                if (perk == 5) descStr += trI("info_p5");
+                if (perk == 6) descStr += trI("info_p6");
+            }
+
+            let dialog = extend(BaseDialog, title, {});
+            let infoTable = new Table();
+            let cell = infoTable.add(descStr).width(360);
+            cell.get().setWrap(true); 
+            cell.get().setAlignment(Align.left);
+
+            let scroll = new ScrollPane(infoTable);
+            scroll.setScrollingDisabled(true, false);
+            dialog.cont.add(scroll).maxHeight(400);
+            dialog.addCloseButton(); 
+            dialog.show();
+        })).size(50, 40).tooltip(isEn() ? "View detailed system stats" : "Xem thông số chi tiết hệ thống");
+    },
 
     config() { return this.getTier(); },
 
@@ -923,7 +916,6 @@ buildConfiguration(table) {
         let modName = this.block.name.split("-")[0]; 
         let baseRegion = Core.atlas.find(this.block.basePrefix + "" + this.block.size);
         
- 
         if(baseRegion.found()){
             Draw.rect(baseRegion, this.x, this.y);
         } else {
@@ -934,13 +926,9 @@ buildConfiguration(table) {
         let cos = Math.cos(rad);
         let sin = Math.sin(rad);
 
- 
         let baseZ = Layer.turret;
-
- 
         Draw.z(baseZ - 0.01);
 
- 
         let wingSpread = this.shootingVisual * 15.0;
 
         let wing1Region = Core.atlas.find(modName + "-indeniter-wing1");
@@ -957,7 +945,6 @@ buildConfiguration(table) {
             Draw.rect(wing2Region, w2x, w2y, this.rotation);
         }
 
- 
         let maxNonRecoilDistance = -8.0;
         let nonRecoilOffset = this.nonRecoil * maxNonRecoilDistance; 
         let nonBaseBack = -8.8; 
@@ -971,7 +958,6 @@ buildConfiguration(table) {
             Draw.rect(nonRegion, nonX, nonY, this.rotation);
         }
 
-   
         Draw.z(baseZ);
 
         let barrel1Region = Core.atlas.find(modName + "-indeniter-barrel1");
@@ -988,30 +974,28 @@ buildConfiguration(table) {
             Draw.rect(b1Region, b1ax, b1ay, this.rotation);
         }
 
-            if (this.energyCharge > 0.001) {
+        if (this.energyCharge > 0.001) {
             Draw.z(Layer.turret + 0.01);
 
- 
             let bulletType = this.peekAmmo();
             let energyColor = bulletType.backColor ? bulletType.backColor : Color.valueOf("#ffcc00");
 
-                    let barrelOffset = 14.0 + (this.customRecoil * -5.0); 
+            let barrelOffset = 14.0 + (this.customRecoil * -5.0); 
             let ballX = this.x + barrelOffset * cos;
             let ballY = this.y + barrelOffset * sin;
 
-                    let pulse = Mathf.absin(Time.time, 3.0, 1.5);
+            let pulse = Mathf.absin(Time.time, 3.0, 1.5);
             let baseRadius = (5.0 + pulse) * this.energyCharge;
 
-                     Draw.color(energyColor);
+            Draw.color(energyColor);
             Draw.alpha(0.35 * this.energyCharge);
             Fill.circle(ballX, ballY, baseRadius * 1.8);
 
- 
             Draw.color(energyColor);
             Draw.alpha(0.8 * this.energyCharge);
             Lines.stroke(1.5 * this.energyCharge);
             Lines.circle(ballX, ballY, baseRadius * 1.3);
- 
+
             Draw.color(Color.white);
             Draw.alpha(0.9 * this.energyCharge);
             Fill.circle(ballX, ballY, baseRadius * 0.7);
@@ -1041,14 +1025,17 @@ buildConfiguration(table) {
         this.subBulletTimer = 0.0;
     }
 });
- 
+
+// Tối ưu hóa hiệu năng: Thay vì dùng Groups.build.each duyệt toàn bộ bản đồ,
+// sự kiện này chỉ kiểm tra trực tiếp các pháo đang được buff trong từ điển global.cornerBuffedTurrets.
 Events.on(UnitDamageEvent, cons(e => {
     let unit = e.unit;
     if (unit == null || !unit.isValid()) return;
 
     if (typeof global !== "undefined" && global.cornerBuffedTurrets) {
-        Groups.build.each(cons(build => {
-            let sourceIndeniter = global.cornerBuffedTurrets[build.id];
+        for (let id in global.cornerBuffedTurrets) {
+            let sourceIndeniter = global.cornerBuffedTurrets[id];
+            let build = Vars.world.build(parseInt(id));
             
             if (build != null && build.isValid() && sourceIndeniter != null && sourceIndeniter.isValid()) {
                 if (unit.team != build.team && build.team == sourceIndeniter.team && build.dst(unit) <= build.range() + 20) {
@@ -1056,18 +1043,20 @@ Events.on(UnitDamageEvent, cons(e => {
                     
                     if (status != null && Mathf.chance(0.35)) { 
                         unit.apply(status, 60 * 10);
-                        let id = unit.id;
+                        let uid = unit.id;
                         
                         if (global.bemodStacks) {
-                            global.bemodStacks[id] = (global.bemodStacks[id] || 0) + 1;
+                            global.bemodStacks[uid] = (global.bemodStacks[uid] || 0) + 1;
                             
-                            if (global.bemodStacks[id] >= 10) {
+                            if (global.bemodStacks[uid] >= 10) {
                                 triggerBemodExplosion(build, unit, 0, false, true, true);
                             }
                         }
                     }
                 }
+            } else {
+                delete global.cornerBuffedTurrets[id];
             }
-        }));
+        }
     }
 }));

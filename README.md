@@ -3,6 +3,13 @@
 
 
 -------------------------------------------
+> Điều chỉnh cân bằng bản 0.7.11:
++ Pháo Vendicum:
+   - thêm đạn: Đồng với 50% sức mạnh so với đạn Silicon.
+   - Kỹ năng mới (Nội tại va chạm): Khi pháo tiêu hao hết số buff, lập tức nhận 9% sát thương, tối đa 999%.
+
+
+-------------------------------------------
 > Điều chỉnh cân bằng bản 0.7.10:
 + Pháo Lyvervon:
    - Tăng 100% chi phí xây dựng.

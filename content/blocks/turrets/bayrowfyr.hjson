@@ -36,7 +36,7 @@ requirements: [
   }
 ]
 ammoTypes: {
-  surge-alloy: {
+  titanium: {
     type: BasicBulletType
     sprite: large-orb
     speed: 4.5

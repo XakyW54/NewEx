@@ -6,8 +6,8 @@ const reqMK2 = { copper: 6000, lead: 6000, titanium: 0 };
 const reqMK2B = { copper: 6000, lead: 6000, titanium: 3000 }; 
 
 const hitsPerStack = 10; 
-const maxStackNormal = 8; 
-const maxStackMK2B = 18; 
+const maxStackNormal = 111; // 111 tầng * 90% = ~9990%
+const maxStackMK2B = 111; 
 
 const crumbleExplosionEffect = new Effect(40, new Cons({
     get: function(e) {
@@ -61,6 +61,22 @@ const tankaniDespawnEffect = new MultiEffect(
     hitSparkLargeEffect
 );
 
+function applyMaxHpPercentDamage(b, entity) {
+    let owner = b.owner;
+    if (owner != null) {
+        if (owner.addHitPoint !== undefined) {
+            owner.addHitPoint();
+        }
+        if (owner.damageStack !== undefined && entity != null && entity.maxHealth !== undefined) {
+            let pairs = Math.floor(owner.damageStack / 2);
+            if (pairs > 0) {
+                let extraDamage = entity.maxHealth() * (pairs * 0.002); // Mỗi 2 tầng = 0.2% Max HP
+                entity.damage(extraDamage);
+            }
+        }
+    }
+}
+
 const tankaniNormalBullet = extend(BasicBulletType, { 
     speed: 15, damage: 1673, width: 10, height: 33, lifetime: 60, 
     frontColor: Color.valueOf("#e0ea87"), backColor: Color.valueOf("#e5ff00"), 
@@ -69,10 +85,7 @@ const tankaniNormalBullet = extend(BasicBulletType, {
     despawnEffect: tankaniDespawnEffect,
     
     hitEntity(b, entity, health) { 
-        let owner = b.owner; 
-        if (owner != null && owner.addHitPoint !== undefined) { 
-            owner.addHitPoint(); 
-        }
+        applyMaxHpPercentDamage(b, entity);
         this.super$hitEntity(b, entity, health); 
     }
 });
@@ -87,10 +100,7 @@ const tankaniMK2Bullet = extend(BasicBulletType, {
     despawnEffect: tankaniDespawnEffect,
 
     hitEntity(b, entity, health) { 
-        let owner = b.owner; 
-        if (owner != null && owner.addHitPoint !== undefined) { 
-            owner.addHitPoint(); 
-        }
+        applyMaxHpPercentDamage(b, entity);
         this.super$hitEntity(b, entity, health); 
     }
 });
@@ -107,10 +117,7 @@ const tankaniMK2BBullet = extend(BasicBulletType, {
     despawnEffect: tankaniDespawnEffect,
 
     hitEntity(b, entity, health) { 
-        let owner = b.owner; 
-        if (owner != null && owner.addHitPoint !== undefined) { 
-            owner.addHitPoint(); 
-        }
+        applyMaxHpPercentDamage(b, entity);
         this.super$hitEntity(b, entity, health); 
     }
 });
@@ -136,7 +143,7 @@ Events.on(ClientLoadEvent, new Cons({
                             get: function(){  
                                 let isEn = Core.settings.getString("locale").startsWith("en");
                                 let max = e.getMaxStack();
-                                let baseText = "DMG: +" + Math.floor(e.getStackRatio() * (max * 10)) + "%"; 
+                                let baseText = "DMG: +" + Math.floor(e.getStackRatio() * (max * 90)) + "%"; 
                                 if(e.damageStack >= max) { 
                                     return baseText + (isEn ? " [cyan](ARMOR PIERCE & SHRED)[]" : " [cyan](XUYÊN GIÁP & PHÁ GIÁP)[]"); 
                                 }
@@ -212,7 +219,7 @@ Events.on(ClientLoadEvent, new Cons({
                 },
 
                 getModifiedDamage(baseDmg) { 
-                    let multiplier = 1.0 + (this.damageStack * 0.1); 
+                    let multiplier = 1.0 + (this.damageStack * 0.9); // 90% mỗi tầng
                     return Math.round(baseDmg * multiplier); 
                 },
 
@@ -281,12 +288,12 @@ Events.on(ClientLoadEvent, new Cons({
                                                 " [white]• Increases HP to [green]1103 HP[].[]\n" + 
                                                 " [white]• Retains multi-target (Ground & Air) and base range.[]\n" + 
                                                 " [white]• Bullets explode in a [orange]50 pixel[] radius on hit.[]\n" + 
-                                                " [white]• Max damage stack: [yellow]8 stacks (+80% DMG)[].[]"
+                                                " [white]• Max damage stack: [yellow]" + maxStackNormal + " stacks (+9990% DMG)[].[]"
                                               : "Tích hợp công nghệ nổ mảnh diện rộng:\n" + 
                                                 " [white]• Tăng lượng máu chống chịu lên [green]1103 HP[].[]\n" + 
                                                 " [white]• Giữ nguyên cơ chế bắn đa mục tiêu (Đất & Không) và tầm bắn gốc.[]\n" + 
                                                 " [white]• Đạn chạm mục tiêu kích nổ lan phạm vi [orange]50 pixel[].[]\n" + 
-                                                " [white]• Tích tầng sát thương tối đa: [yellow]8 tầng (+80% DMG)[].[]";
+                                                " [white]• Tích tầng sát thương tối đa: [yellow]" + maxStackNormal + " tầng (+9990% DMG)[].[]";
                             let b1D = b1.add(b1Text); 
                             b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row(); 
                             b1.button(isEn ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => { 
@@ -307,13 +314,13 @@ Events.on(ClientLoadEvent, new Cons({
                                                 " [white]• Increases max HP to [green]1425 HP[].[]\n" + 
                                                 " [white]• Extends effective range by [ultra-light]2x [green](x2 Range)[][].[]\n" + 
                                                 " [white]• Fire rate [red]reduced by 40%[][white], attacks [orange]Ground & Air[].[]\n" + 
-                                                " [white]• Max stack breakthrough up to [gold]18 stacks (Max +180% DMG)[].[]\n" + 
+                                                " [white]• Max stack breakthrough up to [gold]" + maxStackMK2B + " stacks (Max +9990% DMG)[].[]\n" + 
                                                 " [white]• Pressure wave blast area up to [pink]150 pixels[].[]"
                                               : "Chuyển đổi sang pháo cối tầm xa siêu tăng trưởng:\n" + 
                                                 " [white]• Gia tăng lượng máu tối đa lên cực đại [green]1425 HP[].[]\n" + 
                                                 " [white]• Mở rộng [ultra-light]gấp đôi tầm bắn hiệu dụng [green](x2 Range)[][].[]\n" + 
                                                 " [white]• Tốc độ bắn [red]giảm 40%[][white], tấn công cả [orange]Đất & Không[].[]\n" + 
-                                                " [white]• Giới hạn tích tầng đột phá lên tới [gold]18 tầng (Tối đa +180% DMG)[].[]\n" + 
+                                                " [white]• Giới hạn tích tầng đột phá lên tới [gold]" + maxStackMK2B + " tầng (Tối đa +9990% DMG)[].[]\n" + 
                                                 " [white]• Đạn nổ áp suất tạo vùng sát thương lan rộng tới [pink]150 pixel[].[]";
                             let b2D = b2.add(b2Text); 
                             b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row(); 
@@ -353,12 +360,14 @@ Events.on(ClientLoadEvent, new Cons({
                         let statStackStr = isEn ? "\n[scarlet]⚡ EVOLUTION MECHANIC (HITS) ⚡[]\n" + 
                                                    "[lightgray]Hits landed:[] [yellow]" + this.hitPoints + " Hits[]\n" + 
                                                    "[lightgray]Power level:[] [orange]Tier " + this.damageStack + " / " + max + "[]\n" + 
-                                                   "[lightgray]Bonus damage:[] [green]+" + (this.damageStack * 10) + "%[] (Max +" + (max * 10) + "%)\n" + 
+                                                   "[lightgray]Bonus damage:[] [green]+" + (this.damageStack * 90) + "%[] (Max +" + (max * 90) + "%)\n" + 
+                                                   "[lightgray]Max HP Bonus DMG:[] [green]+" + (Math.floor(this.damageStack / 2) * 0.2).toFixed(1) + "% Max HP[]\n" +
                                                    (this.damageStack >= max ? "[cyan]🔥 Max damage reach: Triggers 40% armor pierce & Armor reduction (armorMultiplier = 1.5)![]\n" : "")
                                                  : "\n[scarlet]⚡ CƠ CHẾ TIẾN HÓA (HITS) ⚡[]\n" + 
                                                    "[lightgray]Số phát bắn trúng:[] [yellow]" + this.hitPoints + " Hits[]\n" + 
                                                    "[lightgray]Cấp độ tầng lực:[] [orange]Tầng " + this.damageStack + " / " + max + "[]\n" + 
-                                                   "[lightgray]Sát thương cộng thêm:[] [green]+" + (this.damageStack * 10) + "%[] (Tối đa +" + (max * 10) + "%)\n" + 
+                                                   "[lightgray]Sát thương cộng thêm:[] [green]+" + (this.damageStack * 90) + "%[] (Tối đa +" + (max * 90) + "%)\n" + 
+                                                   "[lightgray]ST thêm theo Max HP:[] [green]+" + (Math.floor(this.damageStack / 2) * 0.2).toFixed(1) + "% Max HP[]\n" +
                                                    (this.damageStack >= max ? "[cyan]🔥 Đạt mốc tối đa Sát thương: Kích hoạt đạn xuyên giáp 40% & Giảm hiệu quả giáp mục tiêu (armorMultiplier = 1.5)![]\n" : ""); 
 
                         if (currentTier === 0) { 

@@ -6,7 +6,7 @@ const reqMK2 = { copper: 4000, lead: 4000, titanium: 0 };
 const reqMK2B = { copper: 4000, lead: 4000, titanium: 2000 };
 
 const hitsPerStack = 10; 
-const maxStack = 8;      
+const maxStack = 111; // 111 tầng * 90% = ~9990% sát thương tăng thêm (Tối đa ~9999%)
 
 const crumbleExplosionEffect = new Effect(40, cons(e => {
     let previousZ = Draw.z();
@@ -19,12 +19,28 @@ const crumbleExplosionEffect = new Effect(40, cons(e => {
     let flashColor = Color.white.cpy().lerp(Pal.redDust, e.fin());
     flashColor.a = e.fout();
     Draw.color(flashColor);
-    Lines.stroke(e.fout() * 8.0);
+    Lines.stroke(flashColor);
     Lines.circle(e.x, e.y, Interp.pow2Out.apply(e.fin()) * 35.0);
 
     Draw.z(previousZ);
     Draw.reset();
 }));
+
+function applyMaxHpPercentDamage(b, entity) {
+    let owner = b.owner;
+    if (owner != null) {
+        if (owner.addHitPoint !== undefined) {
+            owner.addHitPoint();
+        }
+        if (owner.damageStack !== undefined && entity != null && entity.maxHealth !== undefined) {
+            let pairs = Math.floor(owner.damageStack / 2);
+            if (pairs > 0) {
+                let extraDamage = entity.maxHealth() * (pairs * 0.002); // Mỗi 2 tầng = 0.2% Max HP
+                entity.damage(extraDamage);
+            }
+        }
+    }
+}
 
 const tankaniNormalBullet = extend(BasicBulletType, {
     speed: 15, damage: 1115, width: 10, height: 33, lifetime: 60,
@@ -32,10 +48,7 @@ const tankaniNormalBullet = extend(BasicBulletType, {
     trailColor: Color.valueOf("#daea80"),
     
     hitEntity(b, entity, health) {
-        let owner = b.owner;
-        if (owner != null && owner.addHitPoint !== undefined) {
-            owner.addHitPoint();
-        }
+        applyMaxHpPercentDamage(b, entity);
         this.super$hitEntity(b, entity, health);
     }
 });
@@ -50,10 +63,7 @@ const tankaniMK2Bullet = extend(BasicBulletType, {
     despawnEffect: crumbleExplosionEffect,
 
     hitEntity(b, entity, health) {
-        let owner = b.owner;
-        if (owner != null && owner.addHitPoint !== undefined) {
-            owner.addHitPoint();
-        }
+        applyMaxHpPercentDamage(b, entity);
         this.super$hitEntity(b, entity, health);
     }
 });
@@ -70,10 +80,7 @@ const tankaniMK2BBullet = extend(BasicBulletType, {
     despawnEffect: crumbleExplosionEffect,
 
     hitEntity(b, entity, health) {
-        let owner = b.owner;
-        if (owner != null && owner.addHitPoint !== undefined) {
-            owner.addHitPoint();
-        }
+        applyMaxHpPercentDamage(b, entity);
         this.super$hitEntity(b, entity, health);
     }
 });
@@ -96,7 +103,7 @@ Events.on(ClientLoadEvent, cons(e => {
                 return new Bar(
                     new Prov({ 
                         get: function(){ 
-                            return "DMG: +" + Math.floor(e.getStackRatio() * 80) + "%"; 
+                            return "DMG: +" + Math.floor(e.getStackRatio() * (maxStack * 90)) + "%"; 
                         } 
                     }),
                     new Prov({ 
@@ -120,7 +127,7 @@ Events.on(ClientLoadEvent, cons(e => {
 
             getStackRatio() {
                 if (this.damageStack === undefined) return 0.0;
-                return this.damageStack / 8.0;
+                return this.damageStack / maxStack;
             },
             
             getTier() { return this.tierState == null ? 0 : this.tierState; },
@@ -146,7 +153,7 @@ Events.on(ClientLoadEvent, cons(e => {
             },
 
             getModifiedDamage(baseDmg) {
-                let multiplier = 1.0 + (this.damageStack * 0.1);
+                let multiplier = 1.0 + (this.damageStack * 0.9); // 90% mỗi tầng
                 return Math.round(baseDmg * multiplier);
             },
 
@@ -301,12 +308,14 @@ Events.on(ClientLoadEvent, cons(e => {
 
                     let statStackStr = isEn ? "\n[scarlet]⚡ EVOLUTION MECHANIC (HITS) ⚡[]\n" +
                                                "[lightgray]Hits landed:[] [yellow]" + this.hitPoints + " Hits[]\n" +
-                                               "[lightgray]Power level:[] [orange]Tier " + this.damageStack + " / 8[]\n" +
-                                               "[lightgray]Bonus damage:[] [green]+" + (this.damageStack * 10) + "%[] (Max +80%)\n"
+                                               "[lightgray]Power level:[] [orange]Tier " + this.damageStack + " / " + maxStack + "[]\n" +
+                                               "[lightgray]Bonus damage:[] [green]+" + (this.damageStack * 90) + "%[] (Max +" + (maxStack * 90) + "%)\n" +
+                                               "[lightgray]Max HP Bonus DMG:[] [green]+" + (Math.floor(this.damageStack / 2) * 0.2).toFixed(1) + "% Max HP[]\n"
                                              : "\n[scarlet]⚡ CƠ CHẾ TIẾN HÓA (HITS) ⚡[]\n" +
                                                "[lightgray]Số phát bắn trúng:[] [yellow]" + this.hitPoints + " Hits[]\n" +
-                                               "[lightgray]Cấp độ tầng lực:[] [orange]Tầng " + this.damageStack + " / 8[]\n" +
-                                               "[lightgray]Sát thương cộng thêm:[] [green]+" + (this.damageStack * 10) + "%[] (Tối đa +80%)\n";
+                                               "[lightgray]Cấp độ tầng lực:[] [orange]Tầng " + this.damageStack + " / " + maxStack + "[]\n" +
+                                               "[lightgray]Sát thương cộng thêm:[] [green]+" + (this.damageStack * 90) + "%[] (Tối đa +" + (maxStack * 90) + "%)\n" +
+                                               "[lightgray]ST thêm theo Max HP:[] [green]+" + (Math.floor(this.damageStack / 2) * 0.2).toFixed(1) + "% Max HP[]\n";
 
                     if (currentTier == 0) {
                         title += "[yellow](MK1)[]";

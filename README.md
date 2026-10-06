@@ -3,10 +3,22 @@
 
 
 -------------------------------------------
+> Điều chỉnh cân bằng bản 0.7.12:
++ Pháo điều phối Drone:
+   - giảm 90% chi phí xây dựng.
++ Pháo Tankani 2k và 4k:
+   - Nâng giới hạn tầng tối đa lên 9999%.
+   - Tăng sát thương mỗi tầng lên 90%.
+   - Sát thương 0.2% Max HP mục tiêu mỗi 2 tầng.
+
+
+
+-------------------------------------------
 > Điều chỉnh cân bằng bản 0.7.11:
 + Pháo Vendicum:
    - thêm đạn: Đồng với 50% sức mạnh so với đạn Silicon.
    - Kỹ năng mới (Nội tại va chạm): Khi pháo tiêu hao hết số buff, lập tức nhận 9% sát thương, tối đa 999%.
+
 
 
 -------------------------------------------

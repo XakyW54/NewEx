@@ -1,0 +1,67 @@
+type: ItemTurret
+name: Tyteryi
+description: Pháo Tyteryi: Tháp pháo cường hóa nhiệt năng với cơ chế tích tụ năng lượng độc đáo. Càng bắn liên tục, pháo càng nóng lên giúp tăng mạnh Tốc độ bắn (lên tới +250%) và Sát thương được khuếch đại tối đa +500% DMG. Pháo có khả năng nâng cấp lên MK2 hoặc MK2B với hiệu ứng nội tại kích nổ/sát thương % máu khi nạp đầy nhiệt lượng.
+health: 1200
+size: 3
+reload: 20
+range: 320
+recoil: 0
+inaccuracy: 2
+rotateSpeed: 2
+shootWarmupSpeed: 0.002
+velocityRnd: 0.05
+configurable: true
+shoot: {
+  type: ShootBarrel
+  shots: 1
+  shotDelay: 3.75
+}
+shootSound: minal
+shootCone: 45
+shootEffect: none
+maxAmmo: 30
+ammoPerShot: 2
+cooldownTime: 150
+unitSort: closest
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+}
+smokeEffect: [
+  {
+    followParent: false
+    particles: 16
+    length: 25.0
+    cone: 15.0
+    lifetime: 15
+    interp: pow3Out
+    sizeInterp: pow2Out
+    colorFrom: "787878"
+    colorTo: "787878"
+    sizeFrom: 2.0
+    sizeTo: 0.0
+    layer: 104
+  },
+  {
+    followParent: false
+    particles: 12
+    length: 40.0
+    cone: 25.0
+    lifetime: 30
+    interp: pow3Out
+    sizeInterp: pow2Out
+    colorFrom: "78787800"
+    colorTo: "787878"
+    sizeFrom: 4.0
+    sizeTo: 0.0
+    layer: 104
+  }
+]
+researchCostMultiplier: 0.1
+requirements: [
+  copper/440
+  lead/230
+  silicon/105
+]
+category: turret
+research: rangtaturs

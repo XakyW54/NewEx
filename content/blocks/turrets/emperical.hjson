@@ -3,8 +3,8 @@ type: ItemTurret
 localizedName: Emperical
 description: "Fire energy orbs, lasers, and missiles; unleash lightning strikes; and pull in enemies."
 
-health: 9300
-size: 4
+health: 19300
+size: 3
 configurable: true
 logicConfigurable: true
 
@@ -18,21 +18,24 @@ consumes: {
 }
 
 requirements: [
-    silicon/800
-    copper/1400
-    surge-alloy/240
-    plastanium/550
-    obsidis/950
+    copper/34089
+    silicon/8008
+    copper/14008
+    surge-alloy/2408
+    plastanium/5508
+    obsidis/9508
+        obs/9508
+
 ]
 
 shootSound: none
 ammoTypes: {
     surge-alloy: {
         damage: 10
-        speed: 5
-        lifetime: 60
-        width: 10
-        height: 10
+        speed: 1
+        lifetime: 1
+        width: 1
+        height: 1
     }
 }
 

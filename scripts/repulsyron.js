@@ -1,8 +1,3 @@
-// =======================================================
-// REPULSYRON - IRON MAN UNIBEAM / REPULSOR LASER TURRET
-// =======================================================
-
-// Hiệu ứng tia va chạm chuẩn (Hit Effect)
 const customUnibeamHit = new Effect(14, e => {
     Draw.color(Color.white, Color.valueOf("#00c8ff"), e.fin());
     Lines.stroke(e.fout() * 2.2);
@@ -12,7 +7,6 @@ const customUnibeamHit = new Effect(14, e => {
     });
 });
 
-// Hiệu ứng Overload quá tải khi bắn lâu (Sát thương Max HP)
 const overloadHitEffect = new Effect(20, e => {
     Draw.color(Color.valueOf("#ff0055"), Color.valueOf("#ff99bb"), e.fin());
     Lines.stroke(e.fout() * 3);
@@ -22,7 +16,6 @@ const overloadHitEffect = new Effect(20, e => {
     });
 });
 
-// Hiệu ứng khói bốc ra từ nòng pháo khi đang nguội (Cooldown 5s)
 const cooldownSmoke = new Effect(40, e => {
     Draw.color(Color.gray, Color.darkGray, e.fout());
     Angles.randLenVectors(e.id, 2, e.fin() * 14, e.rotation, 30, (x, y) => {
@@ -30,9 +23,18 @@ const cooldownSmoke = new Effect(40, e => {
     });
 });
 
-// =======================================================
-// HÀM QUẢN LÝ ẨN/HIỆN MENU XÂY DỰNG THEO SỐ LƯỢNG LÕI
-// =======================================================
+// Fix lỗi: lấy x, y của mục tiêu phụ từ e.data
+const secondaryLaserEffect = new Effect(12, e => {
+    if (!e.data) return;
+    let targetX = e.data.x;
+    let targetY = e.data.y;
+
+    Draw.color(Color.valueOf("#ff0055"), Color.white, e.fout());
+    Lines.stroke(e.fout() * 2.5);
+    Lines.line(e.x, e.y, targetX, targetY);
+    Fill.circle(targetX, targetY, e.fout() * 3);
+});
+
 function updateRepulsyronVisibility() {
     const repulsyronBlock = Vars.content.block("newex-repulsyron") || Vars.content.block("repulsyron");
     if (!Vars.player || !repulsyronBlock) return;
@@ -59,18 +61,18 @@ Events.on(ContentInitEvent, () => {
     if (!repulsyron) return;
 
     repulsyron.buildType = () => extend(PowerTurret.PowerTurretBuild, repulsyron, {
-        beamProgress: 0,      // Tiến trình vươn tia từ nòng tới mục tiêu (0.2s = 12 ticks)
-        damageTimer: 0,       // Bộ đếm thời gian gây sát thương (mỗi 0.1s = 6 ticks)
-        firingTimer: 0,       // Bộ đếm thời gian bắn liên tục trên 1 mục tiêu (ticks)
-        fadeProgress: 0,      // Tiến trình thu hồi tia khi ngắt/mục tiêu chết
-        chargeTimer: 0,       // Bộ đếm thời gian tụ lực trước khi bắn (0.5s = 30 ticks)
-        cooldownTimer: 0,     // Bộ đếm thời gian làm nguội pháo (5s = 300 ticks)
+        beamProgress: 0,
+        damageTimer: 0,
+        firingTimer: 0,
+        fadeProgress: 0,
+        chargeTimer: 0,
+        cooldownTimer: 0,
         
         isCharging: false,
         isFiring: false,
         isFading: false,
         
-        lockedTarget: null,   // Khóa mục tiêu duy nhất đến khi tiêu diệt
+        lockedTarget: null,
         
         startX: 0, startY: 0,
         endX: 0, endY: 0,
@@ -83,7 +85,6 @@ Events.on(ContentInitEvent, () => {
             let muzzleX = this.x + Angles.trnsx(this.rotation, repulsyron.size * 4);
             let muzzleY = this.y + Angles.trnsy(this.rotation, repulsyron.size * 4);
 
-            // 1. XỬ LÝ NGUỘI PHÁO (COOLDOWN 5s) & TẠO KHÓI Ở NÒNG
             if (this.cooldownTimer > 0) {
                 this.cooldownTimer -= Time.delta;
                 if (Mathf.chance(0.25)) {
@@ -91,7 +92,8 @@ Events.on(ContentInitEvent, () => {
                 }
             }
 
-            // Hàm kiểm tra mục tiêu hợp lệ
+            let isControlledByPlayer = this.isControlled();
+
             let isTargetValid = (t) => {
                 if (t == null) return false;
                 let isDead = (typeof t.dead === "function") ? t.dead() : t.dead;
@@ -100,42 +102,57 @@ Events.on(ContentInitEvent, () => {
                 return this.within(t, repulsyron.range);
             };
 
-            // Sticky Targeting: Giữ mục tiêu duy nhất
-            if (this.lockedTarget != null && isTargetValid(this.lockedTarget)) {
-                this.target = this.lockedTarget;
-            } else if (this.lockedTarget != null) {
-                this.stopFiringAndStartFade(muzzleX, muzzleY);
-                this.lockedTarget = null;
+            if (!isControlledByPlayer) {
+                if (this.lockedTarget != null && isTargetValid(this.lockedTarget)) {
+                    this.target = this.lockedTarget;
+                } else if (this.lockedTarget != null) {
+                    this.stopFiringAndStartFade(muzzleX, muzzleY);
+                    this.lockedTarget = null;
+                }
             }
 
-            // Chỉ tụ lực / bắn khi đã nguội hoàn toàn (cooldownTimer <= 0)
             if (this.isShooting && this.efficiency > 0 && this.cooldownTimer <= 0) {
-                let currentTarget = this.target;
+                let targetX = 0;
+                let targetY = 0;
 
-                if (currentTarget != null && isTargetValid(currentTarget)) {
-                    // Đổi mục tiêu mới -> Reset trạng thái
-                    if (this.lockedTarget !== currentTarget) {
-                        this.lockedTarget = currentTarget;
-                        this.beamProgress = 0;
-                        this.firingTimer = 0;
-                        this.damageTimer = 0;
-                        this.chargeTimer = 0;
+                if (isControlledByPlayer) {
+                    let curAimX = (typeof this.aimX === "function") ? this.aimX() : this.aimX;
+                    let curAimY = (typeof this.aimY === "function") ? this.aimY() : this.aimY;
+
+                    if (curAimX !== undefined && curAimY !== undefined && !isNaN(curAimX) && !isNaN(curAimY)) {
+                        targetX = curAimX;
+                        targetY = curAimY;
+                    } else {
+                        targetX = muzzleX + Angles.trnsx(this.rotation, repulsyron.range);
+                        targetY = muzzleY + Angles.trnsy(this.rotation, repulsyron.range);
                     }
+                } else {
+                    let currentTarget = this.target;
+                    if (currentTarget != null && isTargetValid(currentTarget)) {
+                        if (this.lockedTarget !== currentTarget) {
+                            this.lockedTarget = currentTarget;
+                            this.beamProgress = 0;
+                            this.firingTimer = 0;
+                            this.damageTimer = 0;
+                            this.chargeTimer = 0;
+                        }
+                        targetX = currentTarget.getX();
+                        targetY = currentTarget.getY();
+                    }
+                }
 
-                    // 2. PHA 1: TỤ LỰC TRONG 0.5s (30 TIKCS)
+                if (isControlledByPlayer || this.lockedTarget != null) {
                     if (this.chargeTimer < 30) {
                         this.isCharging = true;
                         this.isFiring = false;
                         this.chargeTimer += Time.delta;
                     } else {
-                        // 3. PHA 2: BẮN TIA LASER
                         this.isCharging = false;
                         this.isFiring = true;
                         this.isFading = false;
 
                         this.firingTimer += Time.delta;
 
-                        // Vươn tia laser trong 0.2s (12 ticks)
                         if (this.beamProgress < 1.0) {
                             this.beamProgress = Math.min(1.0, this.beamProgress + (Time.delta / 12));
                         }
@@ -143,43 +160,69 @@ Events.on(ContentInitEvent, () => {
                         this.startX = muzzleX;
                         this.startY = muzzleY;
 
-                        let realTargetX = currentTarget.getX();
-                        let realTargetY = currentTarget.getY();
+                        this.endX = Mathf.lerp(this.startX, targetX, this.beamProgress);
+                        this.endY = Mathf.lerp(this.startY, targetY, this.beamProgress);
 
-                        this.endX = Mathf.lerp(this.startX, realTargetX, this.beamProgress);
-                        this.endY = Mathf.lerp(this.startY, realTargetY, this.beamProgress);
-
-                        // Gây sát thương mỗi 0.1s (6 ticks)
                         this.damageTimer += Time.delta;
-                        if (this.damageTimer >= 6) {
+                        if (this.damageTimer >= 6) { // 0.1s mỗi nhịp
                             this.damageTimer = 0;
 
                             let secondsFired = this.firingTimer / 60;
-                            let damageMultiplier = 1 + (secondsFired * 0.15);
-                            let baseDamage = 20 * this.efficiency * damageMultiplier;
+                            
+                            // Cứ mỗi giây khi bắn, tăng thêm 1000% sát thương (+10x base damage / sec)
+                            let dmgMultiplier = 1 + (secondsFired * 10);
+                            let currentDamage = 20 * this.efficiency * dmgMultiplier;
 
-                            // Bắn > 10s -> Tăng dần % Max HP gây thêm
-                            let maxHpBonus = 0;
-                            let maxHp = 0;
-                            if (typeof currentTarget.maxHealth === "function") {
-                                maxHp = currentTarget.maxHealth();
-                            } else if (currentTarget.maxHealth != undefined) {
-                                maxHp = currentTarget.maxHealth;
-                            }
+                            let laserWidth = 12;
 
-                            if (secondsFired >= 10 && maxHp > 0) {
-                                maxHpBonus = maxHp * 0.01 * this.efficiency;
-                            }
+                            // 1. Gây sát thương lên Đơn vị (Units)
+                            Units.nearbyEnemies(this.team, Math.min(this.startX, this.endX) - 30, Math.min(this.startY, this.endY) - 30, Math.abs(this.endX - this.startX) + 60, Math.abs(this.endY - this.startY) + 60, cons(unit => {
+                                if (unit != null && Intersector.distanceSegmentPoint(this.startX, this.startY, this.endX, this.endY, unit.x, unit.y) <= (laserWidth + unit.hitSize / 2)) {
+                                    
+                                    unit.damage(currentDamage);
 
-                            let totalDamage = baseDamage + maxHpBonus;
+                                    // Khi bắn đủ 5s
+                                    if (secondsFired >= 5) {
+                                        overloadHitEffect.at(unit.x, unit.y);
 
-                            if (currentTarget.damage != null) {
-                                currentTarget.damage(totalDamage);
-                            } else if (Damage != null) {
-                                Damage.damage(this.team, this.endX, this.endY, 8, totalDamage);
-                            }
+                                        Units.nearbyEnemies(this.team, unit.x - 120, unit.y - 120, 240, 240, cons(subUnit => {
+                                            if (subUnit != null && subUnit !== unit && subUnit.within(unit.x, unit.y, 120)) {
+                                                subUnit.damagePierce(5000);
+                                                // Truyền vị trí qua data để vẽ tia phụ không bị crash
+                                                secondaryLaserEffect.at(unit.x, unit.y, 0, Color.white, { x: subUnit.x, y: subUnit.y });
+                                            }
+                                        }));
+                                    } else {
+                                        customUnibeamHit.at(unit.x, unit.y);
+                                    }
+                                }
+                            }));
 
-                            if (secondsFired >= 10) {
+                            // 2. Gây sát thương lên Công trình (Buildings)
+                            let x1 = World.toTile(this.startX), y1 = World.toTile(this.startY);
+                            let x2 = World.toTile(this.endX), y2 = World.toTile(this.endY);
+                            World.raycast(x1, y1, x2, y2, (wx, wy) => {
+                                let tile = Vars.world.tile(wx, wy);
+                                if (tile != null && tile.build != null && tile.build.team != this.team) {
+                                    let build = tile.build;
+                                    
+                                    build.damage(this.team, currentDamage);
+
+                                    if (secondsFired >= 5) {
+                                        overloadHitEffect.at(build.x, build.y);
+
+                                        Units.nearbyEnemies(this.team, build.x - 120, build.y - 120, 240, 240, cons(subUnit => {
+                                            if (subUnit != null && subUnit.within(build.x, build.y, 120)) {
+                                                subUnit.damagePierce(5000);
+                                                secondaryLaserEffect.at(build.x, build.y, 0, Color.white, { x: subUnit.x, y: subUnit.y });
+                                            }
+                                        }));
+                                    }
+                                }
+                                return false;
+                            });
+
+                            if (secondsFired >= 5) {
                                 overloadHitEffect.at(this.endX, this.endY);
                             } else {
                                 customUnibeamHit.at(this.endX, this.endY);
@@ -193,9 +236,8 @@ Events.on(ContentInitEvent, () => {
                 this.stopFiringAndStartFade(muzzleX, muzzleY);
             }
 
-            // 4. XỬ LÝ THU HỒI TIA LASER CHÍNH XÁC (KHÔNG BỊ LỆCH NÒNG PHÁO)
             if (this.isFading) {
-                this.fadeProgress += Time.delta / 12; // Thu hồi tia trong 0.2s
+                this.fadeProgress += Time.delta / 12;
                 
                 this.startX = Mathf.lerp(this.fadeStartX, this.fadeEndX, this.fadeProgress);
                 this.startY = Mathf.lerp(this.fadeStartY, this.fadeEndY, this.fadeProgress);
@@ -213,7 +255,6 @@ Events.on(ContentInitEvent, () => {
 
         stopFiringAndStartFade(muzzleX, muzzleY) {
             if (this.isFiring || this.isCharging) {
-                // Kích hoạt Cooldown 5s mỗi khi ngắt bắn hoặc đổi mục tiêu
                 if (this.isFiring) {
                     this.cooldownTimer = 300; 
                 }
@@ -225,7 +266,6 @@ Events.on(ContentInitEvent, () => {
                 this.damageTimer = 0;
                 this.chargeTimer = 0;
 
-                // Khóa điểm bắt đầu và kết thúc chuẩn xác để lerp không bị lệch
                 this.fadeStartX = muzzleX;
                 this.fadeStartY = muzzleY;
                 this.fadeEndX = this.endX;
@@ -239,7 +279,6 @@ Events.on(ContentInitEvent, () => {
             let muzzleX = this.x + Angles.trnsx(this.rotation, repulsyron.size * 4);
             let muzzleY = this.y + Angles.trnsy(this.rotation, repulsyron.size * 4);
 
-            // A. VẼ HIỆU ỨNG TỤ LỰC Ở NÒNG PHÁO (0.5s)
             if (this.isCharging) {
                 let chargeRatio = Mathf.clamp(this.chargeTimer / 30);
                 Draw.z(Layer.bullet + 2);
@@ -250,16 +289,13 @@ Events.on(ContentInitEvent, () => {
                 Draw.reset();
             }
 
-            // B. VẼ TIA LASER & CÁC HIỆU ỨNG ĐI KÈM
             if ((this.isFiring || this.isFading) && (this.beamProgress > 0)) {
                 Draw.z(Layer.bullet + 2);
 
                 let secondsFired = this.firingTimer / 60;
 
-                // Kích thước tăng dần theo thời gian
                 let sizeScale = 1 + Math.min(1.8, secondsFired * 0.12);
 
-                // 5. ĐỔI MÀU TỪ TỪ TỪ XANH DƯƠNG SANG HỒNG NEON (Trong khoảng từ 2s -> 10s)
                 let colorFactor = Mathf.clamp((secondsFired - 2) / 8); 
                 let cOuter = Color.valueOf("#0077ff").cpy().lerp(Color.valueOf("#ff0055"), colorFactor);
                 let cMid   = Color.valueOf("#00e1ff").cpy().lerp(Color.valueOf("#ff66aa"), colorFactor);
@@ -271,7 +307,6 @@ Events.on(ContentInitEvent, () => {
                 let midWidth   = 4.0 * sizeScale;
                 let innerWidth = 1.8 * sizeScale;
 
-                // 1. Lớp hào quang ngoài
                 Draw.color(cOuter);
                 Draw.alpha(alpha * 0.6);
                 Lines.stroke(outerWidth);
@@ -279,7 +314,6 @@ Events.on(ContentInitEvent, () => {
                 Fill.circle(this.startX, this.startY, outerWidth * 0.5);
                 Fill.circle(this.endX, this.endY, outerWidth * 0.5);
 
-                // 6. DÂY NĂNG LƯỢNG VÀ HẠT PHOTON XUẤT HIỆN TỪ TỪ (Fade in mượt từ 0s -> 3s)
                 let effectProgress = Mathf.clamp(secondsFired / 3.0); 
 
                 if (effectProgress > 0 && this.isFiring) {
@@ -287,7 +321,6 @@ Events.on(ContentInitEvent, () => {
                     let angle = Mathf.angle(this.endX - this.startX, this.endY - this.startY);
                     let segments = Math.floor(len / 8);
 
-                    // Vẽ 2 dây năng lượng xoắn với độ đậm tăng từ từ
                     Draw.color(cMid);
                     Draw.alpha(alpha * 0.85 * effectProgress);
                     Lines.stroke(1.6 * sizeScale * effectProgress);
@@ -311,7 +344,6 @@ Events.on(ContentInitEvent, () => {
                         }
                     }
 
-                    // 7. VẼ HẠT PHOTON VỚI KÍCH THƯỚC NGẪU NHIÊN CỐ ĐỊNH CHO MỖI HẠT
                     Draw.color(cInner);
                     let photonCount = Math.floor(14 * effectProgress);
                     for (let p = 0; p < photonCount; p++) {
@@ -323,7 +355,6 @@ Events.on(ContentInitEvent, () => {
                         let fx = px + Angles.trnsx(angle + 90, offset);
                         let fy = py + Angles.trnsy(angle + 90, offset);
 
-                        // Kích thước ngẫu nhiên theo chỉ số p (từ 0.6x đến 1.5x)
                         let randomFactor = 0.6 + ((p * 17) % 10) / 10.0 * 0.9;
                         let pSize = 1.4 * sizeScale * randomFactor;
 
@@ -332,7 +363,6 @@ Events.on(ContentInitEvent, () => {
                     }
                 }
 
-                // Lớp thân giữa
                 Draw.color(cMid);
                 Draw.alpha(alpha * 0.85);
                 Lines.stroke(midWidth);
@@ -340,7 +370,6 @@ Events.on(ContentInitEvent, () => {
                 Fill.circle(this.startX, this.startY, midWidth * 0.5);
                 Fill.circle(this.endX, this.endY, midWidth * 0.5);
 
-                // Lõi năng lượng trắng
                 Draw.color(cInner);
                 Draw.alpha(alpha);
                 Lines.stroke(innerWidth);
@@ -354,9 +383,6 @@ Events.on(ContentInitEvent, () => {
     });
 });
 
-// =======================================================
-// XỬ LÝ SỰ KIỆN QUẢN LÝ GIỚI HẠN VÀ TỰ HỦY REPUlSYRON
-// =======================================================
 Events.on(WorldLoadEvent, event => {
     Time.run(10, () => {
         updateRepulsyronVisibility();

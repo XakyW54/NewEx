@@ -1,5 +1,5 @@
-const COLOR = Color.valueOf("ffff00"); // Vàng chói
-const COLOR_ALT = Color.valueOf("e6005c"); // Hồng đỏ đậm
+const COLOR = Color.valueOf("ffff00"); 
+const COLOR_ALT = Color.valueOf("e6005c");  
 const WHITE = Color.valueOf("ffffff");
 
 const packCons2 = (func) => new Cons2({ get: func });
@@ -15,61 +15,94 @@ function isVietnamese() {
 const reqEmpericalMK2 = { copper: 8000, lead: 8000, titanium: 4000, thorium: 2000 };
 const reqEmpericalMK2B = { copper: 8000, lead: 8000, titanium: 4000, surgethorium: 1500 };
 
-///// CUSTOM EFFECTS /////
+ 
+function updateEmpericalMenuVisibility() {
+    const empericalBlock = Vars.content.block("newex-emperical") || Vars.content.block("emperical");
+    if (!Vars.player || !empericalBlock) return;
 
-// Hiệu ứng hạt tụ hội vào tâm (0.2s = 12 ticks)
-const CircleGatherEffect = new Effect(12, e => {
+    let playerTeam = Vars.player.team();
+    let maxAllowed = 1; 
+    let currentCount = 0;
+    Groups.build.each(b => {
+        if (b.block === empericalBlock && b.team === playerTeam) {
+            currentCount++;
+        }
+    });
+
+    if (currentCount < maxAllowed) {
+        empericalBlock.buildVisibility = BuildVisibility.shown;
+    } else {
+        empericalBlock.buildVisibility = BuildVisibility.hidden;
+    }
+}
+
+ Events.on(WorldLoadEvent, event => {
+    Time.run(10, () => {
+        updateEmpericalMenuVisibility();
+    });
+});
+
+Events.on(BlockBuildEndEvent, event => {
+    updateEmpericalMenuVisibility();
+});
+
+ Events.on(BlockDestroyEvent, event => {
+    const empericalBlock = Vars.content.block("newex-emperical") || Vars.content.block("emperical");
+    if (!empericalBlock) return;
+
+    let destroyedTile = event.tile;
+    if (!destroyedTile || !destroyedTile.build) return;
+
+    let destroyedBuild = destroyedTile.build;
+    let victimTeam = destroyedBuild.team;
+
+    if (destroyedBuild.block instanceof CoreBlock) {
+        let maxAllowed = 1; 
+        let teamBlocks = [];
+        Groups.build.each(b => {
+            if (b.block === empericalBlock && b.team === victimTeam) {
+                teamBlocks.push(b);
+            }
+        });
+
+        if (teamBlocks.length > maxAllowed) {
+            let toDestroy = teamBlocks.length - maxAllowed;
+            for (let i = 0; i < toDestroy; i++) {
+                let lastBlock = teamBlocks.pop();
+                Call.sendMessage("[red]Đội " + victimTeam.name + " vượt quá giới hạn 1 Pháo Emperical duy nhất! Pháo thừa đã tự hủy![]");
+                lastBlock.kill();
+            }
+        }
+    }
+
+    updateEmpericalMenuVisibility();
+});
+
+ 
+ const CircleGatherEffect = new Effect(12, e => {
     Draw.z(Layer.effect);
     Draw.color(COLOR, COLOR_ALT, e.fin());
     
     for (let i = 0; i < 4; i++) {
         let angle = e.id * 90 + i * 90 + e.fin() * 180;
-        let dist = 25 * e.fout(); // Bay từ ngoài vào trong
+        let dist = 25 * e.fout(); 
         let px = e.x + Angles.trnsx(angle, dist);
         let py = e.y + Angles.trnsy(angle, dist);
         Fill.circle(px, py, 2 * e.fin());
     }
 });
 
-// Hiệu ứng hạt nổ phân tán ra xung quanh khi vòng ma pháp biến mất
-const CircleDisperseEffect = new Effect(15, e => {
+ const CircleDisperseEffect = new Effect(15, e => {
     Draw.z(Layer.effect);
     Draw.color(COLOR_ALT, COLOR, e.fin());
     
     for (let i = 0; i < 6; i++) {
         let angle = e.id * 60 + i * 60;
-        let dist = 30 * e.finpow(); // Bay tỏa ra ngoài
+        let dist = 30 * e.finpow(); 
         let px = e.x + Angles.trnsx(angle, dist);
         let py = e.y + Angles.trnsy(angle, dist);
         Fill.circle(px, py, 2.5 * e.fout());
     }
-});
-
-// Hiệu ứng laser trời giội xuống mục tiêu khi bị đánh trúng
-const SkyLaserStrikeEffect = new Effect(25, e => {
-    Draw.z(Layer.effect + 1);
-    Draw.blend(Blending.additive);
-
-    // Kéo nghiêng sang bên trái (startX = e.x - 400, startY = e.y + 1200)
-    let startX = e.x - 400;
-    let startY = e.y + 1200;
-
-    Draw.color(COLOR_ALT, 0.6 * e.fout());
-    Lines.stroke(10 * e.fout());
-    Lines.line(startX, startY, e.x, e.y);
-
-    Draw.color(COLOR, 0.85 * e.fout());
-    Lines.stroke(5 * e.fout());
-    Lines.line(startX, startY, e.x, e.y);
-
-    Draw.color(WHITE, 1.0 * e.fout());
-    Lines.stroke(2.0 * e.fout());
-    Lines.line(startX, startY, e.x, e.y);
-
-    Fill.circle(e.x, e.y, 10 * e.fout());
-
-    Draw.blend();
-    Draw.reset();
 });
 
 const EmpericalExplosionCircleEffect = new Effect(30, e => {
@@ -106,8 +139,7 @@ const EmpericalExplosionEffect = new Effect(60, e => {
     Fill.circle(e.x, e.y, e.fout() * 80);
 });
 
-///// STATUS EFFECTS /////
-
+ 
 const paralyzed = extend(StatusEffect, "paralyzed", {
     localizedName: "Paralyzed",
     speedMultiplier: 0.6,
@@ -120,9 +152,7 @@ const oppressive = extend(StatusEffect, "oppressive", {
     reloadMultiplier: 0
 });
 
-///// HELPER FUNCTIONS /////
-
-// Hàm lấy Máu Tối Đa an toàn từ Unit hoặc Building
+ 
 function getMaxHealth(entity) {
     if (!entity) return 0;
     if (typeof entity.maxHealth === "function") return entity.maxHealth();
@@ -134,7 +164,6 @@ function getMaxHealth(entity) {
     return 0;
 }
 
-// Hàm gây sát thương an toàn lên Entity
 function applyDamage(entity, amount) {
     if (!entity || amount <= 0) return;
     if (typeof entity.damage === "function") {
@@ -144,8 +173,7 @@ function applyDamage(entity, amount) {
     }
 }
 
-///// HANDLER VA CHẠM /////
-
+ 
 function handleCustomHit(bullet, other, hitX, hitY) {
     if (!bullet || !bullet.owner) return;
 
@@ -155,37 +183,32 @@ function handleCustomHit(bullet, other, hitX, hitY) {
 
     let maxHp = getMaxHealth(other);
 
-    // 1. CƠ CHẾ SUPERCHARGED: Laser Trời giội xuống mục tiêu (1% max HP + 500 dmg)
-    let isCharged = turret.isSuperCharged || (turret.shootCount !== undefined && turret.shootCount >= 30);
-    if (isCharged) {
-        let skyStrikeDmg = 500 + (maxHp * 0.01);
-        if (other) applyDamage(other, skyStrikeDmg);
-        SkyLaserStrikeEffect.at(targetX, targetY);
+     if (other && maxHp > 0 && Mathf.chance(0.5)) {
+        applyDamage(other, maxHp * 0.05);
     }
 
-    // 2. CƠ CHẾ TIER 1 (MK2): Gây thêm 1% max HP
-    if (turret.getTier && turret.getTier() == 1 && maxHp > 0 && other) {
+     if (turret.getTier && turret.getTier() == 1 && maxHp > 0 && other) {
         applyDamage(other, maxHp * 0.01);
     }
 
-    // 3. CƠ CHẾ TIER 2 (MK2B): Bão nổ lan rộng
-    if (turret.getTier && turret.getTier() == 2) {
+     if (turret.getTier && turret.getTier() == 2) {
         let splashDmg = bullet.damage * 5.0;
         let splashRadius = 50 * 8;
         Damage.damage(bullet.team, targetX, targetY, splashRadius, splashDmg);
-        EmpericalExplosionEffect.at(targetX, targetY);
+        if (Mathf.chance(0.3)) {
+            EmpericalExplosionEffect.at(targetX, targetY);
+        }
     }
 }
 
-///// BULLET TYPES /////
-
+ 
 const EmpericalBullet_Frag = extend(BasicBulletType, {
     damage: 0,
     speed: 1,
     lifetime: 14.4,
     width: 0,
     height: 0,
-    lightning: 3,
+    lightning: 2,
     lightningDamage: 85,
     lightningLength: 7,
     lightningColor: COLOR,
@@ -232,7 +255,7 @@ const EmpericalBullet = extend(BasicBulletType, {
     trailWidth: 0,
     trailLength: 0,
     trailEffect: customTrailEffect,
-    trailInterval: 2,
+    trailInterval: 4,
     frontColor: COLOR,
     backColor: COLOR_ALT,
     trailColor: COLOR_ALT,
@@ -243,15 +266,15 @@ const EmpericalBullet = extend(BasicBulletType, {
     homingDelay: 14.4,
     splashDamage: 180,
     splashDamageRadius: 60,
-    lightning: 5,
+    lightning: 3,
     lightningDamage: 95,
     lightningLength: 10,
     lightningColor: COLOR,
     pierce: true,
     pierceCap: 1,
-    fragBullets: 3,
+    fragBullets: 2,
     fragBullet: EmpericalBullet_Frag,
-    bulletInterval: 1,
+    bulletInterval: 6,
     intervalBullet: EmpericalBullet_Interval,
 
     hitEntity(b, entity, health) {
@@ -289,13 +312,13 @@ const EmpericalMissile = extend(MissileBulletType, {
     trailWidth: 0,
     trailLength: 0,
     trailEffect: customTrailEffect,
-    trailInterval: 2,
+    trailInterval: 4,
     frontColor: COLOR,
     backColor: COLOR_ALT,
     trailColor: COLOR_ALT,
     homingPower: 1,
     homingRange: 180,
-    lightning: 4,
+    lightning: 2,
     lightningDamage: 120,
     lightningLength: 7,
     lightningColor: COLOR,
@@ -325,13 +348,13 @@ const EmpericalHook = extend(BasicBulletType, {
     trailWidth: 0,
     trailLength: 0,
     trailEffect: customTrailEffect,
-    trailInterval: 1,
+    trailInterval: 3,
     frontColor: WHITE,
     backColor: COLOR_ALT,
     trailColor: COLOR,
     homingPower: 1,
     homingRange: 90,
-    lightning: 4,
+    lightning: 2,
     lightningDamage: 165,
     lightningLength: 7,
     lightningColor: COLOR,
@@ -402,78 +425,7 @@ const EmpericalLightning = extend(LightningBulletType, {
     }
 });
 
-///// DRAWING UTILITIES /////
-
-function DrawChargingSkyBeam(x, y, shootCount) {
-    Draw.z(Layer.effect + 1);
-    Draw.blend(Blending.additive);
-
-    let progress = Math.min(shootCount / 30, 1.0);
-    // Lệch điểm bắt đầu trên trời sang bên trái mạnh hơn (x - 800)
-    let startX = x - 800;
-    let startY = y + 1600;
-
-    let beamWidth = ((2 + progress * 18) + Mathf.absin(Time.time, 3, 2)) * 0.20;
-
-    Draw.color(COLOR_ALT, 0.3 * progress);
-    Lines.stroke(beamWidth * 1.5);
-    Lines.line(startX, startY, x, y);
-
-    Draw.color(COLOR, 0.7 * progress);
-    Lines.stroke(beamWidth);
-    Lines.line(startX, startY, x, y);
-
-    Draw.color(WHITE, 0.9 * progress);
-    Lines.stroke(beamWidth * 0.3);
-    Lines.line(startX, startY, x, y);
-
-    Draw.color(COLOR, 0.8 * progress);
-    Fill.circle(x, y, (3 + progress * 12) * 0.2);
-
-    Draw.blend();
-    Draw.reset();
-}
-
-function DrawSuperSkyBeam(x, y, animProgress, fadeProgress) {
-    Draw.z(Layer.effect + 1);
-    Draw.blend(Blending.additive);
-
-    // Nghiêng hẳn sang bên trái (x - 800) và cao vượt màn hình (y + 1600)
-    let startX = x - 800;
-    let startY = y + 1600;
-
-    let currentTargetX = Mathf.lerp(x - 25, x, animProgress);
-    let currentTargetY = Mathf.lerp(y + 75, y, animProgress);
-
-    let baseWidth = ((40 + animProgress * 30) + Mathf.absin(Time.time, 4, 8)) * 0.20;
-    let beamWidth = baseWidth * fadeProgress;
-    let alpha = fadeProgress;
-
-    Draw.color(COLOR_ALT, 0.5 * alpha);
-    Lines.stroke(beamWidth * 1.6);
-    Lines.line(startX, startY, currentTargetX, currentTargetY);
-
-    Draw.color(COLOR, 0.85 * alpha);
-    Lines.stroke(beamWidth);
-    Lines.line(startX, startY, currentTargetX, currentTargetY);
-
-    Draw.color(WHITE, 1.0 * alpha);
-    Lines.stroke(beamWidth * 0.4);
-    Lines.line(startX, startY, currentTargetX, currentTargetY);
-
-    if (animProgress > 0) {
-        Draw.color(COLOR_ALT, 0.7 * alpha);
-        Fill.circle(currentTargetX, currentTargetY, (5 + 7.5 * animProgress) * fadeProgress * 0.8);
-        Draw.color(COLOR, 0.9 * alpha);
-        Fill.circle(currentTargetX, currentTargetY, (2.5 + 5 * animProgress) * fadeProgress * 0.8);
-        Draw.color(WHITE, 1.0 * alpha);
-        Fill.circle(currentTargetX, currentTargetY, (1.25 + 2.5 * animProgress) * fadeProgress * 0.8);
-    }
-
-    Draw.blend();
-    Draw.reset();
-}
-
+ 
 function DrawMagicCircle(x, y, radius, intensity) {
     Draw.z(Layer.effect);
     Draw.blend(Blending.additive);
@@ -482,13 +434,13 @@ function DrawMagicCircle(x, y, radius, intensity) {
     Lines.stroke(6 * intensity);
     Lines.poly(x, y, 3, radius * 1.15, Time.time);
     Lines.poly(x, y, 3, radius * 1.15, -Time.time);
-    Lines.poly(x, y, 360, radius * 1.1, 0);
+    Lines.poly(x, y, 24, radius * 1.1, 0);
 
     Draw.color(COLOR, intensity);
     Lines.stroke(2 * intensity);
     Lines.poly(x, y, 3, radius, Time.time);
     Lines.poly(x, y, 3, radius, -Time.time);
-    Lines.poly(x, y, 360, radius, 0);
+    Lines.poly(x, y, 24, radius, 0);
 
     Draw.blend();
     Draw.reset();
@@ -507,15 +459,15 @@ function DrawAura(x, y, radius, intensity) {
 
     Draw.color(COLOR_ALT, 0.3 * intensity);
     Lines.stroke(5 * intensity);
-    Lines.poly(x, y, 180, radius * 1.1, 0);
-    Lines.poly(x2, y2, 180, (radius / 2) * 1.15, 0);
+    Lines.poly(x, y, 16, radius * 1.1, 0);
+    Lines.poly(x2, y2, 16, (radius / 2) * 1.15, 0);
     Draw.alpha(0.3 * intensity);
     Fill.circle(x3, y3, (radius / 4) * 1.3);
 
     Draw.color(COLOR, intensity);
     Lines.stroke(2 * intensity);
-    Lines.poly(x, y, 180, radius, 0);
-    Lines.poly(x2, y2, 180, radius / 2, 0);
+    Lines.poly(x, y, 16, radius, 0);
+    Lines.poly(x2, y2, 16, radius / 2, 0);
     Fill.circle(x3, y3, radius / 4);
     Lines.poly(x, y, 3, radius, Time.time + 90);
     Lines.poly(x, y, 3, radius, -Time.time - 90);
@@ -526,10 +478,9 @@ function DrawAura(x, y, radius, intensity) {
     Draw.reset();
 }
 
-///// MAIN BLOCK LOGIC /////
-
+ 
 Events.on(ContentInitEvent, () => {
-    const Emperical = Vars.content.block("newex-emperical");
+    const Emperical = Vars.content.block("newex-emperical") || Vars.content.block("emperical");
     if (!Emperical) return;
 
     Emperical.configurable = true;
@@ -571,10 +522,6 @@ Events.on(ContentInitEvent, () => {
         shootCountTimer: 0,
         stopShootTimer: 0,
 
-        beamTimer: 0,          
-        beamFadeTimer: 0,      
-        isSuperCharged: false,
-
         circleIntroTimer: 0,   
         hasCreatedIntro: false,
         wasActiveLastFrame: false,
@@ -583,9 +530,6 @@ Events.on(ContentInitEvent, () => {
         setTier(val) {
             this.tierState = val;
             this.shootCount = 0;
-            this.beamTimer = 0;
-            this.beamFadeTimer = 0;
-            this.isSuperCharged = false;
         },
 
         range() {
@@ -709,51 +653,56 @@ Events.on(ContentInitEvent, () => {
                 let descStr = "";
                 if (tier == 0) {
                     descStr = vi ? "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
+                                   "[lightgray]Giới hạn xây dựng:[] [red]1 Pháo / Phe (Duy nhất)[]\n" +
                                    "[lightgray]Cấu hình hiện tại:[] " + curTierStr + "\n" +
                                    "[lightgray]Tầm bắn gốc:[] [orange]360 pixel[]\n" +
                                    "[lightgray]Gia tốc bắn tối đa:[] [cyan]+900% (30 cộng dồn)[]\n\n" +
-                                   "[cyan]⚡ CƠ CHẾ KỸ NĂNG:[]\n" +
+                                   "[cyan]⚡ CƠ CHẾ KĨ NĂNG:[]\n" +
                                    "• Hỏa lực hỗn hợp: Khai hỏa đạn năng lượng, tên lửa, móc kéo, sấm sét và Laser áp chế.\n" +
-                                   "• Laser Giội Mục Tiêu: Khi pháo được Laser Trời chiếu vào, mọi đạn đánh trúng kẻ địch sẽ gọi 1 Laser Trời chiếu xún gây [yellow]1% Max HP + 500 Sát thương[]!\n" +
+                                   "• Sát thương % HP: [yellow]50% tỉ lệ mỗi viên đạn bắn ra sẽ gây thêm 5% Max HP[] trực tiếp vào mục tiêu!\n" +
                                    "• Hồi phục bản thân & Sóng xung kích triệt tiêu đạn địch."
                                  : "[gold]⚡ BASE SPECS (MK1) ⚡[]\n" +
+                                   "[lightgray]Build Limit:[] [red]1 Turret / Team (Unique)[]\n" +
                                    "[lightgray]Current Config:[] " + curTierStr + "\n" +
                                    "[lightgray]Base Range:[] [orange]360 pixels[]\n" +
                                    "[lightgray]Max Speed Accelerate:[] [cyan]+900% (30 stacks)[]\n\n" +
                                    "[cyan]⚡ SPECIAL MECHANICS:[]\n" +
                                    "• Mixed Salvo: Fires Orbs, Missiles, Hooks, Lightning, and Oppressive Lasers.\n" +
-                                   "• Target Sky Strike: When Supercharged, hits trigger Sky Laser dealing [yellow]1% Max HP + 500 DMG[]!\n" +
+                                   "• % Max HP Damage: [yellow]50% chance for each bullet hit to deal 5% Max HP[] bonus damage!\n" +
                                    "• Self-Healing & Bullet-Canceling Shockwaves.";
                 } else if (tier == 1) {
                     descStr = vi ? "[cyan]⚡ CẤU HÌNH CẢI TIẾN MK2 ⚡[]\n" +
+                                   "[lightgray]Giới hạn xây dựng:[] [red]1 Pháo / Phe (Duy nhất)[]\n" +
                                    "[lightgray]Cấu hình hiện tại:[] " + curTierStr + "\n" +
                                    "[lightgray]Sát thương tổng:[] [green]+50%[]\n" +
                                    "[lightgray]Tầm bắn:[] [orange]360 pixel[]\n\n" +
                                    "[cyan]⚡ CƠ CHẾ ĐẶC BIỆT MK2:[]\n" +
-                                   "• Bắn trúng gây thêm [yellow]1% Max HP[] của mục tiêu thành sát thương trực tiếp.\n" +
-                                   "• Giữ nguyên cơ chế Laser Giội Mục Tiêu và sóng xung kích triệt tiêu đạn."
+                                   "• Bắn trúng gây thêm [yellow]1% Max HP[] cố định + [yellow]50% tỉ lệ gây 5% Max HP[] trực tiếp.\n" +
+                                   "• Giữ nguyên cơ chế sóng xung kích triệt tiêu đạn."
                                  : "[cyan]⚡ ENHANCED SPECS MK2 ⚡[]\n" +
+                                   "[lightgray]Build Limit:[] [red]1 Turret / Team (Unique)[]\n" +
                                    "[lightgray]Current Config:[] " + curTierStr + "\n" +
                                    "[lightgray]Overall Damage:[] [green]+50%[]\n" +
                                    "[lightgray]Effective Range:[] [orange]360 pixels[]\n\n" +
                                    "[cyan]⚡ MK2 SPECIAL MECHANICS:[]\n" +
-                                   "• On-hit deals extra [yellow]1% Max HP[] bonus damage to target.\n" +
-                                   "• Retains Target Sky Strike and bullet-canceling shockwaves.";
+                                   "• On-hit deals extra [yellow]1% Max HP[] fixed + [yellow]50% chance to deal 5% Max HP[] bonus damage.\n" +
+                                   "• Retains bullet-canceling shockwaves.";
                 } else if (tier == 2) {
                     descStr = vi ? "[purple]⚡ CẤU HÌNH TẦM XA MK2B ⚡[]\n" +
+                                   "[lightgray]Giới hạn xây dựng:[] [red]1 Pháo / Phe (Duy nhất)[]\n" +
                                    "[lightgray]Cấu hình hiện tại:[] " + curTierStr + "\n" +
                                    "[lightgray]Sát thương gốc:[] [red]-20%[]\n" +
                                    "[lightgray]Tầm bắn hiệu dụng:[] [green]540 pixel (+50%)[]\n\n" +
                                    "[purple]🔥 CƠ CHẾ ĐẶC BIỆT MK2B:[]\n" +
                                    "• Siêu bão nổ lan: Đạn đánh trúng gây [orange]500% Sát thương gốc[] trong phạm vi rộng [yellow]50 ô (400px)[]!\n" +
-                                   "• Giữ nguyên cơ chế Laser Giội Mục Tiêu khi pháo SuperCharged."
+                                   "• Giữ nguyên cơ chế [yellow]50% tỉ lệ gây thêm 5% Max HP[] khi bắn trúng."
                                  : "[purple]⚡ LONG-RANGE SPECS MK2B ⚡[]\n" +
-                                   "[lightgray]Current Config:[] " + curTierStr + "\n" +
+                                   "[lightgray]Build Limit:[] [red]1 Turret / Team (Unique)[]\n" +
                                    "[lightgray]Base Damage:[] [red]-20%[]\n" +
                                    "[lightgray]Effective Range:[] [green]540 pixels (+50%)[]\n\n" +
                                    "[purple]🔥 MK2B SPECIAL MECHANICS:[]\n" +
                                    "• Massive Splash Blast: On-hit triggers [orange]500% Base DMG[] splash blast in [yellow]50 tiles (400px)[] radius!\n" +
-                                   "• Retains Target Sky Strike when Supercharged.";
+                                   "• Retains [yellow]50% chance to deal 5% Max HP[] bonus damage.";
                 }
 
                 let infoDialog = extend(BaseDialog, infoTitle, {});
@@ -790,11 +739,12 @@ Events.on(ContentInitEvent, () => {
             ForceEffect.at(x, y);
             if (Sounds.explosionReactor2) Sounds.explosionReactor2.at(x, y, 0.75, 1);
             let radSq = radius * radius;
-            Groups.bullet.each(b => {
+            
+            Groups.bullet.intersect(x - radius, y - radius, radius * 2, radius * 2, cons(b => {
                 if (b.team != this.team && Mathf.len2(b.x - x, b.y - y) <= radSq) {
                     b.remove();
                 }
-            });
+            }));
         },
 
         shootSalvo(sx, sy, soundPitch) {
@@ -851,22 +801,7 @@ Events.on(ContentInitEvent, () => {
             this.wasActiveLastFrame = isActiveNow;
 
             if (this.isShooting && this.hasAmmo()) {
-                if (this.shootCount >= 30) {
-                    if (!this.isSuperCharged) {
-                        if (this.beamTimer < 12) {
-                            this.beamTimer += Time.delta;
-                            return;
-                        } else {
-                            this.isSuperCharged = true;
-                            this.beamFadeTimer = 15;
-                        }
-                    } else {
-                        this.beamFadeTimer = 15;
-                    }
-                }
-
-                let extraBoost = this.isSuperCharged ? 10.0 : 0.0;
-                let speedFactor = 1.0 / (1.0 + (this.shootCount * 0.3) + extraBoost);
+                let speedFactor = 1.0 / (1.0 + (this.shootCount * 0.3));
                 
                 if (this.mainReloadTimer >= this.mainReloadTime * speedFactor) {
                     this.mainReloadTimer = 0;
@@ -905,10 +840,6 @@ Events.on(ContentInitEvent, () => {
                     if (this.stopShootTimer >= 120) {
                         if (this.shootCountTimer >= 6) {
                             this.shootCount--;
-                            if (this.shootCount < 30) {
-                                this.isSuperCharged = false;
-                                this.beamTimer = 0;
-                            }
                             this.shootCountTimer = 0;
                         } else {
                             this.shootCountTimer += Time.delta;
@@ -919,17 +850,13 @@ Events.on(ContentInitEvent, () => {
                 }
             }
 
-            if (!this.isSuperCharged && this.beamFadeTimer > 0) {
-                this.beamFadeTimer -= Time.delta;
-            }
-
             if (this.isShooting && this.hasAmmo()) this.stopShootTimer = 0;
         },
 
         draw() {
             this.super$draw();
 
-            if (this.shootCount > 0 || this.beamFadeTimer > 0) {
+            if (this.shootCount > 0) {
                 let introFactor = (this.circleIntroTimer > 0) ? Math.max(0, 1.0 - (this.circleIntroTimer / 12)) : 1.0;
                 let intensity = (Mathf.clamp(this.shootCount, 0, 10) / 10) * introFactor;
 
@@ -949,16 +876,6 @@ Events.on(ContentInitEvent, () => {
                 DrawMagicCircle(ex2, ey2, 12, intensity);
                 DrawMagicCircle(ex3, ey3, 12, intensity);
                 DrawAura(ex4, ey4, 30, intensity);
-
-                if (this.shootCount > 0 && this.shootCount < 30) {
-                    DrawChargingSkyBeam(this.x, this.y, this.shootCount);
-                }
-
-                if (this.shootCount >= 30 || this.beamFadeTimer > 0) {
-                    let animProgress = Math.min(this.beamTimer / 12, 1.0);
-                    let fadeProgress = Math.max(this.beamFadeTimer / 15, 0.0);
-                    DrawSuperSkyBeam(this.x, this.y, animProgress, fadeProgress);
-                }
             }
         },
 
@@ -969,9 +886,6 @@ Events.on(ContentInitEvent, () => {
             write.f(this.supReloadTimer);
             write.i(this.shootCount);
             write.f(this.stopShootTimer);
-            write.f(this.beamTimer);
-            write.f(this.beamFadeTimer);
-            write.bool(this.isSuperCharged);
         },
 
         read(read, revision) {
@@ -981,9 +895,6 @@ Events.on(ContentInitEvent, () => {
             this.supReloadTimer = read.f();
             this.shootCount = read.i();
             this.stopShootTimer = read.f();
-            this.beamTimer = read.f();
-            this.beamFadeTimer = read.f();
-            this.isSuperCharged = read.bool();
         }
     });
 });

@@ -3,8 +3,7 @@ const tempColor = new Color();
 const entityHpCache = new ObjectMap();
 const entityDamageCache = new ObjectMap();
 
-// Khởi tạo Setting Bật/Tắt định dạng "k"
-Events.on(ClientLoadEvent, () => {
+ Events.on(ClientLoadEvent, () => {
     Vars.ui.settings.game.checkPref("show-hp-popup-eatsuki-tt", true, val => {
         if (val) {
             Core.settings.put("show-damage-popup", false);
@@ -19,8 +18,7 @@ Events.on(ClientLoadEvent, () => {
         }
     });
 
-    // Cấu hình Nút Bật/Tắt chữ "k" trong Cài đặt
-    Vars.ui.settings.game.checkPref("show-damage-short-format", true);
+     Vars.ui.settings.game.checkPref("show-damage-short-format", true);
 });
 
 function clearAllCache() {
@@ -35,8 +33,7 @@ Events.on(StateChangeEvent, e => {
     clearAllCache();
 });
 
-// Xóa cache của unit ngay khi bị tiêu diệt để tránh phình bộ nhớ
-Events.on(UnitDestroyEvent, e => {
+ Events.on(UnitDestroyEvent, e => {
     if (e.unit == null) return;
     let id = e.unit.id;
     entityHpCache.remove(id);
@@ -58,8 +55,7 @@ function getActiveMode() {
     return "none";
 }
 
-// Xử lý định dạng số dựa theo nút Bật/Tắt "k"
-function formatNumber(amount) {
+ function formatNumber(amount) {
     let abs = Math.abs(amount);
     let useShortFormat = Core.settings.getBool("show-damage-short-format", true);
 
@@ -90,8 +86,7 @@ function addEatsukiDamage(entity, damage, hitSize) {
     data.total += damage;
     data.idle = 0;
     
-    // Đã tối ưu: Tạo sẵn chuỗi hiển thị 1 lần khi có sát thương, tránh tạo chuỗi trong Draw loop
-    let formattedText = "[scarlet]" + formatNumber(data.total) + "[]";
+     let formattedText = "[scarlet]" + formatNumber(data.total) + "[]";
 
     if (data.popup === null || !damagePopups.contains(data.popup)) {
         let popup = {
@@ -163,14 +158,13 @@ Events.run(Trigger.update, () => {
         entityHpCache.put(id, u.health);
     }));
 
-    // Tối ưu hóa: Dùng removeIndex thay vì remove theo Object để tăng tốc độ mảng
-    for (let i = damagePopups.size - 1; i >= 0; i--) {
+     for (let i = damagePopups.size - 1; i >= 0; i--) {
         let popup = damagePopups.get(i);
 
         if (popup.type === "eatsuki") {
             let data = entityDamageCache.get(popup.entityId);
             if (!data) {
-                damagePopups.removeIndex(i);
+                damagePopups.remove(i);
                 continue;
             }
             data.idle += Time.delta;
@@ -179,12 +173,12 @@ Events.run(Trigger.update, () => {
 
             if (data.idle >= 90.0 || popup.life <= 0) {
                 entityDamageCache.remove(popup.entityId);
-                damagePopups.removeIndex(i);
+                damagePopups.remove(i);
             }
         } else if (popup.type === "popup") {
             popup.life -= Time.delta;
             if (popup.life <= 0) {
-                damagePopups.removeIndex(i);
+                damagePopups.remove(i);
             }
         }
     }
@@ -212,8 +206,7 @@ Events.run(Trigger.draw, () => {
             tempColor.a = fadeOut * fadeOut;
             font.setColor(tempColor);
             
-            // Tối ưu: Lấy trực tiếp chuỗi đã pre-format sẵn
-            font.draw(popup.formattedText, curX, curY, Align.center);
+             font.draw(popup.formattedText, curX, curY, Align.center);
         } else if (mode === "popup" && popup.type === "popup") {
             let progress = (popup.maxLife - popup.life) / popup.maxLife;
             let fadeOut = popup.life / popup.maxLife;

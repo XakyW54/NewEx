@@ -1,8 +1,8 @@
 type: PowerTurret
 name: Repulsyron
 description: Tháp pháo chùm tia năng lượng siêu xung Unibeam. Bắn ra tia Repulsor thiêu rụi mục tiêu liên tục với tần số cao.
-health: 2200
-size: 3
+health: 22200
+size: 5
 reload: 45
 range: 320
 shootCone: 15
@@ -21,10 +21,10 @@ drawer: {
 }
 
 requirements: [
-  titanium/300
-  silicon/250
-  thorium/180
-  plastanium/120
+  titanium/30000
+  silicon/25000
+  thorium/18000
+  plastanium/12000
 ]
 shootType: {
   type: BulletType

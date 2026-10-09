@@ -3,10 +3,12 @@ name: Repulsyron
 description: Tháp pháo chùm tia năng lượng siêu xung Unibeam. Bắn ra tia Repulsor thiêu rụi mục tiêu liên tục với tần số cao.
 health: 22200
 size: 5
-reload: 45
+reload: 999
 range: 320
 shootCone: 15
 rotateSpeed: 5.0
+recoil: 0
+restitution: 0.00
 targetAir: true
 targetGround: true
 powerUse: 11.5

@@ -15,7 +15,20 @@ function isVietnamese() {
 const reqEmpericalMK2 = { copper: 8000, lead: 8000, titanium: 4000, thorium: 2000 };
 const reqEmpericalMK2B = { copper: 8000, lead: 8000, titanium: 4000, surgethorium: 1500 };
 
- 
+let wing1Region = null;
+let wing2Region = null;
+
+function loadWingRegions() {
+    if (!wing1Region || !wing1Region.found()) {
+        wing1Region = Core.atlas.find("newex-emperical-wing1");
+        if (!wing1Region.found()) wing1Region = Core.atlas.find(Vars.content.transformName("newex-emperical-wing1"));
+    }
+    if (!wing2Region || !wing2Region.found()) {
+        wing2Region = Core.atlas.find("newex-emperical-wing2");
+        if (!wing2Region.found()) wing2Region = Core.atlas.find(Vars.content.transformName("newex-emperical-wing2"));
+    }
+}
+
 function updateEmpericalMenuVisibility() {
     const empericalBlock = Vars.content.block("newex-emperical") || Vars.content.block("emperical");
     if (!Vars.player || !empericalBlock) return;
@@ -36,7 +49,7 @@ function updateEmpericalMenuVisibility() {
     }
 }
 
- Events.on(WorldLoadEvent, event => {
+Events.on(WorldLoadEvent, event => {
     Time.run(10, () => {
         updateEmpericalMenuVisibility();
     });
@@ -46,7 +59,7 @@ Events.on(BlockBuildEndEvent, event => {
     updateEmpericalMenuVisibility();
 });
 
- Events.on(BlockDestroyEvent, event => {
+Events.on(BlockDestroyEvent, event => {
     const empericalBlock = Vars.content.block("newex-emperical") || Vars.content.block("emperical");
     if (!empericalBlock) return;
 
@@ -78,8 +91,7 @@ Events.on(BlockBuildEndEvent, event => {
     updateEmpericalMenuVisibility();
 });
 
- 
- const CircleGatherEffect = new Effect(12, e => {
+const CircleGatherEffect = new Effect(12, e => {
     Draw.z(Layer.effect);
     Draw.color(COLOR, COLOR_ALT, e.fin());
     
@@ -92,7 +104,7 @@ Events.on(BlockBuildEndEvent, event => {
     }
 });
 
- const CircleDisperseEffect = new Effect(15, e => {
+const CircleDisperseEffect = new Effect(15, e => {
     Draw.z(Layer.effect);
     Draw.color(COLOR_ALT, COLOR, e.fin());
     
@@ -139,7 +151,16 @@ const EmpericalExplosionEffect = new Effect(60, e => {
     Fill.circle(e.x, e.y, e.fout() * 80);
 });
 
- 
+const WingChargeLaserEffect = new Effect(20, e => {
+    if (!e.data) return;
+    Draw.z(Layer.effect);
+    Draw.color(COLOR_ALT, COLOR, e.fin());
+    Lines.stroke(2 * e.fout());
+    Lines.line(e.x, e.y, e.data.x, e.data.y);
+    Fill.circle(e.data.x, e.data.y, 3 * e.fout());
+    Draw.reset();
+});
+
 const paralyzed = extend(StatusEffect, "paralyzed", {
     localizedName: "Paralyzed",
     speedMultiplier: 0.6,
@@ -152,7 +173,6 @@ const oppressive = extend(StatusEffect, "oppressive", {
     reloadMultiplier: 0
 });
 
- 
 function getMaxHealth(entity) {
     if (!entity) return 0;
     if (typeof entity.maxHealth === "function") return entity.maxHealth();
@@ -173,7 +193,6 @@ function applyDamage(entity, amount) {
     }
 }
 
- 
 function handleCustomHit(bullet, other, hitX, hitY) {
     if (!bullet || !bullet.owner) return;
 
@@ -183,15 +202,15 @@ function handleCustomHit(bullet, other, hitX, hitY) {
 
     let maxHp = getMaxHealth(other);
 
-     if (other && maxHp > 0 && Mathf.chance(0.5)) {
+    if (other && maxHp > 0 && Mathf.chance(0.5)) {
         applyDamage(other, maxHp * 0.05);
     }
 
-     if (turret.getTier && turret.getTier() == 1 && maxHp > 0 && other) {
+    if (turret.getTier && turret.getTier() == 1 && maxHp > 0 && other) {
         applyDamage(other, maxHp * 0.01);
     }
 
-     if (turret.getTier && turret.getTier() == 2) {
+    if (turret.getTier && turret.getTier() == 2) {
         let splashDmg = bullet.damage * 5.0;
         let splashRadius = 50 * 8;
         Damage.damage(bullet.team, targetX, targetY, splashRadius, splashDmg);
@@ -201,7 +220,6 @@ function handleCustomHit(bullet, other, hitX, hitY) {
     }
 }
 
- 
 const EmpericalBullet_Frag = extend(BasicBulletType, {
     damage: 0,
     speed: 1,
@@ -425,7 +443,6 @@ const EmpericalLightning = extend(LightningBulletType, {
     }
 });
 
- 
 function DrawMagicCircle(x, y, radius, intensity) {
     Draw.z(Layer.effect);
     Draw.blend(Blending.additive);
@@ -478,8 +495,9 @@ function DrawAura(x, y, radius, intensity) {
     Draw.reset();
 }
 
- 
 Events.on(ContentInitEvent, () => {
+    loadWingRegions();
+
     const Emperical = Vars.content.block("newex-emperical") || Vars.content.block("emperical");
     if (!Emperical) return;
 
@@ -525,6 +543,10 @@ Events.on(ContentInitEvent, () => {
         circleIntroTimer: 0,   
         hasCreatedIntro: false,
         wasActiveLastFrame: false,
+
+        wingAlpha: 0,
+        wingProgress: 0,
+        wingChargeTimer: 0,
 
         getTier() { return this.tierState == null ? 0 : this.tierState; },
         setTier(val) {
@@ -765,6 +787,34 @@ Events.on(ContentInitEvent, () => {
 
             let isActiveNow = (this.shootCount > 0);
 
+            if (isActiveNow) {
+                this.wingAlpha = Mathf.approachDelta(this.wingAlpha, 1.0, 0.05);
+                this.wingProgress = Mathf.approachDelta(this.wingProgress, 1.0, 0.06);
+
+                if (this.wingProgress > 0.8) {
+                    this.wingChargeTimer += Time.delta;
+                    if (this.wingChargeTimer >= 60) {
+                        this.wingChargeTimer = 0;
+
+                        let targetForward = 40 - 22;
+                        let targetSide = 40;
+
+                        let wing2X = this.x + Angles.trnsx(this.rotation, targetForward, targetSide);
+                        let wing2Y = this.y + Angles.trnsy(this.rotation, targetForward, targetSide);
+
+                        let wing1X = this.x + Angles.trnsx(this.rotation, targetForward, -targetSide);
+                        let wing1Y = this.y + Angles.trnsy(this.rotation, targetForward, -targetSide);
+
+                        WingChargeLaserEffect.at(this.x, this.y, 0, new Vec2(wing2X, wing2Y));
+                        WingChargeLaserEffect.at(this.x, this.y, 0, new Vec2(wing1X, wing1Y));
+                    }
+                }
+            } else {
+                this.wingAlpha = Mathf.approachDelta(this.wingAlpha, 0.0, 0.05);
+                this.wingProgress = Mathf.approachDelta(this.wingProgress, 0.0, 0.08);
+                this.wingChargeTimer = 0;
+            }
+
             if (isActiveNow && !this.wasActiveLastFrame) {
                 this.circleIntroTimer = 12;
                 this.hasCreatedIntro = false;
@@ -856,9 +906,40 @@ Events.on(ContentInitEvent, () => {
         draw() {
             this.super$draw();
 
-            if (this.shootCount > 0) {
+            if (this.wingAlpha > 0.01) {
+                loadWingRegions();
+
+                let prog = Interp.pow2Out.apply(this.wingProgress);
+                
+                let targetForward = 40 - 22;
+                let targetSide = 40;
+
+                let curForward = targetForward * prog;
+                let curSide = targetSide * prog;
+
+                let ex2 = this.x + Angles.trnsx(this.rotation, curForward, curSide);
+                let ey2 = this.y + Angles.trnsy(this.rotation, curForward, curSide);
+
+                let ex3 = this.x + Angles.trnsx(this.rotation, curForward, -curSide);
+                let ey3 = this.y + Angles.trnsy(this.rotation, curForward, -curSide);
+
+                Draw.z(Layer.turret + 0.01);
+                Draw.color(WHITE);
+                Draw.alpha(this.wingAlpha);
+
+                if (wing2Region && wing2Region.found()) {
+                    Draw.rect(wing2Region, ex2, ey2, this.rotation - 90);
+                }
+                if (wing1Region && wing1Region.found()) {
+                    Draw.rect(wing1Region, ex3, ey3, this.rotation - 90);
+                }
+
+                Draw.reset();
+            }
+
+            if (this.shootCount > 0 && this.wingProgress > 0.3) {
                 let introFactor = (this.circleIntroTimer > 0) ? Math.max(0, 1.0 - (this.circleIntroTimer / 12)) : 1.0;
-                let intensity = (Mathf.clamp(this.shootCount, 0, 10) / 10) * introFactor;
+                let intensity = (Mathf.clamp(this.shootCount, 0, 10) / 10) * introFactor * Math.min(1.0, (this.wingProgress - 0.3) / 0.7);
 
                 let ex1 = this.x + Angles.trnsx(this.rotation, 40, 0);
                 let ey1 = this.y + Angles.trnsy(this.rotation, 40, 0);

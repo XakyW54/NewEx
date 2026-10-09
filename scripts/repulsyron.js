@@ -23,7 +23,6 @@ const cooldownSmoke = new Effect(40, e => {
     });
 });
 
-// Fix lỗi: lấy x, y của mục tiêu phụ từ e.data
 const secondaryLaserEffect = new Effect(12, e => {
     if (!e.data) return;
     let targetX = e.data.x;
@@ -56,6 +55,9 @@ function updateRepulsyronVisibility() {
     }
 }
 
+let wing1Region = null;
+let wing2Region = null;
+
 Events.on(ContentInitEvent, () => {
     let repulsyron = Vars.content.block("newex-repulsyron") || Vars.content.block("repulsyron");
     if (!repulsyron) return;
@@ -78,6 +80,9 @@ Events.on(ContentInitEvent, () => {
         endX: 0, endY: 0,
         fadeStartX: 0, fadeStartY: 0,
         fadeEndX: 0, fadeEndY: 0,
+
+        wingMoveProgress: 0,
+        wingHeatProgress: 0,
 
         updateTile() {
             this.super$updateTile();
@@ -164,31 +169,23 @@ Events.on(ContentInitEvent, () => {
                         this.endY = Mathf.lerp(this.startY, targetY, this.beamProgress);
 
                         this.damageTimer += Time.delta;
-                        if (this.damageTimer >= 6) { // 0.1s mỗi nhịp
+                        if (this.damageTimer >= 6) {
                             this.damageTimer = 0;
 
                             let secondsFired = this.firingTimer / 60;
-                            
-                            // Cứ mỗi giây khi bắn, tăng thêm 1000% sát thương (+10x base damage / sec)
                             let dmgMultiplier = 1 + (secondsFired * 10);
                             let currentDamage = 20 * this.efficiency * dmgMultiplier;
-
                             let laserWidth = 12;
 
-                            // 1. Gây sát thương lên Đơn vị (Units)
                             Units.nearbyEnemies(this.team, Math.min(this.startX, this.endX) - 30, Math.min(this.startY, this.endY) - 30, Math.abs(this.endX - this.startX) + 60, Math.abs(this.endY - this.startY) + 60, cons(unit => {
                                 if (unit != null && Intersector.distanceSegmentPoint(this.startX, this.startY, this.endX, this.endY, unit.x, unit.y) <= (laserWidth + unit.hitSize / 2)) {
-                                    
                                     unit.damage(currentDamage);
 
-                                    // Khi bắn đủ 5s
                                     if (secondsFired >= 5) {
                                         overloadHitEffect.at(unit.x, unit.y);
-
                                         Units.nearbyEnemies(this.team, unit.x - 120, unit.y - 120, 240, 240, cons(subUnit => {
                                             if (subUnit != null && subUnit !== unit && subUnit.within(unit.x, unit.y, 120)) {
                                                 subUnit.damagePierce(5000);
-                                                // Truyền vị trí qua data để vẽ tia phụ không bị crash
                                                 secondaryLaserEffect.at(unit.x, unit.y, 0, Color.white, { x: subUnit.x, y: subUnit.y });
                                             }
                                         }));
@@ -198,19 +195,16 @@ Events.on(ContentInitEvent, () => {
                                 }
                             }));
 
-                            // 2. Gây sát thương lên Công trình (Buildings)
                             let x1 = World.toTile(this.startX), y1 = World.toTile(this.startY);
                             let x2 = World.toTile(this.endX), y2 = World.toTile(this.endY);
                             World.raycast(x1, y1, x2, y2, (wx, wy) => {
                                 let tile = Vars.world.tile(wx, wy);
                                 if (tile != null && tile.build != null && tile.build.team != this.team) {
                                     let build = tile.build;
-                                    
                                     build.damage(this.team, currentDamage);
 
                                     if (secondsFired >= 5) {
                                         overloadHitEffect.at(build.x, build.y);
-
                                         Units.nearbyEnemies(this.team, build.x - 120, build.y - 120, 240, 240, cons(subUnit => {
                                             if (subUnit != null && subUnit.within(build.x, build.y, 120)) {
                                                 subUnit.damagePierce(5000);
@@ -236,9 +230,16 @@ Events.on(ContentInitEvent, () => {
                 this.stopFiringAndStartFade(muzzleX, muzzleY);
             }
 
+            let secondsFired = this.firingTimer / 60;
+            let targetMove = (this.isFiring || this.isCharging) ? 1.0 : 0.0;
+            let targetHeat = (this.isFiring && secondsFired >= 5) ? 1.0 : 0.0;
+
+            let moveSpeed = (targetMove < this.wingMoveProgress) ? (Time.delta / 60) : (Time.delta / 30);
+            this.wingMoveProgress = Mathf.lerpDelta(this.wingMoveProgress, targetMove, moveSpeed);
+            this.wingHeatProgress = Mathf.lerpDelta(this.wingHeatProgress, targetHeat, Time.delta / 40);
+
             if (this.isFading) {
                 this.fadeProgress += Time.delta / 12;
-                
                 this.startX = Mathf.lerp(this.fadeStartX, this.fadeEndX, this.fadeProgress);
                 this.startY = Mathf.lerp(this.fadeStartY, this.fadeEndY, this.fadeProgress);
                 this.endX = this.fadeEndX;
@@ -279,6 +280,40 @@ Events.on(ContentInitEvent, () => {
             let muzzleX = this.x + Angles.trnsx(this.rotation, repulsyron.size * 4);
             let muzzleY = this.y + Angles.trnsy(this.rotation, repulsyron.size * 4);
 
+            if (wing1Region == null || !wing1Region.found()) {
+                wing1Region = Core.atlas.find("newex-repulsyron-wing1", Core.atlas.find("repulsyron-wing1"));
+            }
+            if (wing2Region == null || !wing2Region.found()) {
+                wing2Region = Core.atlas.find("newex-repulsyron-wing2", Core.atlas.find("repulsyron-wing2"));
+            }
+
+            if (wing1Region && wing1Region.found() && wing2Region && wing2Region.found()) {
+                Draw.z(Layer.turret + 0.05);
+
+                let moveDist = 6 * this.wingMoveProgress;
+
+                let w1X = this.x + Angles.trnsx(this.rotation - 90, moveDist);
+                let w1Y = this.y + Angles.trnsy(this.rotation - 90, moveDist);
+
+                let w2X = this.x + Angles.trnsx(this.rotation + 90, moveDist);
+                let w2Y = this.y + Angles.trnsy(this.rotation + 90, moveDist);
+
+                Draw.rect(wing1Region, w1X, w1Y, this.rotation);
+                Draw.rect(wing2Region, w2X, w2Y, this.rotation);
+
+                if (this.wingHeatProgress > 0) {
+                    Draw.color(Color.valueOf("#ffbb88"));
+                    Draw.alpha(this.wingHeatProgress * 0.85);
+                    Draw.blend(Blending.additive);
+                    
+                    Draw.rect(wing1Region, w1X, w1Y, this.rotation);
+                    Draw.rect(wing2Region, w2X, w2Y, this.rotation);
+
+                    Draw.blend();
+                    Draw.reset();
+                }
+            }
+
             if (this.isCharging) {
                 let chargeRatio = Mathf.clamp(this.chargeTimer / 30);
                 Draw.z(Layer.bullet + 2);
@@ -293,7 +328,6 @@ Events.on(ContentInitEvent, () => {
                 Draw.z(Layer.bullet + 2);
 
                 let secondsFired = this.firingTimer / 60;
-
                 let sizeScale = 1 + Math.min(1.8, secondsFired * 0.12);
 
                 let colorFactor = Mathf.clamp((secondsFired - 2) / 8); 

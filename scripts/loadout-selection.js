@@ -1,6 +1,8 @@
 (function() {
     const CURRENT_MOD_NAME = "newex";
     const TAG_KEY = "newex-selected-turrets";
+    const UNLOCKED_TAG_KEY = "newex-unlocked-turrets";
+    const GACHA_POINTS_KEY = "newex-gacha-points";
     
     const fallbackTurrets = [
         "nucleytor", "emperfum", "galaxvorram", "bayrowfyr", "dor",
@@ -24,7 +26,6 @@
     let autoFpsSavedEffects = true;
     let isFpsThrottled = false;
 
-    // Cache Settings để tối ưu hiệu năng
     let autoLowFpsSetting = true;
     let showWaveBtnSetting = true;
     let hpPerWavePercentSetting = 10;
@@ -40,13 +41,6 @@
     const normalDeltaProvider = () => Math.min(Core.graphics.getDeltaTime() * 60, 3);
     const slowDeltaProvider = () => Math.min(Core.graphics.getDeltaTime() * 60, 3) * 0.8;
 
-    let isPlayingNewMode = false;
-    let currentMapName = "[redces]ᑈᐴᐾᐶᒅ";
-    const NEWMODE_SLOT_NAME = "NewEx_NewMode_Save";
-
-    // =========================================================================
-    // HÀM & HIỆU ỨNG TỪ BALASHILON (TRIỆU HỒI THIÊN THẠCH)
-    // =========================================================================
     const packCons = (func) => new Cons({ get: func });
 
     function draw3DRotatedEllipseWave(centerX, centerY, radiusX, radiusY, rotationDeg) {
@@ -248,9 +242,7 @@
 
         Vars.ui.showInfoToast("[orange]Thiên thạch đang rơi xuống bản đồ![]", 2);
     }
-    // =========================================================================
 
-    // Hàm tiêu diệt ngẫu nhiên 20% units phe địch
     function clearEnemyUnitsPercent(percent) {
         if (Vars.state == null || !Vars.state.isGame()) return;
 
@@ -325,9 +317,189 @@
     }
 
     function unlockAllTurrets() {
+        let unlockedSeq = getUnlockedTurrets();
         turretList.each(block => {
-            block.buildVisibility = BuildVisibility.shown;
+            if (unlockedSeq.contains(block.name)) {
+                block.buildVisibility = BuildVisibility.shown;
+            } else {
+                block.buildVisibility = BuildVisibility.hidden;
+            }
         });
+    }
+
+    function getGachaPoints() {
+        return Core.settings.getInt(GACHA_POINTS_KEY, 0);
+    }
+
+    function saveGachaPoints(pts) {
+        Core.settings.put(GACHA_POINTS_KEY, java.lang.Integer(pts));
+    }
+
+    function getUnlockedTurrets() {
+        let saved = Core.settings.getString(UNLOCKED_TAG_KEY, "NOT_SET");
+        let seq = new Seq();
+        if (saved === "NOT_SET") {
+            turretList.each(block => seq.add(block.name));
+            saveUnlockedTurrets(seq);
+        } else if (saved !== "") {
+            let parts = saved.split(",");
+            for (let i = 0; i < parts.length; i++) {
+                seq.add(parts[i]);
+            }
+        }
+        return seq;
+    }
+
+    function saveUnlockedTurrets(seq) {
+        let arr = [];
+        seq.each(name => arr.push(name));
+        Core.settings.put(UNLOCKED_TAG_KEY, arr.join(","));
+    }
+
+    function showGachaDialog() {
+        if (turretList.isEmpty()) loadTurretsFromFolder();
+
+        const dialog = new BaseDialog("Quay nhận mở khóa pháo ngẫu nhiên");
+        dialog.setFillParent(true);
+
+        const content = dialog.cont;
+        content.clear();
+
+        content.add("[accent]-- HỆ THỐNG GACHA THÁP PHÁO --[]").pad(10).fontScale(1.2).row();
+        content.add("Chiến thắng các màn chơi NewMode để nhận điểm và quay gacha mở khóa pháo!").padBottom(8).row();
+
+        let currentPoints = getGachaPoints();
+        let pointsLabel = content.add("[yellow]Điểm Gacha hiện có: " + currentPoints + " điểm [gray](Cần 10 điểm/lượt)[]").fontScale(1.0).pad(4).get();
+        content.row();
+
+        let unlockedSeq = getUnlockedTurrets();
+        let statusLabel = content.add("Đã sở hữu: " + unlockedSeq.size + " / " + turretList.size + " tháp pháo").fontScale(0.95).pad(4).get();
+        content.row();
+
+        let resultTable = new Table(Tex.button);
+        resultTable.margin(15);
+        let resultLabel = resultTable.add("[yellow]Nhấn nút 'Quay Tháp Pháo' bên dưới để bắt đầu![]").fontScale(1.05).get();
+        resultTable.row();
+        content.add(resultTable).size(360, 80).pad(10).row();
+
+        let btnTable = new Table();
+
+        // Sử dụng cú pháp không truyền style để dùng style mặc định an toàn, không bị dính sáng viền
+        btnTable.button("Quay Tháp Pháo", () => {
+            if (turretList.isEmpty()) loadTurretsFromFolder();
+            let pts = getGachaPoints();
+
+            if (pts < 10) {
+                Vars.ui.showInfoToast("[red]Không đủ điểm! Cần ít nhất 10 điểm (Chiến thắng NewMode hoặc qua các mốc wave để kiếm thêm).[]", 3);
+                return;
+            }
+
+            unlockedSeq = getUnlockedTurrets();
+            let lockedTurrets = new Seq();
+            turretList.each(block => {
+                if (!unlockedSeq.contains(block.name)) {
+                    lockedTurrets.add(block);
+                }
+            });
+
+            if (lockedTurrets.isEmpty()) {
+                resultLabel.setText("[green]Bạn đã mở khóa toàn bộ tháp pháo![]");
+                Vars.ui.showInfoToast("Đã mở khóa tất cả tháp pháo!", 2);
+                return;
+            }
+
+            pts -= 10;
+            saveGachaPoints(pts);
+            pointsLabel.setText("[yellow]Điểm Gacha hiện có: " + pts + " điểm [gray](Cần 10 điểm/lượt)[]");
+
+            lockedTurrets.shuffle();
+            let wonTurret = lockedTurrets.first();
+
+            let animFrames = 15;
+            let currentFrame = 0;
+
+            function runAnimation() {
+                if (currentFrame < animFrames) {
+                    let randomItem = turretList.random();
+                    resultLabel.setText("[orange]✦ Đang quay... [cyan]" + randomItem.localizedName + " ✦[]");
+                    currentFrame++;
+                    Time.run(2, runAnimation);
+                } else {
+                    unlockedSeq.add(wonTurret.name);
+                    saveUnlockedTurrets(unlockedSeq);
+
+                    resultLabel.setText("[lime]🎉 Chúc mừng! Đã mở khóa: [white]" + wonTurret.localizedName + "[]");
+                    statusLabel.setText("Đã sở hữu: " + unlockedSeq.size + " / " + turretList.size + " tháp pháo");
+                    Vars.ui.showInfoToast("[green]Gacha thành công: " + wonTurret.localizedName + "![]", 2);
+                    refreshList();
+                }
+            }
+
+            runAnimation();
+        }).size(175, 48).pad(4);
+
+        // Nút xóa dữ liệu gacha dùng style mặc định an toàn
+        btnTable.button("Xóa dữ liệu gacha", () => {
+            Core.settings.put(UNLOCKED_TAG_KEY, "");
+            saveGachaPoints(0);
+            resultLabel.setText("[red]Đã xóa dữ liệu gacha và reset điểm về 0![]");
+            let currentUnlocked = getUnlockedTurrets();
+            pointsLabel.setText("[yellow]Điểm Gacha hiện có: 0 điểm [gray](Cần 10 điểm/lượt)[]");
+            statusLabel.setText("Đã sở hữu: " + currentUnlocked.size + " / " + turretList.size + " tháp pháo");
+            Vars.ui.showInfoToast("[red]Đã xóa dữ liệu gacha thành công![]", 2);
+            refreshList();
+        }).size(175, 48).pad(4);
+
+        content.add(btnTable).pad(10).row();
+
+        content.add("[accent]Danh sách tháp pháo:[]").padTop(6).row();
+
+        let listTable = new Table();
+        listTable.top().margin(5);
+
+        function refreshList() {
+            listTable.clear();
+            let currentUnlocked = getUnlockedTurrets();
+            turretList.each(block => {
+                let isUnlocked = currentUnlocked.contains(block.name);
+                let card = new Table(Tex.button);
+                card.margin(6);
+                let textStr = (isUnlocked ? "[green]✓ Đã mở khóa: " : "[gray]✕ Chưa mở khóa: ") + "[white]" + block.localizedName + "[]";
+                card.add(textStr).left().growX();
+                listTable.add(card).growX().pad(3).row();
+            });
+        }
+
+        refreshList();
+
+        let scrollPane = new ScrollPane(listTable);
+        content.add(scrollPane).grow().row();
+
+        let gachaStep = 0;
+        dialog.update(() => {
+            if (Core.input.keyTap(KeyCode.x)) {
+                gachaStep = 1;
+            } else if (Core.input.keyTap(KeyCode.a)) {
+                if (gachaStep === 1) gachaStep = 2;
+                else gachaStep = 0;
+            } else if (Core.input.keyTap(KeyCode.k)) {
+                if (gachaStep === 2) gachaStep = 3;
+                else gachaStep = 0;
+            } else if (Core.input.keyTap(KeyCode.y)) {
+                if (gachaStep === 3) {
+                    gachaStep = 0;
+                    let pts = getGachaPoints() + 10;
+                    saveGachaPoints(pts);
+                    pointsLabel.setText("[yellow]Điểm Gacha hiện có: " + pts + " điểm [gray](Cần 10 điểm/lượt)[]");
+                    Vars.ui.showInfoToast("[green]Mã bí mật kích hoạt! Nhận +10 điểm Gacha![]", 3);
+                } else {
+                    gachaStep = 0;
+                }
+            }
+        });
+
+        dialog.addCloseButton();
+        dialog.show();
     }
 
     function getSyncedTurretsFromWorld() {
@@ -341,8 +513,9 @@
     }
 
     function applyTurretVisibility(allowedNamesSeq) {
+        let unlockedSeq = getUnlockedTurrets();
         turretList.each(block => {
-            if (allowedNamesSeq != null && allowedNamesSeq.contains(block.name)) {
+            if (unlockedSeq.contains(block.name) && allowedNamesSeq != null && allowedNamesSeq.contains(block.name)) {
                 block.buildVisibility = BuildVisibility.shown;
             } else {
                 block.buildVisibility = BuildVisibility.hidden;
@@ -362,7 +535,6 @@
         }
     }
 
-    // Hàm kích hoạt nhiều Wave liên tiếp
     function triggerMultipleWaves(count) {
         let currentTime = Time.millis();
         if (currentTime - lastSkipTime >= 400) {
@@ -491,7 +663,6 @@
             });
             expandTable.add(autoFpsBtn).size(150, 36).pad(2).row();
 
-            // NÚT X10 GỌI ĐỢT
             let btnWave10 = new TextButton("x10 Gọi Wave", Styles.flatTogglet);
             btnWave10.getLabel().setFontScale(0.75);
             btnWave10.getLabel().setColor(Color.lime);
@@ -500,7 +671,6 @@
             });
             expandTable.add(btnWave10).size(150, 36).pad(2).row();
 
-            // NÚT TỰ HỦY LÕI
             let btnSelfDestruct = new TextButton("Tự hủy lõi", Styles.flatTogglet);
             btnSelfDestruct.getLabel().setFontScale(0.75);
             btnSelfDestruct.getLabel().setColor(Color.red);
@@ -509,7 +679,6 @@
             });
             expandTable.add(btnSelfDestruct).size(150, 36).pad(2).row();
 
-            // NÚT TT RƠI (TRIỆU HỒI THIÊN THẠCH)
             let btnMeteor = new TextButton("TT rơi", Styles.flatTogglet);
             btnMeteor.getLabel().setFontScale(0.75);
             btnMeteor.getLabel().setColor(Color.orange);
@@ -518,7 +687,6 @@
             });
             expandTable.add(btnMeteor).size(150, 36).pad(2).row();
 
-            // NÚT CLEAR E R (KILL NGẪU NHIÊN 20% UNITS ĐỊCH)
             let btnClearER = new TextButton("Clear E R", Styles.flatTogglet);
             btnClearER.getLabel().setFontScale(0.75);
             btnClearER.getLabel().setColor(Color.valueOf("ff5555"));
@@ -589,137 +757,6 @@
         }
     }
 
-    // ================= CHẾ ĐỘ MỚI: NEW MODE =================
-    function getNewModeSlot() {
-        let slots = Vars.control.saves.getSaveSlots();
-        return slots.find(s => s.name === NEWMODE_SLOT_NAME);
-    }
-
-    function isSlotValid(slot) {
-        return slot != null && slot.file != null && slot.file.exists();
-    }
-
-    function showNewModeDialog() {
-        const dialog = new BaseDialog("NewMode - Chọn Màn Chơi");
-        dialog.setFillParent(true);
-
-        const content = dialog.cont;
-        content.clear();
-
-        content.add("[accent]CHỌN BẢN ĐỒ NEWMODE[]").pad(10).fontScale(1.2).row();
-
-        let mapTable = new Table();
-        mapTable.top().margin(10);
-
-        let mapName = "redces";
-        let slot = getNewModeSlot();
-        let hasSave = isSlotValid(slot);
-
-        let mapCard = new Table(Tex.button);
-        mapCard.margin(12);
-
-        mapCard.add("[white]Map: [redces]ᑈᐴᐾᐶᒅ[]").left().row();
-        if (hasSave) {
-            let titleText = "Save File";
-            try {
-                if (slot.getDialogTitle) {
-                    titleText = slot.getDialogTitle();
-                } else if (slot.getName) {
-                    titleText = slot.getName();
-                }
-            } catch(e) {}
-            mapCard.add("[yellow]Có dữ liệu lưu từ trận trước (" + titleText + ")[]").left().padBottom(6).row();
-        } else {
-            mapCard.add("[gray]Màn chơi mới (Chưa có Save)[]").left().padBottom(6).row();
-        }
-
-        let btnText = hasSave ? "Tiếp Tục Chơi" : "Bắt Đầu Chơi";
-        mapCard.button(btnText, Styles.flatTogglet, () => {
-            dialog.hide();
-            startNewModeMap(mapName);
-        }).size(180, 45).pad(4);
-
-        if (hasSave) {
-            mapCard.button("Xóa Save & Chơi Mới", Styles.flatTogglet, () => {
-                slot.delete();
-                Vars.ui.showInfo("Đã xóa dữ liệu lưu của NewMode!");
-                dialog.hide();
-                showNewModeDialog();
-            }).size(200, 45).pad(4);
-        }
-
-        mapTable.add(mapCard).growX().pad(6).row();
-
-        let scrollPane = new ScrollPane(mapTable);
-        content.add(scrollPane).grow().row();
-
-        dialog.addCloseButton();
-        dialog.show();
-    }
-
-    function startNewModeMap(mapName) {
-        isPlayingNewMode = true;
-        currentMapName = "[redces]ᑈᐴᐾᐶᒅ";
-
-        let slot = getNewModeSlot();
-
-        if (isSlotValid(slot)) {
-            try {
-                slot.load();
-                Vars.state.set(GameState.State.playing);
-                Vars.ui.showInfoToast("Đã tải lại trận đấu NewMode thành công!", 2);
-                return;
-            } catch (e) {
-                Log.err("Lỗi load save NewMode, tạo lại trận mới: " + e);
-            }
-        }
-
-        let mod = Vars.mods.getMod(CURRENT_MOD_NAME);
-        if (mod != null && mod.root != null) {
-            let mapFile = mod.root.child("maps").child(mapName + ".msav");
-            if (mapFile.exists()) {
-                let map = MapIO.createMap(mapFile, true);
-
-                Vars.logic.reset();
-                Vars.world.loadMap(map);
-                Vars.state.rules = map.applyRules(Gamemode.survival);
-                Vars.logic.play();
-
-                let newSlot = Vars.control.saves.addSave(NEWMODE_SLOT_NAME);
-                newSlot.save();
-
-                Vars.ui.showInfoToast("Đã khởi tạo màn chơi [redces]ᑈᐴᐾᐶᒅ!", 2);
-                return;
-            }
-        }
-
-        Vars.ui.showInfo("Không tìm thấy file maps/" + mapName + ".msav trong thư mục mod!");
-    }
-
-    function saveNewModeGame() {
-        if (!isPlayingNewMode || !Vars.state.isGame()) return;
-        try {
-            let slot = getNewModeSlot();
-            if (slot == null) {
-                slot = Vars.control.saves.addSave(NEWMODE_SLOT_NAME);
-            }
-            slot.save();
-            Vars.ui.showInfoToast("[accent]Đã tự động lưu trận NewMode![]", 2);
-        } catch (e) {
-            Log.err("Lỗi Save NewMode: " + e);
-        }
-    }
-
-    function deleteNewModeSave() {
-        if (isPlayingNewMode) {
-            let slot = getNewModeSlot();
-            if (slot != null) {
-                slot.delete();
-            }
-            isPlayingNewMode = false;
-        }
-    }
-
     function showReadmeDialog() {
         let readmeContent = "Không tìm thấy file README.md trong mod.";
         let mod = Vars.mods.getMod(CURRENT_MOD_NAME);
@@ -775,12 +812,22 @@
         let maxCols = isMobile ? 2 : 3;
         let cols = 0;
 
+        let unlockedSeq = getUnlockedTurrets();
+
         turretList.each(block => {
-            let btn = new TextButton(block.localizedName, Styles.togglet);
+            let isUnlocked = unlockedSeq.contains(block.name);
+            let btnName = block.localizedName + (isUnlocked ? "" : " [gray](Chưa mở)[]");
+            let btn = new TextButton(btnName, Styles.togglet);
             btn.getLabel().setWrap(true);
             btn.getLabel().setFontScale(isMobile ? 0.8 : 0.9);
 
             btn.clicked(() => {
+                if (!isUnlocked) {
+                    btn.setChecked(false);
+                    Vars.ui.showInfo("Tháp pháo này chưa được mở khóa! Hãy vào mục 'Quay nhận mở khóa pháo ngẫu nhiên' để gacha.");
+                    return;
+                }
+
                 if (btn.isChecked()) {
                     if (selectedTurrets.size < maxCount) {
                         selectedTurrets.add(block);
@@ -857,7 +904,6 @@
         let content = new Table();
         content.top().margin(10);
 
-        // 1. GIỚI HẠN THÁP PHÁO
         content.add("[accent]-- GIỚI HẠN THÁP PHÁO --[]").row();
         content.add("Số lượng tháp pháo chọn mỗi trận:").padBottom(5).row();
 
@@ -876,7 +922,6 @@
         }).width(240).pad(8).get();
         content.row();
 
-        // 2. MỨC ĐỘ TỐI ƯU FPS & ĐỒ HỌA TÙY CHỈNH
         content.add("[accent]-- TỐI ƯU FPS / ĐỒ HỌA --[]").padTop(10).row();
         content.add("Mức độ cắt giảm hiệu ứng (1%):").padBottom(4).row();
         
@@ -895,7 +940,12 @@
         btnAutoFps.setChecked(autoLowFpsSetting);
         content.add(btnAutoFps).size(280, 48).pad(4).row();
 
-        // 3. CHỈ SỐ ĐỊCH THEO TỪNG WAVE
+        content.add("[accent]-- ĐỒ HỌA KHỐI NĂNG LƯỢNG (REDSTONE / COMDUIK) --[]").padTop(10).row();
+        let btnRedstoneFx = new TextButton("Hiệu ứng Redstone/Comduik đầy đủ\n[gray](Tắt đi để tăng FPS khi xây hàng loạt)[]", Styles.togglet);
+        btnRedstoneFx.getLabel().setFontScale(0.8);
+        btnRedstoneFx.setChecked(Core.settings.getBool("newex-redstone-fx", false));
+        content.add(btnRedstoneFx).size(280, 54).pad(4).row();
+
         content.add("[accent]-- CHỈ SỐ ĐỊCH THEO TỪNG WAVE --[]").padTop(10).row();
         content.add("% Máu tăng thêm trên mỗi Wave:").padBottom(4).row();
         let hpFieldTable = new Table();
@@ -905,14 +955,12 @@
         hpFieldTable.add("% / Wave").padLeft(8);
         content.add(hpFieldTable).pad(5).row();
 
-        // 4. QUẢN LÝ NÚT GỌI WAVE
         content.add("[accent]-- QUẢN LÝ NÚT GỌI WAVE --[]").padTop(10).row();
         let btnShowWave = new TextButton("Hiển thị nút Gọi Wave trên màn hình\n[gray](Phím tắt PC: Shift + N)[]", Styles.togglet);
         btnShowWave.getLabel().setFontScale(0.85);
         btnShowWave.setChecked(showWaveBtnSetting);
         content.add(btnShowWave).size(280, 54).pad(5).row();
 
-        // 5. CHẾ ĐỘ HIỂN THỊ THANH MÁU (HP)
         content.add("[accent]-- CHẾ ĐỘ HIỂN THỊ THANH MÁU (HP) --[]").padTop(10).row();
 
         let currentHpStyle = Core.settings.getString("newex-hp-style", "show-hp");
@@ -944,7 +992,6 @@
 
         content.add(tableHp).row();
 
-        // 6. THÔNG TIN CHI TIẾT
         content.add("[accent]-- THÔNG TIN CHI TIẾT --[]").padTop(10).row();
         content.button("Xem README / Update Log", Icon.info, () => {
             showReadmeDialog();
@@ -958,6 +1005,7 @@
             applyFpsOptimizationLevel(optVal);
             
             Core.settings.put("newex-auto-low-fps", java.lang.Boolean(btnAutoFps.isChecked()));
+            Core.settings.put("newex-redstone-fx", java.lang.Boolean(btnRedstoneFx.isChecked()));
 
             let parsedHp = parseInt(hpField.getText()) || 0;
             if (parsedHp > 999) parsedHp = 999;
@@ -1009,34 +1057,14 @@
         }
     });
 
-    Events.on(GameOverEvent, event => {
-        if (isPlayingNewMode) {
-            deleteNewModeSave();
-        }
-    });
-
-    Events.on(StateChangeEvent, event => {
-        if (event.from === GameState.State.playing && event.to === GameState.State.menu) {
-            if (isPlayingNewMode) {
-                saveNewModeGame();
-            }
-        }
-    });
-
-    Events.on(WaveEvent, event => {
-        if (isPlayingNewMode && Vars.state.isGame()) {
-            saveNewModeGame();
-        }
-    });
-
     Events.on(ClientLoadEvent, event => {
         loadTurretsFromFolder();
         reloadCachedSettings();
         applyFpsOptimizationLevel(fpsOptPercentSetting);
 
         try {
-            Vars.ui.menufrag.addButton("NewMode", Icon.play, () => {
-                showNewModeDialog();
+            Vars.ui.menufrag.addButton("Quay nhận mở khóa pháo ngẫu nhiên", Icon.star, () => {
+                showGachaDialog();
             });
 
             Vars.ui.menufrag.addButton("Cài đặt Newex", Icon.settings, () => {

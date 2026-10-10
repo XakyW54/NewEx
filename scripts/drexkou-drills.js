@@ -12,7 +12,7 @@ Events.on(ContentInitEvent, () => {
         drexkouDrill.configurable = true;
 
         drexkouDrill.hasItems = true;
-        drexkouDrill.itemCapacity = 30;
+        drexkouDrill.itemCapacity = 1000;
         drexkouDrill.hasLiquids = true;
         drexkouDrill.liquidCapacity = 30;
 
@@ -205,18 +205,18 @@ Events.on(ContentInitEvent, () => {
                     
                     let infoText = isEn() ?
                         "[cyan]● Select Resource:[ ] Tap resource icons to select drill target. The drill will only operate after a resource is selected.\n\n" +
-                        "[yellow]● Speed Boost Mechanics:[ ]\n" +
-                        "  - [white]Water Supply:[ ] Increases mining speed by [green]+50%[ ].\n" +
-                        "  - [white]Cryofluid Supply:[ ] Increases mining speed by [green]+100%[ ].\n" +
-                        "  - [white]Sallowyr Item Absorption:[ ] Absorbs 1 [accent]Sallowyr[ ] to boost mining efficiency by [orange]+500%[ ] for [stat]10 seconds[ ].\n\n" +
-                        "[lightgray]Note: Combine liquid supply with Sallowyr to maximize drill speed![ ]"
+                        "[yellow]● Yield Boost Mechanics:[ ] Base yield is 100 items per second.\n" +
+                        "  - [white]Water Supply:[ ] Boosts yield to [green]150 items/s (+50%)[ ].\n" +
+                        "  - [white]Cryofluid Supply:[ ] Boosts yield to [green]200 items/s (+100%)[ ].\n" +
+                        "  - [white]Sallowyr Item Absorption:[ ] Absorbs 1 [accent]Sallowyr[ ] to boost yield to [orange]600 items/s (+500%)[ ] for [stat]10 seconds[ ].\n\n" +
+                        "[lightgray]Note: Combine liquid supply with Sallowyr to maximize drill output![ ]"
                         :
                         "[cyan]● Chọn tài nguyên:[ ] Bấm vào các biểu tượng tài nguyên bên cạnh để bắt đầu khai thác. Máy chỉ hoạt động sau khi người chơi chủ động chọn tài nguyên.\n\n" +
-                        "[yellow]● Cơ chế Tăng Tốc độ Khoan:[ ]\n" +
-                        "  - [white]Cấp Nước (Water):[ ] Tăng [green]+50%[ ] tốc độ khai thác.\n" +
-                        "  - [white]Cấp Chất làm lạnh (Cryofluid):[ ] Tăng [green]+100%[ ] tốc độ khai thác.\n" +
-                        "  - [white]Hấp thụ Item Sallowyr:[ ] Khi nhận 1 [accent]Sallowyr[ ], khối sẽ hấp thụ và tăng [orange]+500%[ ] hiệu suất khai thác trong vòng [stat]10 giây[ ].\n\n" +
-                        "[lightgray]Lưu ý: Tối đa hóa hiệu quả bằng cách kết hợp cấp Chất lưu và Sallowyr cùng lúc![ ]";
+                        "[yellow]● Cơ chế Tăng Số Lượng Thu Hoạch:[ ] Tốc độ cơ bản thu 100 item/giây.\n" +
+                        "  - [white]Cấp Nước (Water):[ ] Tăng sản lượng lên [green]150 item/giây (+50%)[ ].\n" +
+                        "  - [white]Cấp Chất làm lạnh (Cryofluid):[ ] Tăng sản lượng lên [green]200 item/giây (+100%)[ ].\n" +
+                        "  - [white]Hấp thụ Item Sallowyr:[ ] Tăng sản lượng lên [orange]600 item/giây (+500%)[ ] trong [stat]10 giây[ ].\n\n" +
+                        "[lightgray]Lưu ý: Kết hợp Chất lưu và Sallowyr cùng lúc để tối đa hóa lượng item thu được![ ]";
 
                     dialog.cont.add(infoText).width(380).wrap().get();
                     
@@ -293,15 +293,15 @@ Events.on(ContentInitEvent, () => {
                             let item = this.getTileDrop(this.targetTile);
 
                             if (item != null && this.items.get(item) < this.block.itemCapacity) {
-                                let hardness = item.hardness > 0 ? item.hardness : 1;
-                                let hardnessPenalty = 1 / (1 + (hardness - 1) * 0.15);
-                                
-                                this.mineTimer += (8 / 60) * hardnessPenalty * this.efficiency * boostMultiplier;
+                                // Đếm thời gian đào (60 ticks = 1 giây)
+                                this.mineTimer += Time.delta * this.efficiency;
 
-                                if (this.mineTimer >= 1.0) {
-                                    let amountToAdd = Math.floor(this.mineTimer);
+                                if (this.mineTimer >= 60.0) {
+                                    this.mineTimer -= 60.0;
+                                    
+                                    // Mặc định 100 item/s, nhân với hệ số buff từ nước/cryo/sallowyr
+                                    let amountToAdd = Math.floor(100 * boostMultiplier);
                                     this.items.add(item, amountToAdd);
-                                    this.mineTimer -= amountToAdd;
 
                                     try {
                                         Call.effect(Fx.mined, this.targetTile.worldx(), this.targetTile.worldy(), 0, item.color);

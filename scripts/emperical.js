@@ -13,7 +13,7 @@ function isVietnamese() {
 }
 
 const reqEmpericalMK2 = { copper: 8000, lead: 8000, titanium: 4000, thorium: 2000 };
-const reqEmpericalMK2B = { copper: 8000, lead: 8000, titanium: 4000, surgethorium: 1500 };
+const reqEmpericalMK2B = { copper: 8000, lead: 8000, titanium: 4000, surgeAlloy: 15000 };
 
 let wing1Region = null;
 let wing2Region = null;
@@ -502,30 +502,33 @@ Events.on(ContentInitEvent, () => {
     if (!Emperical) return;
 
     Emperical.configurable = true;
-    Emperical.logicConfigurable = true;
 
-    Emperical.addBar("atkSpeed", atk => new Bar(
-        new Prov({
-            get: function() {
-                let count = atk.getShootC();
-                return "Atk Speed: +" + (count * 30) + "%";
-            }
-        }),
-        new Prov({
-            get: function() {
-                return Color.cyan;
-            }
-        }),
-        new Floatp({
-            get: function() {
-                let count = atk.getShootC();
-                return count / 30;
-            }
-        })
-    ));
+    try {
+        Emperical.addBar("atkSpeed", atk => new Bar(
+            new Prov({
+                get: function() {
+                    let count = atk.getShootC != null ? atk.getShootC() : 0;
+                    return "Atk Speed: +" + (count * 30) + "%";
+                }
+            }),
+            new Prov({
+                get: function() {
+                    return Color.cyan;
+                }
+            }),
+            new Floatp({
+                get: function() {
+                    let count = atk.getShootC != null ? atk.getShootC() : 0;
+                    return count / 30;
+                }
+            })
+        ));
+    } catch(err) {}
 
     Emperical.config(java.lang.Integer, packCons2((tile, value) => {
-        if (tile != null && typeof tile.setTier === "function") tile.setTier(value);
+        if (tile != null && typeof tile.setTier === "function") {
+            tile.setTier(value);
+        }
     }));
 
     Emperical.buildType = () => extend(ItemTurret.ItemTurretBuild, Emperical, {
@@ -552,6 +555,7 @@ Events.on(ContentInitEvent, () => {
         setTier(val) {
             this.tierState = val;
             this.shootCount = 0;
+            Fx.upgradeCore.at(this.x, this.y);
         },
 
         range() {
@@ -560,11 +564,12 @@ Events.on(ContentInitEvent, () => {
         },
 
         config() {
-            return java.lang.Integer.valueOf(this.getTier());
+            return java.lang.Integer(this.getTier());
         },
 
         buildConfiguration(table) {
-            table.clear();
+            if (table == null) return;
+            table.clear(); table.row();
             let tier = this.getTier();
             let vi = isVietnamese();
 
@@ -572,99 +577,126 @@ Events.on(ContentInitEvent, () => {
                 table.button(Icon.upOpen, Styles.cleari, 44, packRun(() => {
                     let dialogTitle = vi ? "Trung tâm nâng cấp Emperical" : "Emperical Upgrade Center";
                     let dialog = extend(BaseDialog, dialogTitle, {});
-                    let reqCell = dialog.cont.label(packProv(() => {
-                        let core = this.team.core();
-                        if (core == null) return vi ? "[red]Không tìm thấy Lõi Đội![]" : "[red]Team Core not found![]";
-                        let currentCopper = core.items.get(Items.copper);
-                        let currentLead = core.items.get(Items.lead);
-                        let currentTitanium = core.items.get(Items.titanium);
-                        let currentThorium = core.items.get(Items.thorium);
-                        let currentSurge = core.items.get(Items.surgeAlloy || Items.silicon);
+                    
+                    if (dialog.cont != null) {
+                        let reqCell = dialog.cont.add(new Table());
+                        reqCell.get().add(new Label(packProv(() => {
+                            let core = this.team != null ? this.team.core() : null;
+                            if (core == null) return vi ? "[red]Không tìm thấy Lõi Đội![]" : "[red]Team Core not found![]";
+                            let currentCopper = core.items.get(Items.copper);
+                            let currentLead = core.items.get(Items.lead);
+                            let currentTitanium = core.items.get(Items.titanium);
+                            let currentThorium = core.items.get(Items.thorium);
+                            let currentSurge = core.items.get(Items.surgeAlloy);
 
-                        let copColor1 = currentCopper >= reqEmpericalMK2.copper ? "[green]" : "[red]";
-                        let leaColor1 = currentLead >= reqEmpericalMK2.lead ? "[green]" : "[red]";
-                        let titColor1 = currentTitanium >= reqEmpericalMK2.titanium ? "[green]" : "[red]";
-                        let thoColor1 = currentThorium >= reqEmpericalMK2.thorium ? "[green]" : "[red]";
+                            let copColor1 = currentCopper >= reqEmpericalMK2.copper ? "[green]" : "[red]";
+                            let leaColor1 = currentLead >= reqEmpericalMK2.lead ? "[green]" : "[red]";
+                            let titColor1 = currentTitanium >= reqEmpericalMK2.titanium ? "[green]" : "[red]";
+                            let thoColor1 = currentThorium >= reqEmpericalMK2.thorium ? "[green]" : "[red]";
 
-                        let copColor2 = currentCopper >= reqEmpericalMK2B.copper ? "[green]" : "[red]";
-                        let leaColor2 = currentLead >= reqEmpericalMK2B.lead ? "[green]" : "[red]";
-                        let titColor2 = currentTitanium >= reqEmpericalMK2B.titanium ? "[green]" : "[red]";
-                        let surColor2 = currentSurge >= reqEmpericalMK2B.surgethorium ? "[green]" : "[red]";
+                            let copColor2 = currentCopper >= reqEmpericalMK2B.copper ? "[green]" : "[red]";
+                            let leaColor2 = currentLead >= reqEmpericalMK2B.lead ? "[green]" : "[red]";
+                            let titColor2 = currentTitanium >= reqEmpericalMK2B.titanium ? "[green]" : "[red]";
+                            let surColor2 = currentSurge >= reqEmpericalMK2B.surgeAlloy ? "[green]" : "[red]";
 
-                        if (vi) {
-                            return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
-                                   "[cyan]Nhánh Nâng Cấp MK2[]\n • Đồng: " + copColor1 + currentCopper + "[] / " + reqEmpericalMK2.copper + "\n • Chì: " + leaColor1 + currentLead + "[] / " + reqEmpericalMK2.lead + "\n • Titan: " + titColor1 + currentTitanium + "[] / " + reqEmpericalMK2.titanium + "\n • Thorium: " + thoColor1 + currentThorium + "[] / " + reqEmpericalMK2.thorium + "\n" +
-                                   "[purple]Nhánh Tầm Xa MK2B[]\n • Đồng: " + copColor2 + currentCopper + "[] / " + reqEmpericalMK2B.copper + "\n • Chì: " + leaColor2 + currentLead + "[] / " + reqEmpericalMK2B.lead + "\n • Titan: " + titColor2 + currentTitanium + "[] / " + reqEmpericalMK2B.titanium + "\n • Hợp kim Surge: " + surColor2 + currentSurge + "[] / " + reqEmpericalMK2B.surgethorium;
-                        } else {
-                            return "[yellow]CORE VAULT RESOURCE REQUIREMENTS:[]\n" +
-                                   "[cyan]MK2 Upgrade Path[]\n • Copper: " + copColor1 + currentCopper + "[] / " + reqEmpericalMK2.copper + "\n • Lead: " + leaColor1 + currentLead + "[] / " + reqEmpericalMK2.lead + "\n • Titanium: " + titColor1 + currentTitanium + "[] / " + reqEmpericalMK2.titanium + "\n • Thorium: " + thoColor1 + currentThorium + "[] / " + reqEmpericalMK2.thorium + "\n" +
-                                   "[purple]MK2B Long-Range Path[]\n • Copper: " + copColor2 + currentCopper + "[] / " + reqEmpericalMK2B.copper + "\n • Lead: " + leaColor2 + currentLead + "[] / " + reqEmpericalMK2B.lead + "\n • Titanium: " + titColor2 + currentTitanium + "[] / " + reqEmpericalMK2B.titanium + "\n • Surge Alloy: " + surColor2 + currentSurge + "[] / " + reqEmpericalMK2B.surgethorium;
-                        }
-                    }));
+                            if (vi) {
+                                return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
+                                       "[cyan]Nhánh Nâng Cấp MK2[]\n • Đồng: " + copColor1 + currentCopper + "[] / " + reqEmpericalMK2.copper + "\n • Chì: " + leaColor1 + currentLead + "[] / " + reqEmpericalMK2.lead + "\n • Titan: " + titColor1 + currentTitanium + "[] / " + reqEmpericalMK2.titanium + "\n • Thorium: " + thoColor1 + currentThorium + "[] / " + reqEmpericalMK2.thorium + "\n" +
+                                       "[purple]Nhánh Tầm Xa MK2B[]\n • Đồng: " + copColor2 + currentCopper + "[] / " + reqEmpericalMK2B.copper + "\n • Chì: " + leaColor2 + currentLead + "[] / " + reqEmpericalMK2B.lead + "\n • Titan: " + titColor2 + currentTitanium + "[] / " + reqEmpericalMK2B.titanium + "\n • Hợp kim Surge: " + surColor2 + currentSurge + "[] / " + reqEmpericalMK2B.surgeAlloy;
+                            } else {
+                                return "[yellow]CORE VAULT RESOURCE REQUIREMENTS:[]\n" +
+                                       "[cyan]MK2 Upgrade Path[]\n • Copper: " + copColor1 + currentCopper + "[] / " + reqEmpericalMK2.copper + "\n • Lead: " + leaColor1 + currentLead + "[] / " + reqEmpericalMK2.lead + "\n • Titanium: " + titColor1 + currentTitanium + "[] / " + reqEmpericalMK2.titanium + "\n • Thorium: " + thoColor1 + currentThorium + "[] / " + reqEmpericalMK2.thorium + "\n" +
+                                       "[purple]MK2B Long-Range Path[]\n • Copper: " + copColor2 + currentCopper + "[] / " + reqEmpericalMK2B.copper + "\n • Lead: " + leaColor2 + currentLead + "[] / " + reqEmpericalMK2B.lead + "\n • Titanium: " + titColor2 + currentTitanium + "[] / " + reqEmpericalMK2B.titanium + "\n • Surge Alloy: " + surColor2 + currentSurge + "[] / " + reqEmpericalMK2B.surgeAlloy;
+                            }
+                        }))).growX();
 
-                    reqCell.width(360).get().setWrap(true);
-                    reqCell.get().setAlignment(Align.left);
-                    dialog.cont.row(); dialog.cont.add().height(10).row();
+                        dialog.cont.row(); dialog.cont.add().height(10).row();
 
-                    let branchesTable = new Table();
+                        let branchesTable = new Table();
 
-                    let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
-                    b1.add("[cyan]===(MK2)===[]").row();
-                    let b1Text = vi ? "[white]• Sát thương gốc: [green]+50%[]\n" +
-                                       "[white]• Cơ chế đòn đánh: Bắn trúng gây thêm [yellow]1% Max HP[] của mục tiêu thành sát thương bổ sung.[]"
-                                    : "[white]• Base Damage: [green]+50%[]\n" +
-                                       "[white]• Attack Mechanism: Hits deal extra [yellow]1% Max HP[] of target as bonus damage.[]";
-                    let b1D = b1.add(b1Text);
-                    b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
+                        let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
+                        b1.add("[cyan]===(MK2)===[]").row();
+                        let b1Text = vi ? "[white]• Sát thương gốc: [green]+50%[]\n" +
+                                           "[white]• Cơ chế đòn đánh: Bắn trúng gây thêm [yellow]1% Max HP[] của mục tiêu thành sát thương bổ sung.[]"
+                                        : "[white]• Base Damage: [green]+50%[]\n" +
+                                           "[white]• Attack Mechanism: Hits deal extra [yellow]1% Max HP[] of target as bonus damage.[]";
+                        let b1D = b1.add(b1Text);
+                        b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
 
-                    b1.button(vi ? "[green]KÍCH HOẠT MK2[]" : "[green]ACTIVATE MK2[]", packRun(() => {
-                        let core = this.team.core();
-                        if (core != null && core.items.get(Items.copper) >= reqEmpericalMK2.copper && core.items.get(Items.lead) >= reqEmpericalMK2.lead && core.items.get(Items.titanium) >= reqEmpericalMK2.titanium && core.items.get(Items.thorium) >= reqEmpericalMK2.thorium) {
-                            core.items.remove(Items.copper, reqEmpericalMK2.copper); core.items.remove(Items.lead, reqEmpericalMK2.lead); core.items.remove(Items.titanium, reqEmpericalMK2.titanium); core.items.remove(Items.thorium, reqEmpericalMK2.thorium);
-                            Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
-                            this.configure(java.lang.Integer.valueOf(1)); dialog.hide(); this.deselect();
-                        } else {
-                            Vars.ui.showInfo(vi ? "[red]Không đủ tài nguyên nâng cấp MK2![]" : "[red]Not enough resources for MK2![]");
-                        }
-                    })).size(180, 38);
+                        b1.button(vi ? "[green]KÍCH HOẠT MK2[]" : "[green]ACTIVATE MK2[]", packRun(() => {
+                            let core = this.team != null ? this.team.core() : null;
+                            if (core != null && 
+                                core.items.get(Items.copper) >= reqEmpericalMK2.copper && 
+                                core.items.get(Items.lead) >= reqEmpericalMK2.lead && 
+                                core.items.get(Items.titanium) >= reqEmpericalMK2.titanium && 
+                                core.items.get(Items.thorium) >= reqEmpericalMK2.thorium) {
+                                
+                                core.items.remove(Items.copper, reqEmpericalMK2.copper);
+                                core.items.remove(Items.lead, reqEmpericalMK2.lead);
+                                core.items.remove(Items.titanium, reqEmpericalMK2.titanium);
+                                core.items.remove(Items.thorium, reqEmpericalMK2.thorium);
 
-                    let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
-                    b2.add("[purple]===(MK2B)===[]").row();
-                    let b2Text = vi ? "[white]• Sát thương gốc: [red]-20%[]\n" +
-                                       "[white]• Tầm bắn: [green]+50%[] (Lifetime đạn đồng bộ tầm bắn mới)\n" +
-                                       "[white]• Hiệu ứng nổ lan: Bắn trúng mục tiêu gây nổ lan [orange]500% Sát thương gốc[] trong phạm vi [yellow]50 ô (400px)[]![]"
-                                    : "[white]• Base Damage: [red]-20%[]\n" +
-                                       "[white]• Attack Range: [green]+50%[] (Bullet lifetime synced to new range)\n" +
-                                       "[white]• Splash Blast: On-hit deals [orange]500% Base DMG[] splash blast in [yellow]50 tiles (400px)[] radius![]";
-                    let b2D = b2.add(b2Text);
-                    b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
+                                Fx.upgradeCore.at(this.x, this.y); 
+                                Fx.mineHuge.at(this.x, this.y); 
+                                Effect.shake(5, 5, this.x, this.y);
 
-                    b2.button(vi ? "[orange]KÍCH HOẠT MK2B[]" : "[orange]ACTIVATE MK2B[]", packRun(() => {
-                        let core = this.team.core();
-                        let surge = Items.surgeAlloy || Items.silicon;
-                        if (core != null && core.items.get(Items.copper) >= reqEmpericalMK2B.copper && core.items.get(Items.lead) >= reqEmpericalMK2B.lead && core.items.get(Items.titanium) >= reqEmpericalMK2B.titanium && core.items.get(surge) >= reqEmpericalMK2B.surgethorium) {
-                            core.items.remove(Items.copper, reqEmpericalMK2B.copper); core.items.remove(Items.lead, reqEmpericalMK2B.lead); core.items.remove(Items.titanium, reqEmpericalMK2B.titanium); core.items.remove(surge, reqEmpericalMK2B.surgethorium);
-                            Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
-                            this.configure(java.lang.Integer.valueOf(2)); dialog.hide(); this.deselect();
-                        } else {
-                            Vars.ui.showInfo(vi ? "[red]Không đủ tài nguyên nâng cấp MK2B![]" : "[red]Not enough resources for MK2B![]");
-                        }
-                    })).size(180, 38);
+                                this.configure(java.lang.Integer(1)); 
+                                dialog.hide(); this.deselect();
+                            } else {
+                                if (Vars.ui != null) Vars.ui.showInfo(vi ? "[red]Không đủ tài nguyên nâng cấp MK2![]" : "[red]Not enough resources for MK2![]");
+                            }
+                        })).size(180, 38);
 
-                    branchesTable.add(b1).width(340); branchesTable.row();
-                    branchesTable.add().height(12).row();
-                    branchesTable.add(b2).width(340);
+                        let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
+                        b2.add("[purple]===(MK2B)===[]").row();
+                        let b2Text = vi ? "[white]• Sát thương gốc: [red]-20%[]\n" +
+                                           "[white]• Tầm bắn: [green]+50%[] (Lifetime đạn đồng bộ tầm bắn mới)\n" +
+                                           "[white]• Hiệu ứng nổ lan: Bắn trúng mục tiêu gây nổ lan [orange]500% Sát thương gốc[] trong phạm vi [yellow]50 ô (400px)[]![]"
+                                        : "[white]• Base Damage: [red]-20%[]\n" +
+                                           "[white]• Attack Range: [green]+50%[] (Bullet lifetime synced to new range)\n" +
+                                           "[white]• Splash Blast: On-hit deals [orange]500% Base DMG[] splash blast in [yellow]50 tiles (400px)[] radius![]";
+                        let b2D = b2.add(b2Text);
+                        b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
 
-                    let scroll = new ScrollPane(branchesTable);
-                    scroll.setScrollingDisabled(true, false);
-                    dialog.cont.add(scroll).maxHeight(400);
-                    dialog.addCloseButton(); dialog.show();
+                        b2.button(vi ? "[orange]KÍCH HOẠT MK2B[]" : "[orange]ACTIVATE MK2B[]", packRun(() => {
+                            let core = this.team != null ? this.team.core() : null;
+                            if (core != null && 
+                                core.items.get(Items.copper) >= reqEmpericalMK2B.copper && 
+                                core.items.get(Items.lead) >= reqEmpericalMK2B.lead && 
+                                core.items.get(Items.titanium) >= reqEmpericalMK2B.titanium && 
+                                core.items.get(Items.surgeAlloy) >= reqEmpericalMK2B.surgeAlloy) {
+                                
+                                core.items.remove(Items.copper, reqEmpericalMK2B.copper);
+                                core.items.remove(Items.lead, reqEmpericalMK2B.lead);
+                                core.items.remove(Items.titanium, reqEmpericalMK2B.titanium);
+                                core.items.remove(Items.surgeAlloy, reqEmpericalMK2B.surgeAlloy);
+
+                                Fx.bigShockwave.at(this.x, this.y); 
+                                Fx.mineHuge.at(this.x, this.y); 
+                                Effect.shake(5, 5, this.x, this.y);
+
+                                this.configure(java.lang.Integer(2)); 
+                                dialog.hide(); this.deselect();
+                            } else {
+                                if (Vars.ui != null) Vars.ui.showInfo(vi ? "[red]Không đủ tài nguyên nâng cấp MK2B![]" : "[red]Not enough resources for MK2B![]");
+                            }
+                        })).size(180, 38);
+
+                        branchesTable.add(b1).width(340); branchesTable.row();
+                        branchesTable.add().height(12).row();
+                        branchesTable.add(b2).width(340);
+
+                        let scroll = new ScrollPane(branchesTable);
+                        scroll.setScrollingDisabled(true, false);
+                        dialog.cont.add(scroll).maxHeight(400);
+                        dialog.addCloseButton(); dialog.show();
+                    }
                 })).size(44, 44).tooltip(vi ? "Nâng cấp tháp pháo" : "Upgrade turret");
             } else {
                 table.button(Icon.lock, Styles.cleari, 44, packRun(() => {
                     let activeMsg = vi ? (tier == 1 ? "[cyan]ĐANG HOẠT ĐỘNG Ở CẤU HÌNH EMPERICAL MK2![]" : "[purple]ĐANG HOẠT ĐỘNG Ở CẤU HÌNH EMPERICAL MK2B![]")
                                        : (tier == 1 ? "[cyan]CURRENTLY ACTIVE IN EMPERICAL MK2![]" : "[purple]CURRENTLY ACTIVE IN EMPERICAL MK2B![]");
-                    Vars.ui.showInfo(activeMsg);
+                    if (Vars.ui != null) Vars.ui.showInfo(activeMsg);
                 })).size(44, 44).tooltip(vi ? "Cấu hình hiện tại" : "Current config");
             }
 
@@ -727,6 +759,7 @@ Events.on(ContentInitEvent, () => {
                                    "• Retains [yellow]50% chance to deal 5% Max HP[] bonus damage.";
                 }
 
+                if (Vars.ui == null) return;
                 let infoDialog = extend(BaseDialog, infoTitle, {});
                 let infoTable = new Table();
                 let cell = infoTable.add(descStr).width(360);
@@ -962,7 +995,7 @@ Events.on(ContentInitEvent, () => {
 
         write(write) {
             this.super$write(write);
-            write.b(this.getTier());
+            write.i(this.getTier());
             write.f(this.mainReloadTimer);
             write.f(this.supReloadTimer);
             write.i(this.shootCount);
@@ -971,7 +1004,7 @@ Events.on(ContentInitEvent, () => {
 
         read(read, revision) {
             this.super$read(read, revision);
-            this.setTier(read.b());
+            this.tierState = read.i();
             this.mainReloadTimer = read.f();
             this.supReloadTimer = read.f();
             this.shootCount = read.i();

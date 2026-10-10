@@ -183,6 +183,7 @@ require("sonicor");
 
 
 require("loadout-selection");
+require("newmode");
 
 Events.on(ClientLoadEvent, e => {
   let zorynex = Vars.content.getByName(ContentType.planet, "zorynex") || 

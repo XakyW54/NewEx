@@ -11,6 +11,8 @@ Events.on(ContentInitEvent, () => {
                 shockTimer: 0,
                 nextShockTime: 60,
                 drainTicks: 0,
+                cachedProgress: 1.0,
+                updateInterval: 0,
 
                 placed() {
                     this.super$placed();
@@ -18,45 +20,77 @@ Events.on(ContentInitEvent, () => {
                     this.nextShockTime = Mathf.random(60, 120);
                 },
 
- 
                 applyComduikDrain() {
-                    this.drainTicks = 2;  
+                    this.drainTicks = 10;
                 },
 
                 updateTile() {
                     this.super$updateTile();
- 
-                    let decayMultiplier = (this.drainTicks > 0) ? 1.8 : 1.0;
-                    if (this.drainTicks > 0) this.drainTicks--;
 
-                    this.timeRemaining -= Time.delta * decayMultiplier;
+                    let useFullFx = Core.settings.getBool("newex-redstone-fx", false);
 
-                    if (this.timeRemaining <= 0) {
-                        this.tile.setAir();
-                        return;
-                    }
+                    if (!useFullFx) {
+                        this.updateInterval++;
+                        if (this.updateInterval < 6) return;
+                        let deltaMultiplier = this.updateInterval;
+                        this.updateInterval = 0;
 
-                    let lifeProgress = Math.max(0, this.timeRemaining / this.lifetime);
+                        let decayMultiplier = (this.drainTicks > 0) ? 1.8 : 1.0;
+                        if (this.drainTicks > 0) this.drainTicks -= deltaMultiplier;
 
-                    this.shockTimer += Time.delta;
-                    if (this.shockTimer >= this.nextShockTime) {
-                        this.shockTimer = 0;
-                        this.nextShockTime = Mathf.random(60, 120);
+                        this.timeRemaining -= Time.delta * deltaMultiplier * decayMultiplier;
 
-                        let maxBolts = Math.floor(1 + lifeProgress * 4);
-                        let boltCount = Math.floor(Mathf.random(1, maxBolts + 1));
-
-                        for (let i = 0; i < boltCount; i++) {
-                            let randomAngle = Mathf.random(360);
-                            Lightning.create(this.team, Color.valueOf("ff4444"), 20, this.x, this.y, randomAngle, 5);
+                        if (this.timeRemaining <= 0) {
+                            this.tile.setAir();
+                            return;
                         }
 
-                        try { Fx.spark.at(this.x, this.y); } catch(e) {}
+                        this.cachedProgress = Math.max(0, this.timeRemaining / this.lifetime);
+
+                        this.shockTimer += deltaMultiplier;
+                        if (this.shockTimer >= this.nextShockTime) {
+                            this.shockTimer = 0;
+                            this.nextShockTime = Mathf.random(200, 400);
+
+                            try { 
+                                Fx.spark.at(this.x, this.y);
+                                Fx.lightning.at(this.x, this.y, Mathf.random(360), Color.valueOf("ff4444"));
+                            } catch(e) {}
+                        }
+                    } else {
+                        let decayMultiplier = (this.drainTicks > 0) ? 1.8 : 1.0;
+                        if (this.drainTicks > 0) this.drainTicks--;
+
+                        this.timeRemaining -= Time.delta * decayMultiplier;
+
+                        if (this.timeRemaining <= 0) {
+                            this.tile.setAir();
+                            return;
+                        }
+
+                        let lifeProgress = Math.max(0, this.timeRemaining / this.lifetime);
+
+                        this.shockTimer += Time.delta;
+                        if (this.shockTimer >= this.nextShockTime) {
+                            this.shockTimer = 0;
+                            this.nextShockTime = Mathf.random(60, 120);
+
+                            let maxBolts = Math.floor(1 + lifeProgress * 4);
+                            let boltCount = Math.floor(Mathf.random(1, maxBolts + 1));
+
+                            for (let i = 0; i < boltCount; i++) {
+                                let randomAngle = Mathf.random(360);
+                                Lightning.create(this.team, Color.valueOf("ff4444"), 20, this.x, this.y, randomAngle, 5);
+                            }
+
+                            try { Fx.spark.at(this.x, this.y); } catch(e) {}
+                        }
                     }
                 },
 
                 draw() {
-                    let progress = Math.max(0, this.timeRemaining / this.lifetime);
+                    let useFullFx = Core.settings.getBool("newex-redstone-fx", false);
+                    let progress = useFullFx ? Math.max(0, this.timeRemaining / this.lifetime) : this.cachedProgress;
                     let gray = Tmp.c1.set(0.4, 0.4, 0.4, 1.0);
                     let current = Tmp.c2.set(Color.white).lerp(gray, 1.0 - progress);
 

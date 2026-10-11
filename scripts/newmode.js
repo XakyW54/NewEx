@@ -4,16 +4,16 @@
     
     let activeMapName = null;
     let isPlayingNewMode = false;
+    let pendingGachaReward = 0;
+    let hasWonPending = false;
 
-    // Danh sách các map trong NewMode[cite: 3]
+    // Danh sách các map trong NewMode
     const mapsList = [
         { id: "Newbie", displayName: "Newbie" },
         { id: "redces", displayName: "Redces ᑈᐴᐾᐶᒅ" },
         { id: "sentyderd", displayName: "Sentyderd" },
         { id: "defxy1", displayName: "Def Xy-1" },
         { id: "defxy2", displayName: "Def Xy-2" }
-
-
     ];
 
     function getNewModeSlot(mapId) {
@@ -87,6 +87,8 @@
     function startNewModeMap(mapName) {
         isPlayingNewMode = true;
         activeMapName = mapName;
+        hasWonPending = false;
+        pendingGachaReward = 0;
 
         let slotName = "NewEx_NewMode_Save_" + mapName;
         let slots = Vars.control.saves.getSaveSlots();
@@ -149,17 +151,15 @@
             if (slot != null) {
                 slot.delete();
             }
-            isPlayingNewMode = false;
-            activeMapName = null;
         }
     }
 
     Events.on(GameOverEvent, event => {
         if (isPlayingNewMode) {
             if (event.winner != null && event.winner == Vars.state.rules.defaultTeam) {
-                let currentPts = Core.settings.getInt(GACHA_POINTS_KEY, 0) + 1;
-                Core.settings.put(GACHA_POINTS_KEY, java.lang.Integer(currentPts));
-                Vars.ui.showInfoToast("[accent]Chiến thắng NewMode! Nhận +1 điểm Gacha (Tổng: " + currentPts + ")[ ]", 3);
+                hasWonPending = true;
+                // Newbie nhận 20 điểm, các map khác nhận 50 điểm
+                pendingGachaReward = (activeMapName === "Newbie") ? 20 : 50;
             }
             deleteNewModeSave();
         }
@@ -168,7 +168,17 @@
     Events.on(StateChangeEvent, event => {
         if (event.from === GameState.State.playing && event.to === GameState.State.menu) {
             if (isPlayingNewMode) {
-                saveNewModeGame();
+                if (hasWonPending) {
+                    let currentPts = Core.settings.getInt(GACHA_POINTS_KEY, 0) + pendingGachaReward;
+                    Core.settings.put(GACHA_POINTS_KEY, java.lang.Integer(currentPts));
+                    Vars.ui.showInfo("[accent]🎉 CHIẾN THẮNG NEWMODE! 🎉\n\n[white]Bạn đã vượt qua bản đồ [cyan]" + activeMapName + "[white] và nhận được [yellow]+" + pendingGachaReward + " điểm Gacha[white]!\n\nTổng số điểm hiện tại: [yellow]" + currentPts + " điểm[]");
+                } else {
+                    saveNewModeGame();
+                }
+                isPlayingNewMode = false;
+                activeMapName = null;
+                hasWonPending = false;
+                pendingGachaReward = 0;
             }
         }
     });

@@ -1,8 +1,7 @@
 (function() {
+    const shop = require("shop");
     const CURRENT_MOD_NAME = "newex";
     const TAG_KEY = "newex-selected-turrets";
-    const UNLOCKED_TAG_KEY = "newex-unlocked-turrets";
-    const GACHA_POINTS_KEY = "newex-gacha-points";
     
     const fallbackTurrets = [
         "nucleytor", "emperfum", "galaxvorram", "bayrowfyr", "dor",
@@ -312,196 +311,6 @@
         return Core.settings.getInt("newex-max-turrets", 5);
     }
 
-    function isFullSelection() {
-        return getMaxSelectCount() >= turretList.size;
-    }
-
-    function unlockAllTurrets() {
-        let unlockedSeq = getUnlockedTurrets();
-        turretList.each(block => {
-            if (unlockedSeq.contains(block.name)) {
-                block.buildVisibility = BuildVisibility.shown;
-            } else {
-                block.buildVisibility = BuildVisibility.hidden;
-            }
-        });
-    }
-
-    function getGachaPoints() {
-        return Core.settings.getInt(GACHA_POINTS_KEY, 0);
-    }
-
-    function saveGachaPoints(pts) {
-        Core.settings.put(GACHA_POINTS_KEY, java.lang.Integer(pts));
-    }
-
-    function getUnlockedTurrets() {
-        let saved = Core.settings.getString(UNLOCKED_TAG_KEY, "NOT_SET");
-        let seq = new Seq();
-        if (saved === "NOT_SET") {
-            turretList.each(block => seq.add(block.name));
-            saveUnlockedTurrets(seq);
-        } else if (saved !== "") {
-            let parts = saved.split(",");
-            for (let i = 0; i < parts.length; i++) {
-                seq.add(parts[i]);
-            }
-        }
-        return seq;
-    }
-
-    function saveUnlockedTurrets(seq) {
-        let arr = [];
-        seq.each(name => arr.push(name));
-        Core.settings.put(UNLOCKED_TAG_KEY, arr.join(","));
-    }
-
-    function showGachaDialog() {
-        if (turretList.isEmpty()) loadTurretsFromFolder();
-
-        const dialog = new BaseDialog("Quay nhận mở khóa pháo ngẫu nhiên");
-        dialog.setFillParent(true);
-
-        const content = dialog.cont;
-        content.clear();
-
-        content.add("[accent]-- HỆ THỐNG GACHA THÁP PHÁO --[]").pad(10).fontScale(1.2).row();
-        content.add("Chiến thắng các màn chơi NewMode để nhận điểm và quay gacha mở khóa pháo!").padBottom(8).row();
-
-        let currentPoints = getGachaPoints();
-        let pointsLabel = content.add("[yellow]Điểm Gacha hiện có: " + currentPoints + " điểm [gray](Cần 10 điểm/lượt)[]").fontScale(1.0).pad(4).get();
-        content.row();
-
-        let unlockedSeq = getUnlockedTurrets();
-        let statusLabel = content.add("Đã sở hữu: " + unlockedSeq.size + " / " + turretList.size + " tháp pháo").fontScale(0.95).pad(4).get();
-        content.row();
-
-        let resultTable = new Table(Tex.button);
-        resultTable.margin(15);
-        let resultLabel = resultTable.add("[yellow]Nhấn nút 'Quay Tháp Pháo' bên dưới để bắt đầu![]").fontScale(1.05).get();
-        resultTable.row();
-        content.add(resultTable).size(360, 80).pad(10).row();
-
-        let btnTable = new Table();
-
-        // Sử dụng cú pháp không truyền style để dùng style mặc định an toàn, không bị dính sáng viền
-        btnTable.button("Quay Tháp Pháo", () => {
-            if (turretList.isEmpty()) loadTurretsFromFolder();
-            let pts = getGachaPoints();
-
-            if (pts < 10) {
-                Vars.ui.showInfoToast("[red]Không đủ điểm! Cần ít nhất 10 điểm (Chiến thắng NewMode hoặc qua các mốc wave để kiếm thêm).[]", 3);
-                return;
-            }
-
-            unlockedSeq = getUnlockedTurrets();
-            let lockedTurrets = new Seq();
-            turretList.each(block => {
-                if (!unlockedSeq.contains(block.name)) {
-                    lockedTurrets.add(block);
-                }
-            });
-
-            if (lockedTurrets.isEmpty()) {
-                resultLabel.setText("[green]Bạn đã mở khóa toàn bộ tháp pháo![]");
-                Vars.ui.showInfoToast("Đã mở khóa tất cả tháp pháo!", 2);
-                return;
-            }
-
-            pts -= 10;
-            saveGachaPoints(pts);
-            pointsLabel.setText("[yellow]Điểm Gacha hiện có: " + pts + " điểm [gray](Cần 10 điểm/lượt)[]");
-
-            lockedTurrets.shuffle();
-            let wonTurret = lockedTurrets.first();
-
-            let animFrames = 15;
-            let currentFrame = 0;
-
-            function runAnimation() {
-                if (currentFrame < animFrames) {
-                    let randomItem = turretList.random();
-                    resultLabel.setText("[orange]✦ Đang quay... [cyan]" + randomItem.localizedName + " ✦[]");
-                    currentFrame++;
-                    Time.run(2, runAnimation);
-                } else {
-                    unlockedSeq.add(wonTurret.name);
-                    saveUnlockedTurrets(unlockedSeq);
-
-                    resultLabel.setText("[lime]🎉 Chúc mừng! Đã mở khóa: [white]" + wonTurret.localizedName + "[]");
-                    statusLabel.setText("Đã sở hữu: " + unlockedSeq.size + " / " + turretList.size + " tháp pháo");
-                    Vars.ui.showInfoToast("[green]Gacha thành công: " + wonTurret.localizedName + "![]", 2);
-                    refreshList();
-                }
-            }
-
-            runAnimation();
-        }).size(175, 48).pad(4);
-
-        // Nút xóa dữ liệu gacha dùng style mặc định an toàn
-        btnTable.button("Xóa dữ liệu gacha", () => {
-            Core.settings.put(UNLOCKED_TAG_KEY, "");
-            saveGachaPoints(0);
-            resultLabel.setText("[red]Đã xóa dữ liệu gacha và reset điểm về 0![]");
-            let currentUnlocked = getUnlockedTurrets();
-            pointsLabel.setText("[yellow]Điểm Gacha hiện có: 0 điểm [gray](Cần 10 điểm/lượt)[]");
-            statusLabel.setText("Đã sở hữu: " + currentUnlocked.size + " / " + turretList.size + " tháp pháo");
-            Vars.ui.showInfoToast("[red]Đã xóa dữ liệu gacha thành công![]", 2);
-            refreshList();
-        }).size(175, 48).pad(4);
-
-        content.add(btnTable).pad(10).row();
-
-        content.add("[accent]Danh sách tháp pháo:[]").padTop(6).row();
-
-        let listTable = new Table();
-        listTable.top().margin(5);
-
-        function refreshList() {
-            listTable.clear();
-            let currentUnlocked = getUnlockedTurrets();
-            turretList.each(block => {
-                let isUnlocked = currentUnlocked.contains(block.name);
-                let card = new Table(Tex.button);
-                card.margin(6);
-                let textStr = (isUnlocked ? "[green]✓ Đã mở khóa: " : "[gray]✕ Chưa mở khóa: ") + "[white]" + block.localizedName + "[]";
-                card.add(textStr).left().growX();
-                listTable.add(card).growX().pad(3).row();
-            });
-        }
-
-        refreshList();
-
-        let scrollPane = new ScrollPane(listTable);
-        content.add(scrollPane).grow().row();
-
-        let gachaStep = 0;
-        dialog.update(() => {
-            if (Core.input.keyTap(KeyCode.x)) {
-                gachaStep = 1;
-            } else if (Core.input.keyTap(KeyCode.a)) {
-                if (gachaStep === 1) gachaStep = 2;
-                else gachaStep = 0;
-            } else if (Core.input.keyTap(KeyCode.k)) {
-                if (gachaStep === 2) gachaStep = 3;
-                else gachaStep = 0;
-            } else if (Core.input.keyTap(KeyCode.y)) {
-                if (gachaStep === 3) {
-                    gachaStep = 0;
-                    let pts = getGachaPoints() + 10;
-                    saveGachaPoints(pts);
-                    pointsLabel.setText("[yellow]Điểm Gacha hiện có: " + pts + " điểm [gray](Cần 10 điểm/lượt)[]");
-                    Vars.ui.showInfoToast("[green]Mã bí mật kích hoạt! Nhận +10 điểm Gacha![]", 3);
-                } else {
-                    gachaStep = 0;
-                }
-            }
-        });
-
-        dialog.addCloseButton();
-        dialog.show();
-    }
-
     function getSyncedTurretsFromWorld() {
         if (Vars.state.rules != null && Vars.state.rules.tags != null) {
             let savedString = Vars.state.rules.tags.get(TAG_KEY);
@@ -513,7 +322,7 @@
     }
 
     function applyTurretVisibility(allowedNamesSeq) {
-        let unlockedSeq = getUnlockedTurrets();
+        let unlockedSeq = shop.getUnlockedTurrets(turretList);
         turretList.each(block => {
             if (unlockedSeq.contains(block.name) && allowedNamesSeq != null && allowedNamesSeq.contains(block.name)) {
                 block.buildVisibility = BuildVisibility.shown;
@@ -812,7 +621,7 @@
         let maxCols = isMobile ? 2 : 3;
         let cols = 0;
 
-        let unlockedSeq = getUnlockedTurrets();
+        let unlockedSeq = shop.getUnlockedTurrets(turretList);
 
         turretList.each(block => {
             let isUnlocked = unlockedSeq.contains(block.name);
@@ -824,7 +633,7 @@
             btn.clicked(() => {
                 if (!isUnlocked) {
                     btn.setChecked(false);
-                    Vars.ui.showInfo("Tháp pháo này chưa được mở khóa! Hãy vào mục 'Quay nhận mở khóa pháo ngẫu nhiên' để gacha.");
+                    Vars.ui.showInfo("Tháp pháo này chưa được mở khóa! Hãy vào mục 'Cửa Hàng Tháp Pháo' để mua hoặc gacha.");
                     return;
                 }
 
@@ -1063,8 +872,8 @@
         applyFpsOptimizationLevel(fpsOptPercentSetting);
 
         try {
-            Vars.ui.menufrag.addButton("Quay nhận mở khóa pháo ngẫu nhiên", Icon.star, () => {
-                showGachaDialog();
+            Vars.ui.menufrag.addButton("Cửa Hàng Tháp Pháo (Shop)", Icon.star, () => {
+                shop.showShopDialog(turretList, loadTurretsFromFolder);
             });
 
             Vars.ui.menufrag.addButton("Cài đặt Newex", Icon.settings, () => {
@@ -1139,8 +948,8 @@
 
         if (turretList.isEmpty()) loadTurretsFromFolder();
 
-        if (isFullSelection()) {
-            unlockAllTurrets();
+        if (getMaxSelectCount() >= turretList.size) {
+            shop.unlockAllTurrets(turretList);
             return;
         }
 

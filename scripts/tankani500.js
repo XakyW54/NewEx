@@ -1,0 +1,420 @@
+const packCons2 = (func) => new Cons2({ get: func });
+const packRun = (func) => new java.lang.Runnable({ run: func });
+const packProv = (func) => new Prov({ get: func });
+
+const reqMK2 = { copper: 4000, lead: 4000, titanium: 0 };
+const reqMK2B = { copper: 4000, lead: 4000, titanium: 2000 };
+
+const hitsPerStack = 10; 
+const maxStack = 111; 
+
+const crumbleExplosionEffect = new Effect(40, cons(e => {
+    let previousZ = Draw.z();
+    Draw.z(Layer.effect);
+
+    Draw.color(Pal.redDust, Pal.redderDust, e.fin());
+    Lines.stroke(e.fout() * 6.0);
+    Lines.circle(e.x, e.y, Interp.pow3Out.apply(e.fin()) * 45.0);
+
+    let flashColor = Color.white.cpy().lerp(Pal.redDust, e.fin());
+    flashColor.a = e.fout();
+    Draw.color(flashColor);
+    Lines.stroke(flashColor);
+    Lines.circle(e.x, e.y, Interp.pow2Out.apply(e.fin()) * 35.0);
+
+    Draw.z(previousZ);
+    Draw.reset();
+}));
+
+function applyMaxHpPercentDamage(b, entity) {
+    let owner = b.owner;
+    if (owner != null) {
+        if (owner.addHitPoint !== undefined) {
+            owner.addHitPoint();
+        }
+        if (owner.damageStack !== undefined && entity != null && entity.maxHealth !== undefined) {
+            let pairs = Math.floor(owner.damageStack / 2);
+            if (pairs > 0) {
+                let extraDamage = entity.maxHealth() * (pairs * 0.002); 
+                entity.damage(extraDamage);
+            }
+        }
+    }
+}
+
+const tankaniNormalBullet = extend(BasicBulletType, {
+    speed: 15, damage: 558, width: 10, height: 33, lifetime: 60,
+    frontColor: Color.valueOf("#e0ea87"), backColor: Color.valueOf("#e5ff00"),
+    trailColor: Color.valueOf("#daea80"),
+    pierce: true,
+    pierceCap: 99,
+    pierceBuilding: true,
+    
+    hitEntity(b, entity, health) {
+        applyMaxHpPercentDamage(b, entity);
+        this.super$hitEntity(b, entity, health);
+    }
+});
+
+const tankaniMK2Bullet = extend(BasicBulletType, {
+    speed: 15, damage: 558, width: 10, height: 33, lifetime: 60,
+    frontColor: Color.valueOf("#e0ea87"), backColor: Color.valueOf("#00ff4c"),
+    trailColor: Color.valueOf("#daea80"),
+    splashDamageRadius: 50,
+    splashDamage: 279,
+    pierce: true,
+    pierceCap: 99,
+    pierceBuilding: true,
+    hitEffect: crumbleExplosionEffect,    
+    despawnEffect: crumbleExplosionEffect,
+
+    hitEntity(b, entity, health) {
+        applyMaxHpPercentDamage(b, entity);
+        this.super$hitEntity(b, entity, health);
+    }
+});
+
+const tankaniMK2BBullet = extend(BasicBulletType, {
+    speed: 20, damage: 1, width: 10, height: 33, lifetime: 60,
+    frontColor: Color.valueOf("#ff8a80"), backColor: Color.valueOf("#ff1744"),
+    trailColor: Color.valueOf("#ff5252"),
+    splashDamageRadius: 150,
+    splashDamage: 446,
+    collidesGround: false,   
+    collidesAir: true,
+    pierce: true,
+    pierceCap: 99,
+    pierceBuilding: true,
+    hitEffect: crumbleExplosionEffect,    
+    despawnEffect: crumbleExplosionEffect,
+
+    hitEntity(b, entity, health) {
+        applyMaxHpPercentDamage(b, entity);
+        this.super$hitEntity(b, entity, health);
+    }
+});
+
+Events.on(ClientLoadEvent, cons(e => {
+    const turretBlock = Vars.content.getByName(ContentType.block, "newex-tankani500");
+
+    if (turretBlock != null) {
+        turretBlock.configurable = true;
+        turretBlock.inaccuracy = 0;
+        turretBlock.itemCapacity = 1;                  
+        turretBlock.reload = turretBlock.reload * 0.8; 
+        turretBlock.range = turretBlock.range * 0.8;   
+
+        turretBlock.config(java.lang.Integer, packCons2((tile, value) => {
+            if (tile != null && tile.setTier !== undefined) {
+                tile.setTier(value);
+            }
+        }));
+
+        turretBlock.addBar("damageStack", new Func({
+            get: function(e){
+                return new Bar(
+                    new Prov({ 
+                        get: function(){ 
+                            return "DMG: +" + Math.floor(e.getStackRatio() * (maxStack * 90)) + "%"; 
+                        } 
+                    }),
+                    new Prov({ 
+                        get: function(){ 
+                            return Color.orange; 
+                        } 
+                    }),
+                    new Floatp({ 
+                        get: function(){ 
+                            return e.getStackRatio(); 
+                        } 
+                    }),
+                );
+            }
+        }));
+
+        turretBlock.buildType = () => extend(ItemTurret.ItemTurretBuild, turretBlock, {
+            tierState: 0, 
+            hitPoints: 0,
+            damageStack: 0,
+
+            getStackRatio() {
+                if (this.damageStack === undefined) return 0.0;
+                return this.damageStack / maxStack;
+            },
+            
+            getTier() { return this.tierState == null ? 0 : this.tierState; },
+            
+            setTier(val) { 
+                this.tierState = val;
+                if (val == 0) this.health = 565;
+                if (val == 1) this.health = 735; 
+                if (val == 2) this.health = 950;
+                this.maxHealth = this.health;
+            },
+
+            addHitPoint() {
+                if (this.damageStack >= maxStack) return;
+
+                this.hitPoints++;
+                let newStack = Math.floor(this.hitPoints / hitsPerStack);
+                
+                if (newStack > this.damageStack) {
+                    this.damageStack = Math.min(newStack, maxStack);
+                    Fx.upgradeCore.at(this.x, this.y);
+                }
+            },
+
+            getModifiedDamage(baseDmg) {
+                let multiplier = 1.0 + (this.damageStack * 0.9); 
+                return Math.round(baseDmg * multiplier);
+            },
+
+            range() {
+                let tier = this.getTier();
+                if (tier == 2) {
+                    return this.super$range() * 2;
+                }
+                return this.super$range();
+            },
+
+            findTarget() {
+                this.super$findTarget();
+                let tier = this.getTier();
+                if (tier == 2 && this.target != null) {
+                    if (this.target.isFlying === undefined || !this.target.isFlying()) {
+                        this.target = null;
+                    }
+                }
+            },
+
+            buildConfiguration(table) {
+                table.clear(); table.row();
+                let tier = this.getTier();
+                let isEn = Core.settings.getString("locale").startsWith("en");
+
+                if (tier == 0) {
+                    table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
+                        let dialogTitle = isEn ? "Tankani-500 Upgrade Center" : "Trung tâm nâng cấp Tankani-500";
+                        let dialog = extend(BaseDialog, dialogTitle, {});
+                        
+                        let reqCell = dialog.cont.label(packProv(() => {
+                            let core = this.team.core();
+                            if (core == null) return isEn ? "[red]Team Core Not Found![]" : "[red]Không tìm thấy Lõi Đội![]";
+                            let currentcopper = core.items.get(Items.copper);
+                            let currentlead = core.items.get(Items.lead);
+                            let currenttitanium = core.items.get(Items.titanium);
+                            
+                            let copColor1 = currentcopper >= reqMK2.copper ? "[green]" : "[red]";
+                            let leaColor1 = currentlead >= reqMK2.lead ? "[green]" : "[red]";
+                            
+                            let copColor2 = currentcopper >= reqMK2B.copper ? "[green]" : "[red]";
+                            let leaColor2 = currentlead >= reqMK2B.lead ? "[green]" : "[red]";
+                            let titColor2 = currenttitanium >= reqMK2B.titanium ? "[green]" : "[red]";
+                            
+                            if (isEn) {
+                                return "[yellow]CORE STORAGE REQUIREMENTS:[]\n" +
+                                       "[cyan]MK2 Configuration Branch:[]\n" +
+                                       " • Copper: " + copColor1 + currentcopper + "[] / " + reqMK2.copper + "\n" +
+                                       " • Lead: " + leaColor1 + currentlead + "[] / " + reqMK2.lead + "\n" +
+                                       "[purple]MK2B Anti-Air Variant Branch:[]\n" +
+                                       " • Copper: " + copColor2 + currentcopper + "[] / " + reqMK2B.copper + "\n" +
+                                       " • Lead: " + leaColor2 + currentlead + "[] / " + reqMK2B.lead + "\n" +
+                                       " • Titanium: " + titColor2 + currenttitanium + "[] / " + reqMK2B.titanium;
+                            } else {
+                                return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
+                                       "[cyan]Nhánh Cấu Hình MK2:[]\n" +
+                                       " • Đồng: " + copColor1 + currentcopper + "[] / " + reqMK2.copper + "\n" +
+                                       " • Chì: " + leaColor1 + currentlead + "[] / " + reqMK2.lead + "\n" +
+                                       "[purple]Nhánh Biến Thể Chuyên Không MK2B:[]\n" +
+                                       " • Đồng: " + copColor2 + currentcopper + "[] / " + reqMK2B.copper + "\n" +
+                                       " • Chì: " + leaColor2 + currentlead + "[] / " + reqMK2B.lead + "\n" +
+                                       " • Titan: " + titColor2 + currenttitanium + "[] / " + reqMK2B.titanium;
+                            }
+                        }));
+                        
+                        reqCell.width(360).get().setWrap(true);
+                        reqCell.get().setAlignment(Align.left);
+                        dialog.cont.row(); dialog.cont.add().height(10).row();
+
+                        let branchesTable = new Table();
+
+                        let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
+                        b1.add("[cyan]===(MK2)===[]").row();
+                        let b1Text = isEn ? "Integrated area explosive technology:\n" +
+                                            " [white]• Increases HP to [green]735 HP[].[]\n" +
+                                            " [white]• Retains multi-target (Ground & Air) and base range.[]\n" +
+                                            " [white]• Bullets explode in a [orange]50 pixel[] radius on hit.[]\n" +
+                                            " [white]• Primary target takes [red]558 base damage[] directly.[]\n" +
+                                            " [white]• Nearby enemies take [yellow]279 splash damage[] (50%).[]"
+                                          : "Tích hợp công nghệ nổ mảnh diện rộng:\n" +
+                                            " [white]• Tăng lượng máu chống chịu lên [green]735 HP[].[]\n" +
+                                            " [white]• Giữ nguyên cơ chế bắn đa mục tiêu (Đất & Không) và tầm bắn gốc.[]\n" +
+                                            " [white]• Đạn chạm mục tiêu kích nổ lan phạm vi [orange]50 pixel[].[]\n" +
+                                            " [white]• Mục tiêu chính nhận [red]558 sát thương gốc[] trực diện.[]\n" +
+                                            " [white]• Kẻ địch lân cận chịu [yellow]279 sát thương nổ lan[] (50%).[]";
+                        let b1D = b1.add(b1Text);
+                        b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
+                        b1.button(isEn ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => {
+                            let core = this.team.core();
+                            if (core != null && core.items.get(Items.copper) >= reqMK2.copper && core.items.get(Items.lead) >= reqMK2.lead) {
+                                core.items.remove(Items.copper, reqMK2.copper); core.items.remove(Items.lead, reqMK2.lead);
+                                Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
+                                
+                                this.setTier(1);
+                                this.configure(java.lang.Integer.valueOf(1)); 
+                                
+                                dialog.hide(); this.deselect();
+                            } else { Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]"); }
+                        })).size(180, 38);
+
+                        let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
+                        b2.add("[purple]===(MK2B)===[]").row();
+                        let b2Text = isEn ? "Converts to heavy anti-air artillery complex:\n" +
+                                            " [white]• Increases max HP to [green]950 HP[].[]\n" +
+                                            " [white]• Extends effective range by [ultra-light]2x [green](x2 Range)[][].[]\n" +
+                                            " [white]• [red]Completely removes ground targeting capability[].[]\n" +
+                                            " [white]• Increases bullet speed to [sky]20.0[] dedicated anti-air.[]\n" +
+                                            " [white]• Pressure wave blast area up to [pink]150 pixels[].[]\n" +
+                                            " [white]• Deals [orange]446 AOE damage[] (80% of base damage).[]"
+                                          : "Chuyển đổi sang tổ hợp pháo phòng không hạng nặng:\n" +
+                                            " [white]• Gia tăng lượng máu tối đa lên cực đại [green]950 HP[].[]\n" +
+                                            " [white]• Mở rộng [ultra-light]gấp đôi tầm bắn hiệu dụng [green](x2 Range)[][].[]\n" +
+                                            " [white]• [red]Loại bỏ hoàn toàn khả năng bắn mục tiêu mặt đất[].[]\n" +
+                                            " [white]• Tăng tốc độ đạn bay lên [sky]20.0[] chuyên dụng diệt Không Quân.[]\n" +
+                                            " [white]• Đạn nổ áp suất tạo vùng sát thương lan rộng tới [pink]150 pixel[].[]\n" +
+                                            " [white]• Gây [orange]446 sát thương diện rộng[] (80% lực bắn gốc).[]";
+                        let b2D = b2.add(b2Text);
+                        b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
+                        b2.button(isEn ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => {
+                            let core = this.team.core();
+                            if (core != null && core.items.get(Items.copper) >= reqMK2B.copper && core.items.get(Items.lead) >= reqMK2B.lead && core.items.get(Items.titanium) >= reqMK2B.titanium) {
+                                core.items.remove(Items.copper, reqMK2B.copper); core.items.remove(Items.lead, reqMK2B.lead); core.items.remove(Items.titanium, reqMK2B.titanium);
+                                Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
+                                
+                                this.setTier(2);
+                                this.configure(java.lang.Integer.valueOf(2)); 
+                                
+                                dialog.hide(); this.deselect();
+                            } else { Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2B![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
+                        })).size(180, 38);
+
+                        branchesTable.add(b1).width(340); branchesTable.row();
+                        branchesTable.add().height(12).row();
+                        branchesTable.add(b2).width(340);
+
+                        let scroll = new ScrollPane(branchesTable);
+                        scroll.setScrollingDisabled(true, false);
+                        dialog.cont.add(scroll).maxHeight(400);
+                        dialog.addCloseButton(); dialog.show();
+                    })).size(50, 40).tooltip(isEn ? "Upgrade turret firepower structure" : "Nâng cấp cấu trúc hỏa lực tháp pháo");
+                } else {
+                    table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
+                        Vars.ui.showInfo(isEn ? "[scarlet]TANKANI SYSTEM HAS REACHED EVOLUTION LIMIT![]" : "[scarlet]HỆ THỐNG TANKANI ĐÃ ĐẠT GIỚI HẠN TIẾN HÓA![]");
+                    })).size(50, 40).tooltip(isEn ? "Max level reached" : "Đã đạt cấp tối đa");
+                }
+
+                table.button(Icon.info, Styles.cleari, 40, packRun(() => {
+                    let title = isEn ? " Tankani-500 Stats: " : " Thông số Tankani-500: ";
+                    let descStr = "";
+                    let currentTier = this.getTier();
+
+                    let statStackStr = isEn ? "\n[scarlet]⚡ EVOLUTION MECHANIC (HITS) ⚡[]\n" +
+                                               "[lightgray]Hits landed:[] [yellow]" + this.hitPoints + " Hits[]\n" +
+                                               "[lightgray]Power level:[] [orange]Tier " + this.damageStack + " / " + maxStack + "[]\n" +
+                                               "[lightgray]Bonus damage:[] [green]+" + (this.damageStack * 90) + "%[] (Max +" + (maxStack * 90) + "%)\n" +
+                                               "[lightgray]Max HP Bonus DMG:[] [green]+" + (Math.floor(this.damageStack / 2) * 0.2).toFixed(1) + "% Max HP[]\n"
+                                             : "\n[scarlet]⚡ CƠ CHẾ TIẾN HÓA (HITS) ⚡[]\n" +
+                                               "[lightgray]Số phát bắn trúng:[] [yellow]" + this.hitPoints + " Hits[]\n" +
+                                               "[lightgray]Cấp độ tầng lực:[] [orange]Tầng " + this.damageStack + " / " + maxStack + "[]\n" +
+                                               "[lightgray]Sát thương cộng thêm:[] [green]+" + (this.damageStack * 90) + "%[] (Tối đa +" + (maxStack * 90) + "%)\n" +
+                                               "[lightgray]ST thêm theo Max HP:[] [green]+" + (Math.floor(this.damageStack / 2) * 0.2).toFixed(1) + "% Max HP[]\n";
+
+                    if (currentTier == 0) {
+                        title += "[yellow](MK1)[]";
+                        descStr = isEn ? "[gold]⚡ UNUPGRADED BASE STATS (MK1) ⚡[]\n" +
+                                         "[lightgray]Turret Health:[] [green]565 HP[]\n" +
+                                         "[lightgray]Target Type:[] Ground & Air\n" +
+                                         "[lightgray]Single Target Damage:[] [red]" + this.getModifiedDamage(558) + " Damage[] (Base: 558)\n" +
+                                         statStackStr
+                                       : "[gold]⚡ THÔNG SỐ GỐC CHƯA NÂNG CẤP (MK1) ⚡[]\n" +
+                                         "[lightgray]Máu tháp pháo:[] [green]565 HP[]\n" +
+                                         "[lightgray]Trạng thái mục tiêu:[] Đất & Không\n" +
+                                         "[lightgray]Sát thương mục tiêu đơn:[] [red]" + this.getModifiedDamage(558) + " Sát thương[] (Gốc: 558)\n" +
+                                         statStackStr;
+                    } else if (currentTier == 1) {
+                        title += "[cyan](MK2)[]";
+                        descStr = isEn ? "[cyan]⚡ AREA DAMAGE CONFIG (MK2) ⚡[]\n" +
+                                         "[lightgray]Turret Health:[] [green]735 HP[]\n" +
+                                         "[lightgray]Splash Area:[] [orange]50 Pixels[]\n" +
+                                         "[lightgray]Direct Damage:[] [red]" + this.getModifiedDamage(558) + " Damage[] (Base: 558)\n" +
+                                         "[lightgray]Splash Damage:[] [yellow]" + this.getModifiedDamage(279) + " Damage[] (Base: 279)\n" +
+                                         statStackStr
+                                       : "[cyan]⚡ CẤU HÌNH ĐẠN DIỆN RỘNG (MK2) ⚡[]\n" +
+                                         "[lightgray]Máu tháp pháo:[] [green]735 HP[]\n" +
+                                         "[lightgray]Vùng nổ lan (Splash):[] [orange]50 Pixel[]\n" +
+                                         "[lightgray]Sát thương trực diện:[] [red]" + this.getModifiedDamage(558) + " Sát thương[] (Gốc: 558)\n" +
+                                         "[lightgray]Sát thương nổ lan:[] [yellow]" + this.getModifiedDamage(279) + " Sát thương[] (Gốc: 279)\n" +
+                                         statStackStr;
+                    } else if (currentTier == 2) {
+                        title += "[purple](MK2B)[]";
+                        descStr = isEn ? "[purple]⚡ HEAVY ANTI-AIR CONFIG (MK2B) ⚡[]\n" +
+                                         "[lightgray]Turret Health:[] [green]950 HP[]\n" +
+                                         "[lightgray]Range:[] [green]Double Base Range (x2 Range)[]\n" +
+                                         "[lightgray]Target Type:[] [red]AIR ONLY[]\n" +
+                                         "[lightgray]Pressure Splash Area:[] [pink]150 Pixels[]\n" +
+                                         "[lightgray]Anti-Air Splash Damage:[] [orange]" + this.getModifiedDamage(446) + " Damage[] (Base: 446)\n" +
+                                         statStackStr
+                                       : "[purple]⚡ CẤU HÌNH PHÒNG KHÔNG HẠNG NẶNG (MK2B) ⚡[]\n" +
+                                         "[lightgray]Máu tháp pháo:[] [green]950 HP[]\n" +
+                                         "[lightgray]Tầm bắn:[] [green]Gấp đôi tầm bắn gốc (x2 Range)[]\n" +
+                                         "[lightgray]Trạng thái mục tiêu:[] [red]Chỉ bắn KHÔNG QUÂN[]\n" +
+                                         "[lightgray]Vùng nổ lan áp suất:[] [pink]150 Pixel[]\n" +
+                                         "[lightgray]Sát thương nổ phòng không:[] [orange]" + this.getModifiedDamage(446) + " Sát thương[] (Gốc: 446)\n" +
+                                         statStackStr;
+                    }
+
+                    let dialog = extend(BaseDialog, title, {});
+                    let infoTable = new Table();
+                    let cell = infoTable.add(descStr).width(360);
+                    cell.get().setWrap(true); cell.get().setAlignment(Align.left);
+                    let scroll = new ScrollPane(infoTable);
+                    scroll.setScrollingDisabled(true, false);
+                    dialog.cont.add(scroll).maxHeight(400);
+                    dialog.addCloseButton(); dialog.show();
+                })).size(50, 40).tooltip(isEn ? "View detailed system stats" : "Xem chi tiết thông số hệ thống");
+            },
+
+            config() { return java.lang.Integer.valueOf(this.getTier()); },
+
+            shoot(type) {
+                let tier = this.getTier();
+                if (tier == 1) {
+                    tankaniMK2Bullet.damage = this.getModifiedDamage(558);
+                    tankaniMK2Bullet.splashDamage = this.getModifiedDamage(279);
+                    this.super$shoot(tankaniMK2Bullet);
+                } else if (tier == 2) {
+                    tankaniMK2BBullet.damage = this.getModifiedDamage(1);
+                    tankaniMK2BBullet.splashDamage = this.getModifiedDamage(446);
+                    this.super$shoot(tankaniMK2BBullet);
+                } else {
+                    tankaniNormalBullet.damage = this.getModifiedDamage(558);
+                    this.super$shoot(tankaniNormalBullet);
+                }
+            },
+
+            write(write) {
+                this.super$write(write); 
+                write.b(this.getTier()); 
+                write.i(this.hitPoints);     
+                write.b(this.damageStack);   
+            },
+            
+            read(read, revision) {
+                this.super$read(read, revision); 
+                this.setTier(read.b()); 
+                this.hitPoints = read.i();   
+                this.damageStack = read.b(); 
+            }
+        });
+    }
+}));

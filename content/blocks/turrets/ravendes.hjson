@@ -1,0 +1,29 @@
+name: "ravendes"
+localizedName: "Ravendes"
+description: "Siêu tháp pháo hoàng gia tích hợp công nghệ sấy đạn ngôi sao 4 cánh, với khả năng phân chia sát thương theo tầm bắn và tùy chọn nâng cấp đa phân nhánh."
+type: "ItemTurret"
+size: 3
+health: 1200
+reload: 4.0
+range: 1200
+inaccuracy: 2.5
+rotateSpeed: 4.0
+targetAir: true
+targetGround: true
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+}
+shootSound: "ravendesshoot"
+squareSprite: false
+
+requirements: [
+  copper/400
+  lead/280
+  silicon/200
+  titanium/150
+]
+
+category: "turret"
+research: "foreshadow"
+buildVisibility: "shown"

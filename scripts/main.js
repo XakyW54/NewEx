@@ -141,7 +141,7 @@ require("repulsyron");
 
 require("emperical");
 
-
+require("ravendes");
 
 
 
@@ -168,8 +168,11 @@ require("crynex");
 
 require("aether-spiral");
 
+require("tenytisyr");
+
 require("tyteryi");
 
+require("tankani500");
 
 
 
@@ -184,6 +187,7 @@ require("sonicor");
 
 require("loadout-selection");
 require("newmode");
+require("shop");
 
 Events.on(ClientLoadEvent, e => {
   let zorynex = Vars.content.getByName(ContentType.planet, "zorynex") || 

@@ -1,569 +1,952 @@
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
+const packProv = (func) => new Prov({ get: func });
 
-const isEn = () => Core.settings.getString("locale").startsWith("en");
+// Cấu hình tài nguyên nâng cấp tuần tự MK2 & MK3
+const reqTyterYiMK2 = { silicon: 150, titanium: 100, thorium: 80 };
+const reqTyterYiMK3 = { silicon: 250, titanium: 180, thorium: 120, plastanium: 60 };
 
-const reqMK2 = { titanium: 500, silicon: 300, plastanium: 0 };
-const reqMK2B = { titanium: 800, silicon: 400, plastanium: 200 }; 
+// =========================================================================
+// ==================== TÔNG MÀU VÀNG HOÀNG GIA & TRẮC PHA LÊ (ABETA) ======
+// =========================================================================
 
-// Hiệu ứng vụ nổ MK2B (bán kính 35 ô = 280px)
-const fxTyteryiExplosion = new Effect(50, cons(e => {
-    Draw.z(Layer.effect + 0.1);
-    let maxRadius = 280;
-    let alpha = 1.0 - e.fin();
-    let col = Color.valueOf("#ff3300");
+const SWORD_LIGHT = "#ffffff"; 
+const SWORD_MAIN = "#ffe066";  
+const SWORD_DARK = "#ffd700";  
+const SWORD_DEEP = "#ff8800";  
 
-    Draw.color(col);
-    Draw.alpha(alpha * 0.35);
-    Fill.circle(e.x, e.y, maxRadius);
+// Tông màu trắng pha lê cho trạng thái Abeta
+const CRYSTAL_LIGHT = "#ffffff";
+const CRYSTAL_MAIN  = "#e0f7ff";
+const CRYSTAL_DARK  = "#80deea";
+const CRYSTAL_DEEP  = "#00bcd4";
 
-    Draw.color(col);
-    Draw.alpha(alpha * 0.7);
-    Lines.stroke(2.5 * alpha);
-    Lines.circle(e.x, e.y, maxRadius);
+const swordMuzzleFx = new Effect(15, cons(e => {
+    Draw.color(Color.valueOf(SWORD_MAIN), Color.valueOf(SWORD_LIGHT), e.fin());
+    Lines.stroke(1.5 * e.fout());
+    Lines.circle(e.x, e.y, 7.0 * e.finpow());
+}));
 
-    const ringColors = [
-        Color.valueOf("#ffffff"), 
-        Color.valueOf("#ffcc00"), 
-        col 
-    ];
+const crystalMuzzleFx = new Effect(15, cons(e => {
+    Draw.color(Color.valueOf(CRYSTAL_MAIN), Color.valueOf(CRYSTAL_LIGHT), e.fin());
+    Lines.stroke(1.5 * e.fout());
+    Lines.circle(e.x, e.y, 8.0 * e.finpow());
+}));
 
-    for (let i = 0; i < 3; i++) {
-        let delay = i * 0.12;
-        if (e.fin() > delay) {
-            let progress = (e.fin() - delay) / (1.0 - delay);
-            let smoothProgress = Interp.pow3Out.apply(progress);
-            let dynamicRadius = maxRadius * smoothProgress;
+const swordLaunchFx = new Effect(18, cons(e => {
+    Draw.color(Color.valueOf(SWORD_LIGHT), Color.valueOf(SWORD_MAIN), e.fin());
+    Lines.stroke(1.2 * e.fout());
+    Lines.circle(e.x, e.y, 6.0 * e.finpow());
+    Angles.randLenVectors(e.id, 4, 12.0 * e.finpow(), (x, y) => {
+        Fill.circle(e.x + x, e.y + y, 1.0 * e.fout());
+    });
+}));
 
-            Draw.color(ringColors[i]);
-            Draw.alpha(alpha * (1.0 - smoothProgress));
-            Lines.stroke((14.0 - i * 3.0) * (1.0 - smoothProgress));
-            Lines.circle(ringColors[i]);
-            Lines.circle(e.x, e.y, dynamicRadius);
-        }
-    }
+const swordHitFx = new Effect(20, cons(e => {
+    Draw.color(Color.valueOf(SWORD_LIGHT), Color.valueOf(SWORD_MAIN), e.fin());
+    Lines.stroke(1.5 * e.fout());
+    Lines.circle(e.x, e.y, 10.0 * e.finpow());
+    
+    Angles.randLenVectors(e.id, 5, 14.0 * e.finpow(), (x, y) => {
+        Draw.color(Color.valueOf(SWORD_MAIN));
+        Fill.circle(e.x + x, e.y + y, 1.4 * e.fout());
+    });
+}));
+
+const swordExplosionFx = new Effect(25, cons(e => {
+    let size = 14.0 * e.finpow();
+    let spinRot = e.rotation + (e.fin() * 60.0);
+
+    Draw.color(Color.valueOf(SWORD_DEEP));
+    Draw.alpha(0.8 * e.fout());
+    Drawf.tri(e.x, e.y, 4.0 * e.fout(), size * 1.3, spinRot);
+    Drawf.tri(e.x, e.y, 4.0 * e.fout(), size * 1.3, spinRot + 180);
+
+    Draw.color(Color.valueOf(SWORD_MAIN));
+    Draw.alpha(1.0 * e.fout());
+    Drawf.tri(e.x, e.y, 3.0 * e.fout(), size, spinRot + 90);
+    Drawf.tri(e.x, e.y, 3.0 * e.fout(), size, spinRot + 270);
 
     Draw.reset();
 }));
 
-function createTyteryiBullet(baseProperties) {
-    let bullet = extend(BasicBulletType, {
-        hitEntity(b, other, initialHealth) {
-            this.super$hitEntity(b, other, initialHealth);
-            
-            if (other != null && b != null && b.owner != null) {
-                let turret = b.owner;
-                let tier = turret.getTier ? turret.getTier() : 0;
-                let isMaxCharged = turret.stackDmgBonus != null && turret.stackDmgBonus >= 50.0;
+// Hiệu ứng tia laser chiếu từ trên trời xuống
+const skyLaserFx = new Effect(40, cons(e => {
+    Draw.color(Color.white, Color.valueOf(CRYSTAL_LIGHT), e.fin());
+    Lines.stroke(8.0 * e.fout());
+    Lines.line(e.x, e.y + 400.0, e.x, e.y);
+    Draw.color(Color.valueOf(CRYSTAL_MAIN));
+    Lines.stroke(3.0 * e.fout());
+    Lines.line(e.x, e.y + 400.0, e.x, e.y);
+}));
 
-                // MK2: Tích đủ năng lượng gây thêm 1% max HP
-                if (tier == 1 && isMaxCharged) {
-                    other.damage(other.maxHealth * 0.01);
-                }
+// Hiệu ứng mảnh ghép từ 2 bên (Trái & Phải) bay vào tâm ghép hình
+const jigsawAssembleFx = new Effect(45, cons(e => {
+    Draw.color(Color.valueOf(CRYSTAL_LIGHT), Color.valueOf(SWORD_MAIN), e.fin());
+    let progress = e.fin(); // từ 0 đến 1
 
-                // MK2B: Tích đủ năng lượng nổ 35 ô gây 0.5% max HP
-                if (tier == 2 && isMaxCharged) {
-                    let exX = other.x;
-                    let exY = other.y;
-                    let radiusPx = 280;
+    // Các mảnh ghép từ bên Trái bay vào
+    for(let i = 0; i < 10; i++) {
+        let seed = e.id + i * 13;
+        let yOffset = Mathf.randomSeed(seed, -45, 45);
+        let startX = e.x - 120 - Mathf.randomSeed(seed + 1, 0, 50);
+        let currentX = Mathf.lerp(startX, e.x, progress);
+        let currentY = e.y + yOffset * (1.0 - progress);
+        Drawf.tri(currentX, currentY, 5.0 * e.fout(), 10.0 * e.fout(), 45);
+    }
 
-                    fxTyteryiExplosion.at(exX, exY);
-                    Effect.shake(6, 6, exX, exY);
+    // Các mảnh ghép từ bên Phải bay vào
+    for(let i = 0; i < 10; i++) {
+        let seed = e.id + i * 17 + 200;
+        let yOffset = Mathf.randomSeed(seed, -45, 45);
+        let startX = e.x + 120 + Mathf.randomSeed(seed + 1, 0, 50);
+        let currentX = Mathf.lerp(startX, e.x, progress);
+        let currentY = e.y + yOffset * (1.0 - progress);
+        Drawf.tri(currentX, currentY, 5.0 * e.fout(), 10.0 * e.fout(), 225);
+    }
+}));
 
-                    Groups.unit.intersect(exX - radiusPx, exY - radiusPx, radiusPx * 2, radiusPx * 2, cons(nearUnit => {
-                        if (nearUnit != null && nearUnit.isValid() && nearUnit.within(exX, exY, radiusPx) && nearUnit.team != turret.team) {
-                            nearUnit.damage(nearUnit.maxHealth * 0.005);
-                        }
-                    }));
-                }
-            }
+// Hiệu ứng ngôi sao chiếu sáng cực lớn khi chuyển đổi trạng thái
+const starFlashFx = new Effect(45, cons(e => {
+    Draw.color(Color.white, Color.valueOf(CRYSTAL_LIGHT), e.fin());
+    let size = e.finpow() * 130.0;
+    let rot = e.fin() * 50.0;
+    for(let i = 0; i < 4; i++){
+        Drawf.tri(e.x, e.y, 18.0 * e.fout(), size, i * 90.0 + rot);
+        Drawf.tri(e.x, e.y, 18.0 * e.fout(), size, i * 90.0 + 45.0 + rot);
+    }
+    Draw.color(Color.white);
+    Fill.circle(e.x, e.y, e.fout() * 40.0);
+}));
+
+// Hàm phun khói lan tỏa mù mịt ra rất xa từ 16 góc xung quanh tháp
+function spawn16Smoke(build) {
+    for (let i = 0; i < 16; i++) {
+        let angle = i * 22.5; 
+        // Phun khói trải dài từ bán kính gần (16px) ra đến rất xa (72px)
+        for (let d = 16; d <= 72; d += 18) {
+            let sx = build.x + Angles.trnsx(angle, d);
+            let sy = build.y + Angles.trnsy(angle, d);
+            Fx.smoke.at(sx, sy, angle);
+            Fx.smoke.at(sx + Mathf.range(10.0), sy + Mathf.range(10.0), angle + Mathf.range(30.0));
         }
-    });
-
-    Object.assign(bullet, baseProperties);
-    return bullet;
+    }
 }
 
-// --- Silicon Bullets ---
-const tyteryiBullet = createTyteryiBullet({
-    speed: 8, damage: 67.5, lifetime: 48, width: 11, height: 16, 
-    frontColor: Color.white, backColor: Color.valueOf("#e0b080"),
-    pierce: true, pierceCap: 3, pierceBuilding: true, knockback: 1, impact: true,
-    hitEffect: Fx.disperseTrail, despawnEffect: Fx.disperseTrail,
-    trailEffect: Fx.disperseTrail, trailChance: 0.20
+// 🗡️ HÀM VẼ KIẾM (ĐÃ THU NHỎ 30%, KHÔNG CÓ HÀO QUANG) 🗡️
+function drawSwordShape(x, y, rot, baseSize, progress, isCrystal) {
+    let sz = baseSize * Mathf.curve(progress, 0.0, 1.0);
+    if (sz <= 0.1) return;
+
+    let alphaFactor = Mathf.clamp(progress);
+
+    let deepColor = isCrystal ? CRYSTAL_DEEP : SWORD_DEEP;
+    let mainColor = isCrystal ? CRYSTAL_MAIN : SWORD_MAIN;
+    let lightColor = isCrystal ? CRYSTAL_LIGHT : SWORD_LIGHT;
+
+    // Vỏ ngoài sâu
+    Draw.color(Color.valueOf(deepColor));
+    Draw.alpha(0.7 * alphaFactor);
+    Drawf.tri(x, y, sz * 0.4, sz * 2.7, rot);       
+
+    // 3 góc ngắn
+    Drawf.tri(x, y, sz * 0.3, sz * 0.7, rot + 90);    
+    Drawf.tri(x, y, sz * 0.3, sz * 0.7, rot + 270);   
+    Drawf.tri(x, y, sz * 0.22, sz * 0.5, rot + 180);  
+
+    // Thân chính sắc nét
+    Draw.color(Color.valueOf(mainColor));
+    Draw.alpha(0.95 * alphaFactor);
+    Drawf.tri(x, y, sz * 0.26, sz * 2.2, rot);
+    Drawf.tri(x, y, sz * 0.2, sz * 0.55, rot + 90);
+    Drawf.tri(x, y, sz * 0.2, sz * 0.55, rot + 270);
+    Drawf.tri(x, y, sz * 0.15, sz * 0.35, rot + 180);
+
+    // Tâm sáng phản chiếu
+    Draw.color(Color.valueOf(lightColor));
+    Draw.alpha(1.0 * alphaFactor);
+    Drawf.tri(x, y, sz * 0.09, sz * 1.2, rot);
+
+    Fill.circle(x, y, 1.8 * alphaFactor);
+    Draw.reset();
+}
+
+// =========================================================================
+// ===================== ĐẠN PHỤ & KIẾM LI TI QUỸ ĐẠO ZICK-ZACK ============
+// =========================================================================
+
+const MicroSwordBullet1 = extend(BasicBulletType, {
+    speed: 15.4, damage: 140, width: 2.0, height: 7, shrinkX: 0, shrinkY: 0,
+    homingPower: 0.15, homingRange: 140,
+    pierce: true, pierceBuilding: true, pierceCap: 5,
+    frontColor: Color.valueOf(SWORD_LIGHT), backColor: Color.valueOf(SWORD_MAIN),
+    shootEffect: Fx.none, hitEffect: swordHitFx, despawnEffect: Fx.none,
+    update(b) {
+        this.super$update(b);
+        let wave = Mathf.sin(b.time * 0.45) * 2.5;
+        let perp = b.rotation() + 90;
+        b.set(b.x + Angles.trnsx(perp, wave), b.y + Angles.trnsy(perp, wave));
+    },
+    draw(b) {
+        let spawnProgress = Mathf.clamp(b.time / 5.0);
+        drawSwordShape(b.x, b.y, b.rotation(), 4.2, spawnProgress, false);
+    }
 });
 
-const tyteryiMK2Bullet = createTyteryiBullet({
-    speed: 10, damage: 97.5, lifetime: 45, width: 13, height: 20, 
-    frontColor: Color.white, backColor: Color.valueOf("#ffaa66"),
-    pierce: true, pierceCap: 5, pierceBuilding: true, knockback: 1.4, impact: true,
-    hitEffect: Fx.disperseTrail, despawnEffect: Fx.disperseTrail,
-    trailEffect: Fx.disperseTrail, trailChance: 0.40
+const MicroSwordBullet2 = extend(BasicBulletType, {
+    speed: 15.4, damage: 140, width: 2.0, height: 7, shrinkX: 0, shrinkY: 0,
+    homingPower: 0.18, homingRange: 150,
+    pierce: true, pierceBuilding: true, pierceCap: 5,
+    frontColor: Color.valueOf(SWORD_LIGHT), backColor: Color.valueOf(SWORD_MAIN),
+    shootEffect: Fx.none, hitEffect: swordHitFx, despawnEffect: Fx.none,
+    update(b) {
+        this.super$update(b);
+        let wave = Mathf.cos(b.time * 0.35) * 3.2;
+        let perp = b.rotation() + 90;
+        b.set(b.x + Angles.trnsx(perp, wave), b.y + Angles.trnsy(perp, wave));
+    },
+    draw(b) {
+        let spawnProgress = Mathf.clamp(b.time / 5.0);
+        drawSwordShape(b.x, b.y, b.rotation(), 4.2, spawnProgress, false);
+    }
 });
 
-const tyteryiMK2BBullet = createTyteryiBullet({
-    speed: 9, damage: 183.75, lifetime: 50, width: 5, height: 64, 
-    frontColor: Color.white, backColor: Color.valueOf("#831006"),
-    trailEffect: Fx.disperseTrail, trailChance: 0.40, 
-    trailColor: Color.valueOf("#ff2525"),
-    pierce: false, pierceBuilding: false, knockback: 2.8, impact: true, 
-    homingPower: 0.15, homingRange: 200,
-    hitEffect: Fx.disperseTrail, despawnEffect: Fx.disperseTrail
+const MicroSwordBulletCrystal1 = extend(BasicBulletType, {
+    speed: 15.4, damage: 140 * 4.8, width: 2.0, height: 7, shrinkX: 0, shrinkY: 0,
+    homingPower: 0.18, homingRange: 150,
+    pierce: true, pierceBuilding: true, pierceCap: 5,
+    frontColor: Color.valueOf(CRYSTAL_LIGHT), backColor: Color.valueOf(CRYSTAL_MAIN),
+    shootEffect: Fx.none, hitEffect: swordHitFx, despawnEffect: Fx.none,
+    update(b) {
+        this.super$update(b);
+        let wave = Mathf.sin(b.time * 0.45) * 2.5;
+        let perp = b.rotation() + 90;
+        b.set(b.x + Angles.trnsx(perp, wave), b.y + Angles.trnsy(perp, wave));
+    },
+    draw(b) {
+        let spawnProgress = Mathf.clamp(b.time / 5.0);
+        drawSwordShape(b.x, b.y, b.rotation(), 4.2, spawnProgress, true);
+    }
 });
 
-// --- Copper Bullets ---
-const tyteryiCopperBullet = createTyteryiBullet({
-    speed: 8, damage: 33.75, lifetime: 48, width: 11, height: 16, 
-    frontColor: Color.white, backColor: Color.valueOf("#d99d73"),
-    pierce: true, pierceCap: 3, pierceBuilding: true, knockback: 1, impact: true,
-    hitEffect: Fx.disperseTrail, despawnEffect: Fx.disperseTrail,
-    trailEffect: Fx.disperseTrail, trailChance: 0.20
+const MicroSwordBulletCrystal2 = extend(BasicBulletType, {
+    speed: 15.4, damage: 140 * 4.8, width: 2.0, height: 7, shrinkX: 0, shrinkY: 0,
+    homingPower: 0.2, homingRange: 160,
+    pierce: true, pierceBuilding: true, pierceCap: 5,
+    frontColor: Color.valueOf(CRYSTAL_LIGHT), backColor: Color.valueOf(CRYSTAL_MAIN),
+    shootEffect: Fx.none, hitEffect: swordHitFx, despawnEffect: Fx.none,
+    update(b) {
+        this.super$update(b);
+        let wave = Mathf.cos(b.time * 0.35) * 3.2;
+        let perp = b.rotation() + 90;
+        b.set(b.x + Angles.trnsx(perp, wave), b.y + Angles.trnsy(perp, wave));
+    },
+    draw(b) {
+        let spawnProgress = Mathf.clamp(b.time / 5.0);
+        drawSwordShape(b.x, b.y, b.rotation(), 4.2, spawnProgress, true);
+    }
 });
 
-const tyteryiCopperMK2Bullet = createTyteryiBullet({
-    speed: 10, damage: 48.75, lifetime: 45, width: 13, height: 20, 
-    frontColor: Color.white, backColor: Color.valueOf("#d99d73"),
-    pierce: true, pierceCap: 5, pierceBuilding: true, knockback: 1.4, impact: true,
-    hitEffect: Fx.disperseTrail, despawnEffect: Fx.disperseTrail,
-    trailEffect: Fx.disperseTrail, trailChance: 0.40
+const MiniSwordBullet = extend(BasicBulletType, {
+    speed: 4.2, damage: 126, width: 2.5, height: 10, shrinkX: 0, shrinkY: 0,
+    homingPower: 0.1, homingRange: 150,
+    pierce: true, pierceBuilding: true, pierceCap: 5,
+    frontColor: Color.valueOf(CRYSTAL_LIGHT), backColor: Color.valueOf(CRYSTAL_MAIN),
+    shootEffect: Fx.none, hitEffect: swordHitFx, despawnEffect: Fx.none,
+    draw(b) {
+        let spawnProgress = Mathf.clamp(b.time / 8.0);
+        drawSwordShape(b.x, b.y, b.rotation(), 6.3, spawnProgress, true);
+    }
 });
 
-const tyteryiCopperMK2BBullet = createTyteryiBullet({
-    speed: 9, damage: 91.875, lifetime: 50, width: 5, height: 64, 
-    frontColor: Color.white, backColor: Color.valueOf("#b85b37"),
-    trailEffect: Fx.disperseTrail, trailChance: 0.40, 
-    trailColor: Color.valueOf("#d99d73"),
-    pierce: false, pierceBuilding: false, knockback: 2.8, impact: true, 
-    homingPower: 0.15, homingRange: 200,
-    hitEffect: Fx.disperseTrail, despawnEffect: Fx.disperseTrail
+const FallingRainSword = extend(BasicBulletType, {
+    speed: 7.0, damage: 100, width: 2.5, height: 10, shrinkX: 0, shrinkY: 0,
+    homingPower: 0.0, pierce: true, pierceBuilding: true, pierceCap: 3,
+    frontColor: Color.valueOf(SWORD_LIGHT), backColor: Color.valueOf(SWORD_MAIN),
+    shootEffect: Fx.none, hitEffect: swordHitFx, despawnEffect: Fx.none,
+    draw(b) {
+        let spawnProgress = Mathf.clamp(b.time / 5.0);
+        drawSwordShape(b.x, b.y, b.rotation(), 6.3, spawnProgress, false);
+    }
 });
 
-// LẮP LOGIC VÀO BLOCK TỪ HJSON KHI GAME NẠP XONG CONTENT
-Events.on(ContentInitEvent, cons(e => {
-    const vendicum = Vars.content.block("newex-tyteryi");
-    if (!vendicum) return;
+const FallingRainCrystal = extend(BasicBulletType, {
+    speed: 7.0, damage: 155, width: 2.5, height: 10, shrinkX: 0, shrinkY: 0,
+    homingPower: 0.0, pierce: true, pierceBuilding: true, pierceCap: 3,
+    frontColor: Color.valueOf(CRYSTAL_LIGHT), backColor: Color.valueOf(CRYSTAL_MAIN),
+    shootEffect: Fx.none, hitEffect: swordHitFx, despawnEffect: Fx.none,
+    draw(b) {
+        let spawnProgress = Mathf.clamp(b.time / 5.0);
+        drawSwordShape(b.x, b.y, b.rotation(), 6.3, spawnProgress, true);
+    }
+});
 
-    vendicum.shootSound = Sounds.none;
-    vendicum.shootEffect = Fx.none;
-    vendicum.unitSort = UnitSorts.closest;
+function triggerSwordRain(b, entity) {
+    if (entity == null || b.owner == null) return;
+    let tier = (b.owner.getTier !== undefined) ? b.owner.getTier() : 0;
+    if (tier < 1) return; // Chỉ MK2/MK3 mới có mưa kiếm
 
-    vendicum.shoot = new ShootBarrel();
-    vendicum.shoot.shots = 1;
-    vendicum.shoot.shotDelay = 3.75;
-
-    vendicum.drawer = new DrawTurret("reinforced-");
-
-    vendicum.ammo(
-        Items.silicon, tyteryiBullet,
-        Items.copper, tyteryiCopperBullet
-    );
-
-    // Thêm các thanh Bar hiển thị Buff
-    vendicum.setBars();
+    let isAbeta = (b.owner.isAbeta === true);
+    let chance = isAbeta ? 0.3 : 0.1;
     
-    vendicum.addBar("dmg_bonus", new Func({
-        get: function(e){
-            return new Bar(
-                new Prov({ get: function(){ 
-                    let totalBonus = Math.floor((e.getDmgRatio() * 5 + (e.stackDmgBonus || 0)) * 100);
-                    return "DMG: +" + totalBonus + "%"; 
-                } }),
-                new Prov({ get: function(){ return Color.orange; } }),
-                new Floatp({ get: function(){ return Math.min(1.0, (e.getDmgRatio() * 5 + (e.stackDmgBonus || 0)) / 14.99); } })
-            );
+    if (Mathf.chance(chance)) {
+        let count = 6;
+        for (let i = 0; i < count; i++) {
+            let ox = Mathf.range(45.0);
+            let oy = Mathf.range(45.0);
+            let sx = entity.x + ox + Mathf.range(10.0);
+            let sy = entity.y + 160.0 + Mathf.range(20.0);
+            let targetX = entity.x + ox;
+            let targetY = entity.y + oy;
+            let angle = Angles.angle(sx, sy, targetX, targetY);
+
+            let bulletType = isAbeta ? FallingRainCrystal : FallingRainSword;
+            let rainB = bulletType.create(b.owner, b.team, sx, sy, angle);
+            if (rainB != null) {
+                rainB.lifetime = 25.0;
+            }
+            Fx.itemTransfer.at(targetX, targetY, 6, Color.valueOf(SWORD_MAIN));
         }
-    }));
+    }
+}
 
-    vendicum.addBar("as_bonus", new Func({
-        get: function(e){
-            return new Bar(
-                new Prov({ get: function(){ return "AS: " + (Math.floor(e.getAsRatio() * 250) >= 0 ? "+" : "") + Math.floor(e.getAsRatio() * 250) + "%"; } }),
-                new Prov({ get: function(){ return Color.cyan; } }),
-                new Floatp({ get: function(){ return Math.max(e.getAsRatio(), 0); } })
-            );
+// =========================================================================
+// ===================== ĐẠN CHÍNH & CÁC BIẾN THỂ ABETA ====================
+// =========================================================================
+
+const SwordBulletMK1 = extend(BasicBulletType, {
+    speed: 7.7, damage: 210, width: 3.2, height: 12, shrinkX: 0, shrinkY: 0,
+    homingPower: 0.05, homingRange: 150,
+    pierce: true, pierceBuilding: true, pierceCap: 20,
+    frontColor: Color.valueOf(SWORD_LIGHT), backColor: Color.valueOf(SWORD_MAIN),
+    splashDamage: 40, splashDamageRadius: 35,
+    shootEffect: swordMuzzleFx, hitEffect: swordHitFx, despawnEffect: swordExplosionFx, 
+    status: StatusEffects.melting, statusDuration: 90,
+    
+    hitEntity(b, entity, health) { 
+        this.super$hitEntity(b, entity, health); 
+        if (b.owner != null && b.owner.addCharge !== undefined) {
+            b.owner.addCharge(2.0); 
         }
-    }));
+        if (entity != null && entity.maxHealth) {
+            let maxHp = entity.maxHealth;
+            let extraDmg = (b.vel.len() < this.speed * 0.7) ? (maxHp * 0.05) : 0.0;
+            entity.damage(maxHp * 0.03 + extraDmg);
+        }
+        if (entity instanceof Unit && ((entity.type != null && entity.type.name === "akenewm-inventer") || entity.isGalileoJS)) {
+            entity.damage(b.damage * 3.0); 
+            Fx.itemTransfer.at(entity.x, entity.y, 10, Color.valueOf(SWORD_MAIN));
+        }
+        triggerSwordRain(b, entity);
+    },
+    draw(b) {
+        let spawnProgress = Mathf.clamp(b.time / 10.0);
+        drawSwordShape(b.x, b.y, b.rotation(), 9.8, spawnProgress, false);
+    }
+});
 
-    vendicum.config(java.lang.Integer, packCons2((tile, value) => {
-        if (tile != null && tile.tryUpgrade !== undefined) {
-            let val = Number(value);
-            if (val == 1 || val == 2) {
-                tile.tryUpgrade(val);
-            } else {
-                tile.setTier(val);
+const SwordBulletMK2 = extend(BasicBulletType, {
+    speed: 11.55, damage: 273, width: 3.5, height: 14, shrinkX: 0, shrinkY: 0,
+    homingPower: 0.08, homingRange: 200,
+    pierce: true, pierceBuilding: true, pierceCap: 30,
+    frontColor: Color.valueOf(SWORD_LIGHT), backColor: Color.valueOf(SWORD_DARK),
+    splashDamage: 60, splashDamageRadius: 45,
+    shootEffect: swordMuzzleFx, hitEffect: swordHitFx, despawnEffect: swordExplosionFx, 
+    status: StatusEffects.melting, statusDuration: 130,
+    
+    hitEntity(b, entity, health) { 
+        this.super$hitEntity(b, entity, health); 
+        if (b.owner != null && b.owner.addCharge !== undefined) {
+            b.owner.addCharge(2.0); 
+        }
+        if (entity != null && entity.maxHealth) {
+            let maxHp = entity.maxHealth;
+            let extraDmg = (b.vel.len() < this.speed * 0.7) ? (maxHp * 0.05) : 0.0;
+            entity.damage(maxHp * 0.03 + extraDmg);
+        }
+        if (entity instanceof Unit && ((entity.type != null && entity.type.name === "akenewm-inventer") || entity.isGalileoJS)) {
+            entity.damage(b.damage * 3.0); 
+            Fx.itemTransfer.at(entity.x, entity.y, 10, Color.valueOf(SWORD_MAIN));
+        }
+        triggerSwordRain(b, entity);
+    },
+    draw(b) {
+        let spawnProgress = Mathf.clamp(b.time / 10.0);
+        drawSwordShape(b.x, b.y, b.rotation(), 11.2, spawnProgress, false);
+    }
+});
+
+const SwordBulletMK3 = extend(BasicBulletType, {
+    speed: 16.94, damage: 462, width: 3.8, height: 16, shrinkX: 0, shrinkY: 0,
+    homingPower: 0.1, homingRange: 250,
+    pierce: true, pierceBuilding: true, pierceCap: 40,
+    frontColor: Color.valueOf(SWORD_LIGHT), backColor: Color.valueOf(SWORD_DARK),
+    splashDamage: 80, splashDamageRadius: 55,
+    shootEffect: swordMuzzleFx, hitEffect: swordHitFx, despawnEffect: swordExplosionFx, 
+    status: StatusEffects.melting, statusDuration: 160,
+    
+    hitEntity(b, entity, health) { 
+        this.super$hitEntity(b, entity, health); 
+        if (b.owner != null && b.owner.addCharge !== undefined) {
+            b.owner.addCharge(2.0); 
+        }
+        if (entity != null && entity.maxHealth) {
+            let maxHp = entity.maxHealth;
+            let isAbeta = (b.owner != null && b.owner.isAbeta === true);
+            let baseHpDmg = maxHp * (isAbeta ? 0.08 : 0.03);
+            let extraDmg = (b.vel.len() < this.speed * 0.7) ? (maxHp * 0.05) : 0.0;
+            entity.damage(baseHpDmg + extraDmg);
+        }
+        if (entity instanceof Unit && ((entity.type != null && entity.type.name === "akenewm-inventer") || entity.isGalileoJS)) {
+            entity.damage(b.damage * 3.0); 
+            Fx.itemTransfer.at(entity.x, entity.y, 10, Color.valueOf(SWORD_MAIN));
+        }
+        triggerSwordRain(b, entity);
+    },
+    draw(b) {
+        let spawnProgress = Mathf.clamp(b.time / 10.0);
+        drawSwordShape(b.x, b.y, b.rotation(), 11.9, spawnProgress, false);
+    }
+});
+
+const SwordBulletCrystalMK1 = extend(BasicBulletType, {
+    speed: 8.4, damage: 210 * 4.8, width: 3.5, height: 14, shrinkX: 0, shrinkY: 0,
+    homingPower: 0.1, homingRange: 220,
+    pierce: true, pierceBuilding: true, pierceCap: 35,
+    frontColor: Color.valueOf(CRYSTAL_LIGHT), backColor: Color.valueOf(CRYSTAL_MAIN),
+    splashDamage: 80, splashDamageRadius: 50,
+    shootEffect: crystalMuzzleFx, hitEffect: swordHitFx, despawnEffect: swordExplosionFx, 
+    status: StatusEffects.freezing, statusDuration: 150,
+    
+    hitEntity(b, entity, health) { 
+        this.super$hitEntity(b, entity, health); 
+        if (b.owner != null && b.owner.addCharge !== undefined) {
+            b.owner.addCharge(2.0); 
+        }
+        if (entity != null && entity.maxHealth) {
+            let maxHp = entity.maxHealth;
+            let extraDmg = (b.vel.len() < this.speed * 0.7) ? (maxHp * 0.05) : 0.0;
+            entity.damage(maxHp * 0.08 + extraDmg);
+        }
+        if (entity instanceof Unit && ((entity.type != null && entity.type.name === "akenewm-inventer") || entity.isGalileoJS)) {
+            entity.damage(b.damage * 3.0); 
+            Fx.itemTransfer.at(entity.x, entity.y, 10, Color.valueOf(CRYSTAL_MAIN));
+        }
+
+        if (entity != null) {
+            let miniDmg = b.damage * 0.6;
+            for (let i = 0; i < 3; i++) {
+                let angleOffset = i * 120.0 + Mathf.random(30.0);
+                let spawnDist = 32.0;
+                let sx = entity.x + Angles.trnsx(angleOffset, spawnDist);
+                let sy = entity.y + Angles.trnsy(angleOffset, spawnDist);
+                let shootAngle = Angles.angle(sx, sy, entity.x, entity.y);
+
+                let miniB = MiniSwordBullet.create(b.owner, b.team, sx, sy, shootAngle);
+                if (miniB != null) {
+                    miniB.damage = miniDmg;
+                    miniB.lifetime = 45.0; 
+                }
             }
         }
-    }));
+        triggerSwordRain(b, entity);
+    },
+    draw(b) {
+        let spawnProgress = Mathf.clamp(b.time / 10.0);
+        drawSwordShape(b.x, b.y, b.rotation(), 10.5, spawnProgress, true);
+    }
+});
 
-    // Cấu hình BuildType (Entity điều khiển)
-    vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
-        energyState: 1.0, // Ban đầu đạt 100% (cho 500% tốc độ bắn)
-        tierState: 0, 
-        customRecoil: 0.0,
-        stackDmgBonus: 0.0, // Sát thương cộng thêm (tối đa 50.0 = +5000%)
-
-        paidTitanium: 0,
-        paidSilicon: 0,
-        paidPlastanium: 0,
-
-        getDmgRatio(){ return this.stackDmgBonus || 0; },
-        getAsRatio(){ return this.energyState || 0; },
-
-        peekAmmo(){
-            let tier = this.getTier();
-            let isCopper = false;
-
-            if (this.hasAmmo()) {
-                let entry = this.ammo.peek();
-                if (entry != null && entry.item === Items.copper) {
-                    isCopper = true;
-                }
-            }
-
-            if(tier == 1) return isCopper ? tyteryiCopperMK2Bullet : tyteryiMK2Bullet;
-            if(tier == 2) return isCopper ? tyteryiCopperMK2BBullet : tyteryiMK2BBullet;
-            return isCopper ? tyteryiCopperBullet : tyteryiBullet;
-        },
-
-        getTier(){ return this.tierState == null ? 0 : this.tierState; },
-        setTier(val){ 
-            this.tierState = val;
-            this.paidTitanium = 0;
-            this.paidSilicon = 0;
-            this.paidPlastanium = 0;
-            if(val == 0) { this.health = 1200; }
-            if(val == 1) { this.health = 1800; }
-            if(val == 2) { this.health = 1600; }
-            this.maxHealth = this.health;
-        },
-
-        tryUpgrade(targetTier){
-            if(this.getTier() != 0) return false;
-
-            let req = (targetTier == 1) ? reqMK2 : (targetTier == 2 ? reqMK2B : null);
-            if(req == null) return false;
-
-            let core = this.team.core();
-            if(core == null) return false;
-
-            let reqT = req.titanium || 0;
-            let reqS = req.silicon || 0;
-            let reqP = req.plastanium || 0;
-
-            let coreT = core.items.get(Items.titanium);
-            let coreS = core.items.get(Items.silicon);
-            let coreP = core.items.get(Items.plastanium);
-
-            if(coreT >= reqT && coreS >= reqS && coreP >= reqP){
-                if(reqT > 0) core.items.remove(Items.titanium, reqT);
-                if(reqS > 0) core.items.remove(Items.silicon, reqS);
-                if(reqP > 0) core.items.remove(Items.plastanium, reqP);
-
-                this.setTier(targetTier);
-
-                if(targetTier == 1) Fx.upgradeCore.at(this.x, this.y);
-                else Fx.bigShockwave.at(this.x, this.y);
-                Fx.mineHuge.at(this.x, this.y);
-                Effect.shake(4, 4, this.x, this.y);
-                return true;
-            } else {
-                if(!Vars.headless && Vars.player != null){
-                    Vars.ui.showInfo(isEn() ? "[scarlet]Not enough resources in core![]" : "[scarlet]Không đủ tài nguyên trong lõi![]");
-                }
-                return false;
-            }
-        },
-
-        range(){
-            let tier = this.getTier();
-            if(tier == 1) return 420; 
-            if(tier == 2) return 360; 
-            return 320;               
-        },
-
-        buildConfiguration(table){
-            table.clear(); table.row();
-            let tier = this.getTier();
-
-            if(tier == 0) {
-                table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-                    let core = this.team.core();
-                    let availT = core ? core.items.get(Items.titanium) : 0;
-                    let availS = core ? core.items.get(Items.silicon) : 0;
-                    let availP = core ? core.items.get(Items.plastanium) : 0;
-
-                    let dialog = extend(BaseDialog, isEn() ? "Tyteryi Upgrade Center" : "Trung tâm nâng cấp pháo Tyteryi", {});
-                    
-                    let textT_MK2 = (availT >= reqMK2.titanium ? "[green]" : "[scarlet]") + availT + "[] / " + reqMK2.titanium;
-                    let textS_MK2 = (availS >= reqMK2.silicon ? "[green]" : "[scarlet]") + availS + "[] / " + reqMK2.silicon;
-
-                    let textT_MK2B = (availT >= reqMK2B.titanium ? "[green]" : "[scarlet]") + availT + "[] / " + reqMK2B.titanium;
-                    let textS_MK2B = (availS >= reqMK2B.silicon ? "[green]" : "[scarlet]") + availS + "[] / " + reqMK2B.silicon;
-                    let textP_MK2B = (availP >= reqMK2B.plastanium ? "[green]" : "[scarlet]") + availP + "[] / " + reqMK2B.plastanium;
-
-                    let reqStr = isEn() ?
-                        "[yellow]CORE RESOURCES / REQUIRED FOR UPGRADE:[]\n" +
-                        "[cyan]MK2 Branch:[]\n" +
-                        " • Titanium: " + textT_MK2 + "\n" +
-                        " • Silicon: " + textS_MK2 + "\n" +
-                        "[purple]MK2B Branch:[]\n" +
-                        " • Titanium: " + textT_MK2B + "\n" +
-                        " • Silicon: " + textS_MK2B + "\n" +
-                        " • Plastanium: " + textP_MK2B :
-                        "[yellow]TÀI NGUYÊN TRONG LÕI / CẦN NÂNG CẤP:[]\n" +
-                        "[cyan]Nhánh MK2:[]\n" +
-                        " • Titan: " + textT_MK2 + "\n" +
-                        " • Silicon: " + textS_MK2 + "\n" +
-                        "[purple]Nhánh MK2B:[]\n" +
-                        " • Titan: " + textT_MK2B + "\n" +
-                        " • Silicon: " + textS_MK2B + "\n" +
-                        " • Nhựa Plastanium: " + textP_MK2B;
-
-                    let reqCell = dialog.cont.add(reqStr);
-                    reqCell.width(360).get().setWrap(true);
-                    reqCell.get().setAlignment(Align.left);
-                    dialog.cont.row(); dialog.cont.add().height(10).row();
-
-                    let branchesTable = new Table();
-
-                    let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
-                    b1.add("[cyan]===(MK2 - PENETRATION)===[]").row();
-                    let b1D = b1.add(isEn() ? 
-                                    "[white]• Health: [green]+50%[] (1,800 HP)\n" +
-                                    "• Range: [green]+31.25%[] (420 px)\n" +
-                                    "• Base Damage: [green]+44.4%[] (97.5 DMG)\n\n" +
-                                    "[lightgray]Special Perk: Full Heat Empowerment — Reaching max stack adds +1% Max HP true damage per bullet.[]" :
-                                    "[white]• Máu cấu trúc: [green]+50%[] (1,800 HP)\n" +
-                                    "• Tầm bắn: [green]+31.25%[] (420 px)\n" +
-                                    "• Sát thương gốc: [green]+44.4%[] (97.5 DMG)\n\n" +
-                                    "[lightgray]Nội tại nâng cấp: Tích đủ tần giới hạn, đạn bắn ra sẽ gây thêm 1% Max HP của mục tiêu.[]");
-                    b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
-                    b1.button(isEn() ? "[green]UPGRADE MK2[]" : "[green]NÂNG CẤP MK2[]", packRun(() => {
-                        if(Vars.net.active()){
-                            Call.tileConfig(Vars.player, this, java.lang.Integer(1));
-                        } else {
-                            this.tryUpgrade(1);
-                        }
-                        dialog.hide();
-                        this.deselect();
-                    })).size(180, 38);
-
-                    let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
-                    b2.add("[purple]===(MK2B - HOMING)===[]").row();
-                    let b2D = b2.add(isEn() ? 
-                                    "[white]• Health: [green]+33.3%[] (1,600 HP)\n" +
-                                    "• Range: [green]+12.5%[] (360 px)\n" +
-                                    "• Base Damage: [green]+172.2%[] (183.75 DMG)\n\n" +
-                                    "[lightgray]Special Perk: Full Heat Blast — Reaching max stack causes bullet hits to trigger a 35-tile explosion dealing 0.5% Max HP.[]" :
-                                    "[white]• Máu cấu trúc: [green]+33.3%[] (1,600 HP)\n" +
-                                    "• Tầm bắn: [green]+12.5%[] (360 px)\n" +
-                                    "• Sát thương gốc: [green]+172.2%[] (183.75 DMG)\n\n" +
-                                    "[lightgray]Nội tại nâng cấp: Tích đủ tần giới hạn, đạn bắn ra nổ phạm vi 35 ô với 0.5% Max HP.[]");
-                    b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
-                    b2.button(isEn() ? "[orange]UPGRADE MK2B[]" : "[orange]NÂNG CẤP MK2B[]", packRun(() => {
-                        if(Vars.net.active()){
-                            Call.tileConfig(Vars.player, this, java.lang.Integer(2));
-                        } else {
-                            this.tryUpgrade(2);
-                        }
-                        dialog.hide();
-                        this.deselect();
-                    })).size(180, 38);
-
-                    branchesTable.add(b1).width(340); branchesTable.row();
-                    branchesTable.add().height(12).row();
-                    branchesTable.add(b2).width(340);
-
-                    let scroll = new ScrollPane(branchesTable);
-                    scroll.setScrollingDisabled(true, false);
-                    dialog.cont.add(scroll).maxHeight(400);
-                    dialog.addCloseButton(); dialog.show();
-                })).size(50, 40).tooltip(isEn() ? "Upgrade Tyteryi system" : "Nâng cấp hệ thống Tyteryi");
-            } else {
-                table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
-                    Vars.ui.showInfo(isEn() ? "[scarlet]TYTERYI HAS REACHED MAX EVOLUTION LEVEL![]" : "[scarlet]HỆ THỐNG TYTERYI ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]");
-                })).size(50, 40).tooltip(isEn() ? "Max level reached" : "Đã đạt cấp tối đa");
-            }
-
-            table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-                let title = isEn() ? " Tyteryi Turret Stats: " : " Thông số pháo Tyteryi: ";
-                let descStr = "";
-                let currentTier = this.getTier();
-
-                if (currentTier == 0) {
-                    title += "[yellow](MK1)[]";
-                    descStr = isEn() ? 
-                              "[gold]⚡ BASE STATS (MK1) ⚡[]\n" +
-                              "[lightgray]Turret HP:[] [green]1,200[]\n" +
-                              "[lightgray]Effective Range:[] [orange]320 px[]\n" +
-                              "[lightgray]Base Damage (Silicon):[] [yellow]67.50 DMG[]\n" +
-                              "[lightgray]Base Damage (Copper):[] [orange]33.75 DMG[]\n" +
-                              "[lightgray]Penetration:[] [white]3 targets[]\n\n" +
-                              "[sky]⚡ MECHANIC:[]\n" +
-                              "• Starts at 500% Attack Speed, decreasing by 5%/s while firing.\n" +
-                              "• Damage starts at 0% bonus and increases by 50%/s up to 5000%." :
-                              "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                              "[lightgray]Máu tháp pháo:[] [green]1,200[]\n" +
-                              "[lightgray]Tầm bắn hiệu dụng:[] [orange]320 pixel[]\n" +
-                              "[lightgray]Sát thương Silicon:[] [yellow]67.50 DMG[]\n" +
-                              "[lightgray]Sát thương Đồng (Copper):[] [orange]33.75 DMG[]\n" +
-                              "[lightgray]Khả năng xuyên thấu:[] [white]3 mục tiêu[]\n\n" +
-                              "[sky]⚡ CƠ CHẾ BẮN VÀ TÍCH LŨY:[]\n" +
-                              "• Tốc độ bắn ban đầu là 500%, giảm dần 5%/giây khi liên tục bắn.\n" +
-                              "• Sát thương tăng dần 50%/giây khi bắn, tối đa cộng thêm +5000% DMG.";
-                } 
-                else if (currentTier == 1) {
-                    title += "[cyan](MK2)[]";
-                    descStr = isEn() ? 
-                              "[cyan]⚡ BASE STATS (MK2) ⚡[]\n" +
-                              "[lightgray]Turret HP:[] [green]1,800 [lime](+50%)[]\n" +
-                              "[lightgray]Effective Range:[] [orange]420 px [lime](+31.2%)[]\n" +
-                              "[lightgray]Base Damage (Silicon):[] [yellow]97.50 DMG [lime](+44.4%)[]\n" +
-                              "[lightgray]Base Damage (Copper):[] [orange]48.75 DMG[]\n" +
-                              "[lightgray]Penetration:[] [yellow]5 targets[]\n\n" +
-                              "[lime]⚡ SPECIAL EFFECT:[]\n" +
-                              "• Firing until max stack deals [green]+1% Max HP[] bonus damage." :
-                              "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
-                              "[lightgray]Máu tháp pháo:[] [green]1,800 [lime](+50%)[]\n" +
-                              "[lightgray]Tầm bắn hiệu dụng:[] [orange]420 pixel [lime](+31.2%)[]\n" +
-                              "[lightgray]Sát thương Silicon:[] [yellow]97.50 DMG [lime](+44.4%)[]\n" +
-                              "[lightgray]Sát thương Đồng (Copper):[] [orange]48.75 DMG[]\n" +
-                              "[lightgray]Khả năng xuyên thấu:[] [yellow]5 mục tiêu[]\n\n" +
-                              "[lime]⚡ HIỆU ỨNG ĐẶC BIỆT:[]\n" +
-                              "• Khi đạt đủ mốc giới hạn tích lũy, đạn bắn ra gây thêm [green]1% Max HP[] của mục tiêu.";
-                } 
-                else if (currentTier == 2) {
-                    title += "[purple](MK2B)[]";
-                    descStr = isEn() ? 
-                              "[purple]⚡ BASE STATS (MK2B) ⚡[]\n" +
-                              "[lightgray]Turret HP:[] [green]1,600 [lime](+33.3%)[]\n" +
-                              "[lightgray]Effective Range:[] [orange]360 px [lime](+12.5%)[]\n" +
-                              "[lightgray]Base Damage (Silicon):[] [red]183.75 DMG (+172.2%)[]\n" +
-                              "[lightgray]Base Damage (Copper):[] [orange]91.875 DMG[]\n\n" +
-                              "[purple]🔥 SPECIAL EFFECT:[]\n" +
-                              "• Firing until max stack triggers a 35-tile AOE explosion dealing [pink]0.5% Max HP[]." :
-                              "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
-                              "[lightgray]Máu tháp pháo:[] [green]1,600 [lime](+33.3%)[]\n" +
-                              "[lightgray]Tầm bắn hiệu dụng:[] [orange]360 pixel [lime](+12.5%)[]\n" +
-                              "[lightgray]Sát thương Silicon:[] [red]183.75 DMG (+172.2%)[]\n" +
-                              "[lightgray]Sát thương Đồng (Copper):[] [orange]91.875 DMG[]\n\n" +
-                              "[purple]🔥 HIỆU ỨNG ĐẶC BIỆT:[]\n" +
-                              "• Khi đạt đủ mốc giới hạn tích lũy, đạn bắn ra nổ phạm vi 35 ô với [pink]0.5% Max HP[].";
-                }
-
-                let dialog = extend(BaseDialog, title, {});
-                let infoTable = new Table();
-                let cell = infoTable.add(descStr).width(360);
-                cell.get().setWrap(true); cell.get().setAlignment(Align.left);
-                let scroll = new ScrollPane(infoTable);
-                scroll.setScrollingDisabled(true, false);
-                dialog.cont.add(scroll).maxHeight(400);
-                dialog.addCloseButton(); dialog.show();
-            })).size(50, 40).tooltip(isEn() ? "View detailed stats" : "Xem thông số chi tiết hệ thống");
-        },
-
-        config() { return java.lang.Integer(this.getTier()); },
-
-        updateTile(){
-            this.super$updateTile();
-
-            if(this.isShooting && this.hasAmmo() && this.isActive()){
-                // Tốc độ bắn giảm 5%/giây khi bắn (0.05 / 60)
-                this.energyState = Math.max(0.0, this.energyState - (0.05 * Time.delta / 60));
-                
-                // Damage Bonus tăng 50%/giây (0.50 / 60 = 0.008333) -> Tối đa +5000% (50.0)
-                this.stackDmgBonus = Math.min(50.0, (this.stackDmgBonus || 0) + (0.50 * Time.delta / 60));
-            } else {
-                // Tự động hồi lại tốc độ bắn khi nghỉ
-                if(this.energyState < 1.0){ 
-                    this.energyState = Math.min(1.0, this.energyState + (0.20 * Time.delta / 60)); 
-                }
-                // Giảm dần sát thương tích lũy khi nghỉ
-                if(this.stackDmgBonus > 0.0){
-                    this.stackDmgBonus = Math.max(0.0, this.stackDmgBonus - (0.50 * Time.delta / 60));
-                }
-            }
-
-            this.customRecoil = Mathf.approach(this.customRecoil, 0.0, 0.12 * Time.delta);
-        },
-
-        shoot(type){
-            this.super$shoot(type); 
-            this.customRecoil = 1.0;
-        },
-
-        handleBullet(bullet, x, y, angle){ 
-            if(bullet != null) {
-                // Áp dụng lượng dmg bonus đang tích lũy
-                bullet.damage = bullet.type.damage * (1.0 + (this.stackDmgBonus || 0)); 
-                bullet.owner = this;
-            }
-            this.super$handleBullet(bullet, x, y, angle); 
-        },
-
-        baseReloadSpeed(){ 
-            // Ban đầu energyState = 1.0 -> 1.0 + 4.0 = 5.0 (500% tốc bắn)
-            let speedMult = 1.0 + ((this.energyState || 0) * 4.0);
-            return this.efficiency * speedMult; 
-        },
-
-        draw(){
-            let modName = this.block.name.split("-")[0]; 
-            let baseRegion = Core.atlas.find(this.block.basePrefix + "" + this.block.size);
-            if(baseRegion.found()){
-                Draw.rect(baseRegion, this.x, this.y);
-            } else {
-                this.super$draw(); 
-            }
-
-            let rad = this.rotation * Mathf.degRad;
-            let cos = Math.cos(rad);
-            let sin = Math.sin(rad);
-
-            let maxBarrelRecoilDistance = -5.0; 
-            let sideMoveDistance = (this.energyState || 0) * 4.0; 
-
-            let barrel1Region = Core.atlas.find(modName + "-tyteryi-barrel1");
-            if(barrel1Region.found()){
-                let b1x = this.x - (sideMoveDistance * sin);
-                let b1y = this.y + (sideMoveDistance * cos);
-                Draw.rect(barrel1Region, b1x, b1y, this.rotation);
-            }
-
-            let barrel2Region = Core.atlas.find(modName + "-tyteryi-barrel2");
-            if(barrel2Region.found()){
-                let b2x = this.x + (sideMoveDistance * sin);
-                let b2y = this.y - (sideMoveDistance * cos);
-                Draw.rect(barrel2Region, b2x, b2y, this.rotation);
-            }
-
-            let b1Offset = this.customRecoil * maxBarrelRecoilDistance;
-            let b1Region = Core.atlas.find(modName + "-tyteryi-b1");
-            if (b1Region.found()) {
-                let b1ax = this.x + b1Offset * cos;
-                let b1ay = this.y + b1Offset * sin;
-                Draw.rect(b1Region, b1ax, b1ay, this.rotation);
-            }
-        },
-
-        write(write){ 
-            this.super$write(write); 
-            write.b(this.getTier()); 
-            write.i(this.paidTitanium);
-            write.i(this.paidSilicon);
-            write.i(this.paidPlastanium);
-            write.f(this.energyState != null ? this.energyState : 1.0); 
-            write.f(this.stackDmgBonus != null ? this.stackDmgBonus : 0.0);
-        },
-        read(read, revision){ 
-            this.super$read(read, revision); 
-            this.setTier(read.b()); 
-            this.paidTitanium = read.i();
-            this.paidSilicon = read.i();
-            this.paidPlastanium = read.i();
-            if(revision >= 1) this.energyState = read.f(); 
-            if(revision >= 2) this.stackDmgBonus = read.f(); else this.stackDmgBonus = 0.0;
-            this.customRecoil = 0.0;
+const SwordBulletCrystalMK2 = extend(BasicBulletType, {
+    speed: 11.55, damage: 273 * 4.8, width: 3.6, height: 15, shrinkX: 0, shrinkY: 0,
+    homingPower: 0.12, homingRange: 230,
+    pierce: true, pierceBuilding: true, pierceCap: 38,
+    frontColor: Color.valueOf(CRYSTAL_LIGHT), backColor: Color.valueOf(CRYSTAL_MAIN),
+    splashDamage: 90, splashDamageRadius: 52,
+    shootEffect: crystalMuzzleFx, hitEffect: swordHitFx, despawnEffect: swordExplosionFx, 
+    status: StatusEffects.freezing, statusDuration: 160,
+    
+    hitEntity(b, entity, health) { 
+        this.super$hitEntity(b, entity, health); 
+        if (b.owner != null && b.owner.addCharge !== undefined) {
+            b.owner.addCharge(2.0); 
         }
-    });
+        if (entity != null && entity.maxHealth) {
+            let maxHp = entity.maxHealth;
+            let extraDmg = (b.vel.len() < this.speed * 0.7) ? (maxHp * 0.05) : 0.0;
+            entity.damage(maxHp * 0.08 + extraDmg);
+        }
+        if (entity instanceof Unit && ((entity.type != null && entity.type.name === "akenewm-inventer") || entity.isGalileoJS)) {
+            entity.damage(b.damage * 3.0); 
+            Fx.itemTransfer.at(entity.x, entity.y, 10, Color.valueOf(CRYSTAL_MAIN));
+        }
+
+        if (entity != null) {
+            let miniDmg = b.damage * 0.6;
+            for (let i = 0; i < 3; i++) {
+                let angleOffset = i * 120.0 + Mathf.random(30.0);
+                let spawnDist = 32.0;
+                let sx = entity.x + Angles.trnsx(angleOffset, spawnDist);
+                let sy = entity.y + Angles.trnsy(angleOffset, spawnDist);
+                let shootAngle = Angles.angle(sx, sy, entity.x, entity.y);
+
+                let miniB = MiniSwordBullet.create(b.owner, b.team, sx, sy, shootAngle);
+                if (miniB != null) {
+                    miniB.damage = miniDmg;
+                    miniB.lifetime = 45.0; 
+                }
+            }
+        }
+        triggerSwordRain(b, entity);
+    },
+    draw(b) {
+        let spawnProgress = Mathf.clamp(b.time / 10.0);
+        drawSwordShape(b.x, b.y, b.rotation(), 11.2, spawnProgress, true);
+    }
+});
+
+const SwordBulletCrystalMK3 = extend(BasicBulletType, {
+    speed: 16.94, damage: 462 * 4.8, width: 3.8, height: 16, shrinkX: 0, shrinkY: 0,
+    homingPower: 0.15, homingRange: 260,
+    pierce: true, pierceBuilding: true, pierceCap: 45,
+    frontColor: Color.valueOf(CRYSTAL_LIGHT), backColor: Color.valueOf(CRYSTAL_MAIN),
+    splashDamage: 110, splashDamageRadius: 60,
+    shootEffect: crystalMuzzleFx, hitEffect: swordHitFx, despawnEffect: swordExplosionFx, 
+    status: StatusEffects.freezing, statusDuration: 180,
+    
+    hitEntity(b, entity, health) { 
+        this.super$hitEntity(b, entity, health); 
+        if (b.owner != null && b.owner.addCharge !== undefined) {
+            b.owner.addCharge(2.0); 
+        }
+        if (entity != null && entity.maxHealth) {
+            let maxHp = entity.maxHealth;
+            let extraDmg = (b.vel.len() < this.speed * 0.7) ? (maxHp * 0.05) : 0.0;
+            entity.damage(maxHp * 0.08 + extraDmg);
+        }
+        if (entity instanceof Unit && ((entity.type != null && entity.type.name === "akenewm-inventer") || entity.isGalileoJS)) {
+            entity.damage(b.damage * 3.0); 
+            Fx.itemTransfer.at(entity.x, entity.y, 10, Color.valueOf(CRYSTAL_MAIN));
+        }
+
+        if (entity != null) {
+            let miniDmg = b.damage * 0.6;
+            for (let i = 0; i < 3; i++) {
+                let angleOffset = i * 120.0 + Mathf.random(30.0);
+                let spawnDist = 32.0;
+                let sx = entity.x + Angles.trnsx(angleOffset, spawnDist);
+                let sy = entity.y + Angles.trnsy(angleOffset, spawnDist);
+                let shootAngle = Angles.angle(sx, sy, entity.x, entity.y);
+
+                let miniB = MiniSwordBullet.create(b.owner, b.team, sx, sy, shootAngle);
+                if (miniB != null) {
+                    miniB.damage = miniDmg;
+                    miniB.lifetime = 45.0; 
+                }
+            }
+        }
+        triggerSwordRain(b, entity);
+    },
+    draw(b) {
+        let spawnProgress = Mathf.clamp(b.time / 10.0);
+        drawSwordShape(b.x, b.y, b.rotation(), 11.9, spawnProgress, true);
+    }
+});
+
+// =========================================================================
+// ===================== KHỞI TẠO THÁP PHÁO TYTERYI ====================
+// =========================================================================
+
+let TyterYi = extend(ItemTurret, "tyteryi", { squareSprite: false });
+
+TyterYi.shootSound = Sounds.none;
+TyterYi.requirements = ItemStack.with(Items.copper, 400, Items.lead, 280, Items.silicon, 200, Items.titanium, 150);
+TyterYi.buildVisibility = BuildVisibility.shown;
+
+TyterYi.health = 1000; 
+TyterYi.size = 3;
+TyterYi.reload = 34.0;          
+TyterYi.inaccuracy = 1.0;      
+TyterYi.range = 1200.0;
+TyterYi.configurable = true; 
+TyterYi.category = Category.turret;
+
+TyterYi.ammoTypes.put(Items.silicon, SwordBulletMK1);
+
+TyterYi.config(java.lang.Integer, packCons2((tile, value) => {
+    if (tile != null && tile.setTier !== undefined) tile.setTier(value);
 }));
+
+TyterYi.buildType = () => extend(ItemTurret.ItemTurretBuild, TyterYi, {
+    tierState: 0, limitCheck: 0,
+    swords: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0], 
+    isReloading: false,          
+    lastShotTick: -999,          
+    internalCharge: 0.0,         
+    isAbeta: false,              
+    isTransforming: false,       
+    transitionTimer: 0.0,        
+
+    getTier(){ return this.tierState == null ? 0 : this.tierState; },
+    setTier(val){ 
+        this.tierState = val;
+        if(val == 0) this.health = 1000;   
+        if(val == 1) this.health = 1800; // MK2: +80% HP
+        if(val == 2) this.health = 2200; // MK3: +120% HP
+        this.maxHealth = this.health;
+    },
+
+    range(){
+        let tier = this.getTier();
+        if(tier == 1) return 1600.0;
+        if(tier == 2) return 2640.0; // MK3: +120% tầm bắn
+        return 1200.0;
+    },
+
+    drawSelect(){
+        this.super$drawSelect();
+    },
+
+    getMaxSwords(){
+        return this.isAbeta ? 6 : 4;
+    },
+
+    addCharge(amount){
+        if(!this.isAbeta && !this.isTransforming) {
+            this.internalCharge += amount;
+            if(this.internalCharge >= 100.0) {
+                this.internalCharge = 100.0;
+                this.isTransforming = true;
+                this.transitionTimer = 120.0; // 2 giây chuẩn bị
+                spawn16Smoke(this);            
+                skyLaserFx.at(this.x, this.y);
+                jigsawAssembleFx.at(this.x, this.y);
+            }
+        }
+    },
+
+    draw(){
+        this.super$draw();
+
+        let chargeRatio = Mathf.clamp(this.internalCharge / 100.0);
+        let ringRadius = 14.0;
+
+        Draw.color(Color.darkGray);
+        Lines.stroke(1.5);
+        Lines.circle(this.x, this.y, ringRadius);
+
+        let ringColor = this.isAbeta ? CRYSTAL_MAIN : SWORD_MAIN;
+        Draw.color(Color.valueOf(ringColor));
+        Lines.stroke(2.5);
+        if(chargeRatio > 0.0) {
+            let segments = 36;
+            let totalAngle = chargeRatio * 360.0;
+            let activeSegs = Math.max(1, Math.floor(segments * chargeRatio));
+            for(let j = 0; j < activeSegs; j++) {
+                let a1 = (j / segments) * 360.0;
+                let a2 = ((j + 1) / segments) * 360.0;
+                if(a2 > totalAngle) a2 = totalAngle;
+                let x1 = this.x + Angles.trnsx(a1, ringRadius);
+                let y1 = this.y + Angles.trnsy(a1, ringRadius);
+                let x2 = this.x + Angles.trnsx(a2, ringRadius);
+                let y2 = this.y + Angles.trnsy(a2, ringRadius);
+                Lines.line(x1, y1, x2, y2);
+            }
+        }
+
+        let percentStr = new java.lang.String(this.isAbeta ? "ABETA" : (this.isTransforming ? "TRANS..." : Math.floor(this.internalCharge) + "%"));
+        Fonts.outline.getData().setScale(0.38);
+        Fonts.outline.draw(percentStr, this.x, this.y - 18.0, Align.center);
+        Fonts.outline.getData().setScale(1.0);
+
+        let maxS = this.getMaxSwords();
+        let backAngle = this.rotation + 180.0;
+
+        for(let i = 0; i < maxS; i++){
+            let prog = this.swords[i];
+            if(prog <= 0.01) continue;
+
+            let offsetDist = 11.0 + (i * 3.5);
+            let sideOffset = (maxS == 6) ? ((i - 2.5) * 4.5) : ((i - 1.5) * 6.0);
+
+            let floatOffsetX = 0.0;
+            let floatOffsetY = 0.0;
+            if(prog >= 1.0) {
+                floatOffsetX = Mathf.absin(Time.time * 2.5 + i * 25.0, 15.0, 1.5);
+                floatOffsetY = Mathf.absin(Time.time * 3.0 + i * 35.0, 15.0, 1.5);
+            }
+
+            let targetX = this.x + Angles.trnsx(backAngle, offsetDist + floatOffsetX) + Angles.trnsx(backAngle + 90, sideOffset + floatOffsetY);
+            let targetY = this.y + Angles.trnsy(backAngle, offsetDist + floatOffsetX) + Angles.trnsy(backAngle + 90, sideOffset + floatOffsetY);
+
+            let sideSideAngle = (i % 2 == 0) ? (backAngle + 90.0) : (backAngle - 90.0);
+            let startX = this.x + Angles.trnsx(sideSideAngle, 45.0);
+            let startY = this.y + Angles.trnsy(sideSideAngle, 45.0);
+
+            let moveProg = Mathf.curve(prog, 0.0, 1.0);
+            let curX = Mathf.lerp(startX, targetX, moveProg);
+            let curY = Mathf.lerp(startY, targetY, moveProg);
+
+            drawSwordShape(curX, curY, this.rotation, 7.7, prog, this.isAbeta);
+        }
+        Draw.reset();
+    },
+
+    updateTile(){
+        this.limitCheck += Time.delta;
+        if(this.limitCheck >= 15){
+            this.limitCheck = 0; let count = 0; let firstBuild = null;
+            Groups.build.each(b => { if(b.block == TyterYi && b.team == this.team) { count++; if(firstBuild == null) firstBuild = b; } });
+            if(count > 10 && this !== firstBuild){ Call.sendMessage("[red]CẢNH BÁO QUÁ TẢI MẠNG LƯỚI: Giới hạn tối đa 10 đơn vị TyterYi trên cùng hệ thống![]"); this.kill(); return; }
+        }
+
+        // Xử lý chuyển đổi trạng thái Abeta
+        if(this.isTransforming) {
+            this.transitionTimer -= Time.delta;
+            if(Mathf.chance(0.5)) {
+                spawn16Smoke(this); 
+            }
+
+            if(this.transitionTimer <= 0) {
+                this.isTransforming = false;
+                this.isAbeta = true;
+                spawn16Smoke(this);         
+                skyLaserFx.at(this.x, this.y);
+                jigsawAssembleFx.at(this.x, this.y);
+                starFlashFx.at(this.x, this.y); 
+            }
+        }
+
+        let maxS = this.getMaxSwords();
+
+        if(this.isAbeta) {
+            this.internalCharge -= 0.05 * Time.delta;
+            if(this.internalCharge <= 0.0) {
+                this.internalCharge = 0.0;
+                this.isAbeta = false;
+                spawn16Smoke(this);         
+                skyLaserFx.at(this.x, this.y);
+                jigsawAssembleFx.at(this.x, this.y);
+                starFlashFx.at(this.x, this.y); 
+            }
+        }
+
+        let allEmpty = true;
+        for(let i = 0; i < maxS; i++) {
+            if(this.swords[i] > 0.0) {
+                allEmpty = false;
+                break;
+            }
+        }
+
+        if(allEmpty) {
+            this.isReloading = true;
+        }
+
+        if(this.isReloading) {
+            let targetIdx = -1;
+            for(let i = 0; i < maxS; i++) {
+                if(this.swords[i] < 1.0) {
+                    targetIdx = i;
+                    break;
+                }
+            }
+
+            if(targetIdx != -1) {
+                let baseRecharge = (this.getTier() == 2) ? (Time.delta / 22.0) : ((this.getTier() == 1) ? (Time.delta / 35.0) : (Time.delta / 45.0));
+                let rechargeSpeed = this.isAbeta ? (baseRecharge * 1.5) : baseRecharge;
+                
+                this.swords[targetIdx] += rechargeSpeed;
+                if(this.swords[targetIdx] >= 1.0) {
+                    this.swords[targetIdx] = 1.0;
+                }
+            } else {
+                this.isReloading = false;
+            }
+        }
+
+        let tier = this.getTier();
+        if (tier == 2) {
+            this.block.reload = 14.0; 
+            this.inaccuracy = 1.5;
+        } else if (tier == 1) {
+            this.block.reload = 34.0; 
+            this.inaccuracy = 0.8;
+        } else {
+            this.block.reload = 34.0; 
+            this.inaccuracy = 1.0;
+        }
+
+        this.super$updateTile(); 
+    },
+
+    shoot(type){
+        if(this.isTransforming) return; 
+
+        let currentTick = Time.time;
+        let tier = this.getTier();
+        let requiredCooldown = this.isAbeta ? 14 : (tier == 2 ? 17 : 26);
+        if (currentTick - this.lastShotTick < requiredCooldown) {
+            return; 
+        }
+
+        if(this.isReloading) {
+            return;
+        }
+
+        let maxS = this.getMaxSwords();
+        let firedIndex = -1;
+        for(let i = 0; i < maxS; i++) {
+            if(this.swords[i] >= 1.0) {
+                firedIndex = i;
+                break;
+            }
+        }
+
+        if(firedIndex == -1) {
+            return; 
+        }
+
+        this.lastShotTick = currentTick;
+        this.swords[firedIndex] = 0.0;
+
+        let bulletType;
+        if(this.isAbeta) {
+            if(tier == 2) bulletType = SwordBulletCrystalMK3;
+            else if(tier == 1) bulletType = SwordBulletCrystalMK2;
+            else bulletType = SwordBulletCrystalMK1;
+        } else {
+            if(tier == 2) bulletType = SwordBulletMK3;
+            else if(tier == 1) bulletType = SwordBulletMK2;
+            else bulletType = SwordBulletMK1;
+        }
+        
+        let exactLifetime = this.range() / bulletType.speed;
+        
+        let backAngle = this.rotation + 180.0;
+        let leftAngle = this.rotation + 90.0;
+        // Vị trí bắn đạn lệch sang trái 9.0 đơn vị
+        let spawnX = this.x + Angles.trnsx(backAngle, 12.0) + Angles.trnsx(leftAngle, 9.0);
+        let spawnY = this.y + Angles.trnsy(backAngle, 12.0) + Angles.trnsy(leftAngle, 9.0);
+
+        let b = bulletType.create(this, this.team, spawnX, spawnY, this.rotation);
+        if (b != null) {
+            b.lifetime = exactLifetime;
+
+            // Tỷ lệ 50% nhận 50% tốc bay (giảm vận tốc đi một nửa)
+            if (Mathf.chance(0.5)) {
+                b.vel.scl(0.5);
+            }
+
+            swordLaunchFx.at(spawnX, spawnY, this.rotation);
+
+            // Cơ chế MK3: 4 thanh kiếm nhỏ zick-zack với quỹ đạo đa dạng phía sau
+            if (tier == 2) {
+                let count = 4;
+                for (let k = 1; k <= count; k++) {
+                    let backDist = k * 10.0 + Mathf.random(5.0);
+                    let sideSign = (k % 2 == 0) ? 1 : -1;
+                    let sideOffset = sideSign * (7.0 + k * 3.0 + Mathf.random(4.0));
+
+                    let microX = spawnX - Angles.trnsx(this.rotation, backDist) + Angles.trnsx(this.rotation + 90, sideOffset);
+                    let microY = spawnY - Angles.trnsy(this.rotation, backDist) + Angles.trnsy(this.rotation + 90, sideOffset);
+
+                    let microBulletType;
+                    if(this.isAbeta) {
+                        microBulletType = (k % 2 == 0) ? MicroSwordBulletCrystal1 : MicroSwordBulletCrystal2;
+                    } else {
+                        microBulletType = (k % 2 == 0) ? MicroSwordBullet1 : MicroSwordBullet2;
+                    }
+
+                    let mb = microBulletType.create(this, this.team, microX, microY, this.rotation);
+                    if (mb != null) {
+                        mb.lifetime = exactLifetime;
+                    }
+                }
+            }
+        }
+    },
+
+    buildConfiguration(table){
+        table.clear(); table.row();
+        let tier = this.getTier();
+
+        if(tier < 2) {
+            table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
+                let nextTier = tier + 1;
+                let dialog = extend(BaseDialog, nextTier == 1 ? "TRUNG TÂM NÂNG CẤP MK2" : "TRUNG TÂM NÂNG CẤP MK3", {});
+                dialog.cont.add(nextTier == 1 ? "[#ffe066]=== NÂNG CẤP LÊN PROTOCOL MK2 ===[]" : "[#ffaa00]=== NÂNG CẤP LÊN PROTOCOL MK3 ===[]").row();
+                
+                dialog.cont.label(packProv(() => {
+                    let core = this.team.core(); if(core == null) return "[red]CRITICAL ERROR: Mất tín hiệu với Kho Lõi Trung Tâm![]";
+                    let getVal = (item) => core.items.get(Vars.content.item(item));
+                    let req = nextTier == 1 ? reqTyterYiMK2 : reqTyterYiMK3;
+                    
+                    let sil = getVal("silicon"), tit = getVal("titanium"), tho = getVal("thorium"), pla = getVal("plastanium");
+                    let cSil = sil >= req.silicon ? "[#00ff88]" : "[red]";
+                    let cTit = tit >= req.titanium ? "[#00ff88]" : "[red]";
+                    let cTho = tho >= req.thorium ? "[#00ff88]" : "[red]";
+                    let cPla = nextTier == 2 ? (pla >= req.plastanium ? "[#ffe066]" : "[red]") : "";
+
+                    let resStr = "[#ffd700]👑 TÀI NGUYÊN KHO TRUNG TÂM:[]\n" +
+                                 " • Si: " + cSil + sil + "[]/" + req.silicon + "\n" +
+                                 " • Ti: " + cTit + tit + "[]/" + req.titanium + "\n" +
+                                 " • Th: " + cTho + tho + "[]/" + req.thorium;
+                    if(nextTier == 2) {
+                        resStr += "\n • Plastanium: " + cPla + pla + "[]/" + req.plastanium;
+                    }
+                    return resStr;
+                })).row(); dialog.cont.add().height(10).row();
+
+                let btnText = nextTier == 1 ? "[#ffd700]KÍCH HOẠT MK2[]" : "[#ffaa00]KÍCH HOẠT MK3[]";
+                dialog.cont.button(btnText, packRun(() => {
+                    let core = this.team.core();
+                    let req = nextTier == 1 ? reqTyterYiMK2 : reqTyterYiMK3;
+                    let hasMats = core != null && 
+                                  core.items.get(Vars.content.item("silicon")) >= req.silicon &&
+                                  core.items.get(Vars.content.item("titanium")) >= req.titanium &&
+                                  core.items.get(Vars.content.item("thorium")) >= req.thorium;
+                    if(nextTier == 2 && core != null) {
+                        hasMats = hasMats && core.items.get(Vars.content.item("plastanium")) >= req.plastanium;
+                    }
+
+                    if(hasMats) {
+                        core.items.remove(Vars.content.item("silicon"), req.silicon);
+                        core.items.remove(Vars.content.item("titanium"), req.titanium);
+                        core.items.remove(Vars.content.item("thorium"), req.thorium);
+                        if(nextTier == 2) {
+                            core.items.remove(Vars.content.item("plastanium"), req.plastanium);
+                        }
+                        Fx.upgradeCore.at(this.x, this.y); Fx.explosion.at(this.x, this.y);
+                        this.configure(java.lang.Integer(nextTier)); dialog.hide(); this.deselect();
+                    } else { Vars.ui.showInfo("[red]ERROR: Vật tư nguyên liệu không đủ![]"); }
+                })).size(200, 42);
+
+                dialog.addCloseButton(); dialog.show();
+            })).size(50, 40).tooltip("Tái cấu trúc nâng cấp");
+        } else {
+            table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
+                Vars.ui.showInfo("[#00ff88]SYSTEM LOG: Đơn vị TyterYi đã đạt cấp độ bão hòa tối đa (MAX LEVEL MK3).[]");
+            })).size(50, 40).tooltip("Hệ thống đạt giới hạn");
+        }
+
+        table.button(Icon.info, Styles.cleari, 40, packRun(() => {
+            let title = "📡 HỆ THỐNG PHÁO TYTERYI ABETA & MK3";
+            let descStr = "[#ffe066]⚙️ THÔNG TIN CƠ CHẾ NÂNG CẤP & ABETA:[]\n" +
+                          "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+                          " • [#ffd700]Hiệu ứng chuyển đổi:[] Ngưng 2 giây, mảnh ghép 2 bên bay vào, laser từ trời, khói lan tỏa xa và ngôi sao sáng lớn.\n" +
+                          " • [#ffaa00]Mưa Kiếm (MK2/MK3):[] Mở khóa khi đạt MK2 hoặc MK3.\n" +
+                          " • [#00e5ff]Trạng thái Abeta:[] Cộng dồn nhân sát thương theo cấp, triệu hồi kiếm nhỏ khi trúng đích.";
+
+            let dialog = extend(BaseDialog, title, {});
+            let infoTable = new Table(); let cell = infoTable.add(descStr).width(360);
+            cell.get().setWrap(true); cell.get().setAlignment(Align.left);
+            let scroll = new ScrollPane(infoTable); scroll.setScrollingDisabled(true, false);
+            dialog.cont.add(scroll).maxHeight(400); dialog.addCloseButton(); dialog.show();
+        })).size(50, 40).tooltip("Truy xuất dữ liệu kỹ thuật");
+    },
+
+    config() { return java.lang.Integer(this.getTier()); },
+    write(w){ this.super$write(w); w.b(this.getTier()); },
+    read(r, revision){ this.super$read(r, revision); this.setTier(r.b()); }
+});

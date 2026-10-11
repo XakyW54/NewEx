@@ -324,7 +324,10 @@
     function applyTurretVisibility(allowedNamesSeq) {
         let unlockedSeq = shop.getUnlockedTurrets(turretList);
         turretList.each(block => {
-            if (unlockedSeq.contains(block.name) && allowedNamesSeq != null && allowedNamesSeq.contains(block.name)) {
+            let isUnlocked = unlockedSeq.contains(block.name);
+            let isSelected = allowedNamesSeq != null && allowedNamesSeq.contains(block.name);
+
+            if (isUnlocked && isSelected) {
                 block.buildVisibility = BuildVisibility.shown;
             } else {
                 block.buildVisibility = BuildVisibility.hidden;
@@ -949,7 +952,19 @@
         if (turretList.isEmpty()) loadTurretsFromFolder();
 
         if (getMaxSelectCount() >= turretList.size) {
-            shop.unlockAllTurrets(turretList);
+            let unlockedSeq = shop.getUnlockedTurrets(turretList);
+            let savedArray = [];
+            let allowedNames = new Seq();
+            unlockedSeq.each(name => {
+                savedArray.push(name);
+                allowedNames.add(name);
+            });
+
+            if (Vars.state.rules != null && Vars.state.rules.tags != null) {
+                Vars.state.rules.tags.put(TAG_KEY, savedArray.join(","));
+            }
+
+            applyTurretVisibility(allowedNames);
             return;
         }
 

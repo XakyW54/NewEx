@@ -3,6 +3,8 @@
     const CURRENT_MOD_NAME = "newex";
     const TAG_KEY = "newex-selected-turrets";
     
+    const isEn = () => Core.settings.getString("locale").startsWith("en");
+
     const fallbackTurrets = [
         "nucleytor", "emperfum", "galaxvorram", "bayrowfyr", "dor",
         "flazerd", "erysidus", "blixalum", "heliyron", "persefer",
@@ -11,7 +13,7 @@
         "holyder", "plasanod", "tankani4k", "therdum", "lazash",
         "forstarsilum", "hitekalum", "reguilater", "lavunder", "blaw",
         "dtg-soldern", "indeniter", "rangtaturs", "tyber", "endyr",
-        "sonicor", "repulsyron", "emperical", "aether-spiral", "leolyr-spawner"
+        "sonicor", "leolyr-spawner"
     ];
 
     let turretList = new Seq();
@@ -240,7 +242,7 @@
             spawnRandomMeteor(targetX, targetY);
         });
 
-        Vars.ui.showInfoToast("[orange]Thiên thạch đang rơi xuống bản đồ![]", 2);
+        Vars.ui.showInfoToast(isEn() ? "[orange]Meteor falling onto the map![]" : "[orange]Thiên thạch đang rơi xuống bản đồ![]", 2);
     }
 
     function clearEnemyUnitsPercent(percent) {
@@ -256,7 +258,7 @@
         });
 
         if (enemies.isEmpty()) {
-            Vars.ui.showInfoToast("Không có quái địch nào trên bản đồ!", 2);
+            Vars.ui.showInfoToast(isEn() ? "No enemy units on the map!" : "Không có quái địch nào trên bản đồ!", 2);
             return;
         }
 
@@ -274,7 +276,7 @@
             }
         }
 
-        Vars.ui.showInfoToast("[red]Đã tiêu diệt ngẫu nhiên " + countToKill + " (" + percent + "%) units địch![]", 2);
+        Vars.ui.showInfoToast(isEn() ? "[red]Successfully killed random " + countToKill + " (" + percent + "%) enemy units![]" : "[red]Đã tiêu diệt ngẫu nhiên " + countToKill + " (" + percent + "%) units địch![]", 2);
     }
 
     function loadTurretsFromFolder() {
@@ -288,9 +290,11 @@
                 blocksDir.walk(cons(file => {
                     if (!file.isDirectory()) {
                         let blockName = file.nameWithoutExtension();
+                        if (blockName === "repulsyron" || blockName === "emperical" || blockName === "aether-spiral" || blockName === "aether spiral") {
+                            return;
+                        }
                         let fullName = CURRENT_MOD_NAME + "-" + blockName;
                         let block = Vars.content.block(fullName);
-                        // Cho phép nhận diện block nếu là Turret hoặc nằm trong danh sách fallback
                         if (block != null && (block instanceof Turret || fallbackTurrets.includes(blockName)) && !turretList.contains(block)) {
                             turretList.add(block);
                         }
@@ -299,7 +303,6 @@
             }
         }
 
-        // Luôn duyệt qua fallbackTurrets để đảm bảo không bỏ sót bất kỳ khối nào
         fallbackTurrets.forEach(name => {
             let block = Vars.content.block(CURRENT_MOD_NAME + "-" + name);
             if (block != null && !turretList.contains(block)) {
@@ -322,11 +325,19 @@
         return null;
     }
 
-function applyTurretVisibility(allowedNamesSeq) {
+    function applyTurretVisibility(allowedNamesSeq) {
         let isSandbox = Vars.state.rules != null && (Vars.state.rules.infiniteResources || Vars.state.rules.editor);
+        let gachaEnabled = Core.settings.getBool("newex-gacha-enabled", true);
+
+        if (isSandbox || !gachaEnabled) {
+            turretList.each(block => {
+                block.buildVisibility = BuildVisibility.shown;
+            });
+            return;
+        }
+
         let unlockedSeq = shop.getUnlockedTurrets(turretList);
 
-        // Nếu là người chơi tham gia server (Client), đồng bộ danh sách từ quy luật phòng chơi của Host
         if (Vars.net.client() && Vars.state.rules != null && Vars.state.rules.tags != null) {
             let serverSynced = Vars.state.rules.tags.get(TAG_KEY);
             if (serverSynced != null && String(serverSynced) !== "") {
@@ -335,14 +346,9 @@ function applyTurretVisibility(allowedNamesSeq) {
         }
 
         turretList.each(block => {
-            if (isSandbox) {
-                block.buildVisibility = BuildVisibility.shown;
-                return;
-            }
             let isUnlocked = unlockedSeq.contains(block.name);
             let isSelected = allowedNamesSeq != null && allowedNamesSeq.contains(block.name);
 
-            // Khi chơi mạng, nếu host đã chọn và đồng bộ, hiển thị cho mọi người trong phòng
             if (Vars.net.client()) {
                 if (isSelected) {
                     block.buildVisibility = BuildVisibility.shown;
@@ -352,7 +358,6 @@ function applyTurretVisibility(allowedNamesSeq) {
                 return;
             }
 
-            // Host giữ nguyên logic kiểm tra cá nhân
             if (isUnlocked && isSelected) {
                 block.buildVisibility = BuildVisibility.shown;
             } else {
@@ -381,7 +386,7 @@ function applyTurretVisibility(allowedNamesSeq) {
                 for (let i = 0; i < count; i++) {
                     Vars.logic.runWave();
                 }
-                Vars.ui.showInfoToast("[green]Đã triệu hồi " + count + " đợt quái liên tiếp![]", 2);
+                Vars.ui.showInfoToast(isEn() ? "[green]Summoned " + count + " consecutive waves![]" : "[green]Đã triệu hồi " + count + " đợt quái liên tiếp![]", 2);
             }
         }
     }
@@ -397,9 +402,9 @@ function applyTurretVisibility(allowedNamesSeq) {
                             core.kill();
                         }
                     });
-                    Vars.ui.showInfoToast("[red]Đã kích hoạt tự hủy lõi![]", 2);
+                    Vars.ui.showInfoToast(isEn() ? "[red]Core self-destruction triggered![]" : "[red]Đã kích hoạt tự hủy lõi![]", 2);
                 } else {
-                    Vars.ui.showInfoToast("Không tìm thấy lõi phe ta!", 2);
+                    Vars.ui.showInfoToast(isEn() ? "No friendly core found!" : "Không tìm thấy lõi phe ta!", 2);
                 }
             }
         }
@@ -461,7 +466,7 @@ function applyTurretVisibility(allowedNamesSeq) {
             topBar.setBackground(Tex.whiteui);
             topBar.setColor(Color.black);
 
-            let btnWave = new TextButton("Gọi Quái Wave", Styles.cleart);
+            let btnWave = new TextButton(isEn() ? "Call Wave" : "Gọi Quái Wave", Styles.cleart);
             btnWave.getLabel().setFontScale(0.8);
             btnWave.setBackground(Tex.whiteui);
             btnWave.setColor(Color.valueOf("4a4a4a"));
@@ -483,16 +488,16 @@ function applyTurretVisibility(allowedNamesSeq) {
             expandTable.margin(6);
 
             let currentFpsOpt = fpsOptPercentSetting;
-            let optLabel = expandTable.add("Tối ưu FPS: " + currentFpsOpt + "%").fontScale(0.75).get();
+            let optLabel = expandTable.add(isEn() ? "FPS Opt: " + currentFpsOpt + "%" : "Tối ưu FPS: " + currentFpsOpt + "%").fontScale(0.75).get();
             expandTable.row();
 
             expandTable.slider(0, 100, 1, currentFpsOpt, value => {
                 let val = Math.floor(value);
-                optLabel.setText("Tối ưu FPS: " + val + "%");
+                optLabel.setText(isEn() ? "FPS Opt: " + val + "%" : "Tối ưu FPS: " + val + "%");
                 applyFpsOptimizationLevel(val);
             }).width(150).pad(4).row();
 
-            let autoFpsBtn = new TextButton("Tự ẩn effect & Slow motion x0.8 khi FPS < 20", Styles.togglet);
+            let autoFpsBtn = new TextButton(isEn() ? "Auto hide effects & Slow-mo x0.8 when FPS < 20" : "Tự ẩn effect & Slow motion x0.8 khi FPS < 20", Styles.togglet);
             autoFpsBtn.getLabel().setFontScale(0.65);
             autoFpsBtn.setChecked(autoLowFpsSetting);
             autoFpsBtn.clicked(() => {
@@ -502,7 +507,7 @@ function applyTurretVisibility(allowedNamesSeq) {
             });
             expandTable.add(autoFpsBtn).size(150, 36).pad(2).row();
 
-            let btnWave10 = new TextButton("x10 Gọi Wave", Styles.flatTogglet);
+            let btnWave10 = new TextButton(isEn() ? "x10 Call Wave" : "x10 Gọi Wave", Styles.flatTogglet);
             btnWave10.getLabel().setFontScale(0.75);
             btnWave10.getLabel().setColor(Color.lime);
             btnWave10.clicked(() => {
@@ -510,7 +515,7 @@ function applyTurretVisibility(allowedNamesSeq) {
             });
             expandTable.add(btnWave10).size(150, 36).pad(2).row();
 
-            let btnSelfDestruct = new TextButton("Tự hủy lõi", Styles.flatTogglet);
+            let btnSelfDestruct = new TextButton(isEn() ? "Self-Destruct" : "Tự hủy lõi", Styles.flatTogglet);
             btnSelfDestruct.getLabel().setFontScale(0.75);
             btnSelfDestruct.getLabel().setColor(Color.red);
             btnSelfDestruct.clicked(() => {
@@ -518,7 +523,7 @@ function applyTurretVisibility(allowedNamesSeq) {
             });
             expandTable.add(btnSelfDestruct).size(150, 36).pad(2).row();
 
-            let btnMeteor = new TextButton("TT rơi", Styles.flatTogglet);
+            let btnMeteor = new TextButton(isEn() ? "Meteor" : "TT rơi", Styles.flatTogglet);
             btnMeteor.getLabel().setFontScale(0.75);
             btnMeteor.getLabel().setColor(Color.orange);
             btnMeteor.clicked(() => {
@@ -526,7 +531,7 @@ function applyTurretVisibility(allowedNamesSeq) {
             });
             expandTable.add(btnMeteor).size(150, 36).pad(2).row();
 
-            let btnClearER = new TextButton("Clear E R", Styles.flatTogglet);
+            let btnClearER = new TextButton(isEn() ? "Clear E" : "Clear E R", Styles.flatTogglet);
             btnClearER.getLabel().setFontScale(0.75);
             btnClearER.getLabel().setColor(Color.valueOf("ff5555"));
             btnClearER.clicked(() => {
@@ -597,7 +602,7 @@ function applyTurretVisibility(allowedNamesSeq) {
     }
 
     function showReadmeDialog() {
-        let readmeContent = "Không tìm thấy file README.md trong mod.";
+        let readmeContent = isEn() ? "README.md not found in mod." : "Không tìm thấy file README.md trong mod.";
         let mod = Vars.mods.getMod(CURRENT_MOD_NAME);
 
         if (mod != null && mod.root != null) {
@@ -607,7 +612,7 @@ function applyTurretVisibility(allowedNamesSeq) {
             }
         }
 
-        const readmeDialog = new BaseDialog("Thông Tin Mod (README)");
+        const readmeDialog = new BaseDialog(isEn() ? "Mod Information (README)" : "Thông Tin Mod (README)");
         readmeDialog.setFillParent(true);
 
         const content = readmeDialog.cont;
@@ -633,13 +638,13 @@ function applyTurretVisibility(allowedNamesSeq) {
         selectedTurrets.clear();
         const maxCount = getMaxSelectCount();
         
-        const dialog = new BaseDialog("Chọn Tháp Pháo (" + CURRENT_MOD_NAME + ")");
+        const dialog = new BaseDialog(isEn() ? "Select Turrets (" + CURRENT_MOD_NAME + ")" : "Chọn Tháp Pháo (" + CURRENT_MOD_NAME + ")");
         dialog.setFillParent(true);
 
         const contentTable = dialog.cont;
         contentTable.clear();
 
-        let titleLabel = contentTable.add("Vui lòng chọn tối đa " + maxCount + " tháp pháo đã mở khóa cho trận đấu này:").pad(8).get();
+        let titleLabel = contentTable.add(isEn() ? "Please select up to " + maxCount + " unlocked turrets for this match:" : "Vui lòng chọn tối đa " + maxCount + " tháp pháo đã mở khóa cho trận đấu này:").pad(8).get();
         titleLabel.setWrap(true);
         titleLabel.setAlignment(Align.center);
         contentTable.row();
@@ -668,7 +673,7 @@ function applyTurretVisibility(allowedNamesSeq) {
                         selectedTurrets.add(block);
                     } else {
                         btn.setChecked(false);
-                        Vars.ui.showInfo("Chỉ được chọn tối đa " + maxCount + " tháp pháo!");
+                        Vars.ui.showInfo(isEn() ? "Can only select up to " + maxCount + " turrets!" : "Chỉ được chọn tối đa " + maxCount + " tháp pháo!");
                     }
                 } else {
                     selectedTurrets.remove(block);
@@ -687,9 +692,9 @@ function applyTurretVisibility(allowedNamesSeq) {
 
         let buttonTable = new Table();
 
-        buttonTable.button("Xác nhận & Đồng bộ", () => {
+        buttonTable.button(isEn() ? "Confirm & Sync" : "Xác nhận & Đồng bộ", () => {
             if (selectedTurrets.size !== maxCount) {
-                Vars.ui.showInfo("Bạn cần chọn đúng " + maxCount + " tháp pháo!");
+                Vars.ui.showInfo(isEn() ? "You need to select exactly " + maxCount + " turrets!" : "Bạn cần chọn đúng " + maxCount + " tháp pháo!");
                 return;
             }
 
@@ -708,7 +713,7 @@ function applyTurretVisibility(allowedNamesSeq) {
             dialog.hide();
         }).size(180, 50).pad(6);
 
-        buttonTable.button("Thoát vào trận", () => {
+        buttonTable.button(isEn() ? "Exit to Battle" : "Thoát vào trận", () => {
             let savedArray = [];
             let allowedNames = new Seq();
             selectedTurrets.each(block => {
@@ -732,33 +737,39 @@ function applyTurretVisibility(allowedNamesSeq) {
     function showConfigDialog() {
         if (turretList.isEmpty()) loadTurretsFromFolder();
 
-        const dialog = new BaseDialog("Cài Đặt Mod Newex");
+        const dialog = new BaseDialog(isEn() ? "Newex Mod Settings" : "Cài Đặt Mod Newex");
         const mainContent = dialog.cont;
         mainContent.clear();
 
         let content = new Table();
         content.top().margin(10);
 
-        content.add("[accent]-- GIỚI HẠN THÁP PHÁO --[]").row();
-        content.add("Số lượng tháp pháo chọn mỗi trận:").padBottom(5).row();
+        content.add(isEn() ? "[accent]-- GACHA SYSTEM --[]" : "[accent]-- CƠ CHẾ GACHA --[]").row();
+        let btnGachaEnabled = new TextButton(isEn() ? "Enable/Disable Gacha\n[gray](When disabled: Don't hide locked turrets)[]" : "Bật/Tắt cơ chế Gacha\n[gray](Khi tắt: Không ẩn pháo chưa mở khóa)[]", Styles.togglet);
+        btnGachaEnabled.getLabel().setFontScale(0.8);
+        btnGachaEnabled.setChecked(Core.settings.getBool("newex-gacha-enabled", true));
+        content.add(btnGachaEnabled).size(280, 54).pad(4).row();
+
+        content.add(isEn() ? "[accent]-- TURRET LIMIT --[]" : "[accent]-- GIỚI HẠN THÁP PHÁO --[]").padTop(10).row();
+        content.add(isEn() ? "Number of turrets selectable per match:" : "Số lượng tháp pháo chọn mỗi trận:").padBottom(5).row();
 
         let currentLimit = getMaxSelectCount();
-        let textLabel = content.add(currentLimit >= turretList.size ? "Tất cả (Full)" : currentLimit.toString()).fontScale(1.3).get();
+        let textLabel = content.add(currentLimit >= turretList.size ? (isEn() ? "All (Full)" : "Tất cả (Full)") : currentLimit.toString()).fontScale(1.3).get();
         content.row();
 
         let maxSliderVal = Math.max(1, turretList.size);
         let slider = content.slider(1, maxSliderVal, 1, Math.min(currentLimit, maxSliderVal), value => {
             let val = Math.floor(value);
             if (val >= turretList.size) {
-                textLabel.setText("Tất cả (Full)");
+                textLabel.setText(isEn() ? "All (Full)" : "Tất cả (Full)");
             } else {
                 textLabel.setText(val.toString());
             }
         }).width(240).pad(8).get();
         content.row();
 
-        content.add("[accent]-- TỐI ƯU FPS / ĐỒ HỌA --[]").padTop(10).row();
-        content.add("Mức độ cắt giảm hiệu ứng (1%):").padBottom(4).row();
+        content.add(isEn() ? "[accent]-- FPS / GRAPHICS OPTIMIZATION --[]" : "[accent]-- TỐI ƯU FPS / ĐỒ HỌA --[]").padTop(10).row();
+        content.add(isEn() ? "Effect reduction level (1%):" : "Mức độ cắt giảm hiệu ứng (1%):").padBottom(4).row();
         
         let currentFpsOpt = fpsOptPercentSetting;
         let fpsLabel = content.add(currentFpsOpt + "%").fontScale(1.2).get();
@@ -770,27 +781,27 @@ function applyTurretVisibility(allowedNamesSeq) {
         }).width(240).pad(8).get();
         content.row();
 
-        let btnAutoFps = new TextButton("Tự ẩn effect & Slow motion x0.8 khi FPS < 20", Styles.togglet);
+        let btnAutoFps = new TextButton(isEn() ? "Auto hide effects & Slow-mo x0.8 when FPS < 20" : "Tự ẩn effect & Slow motion x0.8 khi FPS < 20", Styles.togglet);
         btnAutoFps.getLabel().setFontScale(0.8);
         btnAutoFps.setChecked(autoLowFpsSetting);
         content.add(btnAutoFps).size(280, 48).pad(4).row();
 
-        content.add("[accent]-- ĐỒ HỌA KHỐI NĂNG LƯỢNG (REDSTONE / COMDUIK) --[]").padTop(10).row();
-        let btnRedstoneFx = new TextButton("Hiệu ứng Redstone/Comduik đầy đủ\n[gray](Tắt đi để tăng FPS khi xây hàng loạt)[]", Styles.togglet);
+        content.add(isEn() ? "[accent]-- ENERGY BLOCK GRAPHICS (REDSTONE / CONDUIT) --[]" : "[accent]-- ĐỒ HỌA KHỐI NĂNG LƯỢNG (REDSTONE / COMDUIK) --[]").padTop(10).row();
+        let btnRedstoneFx = new TextButton(isEn() ? "Full Redstone/Conduit Effects\n[gray](Disable to boost FPS when mass building)[]" : "Hiệu ứng Redstone/Comduik đầy đủ\n[gray](Tắt đi để tăng FPS khi xây hàng loạt)[]", Styles.togglet);
         btnRedstoneFx.getLabel().setFontScale(0.8);
         btnRedstoneFx.setChecked(Core.settings.getBool("newex-redstone-fx", false));
         content.add(btnRedstoneFx).size(280, 54).pad(4).row();
 
-        content.add("[accent]-- CHỈ SỐ ĐỊCH THEO TỪNG WAVE --[]").padTop(10).row();
-        content.add("% Máu tăng thêm trên mỗi Wave:").padBottom(4).row();
+        content.add(isEn() ? "[accent]-- ENEMY STATS PER WAVE --[]" : "[accent]-- CHỈ SỐ ĐỊCH THEO TỪNG WAVE --[]").padTop(10).row();
+        content.add(isEn() ? "% HP increase per Wave:" : "% Máu tăng thêm trên mỗi Wave:").padBottom(4).row();
         let hpFieldTable = new Table();
         let hpField = hpFieldTable.field(hpPerWavePercentSetting.toString(), text => {}).width(120).get();
         hpField.setFilter(TextField.TextFieldFilter.digitsOnly);
         hpField.setMaxLength(3);
-        hpFieldTable.add("% / Wave").padLeft(8);
+        hpFieldTable.add(isEn() ? "% / Wave" : "% / Wave").padLeft(8);
         content.add(hpFieldTable).pad(5).row();
 
-        content.add("[accent]-- CHẾ ĐỘ HIỂN THỊ THANH MÁU (HP) --[]").padTop(10).row();
+        content.add(isEn() ? "[accent]-- HP BAR DISPLAY MODE --[]" : "[accent]-- CHẾ ĐỘ HIỂN THỊ THANH MÁU (HP) --[]").padTop(10).row();
 
         let currentHpStyle = Core.settings.getString("newex-hp-style", "show-hp");
 
@@ -799,9 +810,9 @@ function applyTurretVisibility(allowedNamesSeq) {
 
         let tableHp = new Table();
 
-        let btnShowHp = new TextButton("Bật hp\n[gray](Ngang + số)[]", Styles.togglet);
-        let btnHp = new TextButton("Bật hp\n[gray](Dọc cổ điển)[]", Styles.togglet);
-        let btnOff = new TextButton("Tắt HP", Styles.togglet);
+        let btnShowHp = new TextButton(isEn() ? "Enable HP\n[gray](Horizontal + number)[]" : "Bật hp\n[gray](Ngang + số)[]", Styles.togglet);
+        let btnHp = new TextButton(isEn() ? "Enable HP\n[gray](Classic vertical)[]" : "Bật hp\n[gray](Dọc cổ điển)[]", Styles.togglet);
+        let btnOff = new TextButton(isEn() ? "Disable HP" : "Tắt HP", Styles.togglet);
 
         btnShowHp.getLabel().setFontScale(0.8);
         btnHp.getLabel().setFontScale(0.8);
@@ -821,12 +832,14 @@ function applyTurretVisibility(allowedNamesSeq) {
 
         content.add(tableHp).row();
 
-        content.add("[accent]-- THÔNG TIN CHI TIẾT --[]").padTop(10).row();
-        content.button("Xem README / Update Log", Icon.info, () => {
+        content.add(isEn() ? "[accent]-- DETAILED INFORMATION --[]" : "[accent]-- THÔNG TIN CHI TIẾT --[]").padTop(10).row();
+        content.button(isEn() ? "View README / Update Log" : "Xem README / Update Log", Icon.info, () => {
             showReadmeDialog();
         }).size(240, 48).pad(5).row();
 
-        content.button("Lưu Cài Đặt", () => {
+        content.button(isEn() ? "Save Settings" : "Lưu Cài Đặt", () => {
+            Core.settings.put("newex-gacha-enabled", java.lang.Boolean(btnGachaEnabled.isChecked()));
+
             let newValue = Math.floor(slider.getValue());
             Core.settings.put("newex-max-turrets", java.lang.Integer(newValue));
 
@@ -848,8 +861,9 @@ function applyTurretVisibility(allowedNamesSeq) {
             Core.settings.put("newex-hp-style", selectedStyle);
 
             reloadCachedSettings();
+            applyTurretVisibility(null);
 
-            Vars.ui.showInfo("Đã lưu cài đặt Newex thành công!");
+            Vars.ui.showInfo(isEn() ? "Newex settings saved successfully!" : "Đã lưu cài đặt Newex thành công!");
             dialog.hide();
         }).size(170, 45).padTop(12);
 
@@ -884,17 +898,33 @@ function applyTurretVisibility(allowedNamesSeq) {
         }
     });
 
+    Events.on(UnitDestroyEvent, event => {
+        if (event.unit != null && Vars.state != null && Vars.state.isGame()) {
+            let playerTeam = Vars.state.rules.defaultTeam;
+            if (event.unit.team != playerTeam) {
+                let killCount = Core.settings.getInt("newex-enemy-kill-count", 0) + 1;
+                if (killCount >= 100) {
+                    killCount -= 100;
+                    let pts = shop.getGachaPoints() + 1;
+                    shop.saveGachaPoints(pts);
+                    Vars.ui.showInfoToast(isEn() ? "[green]+1 Gacha Point! (Killed 100 enemies)[]" : "[green]+1 điểm Gacha! (Tiêu diệt đủ 100 địch)[]", 2);
+                }
+                Core.settings.put("newex-enemy-kill-count", java.lang.Integer(killCount));
+            }
+        }
+    });
+
     Events.on(ClientLoadEvent, event => {
         loadTurretsFromFolder();
         reloadCachedSettings();
         applyFpsOptimizationLevel(fpsOptPercentSetting);
 
         try {
-            Vars.ui.menufrag.addButton("Cửa Hàng Tháp Pháo (Shop)", Icon.star, () => {
+            Vars.ui.menufrag.addButton(isEn() ? "Turret Shop" : "Cửa Hàng Tháp Pháo (Shop)", Icon.star, () => {
                 shop.showShopDialog(turretList, loadTurretsFromFolder);
             });
 
-            Vars.ui.menufrag.addButton("Cài đặt Newex", Icon.settings, () => {
+            Vars.ui.menufrag.addButton(isEn() ? "Newex Settings" : "Cài đặt Newex", Icon.settings, () => {
                 showConfigDialog();
             });
         } catch(e) {}
@@ -928,10 +958,10 @@ function applyTurretVisibility(allowedNamesSeq) {
                     Core.settings.put("newex-show-wave-btn", java.lang.Boolean(showWaveBtnSetting));
                     
                     if (showWaveBtnSetting) {
-                        Vars.ui.showInfoToast("Đã hiện nút Gọi Wave", 1.5);
+                        Vars.ui.showInfoToast(isEn() ? "Wave button shown" : "Đã hiện nút Gọi Wave", 1.5);
                         centerWaveButton();
                     } else {
-                        Vars.ui.showInfoToast("Đã ẩn nút Gọi Wave", 1.5);
+                        Vars.ui.showInfoToast(isEn() ? "Wave button hidden" : "Đã ẩn nút Gọi Wave", 1.5);
                     }
                 }
 
@@ -969,7 +999,9 @@ function applyTurretVisibility(allowedNamesSeq) {
         if (turretList.isEmpty()) loadTurretsFromFolder();
 
         let isSandbox = Vars.state.rules != null && (Vars.state.rules.infiniteResources || Vars.state.rules.editor);
-        if (isSandbox) {
+        let gachaEnabled = Core.settings.getBool("newex-gacha-enabled", true);
+
+        if (isSandbox || !gachaEnabled) {
             turretList.each(block => {
                 block.buildVisibility = BuildVisibility.shown;
             });

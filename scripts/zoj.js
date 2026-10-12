@@ -8,7 +8,7 @@ const zojBullet = extend(BasicBulletType, {
     backColor: Color.valueOf("#e5ff00"),
     trailColor: Color.valueOf("#daea80"),
 
-     homingPower: 0.8,
+    homingPower: 0.8,
     homingRange: 300,
     homingDelay: 0,
 
@@ -17,20 +17,17 @@ const zojBullet = extend(BasicBulletType, {
 
         let owner = b.owner;
         if (owner != null && owner.team != null && owner.isValid()) {
-             let core = owner.team.core();
+            let core = owner.team.core();
             if (core != null) {
-                core.items.add(Items.copper, 20);
-            }
-
-             let healthPercent = owner.maxHealth * 0.10;
-
-             if (Math.random() < 0.7) {
-                 owner.damage(healthPercent);
-                Fx.blockCrash.at(owner.x, owner.y); 
-            } else {
-                 if (owner.customSelfHeal !== undefined) {
-                    owner.customSelfHeal(healthPercent);
+                // Lấy chính xác loại Item từ băng đạn của pháo
+                let ammoItem = Items.copper;
+                if (owner.ammo != null && !owner.ammo.isEmpty()) {
+                    let entry = owner.ammo.peek();
+                    if (entry != null) {
+                        ammoItem = entry.item || entry;
+                    }
                 }
+                core.items.add(ammoItem, 30);
             }
         }
     }
@@ -40,27 +37,20 @@ Events.on(ClientLoadEvent, cons(e => {
     const zojBlock = Vars.content.getByName(ContentType.block, "newex-zoj");
 
     if (zojBlock != null) {
-        zojBlock.ammoTypes.put(Items.copper, zojBullet);
+        let selectableItems = [Items.copper, Items.lead, Items.coal, Items.sand, Items.scrap];
+        selectableItems.forEach(item => {
+            zojBlock.ammoTypes.put(item, zojBullet);
+        });
 
         const baseCost = 16;
         const maxCost = 99999;
 
-         let totalPlacedCount = 0;
-
-         Events.on(WorldLoadEvent, cons(event => {
-            totalPlacedCount = 0;
-            updateCost();
-        }));
-
-         Events.on(BlockBuildEndEvent, cons(event => {
-            if (event.tile != null && event.tile.block() === zojBlock && !event.breaking) {
-                totalPlacedCount++;  
-                updateCost();
-            }
-        }));
-
         function getDynamicCost() {
-            let cost = Math.floor(baseCost * Math.pow(2, totalPlacedCount));
+            let count = 0;
+            Groups.build.each(b => {
+                if (b.block === zojBlock) count++;
+            });
+            let cost = Math.floor(baseCost * Math.pow(2, count));
             if (cost > maxCost) {
                 cost = maxCost;
             }
@@ -73,18 +63,36 @@ Events.on(ClientLoadEvent, cons(e => {
             }
         }
 
-         zojBlock.buildType = () => extend(ItemTurret.ItemTurretBuild, zojBlock, {
-            
-             heal(amount) {
-             },
+        zojBlock.buildType = () => extend(ItemTurret.ItemTurretBuild, zojBlock, {
+            shotsFired: 0,
 
-             customSelfHeal(amount) {
-                this.health = Math.min(this.health + amount, this.maxHealth);
-                Fx.heal.at(this.x, this.y);
+            useAmmo() {
+                let type = this.super$useAmmo();
+                this.shotsFired++;
+                if (this.shotsFired >= 100) {
+                    this.kill();
+                }
+                return type;
+            },
+
+            write(write) {
+                this.super$write(write);
+                write.i(this.shotsFired);
+            },
+
+            read(read, revision) {
+                this.super$read(read, revision);
+                this.shotsFired = read.i();
+            },
+
+            heal(amount) {
+            },
+
+            customSelfHeal(amount) {
             }
         });
 
-         Events.run(Trigger.update, () => {
+        Events.run(Trigger.update, () => {
             updateCost();
         });
     }

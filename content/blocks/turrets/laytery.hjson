@@ -1,0 +1,23 @@
+name: laytery
+displayName: Laytery
+description: "Tập trung năng lượng khóa và xả tia laser liên tục vào mục tiêu không và đất. Sát thương tăng dần theo thời gian duy trì."
+health: 5200
+size: 2
+range: 224
+reload: 9999
+targetAir: true
+targetGround: true
+hasPower: true
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+}
+consumes: {
+  power: 0.2
+}
+requirements: [
+  copper/150
+  lead/150
+]
+category: turret
+research: core-shard

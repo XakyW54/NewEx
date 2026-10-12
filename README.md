@@ -3,6 +3,13 @@
 
 
 -------------------------------------------
+> Điều chỉnh cân bằng bản 0.7.18:
++ Pháo Zoj:
+   - Thay đổi cơ chế: +20 đồng và 50% mất máu hồi máu > khi nạp loại đạn nào, bắn trúng mục tiêu +30 vật phẩm đó, bắn đủ 100 viên sẽ tự hủy.
+   
+
+
+-------------------------------------------
 > Điều chỉnh cân bằng bản 0.7.12:
 + Pháo điều phối Drone:
    - giảm 90% chi phí xây dựng.

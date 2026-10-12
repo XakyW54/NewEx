@@ -10,7 +10,8 @@
         "maxitoner", "xylaon", "lyvervon", "vendicum", "drone-launcher",
         "holyder", "plasanod", "tankani4k", "therdum", "lazash",
         "forstarsilum", "hitekalum", "reguilater", "lavunder", "blaw",
-        "dtg-soldern", "indeniter", "rangtaturs", "tyber", "endyr"
+        "dtg-soldern", "indeniter", "rangtaturs", "tyber", "endyr",
+        "sonicor", "repulsyron", "emperical", "aether-spiral", "leolyr-spawner"
     ];
 
     let turretList = new Seq();
@@ -289,7 +290,8 @@
                         let blockName = file.nameWithoutExtension();
                         let fullName = CURRENT_MOD_NAME + "-" + blockName;
                         let block = Vars.content.block(fullName);
-                        if (block != null && block instanceof Turret && !turretList.contains(block)) {
+                        // Cho phép nhận diện block nếu là Turret hoặc nằm trong danh sách fallback
+                        if (block != null && (block instanceof Turret || fallbackTurrets.includes(blockName)) && !turretList.contains(block)) {
                             turretList.add(block);
                         }
                     }
@@ -297,14 +299,13 @@
             }
         }
 
-        if (turretList.isEmpty()) {
-            fallbackTurrets.forEach(name => {
-                let block = Vars.content.block(CURRENT_MOD_NAME + "-" + name);
-                if (block != null && !turretList.contains(block)) {
-                    turretList.add(block);
-                }
-            });
-        }
+        // Luôn duyệt qua fallbackTurrets để đảm bảo không bỏ sót bất kỳ khối nào
+        fallbackTurrets.forEach(name => {
+            let block = Vars.content.block(CURRENT_MOD_NAME + "-" + name);
+            if (block != null && !turretList.contains(block)) {
+                turretList.add(block);
+            }
+        });
     }
 
     function getMaxSelectCount() {
@@ -321,12 +322,37 @@
         return null;
     }
 
-    function applyTurretVisibility(allowedNamesSeq) {
+function applyTurretVisibility(allowedNamesSeq) {
+        let isSandbox = Vars.state.rules != null && (Vars.state.rules.infiniteResources || Vars.state.rules.editor);
         let unlockedSeq = shop.getUnlockedTurrets(turretList);
+
+        // Nếu là người chơi tham gia server (Client), đồng bộ danh sách từ quy luật phòng chơi của Host
+        if (Vars.net.client() && Vars.state.rules != null && Vars.state.rules.tags != null) {
+            let serverSynced = Vars.state.rules.tags.get(TAG_KEY);
+            if (serverSynced != null && String(serverSynced) !== "") {
+                allowedNamesSeq = new Seq(String(serverSynced).split(","));
+            }
+        }
+
         turretList.each(block => {
+            if (isSandbox) {
+                block.buildVisibility = BuildVisibility.shown;
+                return;
+            }
             let isUnlocked = unlockedSeq.contains(block.name);
             let isSelected = allowedNamesSeq != null && allowedNamesSeq.contains(block.name);
 
+            // Khi chơi mạng, nếu host đã chọn và đồng bộ, hiển thị cho mọi người trong phòng
+            if (Vars.net.client()) {
+                if (isSelected) {
+                    block.buildVisibility = BuildVisibility.shown;
+                } else {
+                    block.buildVisibility = BuildVisibility.hidden;
+                }
+                return;
+            }
+
+            // Host giữ nguyên logic kiểm tra cá nhân
             if (isUnlocked && isSelected) {
                 block.buildVisibility = BuildVisibility.shown;
             } else {
@@ -407,6 +433,7 @@
     }
 
     function centerWaveButton() {
+        if (Vars.mobile) return;
         if (customWaveContainer != null) {
             let screenW = Core.graphics.getWidth();
             let screenH = Core.graphics.getHeight();
@@ -424,7 +451,7 @@
     }
 
     function injectWaveButtonToHUD() {
-        if (waveBtnAdded) return;
+        if (waveBtnAdded || Vars.mobile) return;
 
         if (Vars.ui != null && Vars.ui.hudGroup != null) {
             let container = new Table();
@@ -612,7 +639,7 @@
         const contentTable = dialog.cont;
         contentTable.clear();
 
-        let titleLabel = contentTable.add("Vui lòng chọn tối đa " + maxCount + " tháp pháo cho trận đấu này:").pad(8).get();
+        let titleLabel = contentTable.add("Vui lòng chọn tối đa " + maxCount + " tháp pháo đã mở khóa cho trận đấu này:").pad(8).get();
         titleLabel.setWrap(true);
         titleLabel.setAlignment(Align.center);
         contentTable.row();
@@ -628,18 +655,14 @@
 
         turretList.each(block => {
             let isUnlocked = unlockedSeq.contains(block.name);
-            let btnName = block.localizedName + (isUnlocked ? "" : " [gray](Chưa mở)[]");
+            if (!isUnlocked) return;
+
+            let btnName = block.localizedName;
             let btn = new TextButton(btnName, Styles.togglet);
             btn.getLabel().setWrap(true);
             btn.getLabel().setFontScale(isMobile ? 0.8 : 0.9);
 
             btn.clicked(() => {
-                if (!isUnlocked) {
-                    btn.setChecked(false);
-                    Vars.ui.showInfo("Tháp pháo này chưa được mở khóa! Hãy vào mục 'Cửa Hàng Tháp Pháo' để mua hoặc gacha.");
-                    return;
-                }
-
                 if (btn.isChecked()) {
                     if (selectedTurrets.size < maxCount) {
                         selectedTurrets.add(block);
@@ -767,12 +790,6 @@
         hpFieldTable.add("% / Wave").padLeft(8);
         content.add(hpFieldTable).pad(5).row();
 
-        content.add("[accent]-- QUẢN LÝ NÚT GỌI WAVE --[]").padTop(10).row();
-        let btnShowWave = new TextButton("Hiển thị nút Gọi Wave trên màn hình\n[gray](Phím tắt PC: Shift + N)[]", Styles.togglet);
-        btnShowWave.getLabel().setFontScale(0.85);
-        btnShowWave.setChecked(showWaveBtnSetting);
-        content.add(btnShowWave).size(280, 54).pad(5).row();
-
         content.add("[accent]-- CHẾ ĐỘ HIỂN THỊ THANH MÁU (HP) --[]").padTop(10).row();
 
         let currentHpStyle = Core.settings.getString("newex-hp-style", "show-hp");
@@ -823,8 +840,6 @@
             if (parsedHp > 999) parsedHp = 999;
             if (parsedHp < 0) parsedHp = 0;
             Core.settings.put("newex-hp-per-wave-percent", java.lang.Integer(parsedHp));
-
-            Core.settings.put("newex-show-wave-btn", java.lang.Boolean(btnShowWave.isChecked()));
 
             let selectedStyle = "off";
             if (btnShowHp.isChecked()) selectedStyle = "show-hp";
@@ -906,29 +921,31 @@
                 }
             }
 
-            let shiftPressed = Core.input.keyDown(KeyCode.shiftLeft) || Core.input.keyDown(KeyCode.shiftRight);
-            if (shiftPressed && Core.input.keyTap(KeyCode.n)) {
-                showWaveBtnSetting = !showWaveBtnSetting;
-                Core.settings.put("newex-show-wave-btn", java.lang.Boolean(showWaveBtnSetting));
-                
-                if (showWaveBtnSetting) {
-                    Vars.ui.showInfoToast("Đã hiện nút Gọi Wave", 1.5);
-                    centerWaveButton();
-                } else {
-                    Vars.ui.showInfoToast("Đã ẩn nút Gọi Wave", 1.5);
+            if (!Vars.mobile) {
+                let shiftPressed = Core.input.keyDown(KeyCode.shiftLeft) || Core.input.keyDown(KeyCode.shiftRight);
+                if (shiftPressed && Core.input.keyTap(KeyCode.n)) {
+                    showWaveBtnSetting = !showWaveBtnSetting;
+                    Core.settings.put("newex-show-wave-btn", java.lang.Boolean(showWaveBtnSetting));
+                    
+                    if (showWaveBtnSetting) {
+                        Vars.ui.showInfoToast("Đã hiện nút Gọi Wave", 1.5);
+                        centerWaveButton();
+                    } else {
+                        Vars.ui.showInfoToast("Đã ẩn nút Gọi Wave", 1.5);
+                    }
                 }
-            }
 
-            if (showWaveBtnSetting) {
-                if (!waveBtnAdded) {
-                    injectWaveButtonToHUD();
-                }
-                if (customWaveContainer != null) {
-                    customWaveContainer.visible = true;
-                }
-            } else {
-                if (customWaveContainer != null) {
-                    customWaveContainer.visible = false;
+                if (showWaveBtnSetting) {
+                    if (!waveBtnAdded) {
+                        injectWaveButtonToHUD();
+                    }
+                    if (customWaveContainer != null) {
+                        customWaveContainer.visible = true;
+                    }
+                } else {
+                    if (customWaveContainer != null) {
+                        customWaveContainer.visible = false;
+                    }
                 }
             }
         } else {
@@ -950,6 +967,14 @@
         }
 
         if (turretList.isEmpty()) loadTurretsFromFolder();
+
+        let isSandbox = Vars.state.rules != null && (Vars.state.rules.infiniteResources || Vars.state.rules.editor);
+        if (isSandbox) {
+            turretList.each(block => {
+                block.buildVisibility = BuildVisibility.shown;
+            });
+            return;
+        }
 
         if (getMaxSelectCount() >= turretList.size) {
             let unlockedSeq = shop.getUnlockedTurrets(turretList);

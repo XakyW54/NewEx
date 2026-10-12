@@ -14,7 +14,6 @@ function getUnlockedTurrets(turretList) {
     let saved = Core.settings.getString(UNLOCKED_TAG_KEY, "NOT_SET");
     let seq = new Seq();
     if (saved === "NOT_SET") {
-        // Sửa lỗi: Ban đầu chỉ mở khóa sẵn 3 tháp pháo đầu tiên, các tháp pháo còn lại sẽ bị khóa và ẩn đi đúng ý bạn
         if (turretList != null && turretList.size > 0) {
             let limit = Math.min(3, turretList.size);
             for (let i = 0; i < limit; i++) {
@@ -65,7 +64,6 @@ function setupXakyKeylistener(dialog, turretList, updateCallback) {
 
             lastKeyTime = currentTime;
 
-            // Kiểm tra chuỗi xakyfull (Mở khóa tất cả)
             if (keycode === fullKeySequence[fullKeyIndex]) {
                 fullKeyIndex++;
                 if (fullKeyIndex >= fullKeySequence.length) {
@@ -84,7 +82,6 @@ function setupXakyKeylistener(dialog, turretList, updateCallback) {
                 fullKeyIndex = (keycode === fullKeySequence[0]) ? 1 : 0;
             }
 
-            // Kiểm tra chuỗi xaky (+10 điểm)
             if (keycode === keySequence[keyIndex]) {
                 keyIndex++;
                 if (keyIndex >= keySequence.length) {
@@ -140,7 +137,6 @@ function showShopDialog(turretList, loadTurretsFromFolderFunc) {
     let statusLabel = mainTable.add("Đã sở hữu: " + unlockedSeq.size + " / " + turretList.size + " tháp pháo").fontScale(isMobile ? 0.8 : 0.95).pad(3).get();
     mainTable.row();
 
-    // Nút chuyển sang giao diện Gacha
     let topBtnTable = new Table();
     topBtnTable.button("🎲 Chuyển đến Gacha Ngẫu Nhiên (10đ/lượt)", Styles.flatTogglet, () => {
         dialog.hide();
@@ -148,7 +144,6 @@ function showShopDialog(turretList, loadTurretsFromFolderFunc) {
     }).size(isMobile ? 260 : 320, isMobile ? 40 : 45).pad(4);
     mainTable.add(topBtnTable).pad(4).row();
 
-    // Nút Xuất/Nhập file lưu
     let ioTable = new Table();
     ioTable.button("📤 Xuất Ra File", Styles.cleart, () => {
         let unlockedSeq = getUnlockedTurrets(turretList);
@@ -229,11 +224,43 @@ function showShopDialog(turretList, loadTurretsFromFolderFunc) {
                 displayName += " ";
             }
 
-            let nameLabel = card.add("[white]" + displayName + "[]").left().growX().padLeft(4).fontScale(isMobile ? 0.75 : 0.9).get();
-            nameLabel.setWrap(true);
+            let leftSide = new Table();
+            leftSide.left();
+
+            let iconRegion = null;
+            if (block.name.endsWith("-laytery") || block.name.includes("laytery")) {
+                try {
+                    let customIcon = Core.atlas.find(CURRENT_MOD_NAME + "-icon");
+                    if (customIcon != null && customIcon.found()) iconRegion = customIcon;
+                } catch(e) {}
+                if (iconRegion == null) {
+                    try {
+                        let customIcon2 = Core.atlas.find("icon");
+                        if (customIcon2 != null && customIcon2.found()) iconRegion = customIcon2;
+                    } catch(e) {}
+                }
+            }
+
+            if (iconRegion == null) {
+                iconRegion = block.uiIcon;
+            }
+
+            if (iconRegion != null) {
+                try {
+                    let drawable = (iconRegion instanceof TextureRegion || (iconRegion.getClass && iconRegion.getClass().getName().indexOf("TextureRegion") >= 0)) 
+                        ? new TextureRegionDrawable(iconRegion) 
+                        : iconRegion;
+                    leftSide.image(drawable).size(isMobile ? 20 : 24).padRight(6);
+                } catch(e) {}
+            }
+
+            let nameLabel = leftSide.add("[white]" + displayName + "[]").left().fontScale(isMobile ? 0.7 : 0.82).get();
+            nameLabel.setWrap(false);
+
+            card.add(leftSide).left().growX().padLeft(4);
 
             if (isUnlocked) {
-                card.add("[green]✓ Đã sở hữu[]").fontScale(isMobile ? 0.75 : 0.9).right().padRight(6);
+                card.add("[green]✓ Đã sở hữu[]").fontScale(isMobile ? 0.7 : 0.85).right().padRight(6);
             } else {
                 card.button("Mua (20đ)", () => {
                     let pts = getGachaPoints();
@@ -250,13 +277,12 @@ function showShopDialog(turretList, loadTurretsFromFolderFunc) {
 
                     Vars.ui.showInfoToast("[green]Mua thành công: " + block.localizedName + "![]", 2);
                     refreshShopList();
-                }).size(isMobile ? 85 : 100, isMobile ? 32 : 36).right();
+                }).size(isMobile ? 85 : 100, isMobile ? 32 : 36).right().padRight(2);
             }
 
-            listTable.add(card).growX().pad(2).row();
+            listTable.add(card).growX().height(isMobile ? 48 : 52).pad(2).row();
         });
 
-        // Nút xóa/reset dữ liệu shop
         let deleteBtnCard = new Table(Tex.button);
         deleteBtnCard.margin(6);
         let resetBtn = deleteBtnCard.button("[red]Xóa dữ liệu shop (+20 điểm)[]", Styles.flatTogglet, () => {
@@ -321,21 +347,60 @@ function showGachaDialog(turretList, loadTurretsFromFolderFunc) {
     let statusLabel = mainTable.add("Đã sở hữu: " + unlockedSeq.size + " / " + turretList.size + " tháp pháo").fontScale(isMobile ? 0.8 : 0.95).pad(3).get();
     mainTable.row();
 
-    // Nút quay lại Shop mua trực tiếp
     let backBtnTable = new Table();
-    backBtnTable.button("⬅ Quay lại Cửa Hàng Shop", Styles.flatTogglet, () => {
+    let backBtn = backBtnTable.button("⬅ Quay lại Cửa Hàng Shop", Styles.flatTogglet, () => {
         dialog.hide();
         showShopDialog(turretList, loadTurretsFromFolderFunc);
-    }).size(isMobile ? 220 : 250, isMobile ? 36 : 40).pad(3);
+    }).size(isMobile ? 240 : 280, isMobile ? 38 : 42).pad(3).get();
+    backBtn.getLabel().setFontScale(isMobile ? 0.75 : 0.9);
+    backBtn.getLabel().setWrap(false);
     mainTable.add(backBtnTable).pad(4).row();
 
+    // Khung kết quả Gacha
     let resultTable = new Table(Tex.button);
     resultTable.margin(10);
-    let resultLabel = resultTable.add("[yellow]Nhấn nút 'Quay Tháp Pháo' bên dưới để bắt đầu![]").fontScale(isMobile ? 0.85 : 1.05).get();
-    resultLabel.setWrap(true);
-    resultLabel.setAlignment(Align.center);
-    resultTable.row();
-    mainTable.add(resultTable).size(isMobile ? 280 : 360, isMobile ? 70 : 80).pad(8).row();
+
+    // Hàm cập nhật nội dung kết quả Gacha kèm theo icon tháp pháo
+    function updateGachaResult(text, block) {
+        resultTable.clear();
+        let inner = new Table();
+        inner.center();
+
+        if (block != null) {
+            let iconRegion = null;
+            if (block.name.endsWith("-laytery") || block.name.includes("laytery")) {
+                try {
+                    let customIcon = Core.atlas.find(CURRENT_MOD_NAME + "-icon");
+                    if (customIcon != null && customIcon.found()) iconRegion = customIcon;
+                } catch(e) {}
+                if (iconRegion == null) {
+                    try {
+                        let customIcon2 = Core.atlas.find("icon");
+                        if (customIcon2 != null && customIcon2.found()) iconRegion = customIcon2;
+                    } catch(e) {}
+                }
+            }
+            if (iconRegion == null) {
+                iconRegion = block.uiIcon;
+            }
+            if (iconRegion != null) {
+                try {
+                    let drawable = (iconRegion instanceof TextureRegion || (iconRegion.getClass && iconRegion.getClass().getName().indexOf("TextureRegion") >= 0)) 
+                        ? new TextureRegionDrawable(iconRegion) 
+                        : iconRegion;
+                    inner.image(drawable).size(isMobile ? 26 : 32).padRight(8);
+                } catch(e) {}
+            }
+        }
+
+        let lbl = inner.add(text).left().fontScale(isMobile ? 0.75 : 0.9).get();
+        lbl.setWrap(false);
+        resultTable.add(inner).center();
+    }
+
+    updateGachaResult("[yellow]Nhấn 'Quay Tháp Pháo' để bắt đầu![]", null);
+
+    mainTable.add(resultTable).growX().minHeight(isMobile ? 65 : 75).pad(8).row();
 
     let btnTable = new Table();
 
@@ -357,7 +422,7 @@ function showGachaDialog(turretList, loadTurretsFromFolderFunc) {
         });
 
         if (lockedTurrets.isEmpty()) {
-            resultLabel.setText("[green]Bạn đã mở khóa toàn bộ tháp pháo![]");
+            updateGachaResult("[green]Bạn đã mở khóa toàn bộ tháp pháo![]", null);
             Vars.ui.showInfoToast("Đã mở khóa tất cả tháp pháo!", 2);
             return;
         }
@@ -375,14 +440,14 @@ function showGachaDialog(turretList, loadTurretsFromFolderFunc) {
         function runAnimation() {
             if (currentFrame < animFrames) {
                 let randomItem = turretList.random();
-                resultLabel.setText("[orange]✦ Đang quay... [cyan]" + randomItem.localizedName + " ✦[]");
+                updateGachaResult("[orange]✦ Đang quay... [cyan]" + randomItem.localizedName + " ✦[]", randomItem);
                 currentFrame++;
                 Time.run(2, runAnimation);
             } else {
                 unlockedSeq.add(wonTurret.name);
                 saveUnlockedTurrets(unlockedSeq);
 
-                resultLabel.setText("[lime]🎉 Chúc mừng! Đã mở khóa: [white]" + wonTurret.localizedName + "[]");
+                updateGachaResult("[lime]🎉 Chúc mừng! Mở khóa: [white]" + wonTurret.localizedName + "[]", wonTurret);
                 statusLabel.setText("Đã sở hữu: " + unlockedSeq.size + " / " + turretList.size + " tháp pháo");
                 Vars.ui.showInfoToast("[green]Gacha thành công: " + wonTurret.localizedName + "![]", 2);
             }

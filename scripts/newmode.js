@@ -13,7 +13,8 @@
         { id: "redces", displayName: "Redces ᑈᐴᐾᐶᒅ" },
         { id: "sentyderd", displayName: "Sentyderd" },
         { id: "defxy1", displayName: "Def Xy-1" },
-        { id: "defxy2", displayName: "Def Xy-2" }
+        { id: "defxy2", displayName: "Def Xy-2" },
+        { id: "rock", displayName: "Rocks" }
     ];
 
     function getNewModeSlot(mapId) {
@@ -89,6 +90,9 @@
         activeMapName = mapName;
         hasWonPending = false;
         pendingGachaReward = 0;
+
+        // [CHỈNH SỬA] Đặt cờ đánh dấu đang chơi chế độ NewMode
+        Core.settings.put("newex-is-playing-newmode", java.lang.Boolean(true));
 
         let slotName = "NewEx_NewMode_Save_" + mapName;
         let slots = Vars.control.saves.getSaveSlots();
@@ -180,6 +184,8 @@
                 hasWonPending = false;
                 pendingGachaReward = 0;
             }
+            // [CHỈNH SỬA] Tắt cờ NewMode khi thoát về menu chính
+            Core.settings.put("newex-is-playing-newmode", java.lang.Boolean(false));
         }
     });
 
@@ -197,6 +203,9 @@
     });
 
     Events.on(ClientLoadEvent, event => {
+        // [CHỈNH SỬA] Khởi tạo cờ NewMode là false khi khởi động game
+        Core.settings.put("newex-is-playing-newmode", java.lang.Boolean(false));
+
         try {
             Vars.ui.menufrag.addButton("NewMode", Icon.play, () => {
                 showNewModeDialog();

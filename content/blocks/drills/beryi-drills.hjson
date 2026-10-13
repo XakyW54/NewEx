@@ -1,0 +1,22 @@
+name: beryi-drills
+type: Block
+localizedName: "Beryi Drill"
+description: "Máy khoan tự động diện rộng, quét và ngẫu nhiên khai thác tài nguyên trong phạm vi hình vuông 25 ô. Hỗ trợ tăng tốc bằng nước, chất làm lạnh và Sallowyr."
+details: "Tốc độ: 2 item/s. Cấp Nước: +50% (3 item/s). Cryofluid: +100% (4 item/s). Sallowyr: +500% (12 item/s trong 10s)."
+size: 3
+hasItems: true
+itemCapacity: 1000
+hasLiquids: true
+liquidCapacity: 30
+configurable: true
+update: true
+solid: true
+category: production
+research: mechanical-drill
+
+requirements: [
+  copper/150
+  lead/150
+  obsidis/8
+  titanium/50
+]

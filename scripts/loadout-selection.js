@@ -900,6 +900,9 @@
 
     Events.on(UnitDestroyEvent, event => {
         if (event.unit != null && Vars.state != null && Vars.state.isGame()) {
+            // [CHỈNH SỬA] Chỉ thực hiện đếm 100 địch khi đang chơi trong NewMode
+            if (!Core.settings.getBool("newex-is-playing-newmode", false)) return;
+
             let playerTeam = Vars.state.rules.defaultTeam;
             if (event.unit.team != playerTeam) {
                 let killCount = Core.settings.getInt("newex-enemy-kill-count", 0) + 1;

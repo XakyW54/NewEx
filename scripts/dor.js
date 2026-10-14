@@ -230,36 +230,47 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
 
         if(tier == 0) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
+                // Quét lõi 1 lần duy nhất khi nhấn nút nâng cấp ^
+                let core = this.team.core();
+                let scanC = core != null ? core.items.get(Items.copper) : 0;
+                let scanL = core != null ? core.items.get(Items.lead) : 0;
+                let scanT = core != null ? core.items.get(Items.titanium) : 0;
+
                 let dialog = extend(BaseDialog, isEn() ? "Dor Turret Upgrade Center" : "Trung tâm nâng cấp pháo Dor", {});
                 
-                let reqCell = dialog.cont.label(packProv(() => {
-                    let cMK2 = Math.max(0, reqMK2.copper - this.paidCopper);
-                    let lMK2 = Math.max(0, reqMK2.lead - this.paidLead);
+                let cMK2 = Math.max(0, reqMK2.copper - this.paidCopper);
+                let lMK2 = Math.max(0, reqMK2.lead - this.paidLead);
 
-                    let cMK2B = Math.max(0, reqMK2B.copper - this.paidCopper);
-                    let lMK2B = Math.max(0, reqMK2B.lead - this.paidLead);
-                    let tMK2B = Math.max(0, reqMK2B.titanium - this.paidTitanium);
+                let cMK2B = Math.max(0, reqMK2B.copper - this.paidCopper);
+                let lMK2B = Math.max(0, reqMK2B.lead - this.paidLead);
+                let tMK2B = Math.max(0, reqMK2B.titanium - this.paidTitanium);
 
-                    if(isEn()){
-                        return "[yellow]REQUIRED UPGRADE COST:[]\n" +
-                               "[cyan]MK2 Branch:[]\n" +
-                               " • Copper: [green]" + cMK2 + "[]\n" +
-                               " • Lead: [green]" + lMK2 + "[]\n" +
-                               "[purple]MK2B Branch:[]\n" +
-                               " • Copper: [green]" + cMK2B + "[]\n" +
-                               " • Lead: [green]" + lMK2B + "[]\n" +
-                               " • Titanium: [green]" + tMK2B + "[]";
-                    }
+                let ccMK2 = scanC >= cMK2 ? "[green]" : "[red]";
+                let clMK2 = scanL >= lMK2 ? "[green]" : "[red]";
+                let ccMK2B = scanC >= cMK2B ? "[green]" : "[red]";
+                let clMK2B = scanL >= lMK2B ? "[green]" : "[red]";
+                let ctMK2B = scanT >= tMK2B ? "[green]" : "[red]";
 
-                    return "[yellow]YÊU CẦU TÀI NGUYÊN NÂNG CẤP:[]\n" +
-                           "[cyan]Nhánh MK2:[]\n" +
-                           " • Đồng: [green]" + cMK2 + "[]\n" +
-                           " • Chì: [green]" + lMK2 + "[]\n" +
-                           "[purple]Nhánh MK2B:[]\n" +
-                           " • Đồng: [green]" + cMK2B + "[]\n" +
-                           " • Chì: [green]" + lMK2B + "[]\n" +
-                           " • Titan: [green]" + tMK2B + "[]";
-                }));
+                let reqText = isEn() ? 
+                    ("[yellow]CORE / REQUIRED COST:[]\n" +
+                     "[cyan]MK2 Branch:[]\n" +
+                     " • Copper: " + ccMK2 + scanC + "[] / " + cMK2 + "\n" +
+                     " • Lead: " + clMK2 + scanL + "[] / " + lMK2 + "\n" +
+                     "[purple]MK2B Branch:[]\n" +
+                     " • Copper: " + ccMK2B + scanC + "[] / " + cMK2B + "\n" +
+                     " • Lead: " + clMK2B + scanL + "[] / " + lMK2B + "\n" +
+                     " • Titanium: " + ctMK2B + scanT + "[] / " + tMK2B) :
+                    ("[yellow]TÀI NGUYÊN LÕI / YÊU CẦU:[]\n" +
+                     "[cyan]Nhánh MK2:[]\n" +
+                     " • Đồng: " + ccMK2 + scanC + "[] / " + cMK2 + "\n" +
+                     " • Chì: " + clMK2 + scanL + "[] / " + lMK2 + "\n" +
+                     "[purple]Nhánh MK2B:[]\n" +
+                     " • Đồng: " + ccMK2B + scanC + "[] / " + cMK2B + "\n" +
+                     " • Chì: " + clMK2B + scanL + "[] / " + lMK2B + "\n" +
+                     " • Titan: " + ctMK2B + scanT + "[] / " + tMK2B);
+
+                // Dùng .add() thay vì .label() để tương thích với chuỗi tĩnh
+                let reqCell = dialog.cont.add(reqText.toString());
                 
                 reqCell.width(360).get().setWrap(true);
                 reqCell.get().setAlignment(Align.left);
@@ -312,25 +323,34 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
             })).size(50, 40).tooltip(isEn() ? "Upgrade Dor turret" : "Nâng cấp tháp pháo Dor");
         } else if (tier == 1) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
+                // Quét lõi 1 lần duy nhất khi nhấn nút nâng cấp ^
+                let core = this.team.core();
+                let scanC = core != null ? core.items.get(Items.copper) : 0;
+                let scanL = core != null ? core.items.get(Items.lead) : 0;
+                let scanT = core != null ? core.items.get(Items.titanium) : 0;
+
                 let dialog = extend(BaseDialog, isEn() ? "Dor MK3 Evolution Center" : "Trung tâm tiến hóa MK3 - Dor", {});
 
-                let reqCell = dialog.cont.label(packProv(() => {
-                    let cMK3 = Math.max(0, reqMK3.copper - this.paidCopper);
-                    let lMK3 = Math.max(0, reqMK3.lead - this.paidLead);
-                    let tMK3 = Math.max(0, reqMK3.titanium - this.paidTitanium);
+                let cMK3 = Math.max(0, reqMK3.copper - this.paidCopper);
+                let lMK3 = Math.max(0, reqMK3.lead - this.paidLead);
+                let tMK3 = Math.max(0, reqMK3.titanium - this.paidTitanium);
 
-                    if(isEn()){
-                        return "[yellow]REQUIRED MK3 UPGRADE COST:[]\n" +
-                               " • Copper: [green]" + cMK3 + "[]\n" +
-                               " • Lead: [green]" + lMK3 + "[]\n" +
-                               " • Titanium: [green]" + tMK3 + "[]";
-                    }
+                let ccMK3 = scanC >= cMK3 ? "[green]" : "[red]";
+                let clMK3 = scanL >= lMK3 ? "[green]" : "[red]";
+                let ctMK3 = scanT >= tMK3 ? "[green]" : "[red]";
 
-                    return "[yellow]YÊU CẦU TÀI NGUYÊN NÂNG CẤP MK3:[]\n" +
-                           " • Đồng: [green]" + cMK3 + "[]\n" +
-                           " • Chì: [green]" + lMK3 + "[]\n" +
-                           " • Titan: [green]" + tMK3 + "[]";
-                }));
+                let reqText = isEn() ? 
+                    ("[yellow]CORE / REQUIRED MK3 COST:[]\n" +
+                     " • Copper: " + ccMK3 + scanC + "[] / " + cMK3 + "\n" +
+                     " • Lead: " + clMK3 + scanL + "[] / " + lMK3 + "\n" +
+                     " • Titanium: " + ctMK3 + scanT + "[] / " + tMK3) :
+                    ("[yellow]TÀI NGUYÊN LÕI / YÊU CẦU MK3:[]\n" +
+                     " • Đồng: " + ccMK3 + scanC + "[] / " + cMK3 + "\n" +
+                     " • Chì: " + clMK3 + scanL + "[] / " + lMK3 + "\n" +
+                     " • Titan: " + ctMK3 + scanT + "[] / " + tMK3);
+
+                // Dùng .add() thay vì .label() để tương thích với chuỗi tĩnh
+                let reqCell = dialog.cont.add(reqText.toString());
 
                 reqCell.width(360).get().setWrap(true); reqCell.get().setAlignment(Align.left);
                 dialog.cont.row(); dialog.cont.add().height(10).row();
@@ -357,31 +377,44 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
             })).size(50, 40).tooltip(isEn() ? "Upgrade turret to MK3" : "Nâng cấp pháo lên MK3");
         } else if (tier == 2) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
+                // Quét lõi 1 lần duy nhất khi nhấn nút nâng cấp ^
+                let core = this.team.core();
+                let scanC = core != null ? core.items.get(Items.copper) : 0;
+                let scanL = core != null ? core.items.get(Items.lead) : 0;
+                let scanT = core != null ? core.items.get(Items.titanium) : 0;
+
                 let dialog = extend(BaseDialog, isEn() ? "MK2B Branch Evolution Center" : "Trung tâm Rẽ Nhánh Tiến Hóa MK2B", {});
 
-                let reqCell = dialog.cont.label(packProv(() => {
-                    let cMK2B1 = Math.max(0, reqMK2B1.copper - this.paidCopper);
-                    let lMK2B1 = Math.max(0, reqMK2B1.lead - this.paidLead);
-                    let tMK2B1 = Math.max(0, reqMK2B1.titanium - this.paidTitanium);
+                let cMK2B1 = Math.max(0, reqMK2B1.copper - this.paidCopper);
+                let lMK2B1 = Math.max(0, reqMK2B1.lead - this.paidLead);
+                let tMK2B1 = Math.max(0, reqMK2B1.titanium - this.paidTitanium);
 
-                    let cMK3B = Math.max(0, reqMK3B.copper - this.paidCopper);
-                    let lMK3B = Math.max(0, reqMK3B.lead - this.paidLead);
-                    let tMK3B = Math.max(0, reqMK3B.titanium - this.paidTitanium);
+                let cMK3B = Math.max(0, reqMK3B.copper - this.paidCopper);
+                let lMK3B = Math.max(0, reqMK3B.lead - this.paidLead);
+                let tMK3B = Math.max(0, reqMK3B.titanium - this.paidTitanium);
 
-                    if(isEn()){
-                        return "[yellow]REQUIRED EVOLUTION COST:[]\n" +
-                               "[purple]MK2B1 Config:[]\n" +
-                               " • Copper: [green]" + cMK2B1 + "[] | Lead: [green]" + lMK2B1 + "[] | Titanium: [green]" + tMK2B1 + "[]\n" +
-                               "[pink]Ultimate MK3B:[]\n" +
-                               " • Copper: [green]" + cMK3B + "[] | Lead: [green]" + lMK3B + "[] | Titanium: [green]" + tMK3B + "[]";
-                    }
+                let cc2 = scanC >= cMK2B1 ? "[green]" : "[red]";
+                let cl2 = scanL >= lMK2B1 ? "[green]" : "[red]";
+                let ct2 = scanT >= tMK2B1 ? "[green]" : "[red]";
 
-                    return "[yellow]YÊU CẦU TÀI NGUYÊN NÂNG CẤP:[]\n" +
-                           "[purple]Cấu Hình MK2B1:[]\n" +
-                           " • Đồng: [green]" + cMK2B1 + "[] | Chì: [green]" + lMK2B1 + "[] | Titan: [green]" + tMK2B1 + "[]\n" +
-                           "[pink]Cấu Hình MK3B:[]\n" +
-                           " • Đồng: [green]" + cMK3B + "[] | Chì: [green]" + lMK3B + "[] | Titan: [green]" + tMK3B + "[]";
-                }));
+                let cc3 = scanC >= cMK3B ? "[green]" : "[red]";
+                let cl3 = scanL >= lMK3B ? "[green]" : "[red]";
+                let ct3 = scanT >= tMK3B ? "[green]" : "[red]";
+
+                let reqText = isEn() ?
+                    ("[yellow]CORE / REQUIRED EVOLUTION COST:[]\n" +
+                     "[purple]MK2B1 Config:[]\n" +
+                     " • Copper: " + cc2 + scanC + "[]/" + cMK2B1 + " | Lead: " + cl2 + scanL + "[]/" + lMK2B1 + " | Titanium: " + ct2 + scanT + "[]/" + tMK2B1 + "\n" +
+                     "[pink]Ultimate MK3B:[]\n" +
+                     " • Copper: " + cc3 + scanC + "[]/" + cMK3B + " | Lead: " + cl3 + scanL + "[]/" + lMK3B + " | Titanium: " + ct3 + scanT + "[]/" + tMK3B) :
+                    ("[yellow]TÀI NGUYÊN LÕI / YÊU CẦU:[]\n" +
+                     "[purple]Cấu Hình MK2B1:[]\n" +
+                     " • Đồng: " + cc2 + scanC + "[]/" + cMK2B1 + " | Chì: " + cl2 + scanL + "[]/" + lMK2B1 + " | Titan: " + ct2 + scanT + "[]/" + tMK2B1 + "\n" +
+                     "[pink]Cấu Hình MK3B:[]\n" +
+                     " • Đồng: " + cc3 + scanC + "[]/" + cMK3B + " | Chì: " + cl3 + scanL + "[]/" + lMK3B + " | Titan: " + ct3 + scanT + "[]/" + tMK3B);
+
+                // Dùng .add() thay vì .label() để tương thích với chuỗi tĩnh
+                let reqCell = dialog.cont.add(reqText.toString());
 
                 reqCell.width(360).get().setWrap(true); reqCell.get().setAlignment(Align.left);
                 dialog.cont.row(); dialog.cont.add().height(10).row();

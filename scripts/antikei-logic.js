@@ -1,30 +1,23 @@
-// antikei-logic.js
-
 let antikeiBlock;
 let mapHasAntikei = false;
 
-// Lưu hướng di chuyển dạng Angle tùy chỉnh cho từng ô (Key dạng "x_y")
 let flowDirectionMap = new java.util.HashMap();
-// Lưu hướng đi tự động tối ưu tính toán sẵn dẫn tới Lõi
 let autoFlowMap = new java.util.HashMap();
-// Danh sách chứa toàn bộ tọa độ các ô antikei trên map
 let antikeiTilesList = new java.util.ArrayList();
-// Lưu hướng đi cuối cùng của Unit bằng ID
 let unitLastAngles = new java.util.HashMap();
 
-// Biến hỗ trợ nhận biết kéo chuột trong Editor
 let lastEditorTile = null;
+let lastCoreCount = -1;
+let frameCount = 0;
 
 Events.on(ContentInitEvent, () => {
     antikeiBlock = Vars.content.block("newex-antikei");
 });
 
-// Sử dụng key dạng chuỗi "x_y" để loại bỏ hoàn toàn lỗi lệch tọa độ tâm khối
 function getTileKey(x, y) {
     return x + "_" + y;
 }
 
-// Lấy định danh map an toàn
 function getMapId() {
     if (Vars.state == null) return "default_map";
     if (Vars.state.map != null && Vars.state.map.name() != null) {
@@ -33,7 +26,19 @@ function getMapId() {
     return "editor_test_map";
 }
 
-// Lưu dữ liệu hướng mũi tên tùy chỉnh vào Core.settings dưới dạng JSON
+function getTotalCores() {
+    let total = 0;
+    if (Vars.state == null || Vars.state.teams == null) return 0;
+    for (let i = 0; i < Team.all.length; i++) {
+        let t = Team.all[i];
+        let tData = Vars.state.teams.get(t);
+        if (tData != null && tData.cores != null) {
+            total += tData.cores.size;
+        }
+    }
+    return total;
+}
+
 function saveFlowData() {
     if (Vars.state.isMenu()) return;
     let mapId = "antikei_map_" + getMapId();
@@ -46,7 +51,6 @@ function saveFlowData() {
     Core.settings.put(mapId, JSON.stringify(obj));
 }
 
-// Tải dữ liệu hướng mũi tên tùy chỉnh từ Core.settings khi vào map
 function loadFlowData() {
     flowDirectionMap.clear();
     if (Vars.state.isMenu()) return;
@@ -65,7 +69,6 @@ function loadFlowData() {
     }
 }
 
-// Tìm Lõi mục tiêu gần nhất
 function getClosestCore(x, y, team) {
     try {
         let enemyTeam = team.enemy();
@@ -95,7 +98,6 @@ function getClosestCore(x, y, team) {
     return null;
 }
 
-// Tìm khối antikei nhanh nhất trong bán kính rộng để quái ngoài tự tìm tới
 function findNearestAntikeiFast(unit) {
     let uTileX = unit.tileX();
     let uTileY = unit.tileY();
@@ -117,7 +119,6 @@ function findNearestAntikeiFast(unit) {
     return null;
 }
 
-// Quét toàn bộ ô antikei và tự động tính toán tuyến đường tối ưu dẫn tới Lõi
 function cacheAntikeiTiles() {
     antikeiTilesList.clear();
     autoFlowMap.clear();
@@ -136,23 +137,59 @@ function cacheAntikeiTiles() {
 
     if (!mapHasAntikei) return;
 
-    let sampleCore = getClosestCore(Vars.world.width() * 4, Vars.world.height() * 4, Team.crux);
-    if (sampleCore == null) return;
-
-    let coreTileX = World.toTile(sampleCore.x);
-    let coreTileY = World.toTile(sampleCore.y);
+    lastCoreCount = getTotalCores();
 
     let queue = [];
     let distanceMap = {};
 
-    for (let i = 0; i < antikeiTilesList.size(); i++) {
-        let key = antikeiTilesList.get(i);
-        let parts = key.split("_");
-        let tx = parseInt(parts[0]);
-        let ty = parseInt(parts[1]);
-        if (Math.abs(tx - coreTileX) <= 3 && Math.abs(ty - coreTileY) <= 3) {
-            distanceMap[key] = 0;
-            queue.push({x: tx, y: ty, key: key});
+    for (let i = 0; i < Team.all.length; i++) {
+        let t = Team.all[i];
+        let tData = Vars.state.teams.get(t);
+        if (tData != null && tData.cores != null) {
+            for (let cIdx = 0; cIdx < tData.cores.size; cIdx++) {
+                let core = tData.cores.get(cIdx);
+                let coreTileX = World.toTile(core.x);
+                let coreTileY = World.toTile(core.y);
+
+                let minDistToCore = -1;
+                let closestAntikeiForThisCore = [];
+
+                for (let k = 0; k < antikeiTilesList.size(); k++) {
+                    let key = antikeiTilesList.get(k);
+                    let parts = key.split("_");
+                    let tx = parseInt(parts[0]);
+                    let ty = parseInt(parts[1]);
+                    let dst = Math.abs(tx - coreTileX) + Math.abs(ty - coreTileY);
+
+                    if (minDistToCore === -1 || dst < minDistToCore) {
+                        minDistToCore = dst;
+                        closestAntikeiForThisCore = [{x: tx, y: ty, key: key}];
+                    } else if (dst === minDistToCore) {
+                        closestAntikeiForThisCore.push({x: tx, y: ty, key: key});
+                    }
+                }
+
+                for (let k = 0; k < antikeiTilesList.size(); k++) {
+                    let key = antikeiTilesList.get(k);
+                    let parts = key.split("_");
+                    let tx = parseInt(parts[0]);
+                    let ty = parseInt(parts[1]);
+                    if (Math.abs(tx - coreTileX) <= 5 && Math.abs(ty - coreTileY) <= 5) {
+                        if (distanceMap[key] === undefined || distanceMap[key] > 0) {
+                            distanceMap[key] = 0;
+                            queue.push({x: tx, y: ty, key: key});
+                        }
+                    }
+                }
+
+                for (let c = 0; c < closestAntikeiForThisCore.length; c++) {
+                    let item = closestAntikeiForThisCore[c];
+                    if (distanceMap[item.key] === undefined) {
+                        distanceMap[item.key] = 0;
+                        queue.push(item);
+                    }
+                }
+            }
         }
     }
 
@@ -263,7 +300,8 @@ Events.on(WorldLoadEvent, () => {
 Events.run(Trigger.update, () => {
     if (!antikeiBlock || Vars.state.isMenu()) return;
 
-    // 1. KÉO CHUỘT TRONG MAP EDITOR ĐỂ ĐẶT HƯỚNG MŨI TÊN TÙY CHỈNH (Khi không giữ phím R)
+    frameCount++;
+
     if (Vars.state.isEditor() && !Core.input.keyDown(KeyCode.r) && (Core.input.keyDown(KeyCode.mouseLeft) || Core.input.isTouched())) {
         let mouseVec = Core.camera.unproject(Core.input.mouse());
         let currentTile = Vars.world.tileWorld(mouseVec.x, mouseVec.y);
@@ -295,11 +333,18 @@ Events.run(Trigger.update, () => {
 
     if (!mapHasAntikei) return;
 
-    if (Vars.state.isPlaying() && Time.time % 60 == 0) {
+    if (Vars.state.isPlaying() && frameCount % 60 == 0) {
         clearOresOnAntikei();
     }
 
-    // 2. NHẤP CHUỘT GIỮA ĐỂ XOAY HƯỚNG MŨI TÊN TÙY CHỈNH
+    if (Vars.state.isPlaying() && frameCount % 30 == 0) {
+        let currentCores = getTotalCores();
+        if (lastCoreCount !== -1 && currentCores < lastCoreCount) {
+            cacheAntikeiTiles();
+        }
+        lastCoreCount = currentCores;
+    }
+
     if (Core.input.keyTap(KeyCode.mouseMiddle)) {
         let mouseVec = Core.camera.unproject(Core.input.mouse());
         let tile = Vars.world.tileWorld(mouseVec.x, mouseVec.y);
@@ -318,7 +363,6 @@ Events.run(Trigger.update, () => {
         }
     }
 
-    // 3. NHẤN GIỮ NÚT R + LIA CHUỘT ĐỂ XÓA MŨI TÊN TÙY CHỈNH
     if (Vars.state.isEditor() && Core.input.keyDown(KeyCode.r) && (Core.input.keyDown(KeyCode.mouseLeft) || Core.input.isTouched())) {
         let mouseVec = Core.camera.unproject(Core.input.mouse());
         let tile = Vars.world.tileWorld(mouseVec.x, mouseVec.y);
@@ -332,7 +376,6 @@ Events.run(Trigger.update, () => {
         }
     }
 
-    // ĐIỀU KHIỂN DI CHUYỂN CỦA UNIT
     Groups.unit.each(unit => {
         if (unit == null || !unit.isAdded() || unit.isFlying()) return;
 
@@ -340,7 +383,6 @@ Events.run(Trigger.update, () => {
         let moveAngle = 0;
 
         if (currentTile != null && currentTile.floor() === antikeiBlock) {
-            // ĐANG ĐỨNG TRÊN ANTIKEI: Đi theo hướng mũi tên
             let uTileX = unit.tileX();
             let uTileY = unit.tileY();
             let currentKey = getTileKey(uTileX, uTileY);
@@ -350,7 +392,6 @@ Events.run(Trigger.update, () => {
             moveAngle = getOptimalAngle(worldX, worldY, currentKey, unit.team);
             unitLastAngles.put(unit.id, java.lang.Float.valueOf(moveAngle));
         } else {
-            // ĐANG Ở NGOÀI: Tự động tìm khối antikei gần nhất để di chuyển vào hệ thống
             let nearest = findNearestAntikeiFast(unit);
             if (nearest != null) {
                 moveAngle = unit.angleTo(nearest.worldx(), nearest.worldy());
@@ -381,7 +422,6 @@ Events.run(Trigger.update, () => {
     });
 });
 
-// VẼ MŨI TÊN CHÍNH XÁC TUYỆT ĐỐI NGAY CHÍNH GIỮA TÂM KHỐI
 Events.run(Trigger.draw, () => {
     if (!antikeiBlock || Vars.state.isMenu()) return;
 
@@ -393,7 +433,6 @@ Events.run(Trigger.draw, () => {
         let x = parseInt(parts[0]);
         let y = parseInt(parts[1]);
         
-        // Tính chuẩn tọa độ tâm ô (World Center)
         let worldX = x * Vars.tilesize + Vars.tilesize / 2;
         let worldY = y * Vars.tilesize + Vars.tilesize / 2;
 
@@ -403,7 +442,6 @@ Events.run(Trigger.draw, () => {
             Draw.color(Pal.accent);
             Lines.stroke(1.2);
             
-            // Vẽ mũi tên cân đối ngay chính giữa tâm khối
             Lines.lineAngleCenter(worldX, worldY, angle, 4);
             Lines.lineAngle(worldX + Angles.trnsx(angle, 2), worldY + Angles.trnsy(angle, 2), angle + 135, 2);
             Lines.lineAngle(worldX + Angles.trnsx(angle, 2), worldY + Angles.trnsy(angle, 2), angle - 135, 2);

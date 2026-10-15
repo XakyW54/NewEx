@@ -62,10 +62,17 @@ Events.on(ContentInitEvent, () => {
                                    Math.abs(building.y - this.y) <= this.range;
 
                     if (inSquare) {
-                        if (building.team == this.team && building instanceof Drill.DrillBuild) {
-                            building.applyBoost(1.5, 35); 
-                            if (Math.random() < 0.45) {
-                                copesBuffCircleEffect.at(building.x, building.y);
+                        if (building.team == this.team) {
+                            let isDrill = building instanceof Drill.DrillBuild;
+                            let isBeryiDrill = building.block && (building.block.name === "newex-beryi-drills" || building.block.name === "beryi-drills");
+
+                            if (isDrill || isBeryiDrill) {
+                                if (typeof building.applyBoost === "function") {
+                                    building.applyBoost(1.5, 35); 
+                                }
+                                if (Math.random() < 0.45) {
+                                    copesBuffCircleEffect.at(building.x, building.y);
+                                }
                             }
                         }
                     }

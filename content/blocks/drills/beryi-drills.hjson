@@ -15,8 +15,7 @@ category: production
 research: mechanical-drill
 
 requirements: [
-  copper/150
-  lead/150
-  obsidis/8
-  titanium/50
+  copper/250
+  lead/250
+  graphite/150
 ]

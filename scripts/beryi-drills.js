@@ -27,6 +27,8 @@ Events.on(ContentInitEvent, () => {
             radiusTiles: 25,
             cachedTiles: [],  
             sallowyrTimer: 0,
+            copesBoostTime: 0,
+            copesBoostIntensity: 1.0,
 
             getTileDrop(t) {
                 if (t == null) return null;
@@ -44,14 +46,23 @@ Events.on(ContentInitEvent, () => {
                 return null;
             },
 
+            applyBoost(intensity, duration) {
+                this.copesBoostIntensity = intensity;
+                this.copesBoostTime = duration;
+            },
+
             write(write) {
                 this.super$write(write);
                 write.f(this.sallowyrTimer);
+                write.f(this.copesBoostTime);
+                write.f(this.copesBoostIntensity);
             },
 
             read(read, revision) {
                 this.super$read(read, revision);
                 this.sallowyrTimer = read.f();
+                this.copesBoostTime = read.f();
+                this.copesBoostIntensity = read.f();
             },
 
             acceptLiquid(source, liquid) {
@@ -106,7 +117,7 @@ Events.on(ContentInitEvent, () => {
                 table.clearChildren();
 
                 table.button(Icon.info, Styles.cleari, 40, () => {
-                    let dialog = new Dialog(isEn() ? "[accent]Beryi Drill Manual[ ]" : "[accent]Hướng Dẫn Sử Dụng Khối Khoan Beryi[ ]");
+                    let dialog = new Dialog(isEn() ? "[accent]Beryi Drill Manual[]" : "[accent]Hướng Dẫn Sử Dụng Khối Khoan Beryi[]");
                     dialog.cont.margin(15);
                     
                     let infoText = isEn() ?
@@ -173,6 +184,11 @@ Events.on(ContentInitEvent, () => {
                         this.liquids.remove(Liquids.water, 0.2 * Time.delta);
                     }
 
+                    if (this.copesBoostTime > 0) {
+                        this.copesBoostTime -= Time.delta;
+                        boostMultiplier *= this.copesBoostIntensity;
+                    }
+
                     if (this.sallowyrTimer > 0) {
                         this.sallowyrTimer -= Time.delta;
                         boostMultiplier += 5.0;
@@ -234,6 +250,10 @@ Events.on(ContentInitEvent, () => {
                     for (let i = 0; i < this.cachedTiles.length; i++) {
                         let t = this.cachedTiles[i];
                         if (t != null) {
+                            let itemDrop = this.getTileDrop(t);
+                            // Không vẽ viền cho cát (Items.sand)
+                            if (itemDrop === Items.sand) continue;
+
                             let wx = t.worldx();
                             let wy = t.worldy();
 
@@ -242,10 +262,10 @@ Events.on(ContentInitEvent, () => {
                             let topTile = Vars.world.tile(t.x, t.y + 1);
                             let bottomTile = Vars.world.tile(t.x, t.y - 1);
 
-                            let hasRight = (rightTile != null && rightTile.x >= minX && rightTile.x <= maxX && rightTile.y >= minY && rightTile.y <= maxY && this.getTileDrop(rightTile) != null);
-                            let hasLeft = (leftTile != null && leftTile.x >= minX && leftTile.x <= maxX && leftTile.y >= minY && leftTile.y <= maxY && this.getTileDrop(leftTile) != null);
-                            let hasTop = (topTile != null && topTile.x >= minX && topTile.x <= maxX && topTile.y >= minY && topTile.y <= maxY && this.getTileDrop(topTile) != null);
-                            let hasBottom = (bottomTile != null && bottomTile.x >= minX && bottomTile.x <= maxX && bottomTile.y >= minY && bottomTile.y <= maxY && this.getTileDrop(bottomTile) != null);
+                            let hasRight = (rightTile != null && rightTile.x >= minX && rightTile.x <= maxX && rightTile.y >= minY && rightTile.y <= maxY && this.getTileDrop(rightTile) != null && this.getTileDrop(rightTile) !== Items.sand);
+                            let hasLeft = (leftTile != null && leftTile.x >= minX && leftTile.x <= maxX && leftTile.y >= minY && leftTile.y <= maxY && this.getTileDrop(leftTile) != null && this.getTileDrop(leftTile) !== Items.sand);
+                            let hasTop = (topTile != null && topTile.x >= minX && topTile.x <= maxX && topTile.y >= minY && topTile.y <= maxY && this.getTileDrop(topTile) != null && this.getTileDrop(topTile) !== Items.sand);
+                            let hasBottom = (bottomTile != null && bottomTile.x >= minX && bottomTile.x <= maxX && bottomTile.y >= minY && bottomTile.y <= maxY && this.getTileDrop(bottomTile) != null && this.getTileDrop(bottomTile) !== Items.sand);
 
                             if (!hasLeft)   Lines.line(wx - 4, wy - 4, wx - 4, wy + 4);
                             if (!hasRight)  Lines.line(wx + 4, wy - 4, wx + 4, wy + 4);

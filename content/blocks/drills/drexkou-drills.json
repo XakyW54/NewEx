@@ -18,7 +18,8 @@
   "research": "newex",
   "requirements": [
     "copper/100",
-    "obsidis/10",
+    "obsidis/120",
+    "berrybyr/10",
     "lead/80",
     "silicon/50"
   ]

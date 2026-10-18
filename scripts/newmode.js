@@ -7,7 +7,6 @@
     let pendingGachaReward = 0;
     let hasWonPending = false;
 
-    // Danh sách các map trong NewMode
     const mapsList = [
         { id: "Newbie", displayName: "Newbie" },
         { id: "redces", displayName: "Redces ᑈᐴᐾᐶᒅ" },
@@ -91,7 +90,6 @@
         hasWonPending = false;
         pendingGachaReward = 0;
 
-        // [CHỈNH SỬA] Đặt cờ đánh dấu đang chơi chế độ NewMode
         Core.settings.put("newex-is-playing-newmode", java.lang.Boolean(true));
 
         let slotName = "NewEx_NewMode_Save_" + mapName;
@@ -162,7 +160,6 @@
         if (isPlayingNewMode) {
             if (event.winner != null && event.winner == Vars.state.rules.defaultTeam) {
                 hasWonPending = true;
-                // Newbie nhận 20 điểm, các map khác nhận 50 điểm
                 pendingGachaReward = (activeMapName === "Newbie") ? 20 : 50;
             }
             deleteNewModeSave();
@@ -184,7 +181,6 @@
                 hasWonPending = false;
                 pendingGachaReward = 0;
             }
-            // [CHỈNH SỬA] Tắt cờ NewMode khi thoát về menu chính
             Core.settings.put("newex-is-playing-newmode", java.lang.Boolean(false));
         }
     });
@@ -193,7 +189,6 @@
         if (isPlayingNewMode && Vars.state.isGame()) {
             saveNewModeGame();
             
-            // Thưởng +1 điểm gacha cứ mỗi khi qua được 10 đợt (wave)
             if (Vars.state.wave > 0 && Vars.state.wave % 10 === 0) {
                 let currentPts = Core.settings.getInt(GACHA_POINTS_KEY, 0) + 1;
                 Core.settings.put(GACHA_POINTS_KEY, java.lang.Integer(currentPts));
@@ -203,7 +198,6 @@
     });
 
     Events.on(ClientLoadEvent, event => {
-        // [CHỈNH SỬA] Khởi tạo cờ NewMode là false khi khởi động game
         Core.settings.put("newex-is-playing-newmode", java.lang.Boolean(false));
 
         try {

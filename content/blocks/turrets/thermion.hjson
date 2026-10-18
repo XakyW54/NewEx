@@ -1,0 +1,31 @@
+name: "newex-thermion"
+localizedName: "Thermion Wave Tower"
+description: 
+'''
+Một công trình chiến thuật cao cấp với 3 dạng thức chuyển đổi:
+- 💛 Form Yellow: Khống chế diện rộng & Sát thương dòng điện.
+- 💙 Form Blue: Hỏa lực quỹ đạo & Hủy diệt tầm xa.
+- 💜 Form Purple: Thao túng tâm lý & Cướp quân địch.
+'''
+type: "Block"
+size: 3
+health: 3000
+solid: true
+update: true
+hasPower: true
+configurable: true
+category: "turret"
+research: "core-shard"
+
+consumes: {
+  power: 4.0
+}
+
+requirements: [
+  copper/200
+  lead/150
+  silicon/120
+  phase-fabric/50
+]
+
+alwaysUnlocked: true

@@ -290,7 +290,7 @@
                 blocksDir.walk(cons(file => {
                     if (!file.isDirectory()) {
                         let blockName = file.nameWithoutExtension();
-                        if (blockName === "repulsyron" || blockName === "emperical" || blockName === "aether-spiral" || blockName === "aether spiral") {
+                        if (blockName === "repulsyron" || blockName === "emperical" || blockName === "aether-spiral" || blockName === "aetherspiral" || blockName === "aether spiral") {
                             return;
                         }
                         let fullName = CURRENT_MOD_NAME + "-" + blockName;
@@ -315,21 +315,11 @@
         return Core.settings.getInt("newex-max-turrets", 5);
     }
 
-    function getSyncedTurretsFromWorld() {
-        if (Vars.state.rules != null && Vars.state.rules.tags != null) {
-            let savedString = Vars.state.rules.tags.get(TAG_KEY);
-            if (savedString != null && String(savedString) !== "") {
-                return String(savedString).split(",");
-            }
-        }
-        return null;
-    }
-
     function applyTurretVisibility(allowedNamesSeq) {
         let isSandbox = Vars.state.rules != null && (Vars.state.rules.infiniteResources || Vars.state.rules.editor);
         let gachaEnabled = Core.settings.getBool("newex-gacha-enabled", true);
 
-        if (isSandbox || !gachaEnabled) {
+        if (isSandbox) {
             turretList.each(block => {
                 block.buildVisibility = BuildVisibility.shown;
             });
@@ -338,25 +328,9 @@
 
         let unlockedSeq = shop.getUnlockedTurrets(turretList);
 
-        if (Vars.net.client() && Vars.state.rules != null && Vars.state.rules.tags != null) {
-            let serverSynced = Vars.state.rules.tags.get(TAG_KEY);
-            if (serverSynced != null && String(serverSynced) !== "") {
-                allowedNamesSeq = new Seq(String(serverSynced).split(","));
-            }
-        }
-
         turretList.each(block => {
-            let isUnlocked = unlockedSeq.contains(block.name);
+            let isUnlocked = gachaEnabled ? unlockedSeq.contains(block.name) : true;
             let isSelected = allowedNamesSeq != null && allowedNamesSeq.contains(block.name);
-
-            if (Vars.net.client()) {
-                if (isSelected) {
-                    block.buildVisibility = BuildVisibility.shown;
-                } else {
-                    block.buildVisibility = BuildVisibility.hidden;
-                }
-                return;
-            }
 
             if (isUnlocked && isSelected) {
                 block.buildVisibility = BuildVisibility.shown;
@@ -657,9 +631,10 @@
         let cols = 0;
 
         let unlockedSeq = shop.getUnlockedTurrets(turretList);
+        let gachaEnabled = Core.settings.getBool("newex-gacha-enabled", true);
 
         turretList.each(block => {
-            let isUnlocked = unlockedSeq.contains(block.name);
+            let isUnlocked = gachaEnabled ? unlockedSeq.contains(block.name) : true;
             if (!isUnlocked) return;
 
             let btnName = block.localizedName;
@@ -900,7 +875,6 @@
 
     Events.on(UnitDestroyEvent, event => {
         if (event.unit != null && Vars.state != null && Vars.state.isGame()) {
-            // [CHỈNH SỬA] Chỉ thực hiện đếm 100 địch khi đang chơi trong NewMode
             if (!Core.settings.getBool("newex-is-playing-newmode", false)) return;
 
             let playerTeam = Vars.state.rules.defaultTeam;
@@ -1004,7 +978,7 @@
         let isSandbox = Vars.state.rules != null && (Vars.state.rules.infiniteResources || Vars.state.rules.editor);
         let gachaEnabled = Core.settings.getBool("newex-gacha-enabled", true);
 
-        if (isSandbox || !gachaEnabled) {
+        if (isSandbox) {
             turretList.each(block => {
                 block.buildVisibility = BuildVisibility.shown;
             });
@@ -1015,9 +989,13 @@
             let unlockedSeq = shop.getUnlockedTurrets(turretList);
             let savedArray = [];
             let allowedNames = new Seq();
-            unlockedSeq.each(name => {
-                savedArray.push(name);
-                allowedNames.add(name);
+            
+            turretList.each(block => {
+                let isUnlocked = gachaEnabled ? unlockedSeq.contains(block.name) : true;
+                if (isUnlocked) {
+                    savedArray.push(block.name);
+                    allowedNames.add(block.name);
+                }
             });
 
             if (Vars.state.rules != null && Vars.state.rules.tags != null) {
@@ -1025,23 +1003,6 @@
             }
 
             applyTurretVisibility(allowedNames);
-            return;
-        }
-
-        let syncedNames = getSyncedTurretsFromWorld();
-        if (syncedNames != null && syncedNames.length > 0) {
-            let allowedNames = new Seq();
-            for (let i = 0; i < syncedNames.length; i++) {
-                allowedNames.add(syncedNames[i]);
-            }
-            applyTurretVisibility(allowedNames);
-            return;
-        }
-
-        if (Vars.net.client()) {
-            turretList.each(block => {
-                block.buildVisibility = BuildVisibility.hidden;
-            });
             return;
         }
 

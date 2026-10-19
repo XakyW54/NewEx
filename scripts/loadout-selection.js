@@ -33,6 +33,30 @@
     let hpPerWavePercentSetting = 10;
     let fpsOptPercentSetting = 0;
 
+    // Biến đếm số lần nhấn các nút
+    let countWave = 0;
+    let countWave10 = 0;
+    let countSelfDestruct = 0;
+    let countMeteor = 0;
+    let countClearER = 0;
+    let countDeleteOre = 0;
+
+    // Biến quản lý chuyển động camera mượt mà theo frame
+    let targetCamX = -1;
+    let targetCamY = -1;
+    let panDuration = 0.4;
+    let panTimer = 1.0;
+    let panStartX = 0;
+    let panStartY = 0;
+
+    function smoothPanTo(x, y) {
+        targetCamX = x;
+        targetCamY = y;
+        panStartX = Core.camera.position.x;
+        panStartY = Core.camera.position.y;
+        panTimer = 0;
+    }
+
     function reloadCachedSettings() {
         autoLowFpsSetting = Core.settings.getBool("newex-auto-low-fps", true);
         showWaveBtnSetting = Core.settings.getBool("newex-show-wave-btn", true);
@@ -82,6 +106,22 @@
 
         Lines.stroke(3 * alpha, Color.white);
         Lines.circle(e.x, e.y, radius * 0.85);
+
+        Draw.reset();
+    }));
+
+    const deleteOreEffect = new Effect(45, packCons((e) => {
+        Draw.z(Layer.effect + 5);
+        let f = e.fin();
+        let alpha = 1.0 - f;
+        let radius = f * 80;
+
+        Draw.color(Color.valueOf("80ffea"));
+        Lines.stroke(2.5 * alpha);
+        Lines.circle(e.x, e.y, radius);
+
+        Draw.color(Color.white);
+        Fill.circle(e.x, e.y, (1.0 - f) * 6);
 
         Draw.reset();
     }));
@@ -227,22 +267,35 @@
         }
     }
 
-    function triggerRandomMeteor() {
+    // Nút Thiên thạch: Trượt camera tới vị trí -> sau 1s mới rơi
+    function triggerRandomMeteor(btnActor) {
         if (Vars.state == null || !Vars.state.isGame() || Vars.world == null) return;
 
         let worldWidth = Vars.world.width() * Vars.tilesize;
         let worldHeight = Vars.world.height() * Vars.tilesize;
 
-        let targetX = Mathf.random(16, worldWidth - 16);
-        let targetY = Mathf.random(16, worldHeight - 16);
+        let marginX = worldWidth * 0.1;
+        let marginY = worldHeight * 0.1;
 
-        meteorFallingEffect.at(targetX, targetY);
+        let targetX = Mathf.random(marginX, worldWidth - marginX);
+        let targetY = Mathf.random(marginY, worldHeight - marginY);
 
-        Time.run(50, () => {
-            spawnRandomMeteor(targetX, targetY);
+        smoothPanTo(targetX, targetY);
+
+        Vars.ui.showInfoToast(isEn() ? "[orange]Camera panning to meteor target...[]" : "[orange]Đang di chuyển camera đến mục tiêu thiên thạch...[]", 1.5);
+
+        Time.run(60, () => {
+            meteorFallingEffect.at(targetX, targetY);
+            Time.run(50, () => {
+                spawnRandomMeteor(targetX, targetY);
+            });
+            Vars.ui.showInfoToast(isEn() ? "[orange]Meteor falling onto the map![]" : "[orange]Thiên thạch đang rơi xuống bản đồ![]", 2);
         });
 
-        Vars.ui.showInfoToast(isEn() ? "[orange]Meteor falling onto the map![]" : "[orange]Thiên thạch đang rơi xuống bản đồ![]", 2);
+        countMeteor++;
+        if (btnActor != null) {
+            btnActor.setText((isEn() ? "Meteor" : "TT rơi") + " (" + countMeteor + ")");
+        }
     }
 
     function clearEnemyUnitsPercent(percent) {
@@ -277,6 +330,60 @@
         }
 
         Vars.ui.showInfoToast(isEn() ? "[red]Successfully killed random " + countToKill + " (" + percent + "%) enemy units![]" : "[red]Đã tiêu diệt ngẫu nhiên " + countToKill + " (" + percent + "%) units địch![]", 2);
+    }
+
+    // Nút Xóa mỏ: Trượt camera tới vị trí -> sau 1s mới xóa
+    function deleteRandomOreDeposit(btnActor) {
+        if (Vars.state == null || !Vars.state.isGame() || Vars.world == null) return;
+
+        let oreTiles = new Seq();
+        let width = Vars.world.width();
+        let height = Vars.world.height();
+
+        for (let x = 0; x < width; x++) {
+            for (let y = 0; y < height; y++) {
+                let t = Vars.world.tile(x, y);
+                if (t != null && t.overlay() != null && t.overlay() !== Blocks.air) {
+                    oreTiles.add(t);
+                }
+            }
+        }
+
+        if (oreTiles.isEmpty()) {
+            Vars.ui.showInfoToast(isEn() ? "No ore deposits found on the map!" : "Không tìm thấy bãi khoáng sản nào trên bản đồ!", 2);
+            return;
+        }
+
+        oreTiles.shuffle();
+        let sample = oreTiles.first();
+
+        smoothPanTo(sample.worldx(), sample.worldy());
+
+        Vars.ui.showInfoToast(isEn() ? "[orange]Camera panning to ore deposit...[]" : "[orange]Đang di chuyển camera đến bãi khoáng sản...[]", 1.5);
+
+        Time.run(60, () => {
+            let oreType = sample.overlay();
+            let clearedCount = 0;
+            let radius = 5;
+            for (let rx = -radius; rx <= radius; rx++) {
+                for (let ry = -radius; ry <= radius; ry++) {
+                    let tx = sample.x + rx;
+                    let ty = sample.y + ry;
+                    let t = Vars.world.tile(tx, ty);
+                    if (t != null && t.overlay() === oreType) {
+                        t.setOverlay(Blocks.air);
+                        clearedCount++;
+                    }
+                }
+            }
+            deleteOreEffect.at(sample.worldx(), sample.worldy());
+            Vars.ui.showInfoToast(isEn() ? "[orange]Random ore deposit deleted (" + clearedCount + " tiles)![]" : "[orange]Đã xóa ngẫu nhiên 1 bãi khoáng sản (" + clearedCount + " ô)![]", 2);
+        });
+
+        countDeleteOre++;
+        if (btnActor != null) {
+            btnActor.setText((isEn() ? "Del Ore" : "Xóa mỏ") + " (" + countDeleteOre + ")");
+        }
     }
 
     function loadTurretsFromFolder() {
@@ -340,7 +447,8 @@
         });
     }
 
-    function triggerNextWave() {
+    // Nút Gọi Wave: Thực thi ngay lập tức không di chuyển camera
+    function triggerNextWave(btnActor) {
         let currentTime = Time.millis();
         if (currentTime - lastSkipTime >= 400) {
             lastSkipTime = currentTime;
@@ -349,10 +457,15 @@
                     Vars.logic.runWave();
                 }
             }
+            countWave++;
+            if (btnActor != null) {
+                btnActor.setText((isEn() ? "Call Wave" : "Gọi Quái Wave") + " (" + countWave + ")");
+            }
         }
     }
 
-    function triggerMultipleWaves(count) {
+    // Nút x10 Gọi Wave: Thực thi ngay lập tức không di chuyển camera
+    function triggerMultipleWaves(count, btnActor) {
         let currentTime = Time.millis();
         if (currentTime - lastSkipTime >= 400) {
             lastSkipTime = currentTime;
@@ -362,24 +475,42 @@
                 }
                 Vars.ui.showInfoToast(isEn() ? "[green]Summoned " + count + " consecutive waves![]" : "[green]Đã triệu hồi " + count + " đợt quái liên tiếp![]", 2);
             }
+            countWave10++;
+            if (btnActor != null) {
+                btnActor.setText((isEn() ? "x10 Call Wave" : "x10 Gọi Wave") + " (" + countWave10 + ")");
+            }
         }
     }
 
-    function selfDestructCores() {
-        if (Vars.state != null && Vars.state.isGame()) {
-            let playerTeam = Vars.state.rules.defaultTeam;
-            if (playerTeam != null) {
-                let cores = playerTeam.cores();
-                if (cores != null && !cores.isEmpty()) {
-                    cores.each(core => {
-                        if (core != null) {
-                            core.kill();
-                        }
+    // Nút Tự hủy lõi: Trượt camera tới lõi -> sau 1s mới nổ
+    function selfDestructCores(btnActor) {
+        if (Vars.state == null || !Vars.state.isGame()) return;
+        let playerTeam = Vars.state.rules.defaultTeam;
+        if (playerTeam != null) {
+            let cores = playerTeam.cores();
+            if (cores != null && !cores.isEmpty()) {
+                let core = cores.first();
+                if (core != null) {
+                    smoothPanTo(core.x, core.y);
+
+                    Vars.ui.showInfoToast(isEn() ? "[red]Camera panning to core...[]" : "[red]Đang di chuyển camera tới lõi...[]", 1.5);
+
+                    Time.run(60, () => {
+                        cores.each(c => {
+                            if (c != null) {
+                                c.kill();
+                            }
+                        });
+                        Vars.ui.showInfoToast(isEn() ? "[red]Core self-destruction triggered![]" : "[red]Đã kích hoạt tự hủy lõi![]", 2);
                     });
-                    Vars.ui.showInfoToast(isEn() ? "[red]Core self-destruction triggered![]" : "[red]Đã kích hoạt tự hủy lõi![]", 2);
-                } else {
-                    Vars.ui.showInfoToast(isEn() ? "No friendly core found!" : "Không tìm thấy lõi phe ta!", 2);
+
+                    countSelfDestruct++;
+                    if (btnActor != null) {
+                        btnActor.setText((isEn() ? "Self-Destruct" : "Tự hủy lõi") + " (" + countSelfDestruct + ")");
+                    }
                 }
+            } else {
+                Vars.ui.showInfoToast(isEn() ? "No friendly core found!" : "Không tìm thấy lõi phe ta!", 2);
             }
         }
     }
@@ -412,7 +543,7 @@
     }
 
     function centerWaveButton() {
-        if (Vars.mobile) return;
+        if (Vars.mobile || Vars.net.client()) return;
         if (customWaveContainer != null) {
             let screenW = Core.graphics.getWidth();
             let screenH = Core.graphics.getHeight();
@@ -430,7 +561,7 @@
     }
 
     function injectWaveButtonToHUD() {
-        if (waveBtnAdded || Vars.mobile) return;
+        if (waveBtnAdded || Vars.mobile || Vars.net.client()) return;
 
         if (Vars.ui != null && Vars.ui.hudGroup != null) {
             let container = new Table();
@@ -485,7 +616,7 @@
             btnWave10.getLabel().setFontScale(0.75);
             btnWave10.getLabel().setColor(Color.lime);
             btnWave10.clicked(() => {
-                triggerMultipleWaves(10);
+                triggerMultipleWaves(10, btnWave10);
             });
             expandTable.add(btnWave10).size(150, 36).pad(2).row();
 
@@ -493,7 +624,7 @@
             btnSelfDestruct.getLabel().setFontScale(0.75);
             btnSelfDestruct.getLabel().setColor(Color.red);
             btnSelfDestruct.clicked(() => {
-                selfDestructCores();
+                selfDestructCores(btnSelfDestruct);
             });
             expandTable.add(btnSelfDestruct).size(150, 36).pad(2).row();
 
@@ -501,7 +632,7 @@
             btnMeteor.getLabel().setFontScale(0.75);
             btnMeteor.getLabel().setColor(Color.orange);
             btnMeteor.clicked(() => {
-                triggerRandomMeteor();
+                triggerRandomMeteor(btnMeteor);
             });
             expandTable.add(btnMeteor).size(150, 36).pad(2).row();
 
@@ -509,9 +640,19 @@
             btnClearER.getLabel().setFontScale(0.75);
             btnClearER.getLabel().setColor(Color.valueOf("ff5555"));
             btnClearER.clicked(() => {
-                clearEnemyUnitsPercent(20);
+                countClearER++;
+                btnClearER.setText((isEn() ? "Clear E" : "Clear E R") + " (" + countClearER + ")");
+                clearEnemyUnitsPercent(99);
             });
             expandTable.add(btnClearER).size(150, 36).pad(2).row();
+
+            let btnDeleteOre = new TextButton(isEn() ? "Del Ore" : "Xóa mỏ", Styles.flatTogglet);
+            btnDeleteOre.getLabel().setFontScale(0.75);
+            btnDeleteOre.getLabel().setColor(Color.valueOf("80ffea"));
+            btnDeleteOre.clicked(() => {
+                deleteRandomOreDeposit(btnDeleteOre);
+            });
+            expandTable.add(btnDeleteOre).size(150, 36).pad(2).row();
 
             container.add(expandTable).padTop(2).row();
 
@@ -560,7 +701,7 @@
             }
 
             addDragAndClick(btnWave, () => {
-                triggerNextWave();
+                triggerNextWave(btnWave);
             });
 
             addDragAndClick(btnToggleExpand, () => {
@@ -910,6 +1051,23 @@
     Events.run(Trigger.update, () => {
         let inGame = Vars.state != null && Vars.state.isGame();
 
+        // Xử lý cập nhật camera trượt siêu mượt theo DeltaTime thực tế
+        if (targetCamX >= 0 && targetCamY >= 0) {
+            panTimer += Core.graphics.getDeltaTime();
+            let alpha = Math.min(panTimer / panDuration, 1.0);
+            let smoothAlpha = Interp.pow3Out.apply(alpha);
+            
+            Core.camera.position.set(
+                Mathf.lerp(panStartX, targetCamX, smoothAlpha),
+                Mathf.lerp(panStartY, targetCamY, smoothAlpha)
+            );
+
+            if (alpha >= 1.0) {
+                targetCamX = -1;
+                targetCamY = -1;
+            }
+        }
+
         if (inGame) {
             if (autoLowFpsSetting) {
                 let currentFps = Core.graphics.getFramesPerSecond();
@@ -928,7 +1086,8 @@
                 }
             }
 
-            if (!Vars.mobile) {
+            // Chỉ cho phép Host/Singleplayer trên PC sử dụng tính năng hiển thị nút qua phím Shift + N
+            if (!Vars.mobile && !Vars.net.client()) {
                 let shiftPressed = Core.input.keyDown(KeyCode.shiftLeft) || Core.input.keyDown(KeyCode.shiftRight);
                 if (shiftPressed && Core.input.keyTap(KeyCode.n)) {
                     showWaveBtnSetting = !showWaveBtnSetting;
@@ -953,6 +1112,10 @@
                     if (customWaveContainer != null) {
                         customWaveContainer.visible = false;
                     }
+                }
+            } else {
+                if (customWaveContainer != null) {
+                    customWaveContainer.visible = false;
                 }
             }
         } else {

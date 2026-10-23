@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 print("LAVUNDER - OPTIMIZED & NO-LIMIT SYSTEM LOADED");
 
 const deadZone = 40; 
@@ -51,8 +52,8 @@ const lavunderLaserBullet = extend(BulletType, {
         if(!b) return;
         b.data = {
             hasTarget: false,
-            lastX: b.x + Angles.trnsx(b.rotation(), 320),
-            lastY: b.y + Angles.trnsy(b.rotation(), 320)
+            lastX: b.x + Angles.trnsx(b.rotation(), 260),
+            lastY: b.y + Angles.trnsy(b.rotation(), 260)
         };
     },
 
@@ -60,7 +61,7 @@ const lavunderLaserBullet = extend(BulletType, {
         if(!b || !b.owner) return;
         
         let turretId = b.owner.id;
-        let range = 320;
+        let range = 260;
 
         if(!turretTierMap.containsKey(turretId)) turretTierMap.put(turretId, 1);
         if(!turretChargeMap.containsKey(turretId)) turretChargeMap.put(turretId, 0);
@@ -362,10 +363,10 @@ const lavunder = extend(PowerTurret, "lavunder", {
     init(){ this.super$init(); },
     load(){
         this.super$load();
-        this.bodyRegion = Core.atlas.find(this.name + "-body");
-        this.downxRegion = Core.atlas.find(this.name + "-downx");
-        this.a1Region = Core.atlas.find(this.name + "-a1");
-        this.a2Region = Core.atlas.find(this.name + "-a2");
+        this.bodyRegion = PerfCore.region(this.name + "-body");
+        this.downxRegion = PerfCore.region(this.name + "-downx");
+        this.a1Region = PerfCore.region(this.name + "-a1");
+        this.a2Region = PerfCore.region(this.name + "-a2");
     },
     drawPlace(x, y, rotation, valid){
         this.super$drawPlace(x, y, rotation, valid);
@@ -375,11 +376,11 @@ const lavunder = extend(PowerTurret, "lavunder", {
     }
 });
 
-lavunder.health = 2300;
+lavunder.health = 3750;
 lavunder.size = 4;
 lavunder.targetAir = false;
 lavunder.targetGround = true;
-lavunder.range = 320;
+lavunder.range = 260;
 lavunder.reload = 10; 
 lavunder.shootType = lavunderLaserBullet;
 lavunder.recoil = 0; 
@@ -393,9 +394,9 @@ lavunder.config(java.lang.Integer, packCons2((tile, value) => {
         let valInt = Math.floor(value); 
         
         turretTierMap.put(turretId, valInt);
-        if(valInt == 1) tile.health = 2300;
-        else if(valInt == 2) tile.health = 3500;
-        else if(valInt == 3) tile.health = 4200;
+        if(valInt == 1) tile.health = 3750;
+        else if(valInt == 2) tile.health = 5707;
+        else if(valInt == 3) tile.health = 6848;
     }
 }));
 
@@ -426,7 +427,7 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
 
     updateTile(){
         this.super$updateTile();
-        let targetRadius = 320;
+        let targetRadius = 260;
         let hasTarget = Units.closestTarget(this.team, this.x, this.y, targetRadius, u => !u.dead && !u.type.flying && Mathf.dst(this.x, this.y, u.x, u.y) >= deadZone, b => true) != null;
 
         if(hasTarget){
@@ -439,7 +440,7 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
     },
 
     draw() {
-        let baseRegion = Core.atlas.find(lavunder.basePrefix + "block-" + lavunder.size);
+        let baseRegion = PerfCore.region(lavunder.basePrefix + "block-" + lavunder.size);
         if (baseRegion && baseRegion.found()) {
             Draw.rect(baseRegion, this.x, this.y);
         } else {
@@ -534,13 +535,13 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
                     " [white]• Energy point charging rate accelerated by [green]+380% (3.8x)[].[]\n" +
                     " [white]• At [yellow]100 Charge[]: Deals [red]3,200 flat DMG[] + [cyan]2% Max HP[] (40px radius).[]\n" +
                     " [white]• [green]Feedback Loop[]: [orange]50%[] chance to refund [yellow]80 charge points[] upon detonation.[]\n" +
-                    " [white]• [green]+52.17% HP[] (3,500) and expanded [green]+6.25% Range[] (340 px)." :
+                    " [white]• [green]+52.17% HP[] (5,707) and expanded [green]+6.25% Range[] (276.2 px)." :
                     "Mô-đun kích xung hỏa lực liên hoàn:\n" +
                     " [white]• Sát thương cơ bản: [yellow]112.00 ST/giây[] (gây dmg mỗi 1s).[]\n" +
                     " [white]• Tốc độ gia tốc sạc điểm năng lượng tăng trưởng nhanh [green]+380% (3.8x)[].[]\n" +
                     " [white]• Khi đạt [yellow]100 sạc[]: Gây [red]3,200 ST flat[] + [cyan]2% HP tối đa[] (bán kính 40 px).[]\n" +
                     " [white]• [green]Mạch Phản Hồi[]: Có [orange]50%[] tỷ lệ hoàn trả [yellow]80 điểm sạc[] ngay sau nổ.[]\n" +
-                    " [white]• Tăng [green]+52.17% Máu[] (3,500) và mở rộng [green]+6.25% Tầm bắn[] (340 px).";
+                    " [white]• Tăng [green]+52.17% Máu[] (5,707) và mở rộng [green]+6.25% Tầm bắn[] (276.2 px).";
                 let b1D = b1.add(b1Text);
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                 b1.button(isEn ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => {
@@ -562,14 +563,14 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
                     " [white]• Base Damage: [pink]191.52 DMG/sec[] (deals damage every 1s).[]\n" +
                     " [white]• [cyan]Multi-Tier Charge[]: At thresholds [yellow]20,40,60,80[] has a [white]70%[] chance for secondary beam blasts.[]\n" +
                     " [white]• At [yellow]100 Charge[]: Triggers a sequence of [orange]3 consecutive explosive blasts[].[]\n" +
-                    " [white]• Super reinforced structure grants [green]+82.6% HP[] (4,200).[]\n" +
-                    " [white]• Maintains base [yellow]Range[] (320 px)." :
+                    " [white]• Super reinforced structure grants [green]+82.6% HP[] (6,848).[]\n" +
+                    " [white]• Maintains base [yellow]Range[] (260 px)." :
                     "Lõi hội tụ quang phổ hủy diệt diện rộng:\n" +
                     " [white]• Sát thương cơ bản: [pink]191.52 ST/giây[] (gây dmg mỗi 1s).[]\n" +
                     " [white]• [cyan]Cơ chế Sạc Đa Tầng[]: Tại mốc [yellow]20,40,60,80[] có [white]70%[] tỷ lệ nổ phụ tia.[]\n" +
                     " [white]• Khi chạm [yellow]100 sạc[]: Kích hoạt chuỗi [orange]3 loạt bộc phá liên tiếp[] hủy diệt.[]\n" +
-                    " [white]• Siêu gia cố cấu trúc tăng [green]+82.6% Máu[] (4,200).[]\n" +
-                    " [white]• Giữ nguyên [yellow]Tầm bắn[] (320 px).";
+                    " [white]• Siêu gia cố cấu trúc tăng [green]+82.6% Máu[] (6,848).[]\n" +
+                    " [white]• Giữ nguyên [yellow]Tầm bắn[] (260 px).";
                 let b2D = b2.add(b2Text);
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
                 b2.button(isEn ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => {
@@ -608,28 +609,28 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
                 title += "[yellow](MK1)[]";
                 descStr = isEn ?
                           "[gold]⚡ BASE STATS (MK1) ⚡[]\n" +
-                          "[lightgray]Turret Health:[] [green]2,300[]\n" +
-                          "[lightgray]Effective Range:[] [orange]320 pixels[] (Deadzone: <40 px)\n" +
+                          "[lightgray]Turret Health:[] [green]3,750[]\n" +
+                          "[lightgray]Effective Range:[] [orange]260 pixels[] (Deadzone: <40 px)\n" +
                           "[lightgray]Base Damage:[] [white]112.00 firepower/sec (Interval: 1s/hit)[]\n" +
                           "[lightgray]Power Consumption:[] [lightgray]22/sec[]" :
                           "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]2,300[]\n" +
-                          "[lightgray]Tầm bắn phát xạ:[] [orange]320 pixel[] (Vùng mù: <40 px)\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]3,750[]\n" +
+                          "[lightgray]Tầm bắn phát xạ:[] [orange]260 pixel[] (Vùng mù: <40 px)\n" +
                           "[lightgray]Sát thương cơ bản:[] [white]112.00 hỏa lực/giây (Chu kỳ: 1s/lần)[]\n" +
                           "[lightgray]Năng lượng tiêu thụ:[] [lightgray]22/giây[]";
             } else if (currentTier == 2) {
                 title += "[cyan](MK2)[]";
                 descStr = isEn ?
                           "[cyan]⚡ UPGRADED CONFIGURATION STATS (MK2) ⚡[]\n" +
-                          "[lightgray]Turret Health:[] [green]3,500 (+52.17%)[]\n" +
-                          "[lightgray]Effective Range:[] [orange]340 pixels (+6.25%)[]\n" +
+                          "[lightgray]Turret Health:[] [green]5,707 (+52.17%)[]\n" +
+                          "[lightgray]Effective Range:[] [orange]276.2 pixels (+6.25%)[]\n" +
                           "[lightgray]Base Damage:[] [white]112.00 firepower/sec[]\n" +
                           "[lightgray]Charge Acceleration:[] [green]3.8x speed[]\n" +
                           "[lightgray]Detonation Effect:[] [red]3,200 flat DMG[] + [cyan]2% Max HP[]\n" +
                           "[lightgray]Feedback Rate:[] [orange]50% chance[] to refund 80 charge" :
                           "[cyan]⚡ THÔNG SỐ CẤU HÌNH NÂNG CẤP (MK2) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]3,500 (+52.17%)[]\n" +
-                          "[lightgray]Tầm bắn phát xạ:[] [orange]340 pixel (+6.25%)[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]5,707 (+52.17%)[]\n" +
+                          "[lightgray]Tầm bắn phát xạ:[] [orange]276.2 pixel (+6.25%)[]\n" +
                           "[lightgray]Sát thương cơ bản:[] [white]112.00 hỏa lực/giây[]\n" +
                           "[lightgray]Gia tốc sạc điểm:[] [green]Tốc độ x3.8[]\n" +
                           "[lightgray]Hiệu ứng nổ bộc phá:[] [red]3,200 ST flat[] + [cyan]2% HP max[]\n" +
@@ -638,14 +639,14 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
                 title += "[purple](MK2B)[]";
                 descStr = isEn ?
                           "[purple]⚡ SPECTRAL VARIANT STATS (MK2B) ⚡[]\n" +
-                          "[lightgray]Turret Health:[] [green]4,200 (+82.6%)[]\n" +
-                          "[lightgray]Effective Range:[] [orange]320 pixels[]\n" +
+                          "[lightgray]Turret Health:[] [green]6,848 (+82.6%)[]\n" +
+                          "[lightgray]Effective Range:[] [orange]260 pixels[]\n" +
                           "[lightgray]Base Damage:[] [pink]191.52 firepower/sec (+71%)[]\n" +
                           "[lightgray]Multi-Tier Charge:[] Blast sub-beams at [yellow]20,40,60,80 charge[]\n" +
                           "[lightgray]Max Charge Burst:[] Trigger [orange]3 consecutive explosive blasts[]" :
                           "[purple]⚡ THÔNG SỐ BIẾN THỂ QUANG PHỔ (MK2B) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]4,200 (+82.6%)[]\n" +
-                          "[lightgray]Tầm bắn phát xạ:[] [orange]320 pixel[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]6,848 (+82.6%)[]\n" +
+                          "[lightgray]Tầm bắn phát xạ:[] [orange]260 pixel[]\n" +
                           "[lightgray]Sát thương cơ bản:[] [pink]191.52 hỏa lực/giây (+71%)[]\n" +
                           "[lightgray]Sạc Đa Tầng:[] Nổ tia phụ tại các mốc [yellow]20,40,60,80 sạc[]\n" +
                           "[lightgray]Bộc phá Tối đại:[] Kích hoạt chuỗi [orange]3 loạt nổ liên tiếp[]";

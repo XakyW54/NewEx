@@ -2,7 +2,7 @@ type: ItemTurret
 name: Tyber
 description: Tháp pháo tên lửa hạng nặng bắn luân phiên cụm 3 nòng. Tự động bắn thêm tên lửa tầm nhiệt phụ và định kỳ kích nổ xung kích tại tâm để tiêu diệt kẻ địch áp sát.
 size: 4
-health: 565
+health: 1413
 category: turret
 researchCostMultiplier: 0.7
 

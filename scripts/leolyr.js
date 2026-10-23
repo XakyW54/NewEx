@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 function getLeolyrUpgradeRequirements(currentLevel) {
     return {
         copperNeeded: 400,
@@ -168,8 +169,8 @@ Events.on(ClientLoadEvent, () => {
         });
     }
 
-    leolyrWing1Region = Core.atlas.find("newex-leolyr-wing1") || Core.atlas.find("leolyr-wing1");
-    leolyrWing2Region = Core.atlas.find("newex-leolyr-wing2") || Core.atlas.find("leolyr-wing2");
+    leolyrWing1Region = PerfCore.region("newex-leolyr-wing1") || PerfCore.region("leolyr-wing1");
+    leolyrWing2Region = PerfCore.region("newex-leolyr-wing2") || PerfCore.region("leolyr-wing2");
 
     const leolyrUnit = Vars.content.getByName(ContentType.unit, "newex-leolyr") || Vars.content.getByName(ContentType.unit, "leolyr");
     if (leolyrUnit != null) {

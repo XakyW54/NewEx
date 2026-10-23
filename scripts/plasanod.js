@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 let sta = null;
 try {
     sta = require("sta");
@@ -57,13 +58,13 @@ function trP(key, viText, enText) {
     
     if (key === "mk2_desc") {
         return currentIsEn ?
-            "[white]• Structure HP: [gray]+0%[] (4,200 HP)\n" +
-            "• Range: [green]+30%[] (780 px)\n" +
+            "[white]• Structure HP: [gray]+0%[] (10,500 HP)\n" +
+            "• Range: [green]+30%[] (364 px)\n" +
             "• Base Damage: [green]+300%[] (140 DPS)\n\n" +
             "[lightgray]Special Skill: Long-Range Superconductive Beam Config — Focuses long-range energy beam, adding Shocked effect with 15% lightning chain chance.[]"
             :
-            "[white]• Máu cấu trúc: [gray]+0%[] (4,200 HP)\n" +
-            "• Tầm bắn: [green]+30%[] (780 px)\n" +
+            "[white]• Máu cấu trúc: [gray]+0%[] (10,500 HP)\n" +
+            "• Tầm bắn: [green]+30%[] (364 px)\n" +
             "• Sát thương gốc: [green]+300%[] (140 DPS)\n\n" +
             "[lightgray]Kỹ năng đặc biệt: Cấu Hình Tia Siêu Dẫn Tầm Xa — Tập trung chùm tia năng lượng siêu dẫn tầm xa, bổ sung hiệu ứng Giật Điện (Shocked) kèm 15% tỷ lệ phóng sét lan rộng sang các mục tiêu lân cận.[]";
     }
@@ -72,13 +73,13 @@ function trP(key, viText, enText) {
     
     if (key === "mk2b_desc") {
         return currentIsEn ?
-            "[white]• Structure HP: [green]+55%[] (6,500 HP)\n" +
-            "• Range: [gray]+0%[] (600 px)\n" +
+            "[white]• Structure HP: [green]+55%[] (16,250 HP)\n" +
+            "• Range: [gray]+0%[] (280 px)\n" +
             "• Base Damage: [green]+357%[] (160 DPS)\n\n" +
             "[lightgray]Special Skill: Melee Gravity Vortex Variant — Optimizes turret at close range, continuously applying +3 CEI stacks/sec (Melting, Electrified, Demon Lightning).[]"
             :
-            "[white]• Máu cấu trúc: [green]+55%[] (6,500 HP)\n" +
-            "• Tầm bắn: [gray]+0%[] (600 px)\n" +
+            "[white]• Máu cấu trúc: [green]+55%[] (16,250 HP)\n" +
+            "• Tầm bắn: [gray]+0%[] (280 px)\n" +
             "• Sát thương gốc: [green]+357%[] (160 DPS)\n\n" +
             "[lightgray]Kỹ năng đặc biệt: Biến Thể Xoáy Trọng Lực Cận Chiến — Tối ưu hóa pháo ở tầm gần, gắn liên tục +3 tầng hiệu ứng CEI/giây (bao gồm Nóng Chảy, Điện Hóa và Sét Ma Quỷ) lên mục tiêu.[]";
     }
@@ -94,7 +95,7 @@ function trP(key, viText, enText) {
     if (key === "info_mk1") {
         return currentIsEn ?
             "[gold]⚡ BASE STATS (MK1) ⚡[]\n" +
-            "[lightgray]Turret HP:[] [green]4,200 HP[]\n" +
+            "[lightgray]Turret HP:[] [green]10,500 HP[]\n" +
             "[lightgray]Effective Range:[] [orange]" + viText + " pixels[]" + enText + "\n" +
             "[lightgray]Base Damage:[] [yellow]210.00 DPS (Per beam)[]\n\n" +
             "[sky]⚡ SKILL MECHANICS:[]\n" +
@@ -102,7 +103,7 @@ function trP(key, viText, enText) {
             "• Passive: +50% Damage per 10% missing HP."
             :
             "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-            "[lightgray]Máu tháp pháo:[] [green]4,200 HP[]\n" +
+            "[lightgray]Máu tháp pháo:[] [green]10,500 HP[]\n" +
             "[lightgray]Tầm bắn hiệu dụng:[] [orange]" + viText + " pixel[]" + enText + "\n" +
             "[lightgray]Sát thương gốc:[] [yellow]210.00 DPS (Mỗi tia)[]\n\n" +
             "[sky]⚡ CƠ CHẾ KĨ NĂNG:[]\n" +
@@ -112,7 +113,7 @@ function trP(key, viText, enText) {
     if (key === "info_mk2") {
         return currentIsEn ?
             "[cyan]⚡ BASE STATS (MK2) ⚡[]\n" +
-            "[lightgray]Turret HP:[] [green]4,200 HP[]\n" +
+            "[lightgray]Turret HP:[] [green]10,500 HP[]\n" +
             "[lightgray]Effective Range:[] [orange]" + viText + " pixels [lime](+30%)[]" + enText + "\n" +
             "[lightgray]Base Damage:[] [yellow]140.00 DPS [lime](+300%)[]\n\n" +
             "[lime]⚡ SKILL MECHANICS:[]\n" +
@@ -120,7 +121,7 @@ function trP(key, viText, enText) {
             "• Passive: +50% Damage per 10% missing HP."
             :
             "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
-            "[lightgray]Máu tháp pháo:[] [green]4,200 HP[]\n" +
+            "[lightgray]Máu tháp pháo:[] [green]10,500 HP[]\n" +
             "[lightgray]Tầm bắn hiệu dụng:[] [orange]" + viText + " pixel [lime](+30%)[]" + enText + "\n" +
             "[lightgray]Sát thương gốc:[] [yellow]140.00 DPS [lime](+300%)[]\n\n" +
             "[lime]⚡ CƠ CHẾ KĨ NĂNG:[]\n" +
@@ -130,7 +131,7 @@ function trP(key, viText, enText) {
     if (key === "info_mk2b") {
         return currentIsEn ?
             "[purple]⚡ BASE STATS (MK2B) ⚡[]\n" +
-            "[lightgray]Turret HP:[] [green]6,500 HP [lime](+55%)[]\n" +
+            "[lightgray]Turret HP:[] [green]16,250 HP [lime](+55%)[]\n" +
             "[lightgray]Effective Range:[] [orange]" + viText + " pixels[]" + enText + "\n" +
             "[lightgray]Base Damage:[] [red]160.00 DPS [lime](+357%)[]\n\n" +
             "[purple]🔥 SPECIAL SKILL MECHANICS:[]\n" +
@@ -138,7 +139,7 @@ function trP(key, viText, enText) {
             "• Passive: +50% Damage per 10% missing HP."
             :
             "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
-            "[lightgray]Máu tháp pháo:[] [green]6,500 HP [lime](+55%)[]\n" +
+            "[lightgray]Máu tháp pháo:[] [green]16,250 HP [lime](+55%)[]\n" +
             "[lightgray]Tầm bắn hiệu dụng:[] [orange]" + viText + " pixel[]" + enText + "\n" +
             "[lightgray]Sát thương gốc:[] [red]160.00 DPS [lime](+357%)[]\n\n" +
             "[purple]🔥 CƠ CHẾ KĨ NĂNG ĐẶC BIỆT:[]\n" +
@@ -234,13 +235,13 @@ let plasanod = extend(ContinuousTurret, "plasanod", {
     
     load(){
         this.super$load();
-        this.customBaseRegion = Core.atlas.find(this.basePrefix + "block-" + this.size);
+        this.customBaseRegion = PerfCore.region(this.basePrefix + "block-" + this.size);
     }
 });
 
-plasanod.health = 4200;
+plasanod.health = 10500;
 plasanod.size = 3;
-plasanod.range = 600;
+plasanod.range = 280;
 plasanod.targetAir = true;
 plasanod.targetGround = true;
 plasanod.configurable = true;
@@ -334,14 +335,14 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
     },
 
     range(){
-        let baseR = 600;
+        let baseR = 280;
         let perk = this.getPerkTier();
         let tier = this.getTier();
 
-        if (tier == 1) baseR = 780;
+        if (tier == 1) baseR = 364;
 
         if (perk == 2 || perk == 4) {
-            baseR += 300;
+            baseR += 140;
         }
 
         return baseR;
@@ -750,12 +751,12 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
                     let e2X = off2X + Angles.trnsx(rot, len);
                     let e2Y = off2Y + Angles.trnsy(rot, len);
 
-                    Draw.color(Color.valueOf("00ffcc"), Color.white, 0.8 + Mathf.absin(Time.time, 1, 0.2));
+                    Draw.color(PerfCore.color("00ffcc"), Color.white, 0.8 + Mathf.absin(Time.time, 1, 0.2));
                     Lines.stroke(2.5 + Mathf.absin(Time.time, 2, 1.0));
                     Lines.line(off1X, off1Y, e1X, e1Y);
                     Fill.circle(e1X, e1Y, 3 + Mathf.absin(Time.time, 2, 1.5));
 
-                    Draw.color(Color.valueOf("ffcc66"), Color.white, 0.8 + Mathf.absin(Time.time, 1, 0.2));
+                    Draw.color(PerfCore.color("ffcc66"), Color.white, 0.8 + Mathf.absin(Time.time, 1, 0.2));
                     Lines.stroke(2.5 + Mathf.absin(Time.time, 2, 1.0));
                     Lines.line(off2X, off2Y, e2X, e2Y);
                     Fill.circle(e2X, e2Y, 3 + Mathf.absin(Time.time, 2, 1.5));

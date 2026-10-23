@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 global.mk2bUnits = global.mk2bUnits || {};
 global.droneLauncherMap = global.droneLauncherMap || {};
 global.droneRecallMap = global.droneRecallMap || {};
@@ -62,10 +63,10 @@ const masterHomingSwordBullet = extend(BasicBulletType, {
     },
 
     draw(b) {
-        let swordRegion = Core.atlas.find("units/cargo/swordmaster", 
-                          Core.atlas.find("cargo/swordmaster", 
-                          Core.atlas.find("swordmaster", 
-                          Core.atlas.find("newex-cargo-swordmaster", Core.atlas.find("newex-swordmaster")))));
+        let swordRegion = PerfCore.region("units/cargo/swordmaster", 
+                          PerfCore.region("cargo/swordmaster", 
+                          PerfCore.region("swordmaster", 
+                          PerfCore.region("newex-cargo-swordmaster", PerfCore.region("newex-swordmaster")))));
 
         let angle = b.rotation();
 
@@ -123,10 +124,10 @@ const masterBurstAuraSwordBullet = extend(BasicBulletType, {
     backColor: masterGlowColor,
 
     draw(b) {
-        let swordRegion = Core.atlas.find("units/cargo/swordmaster", 
-                          Core.atlas.find("cargo/swordmaster", 
-                          Core.atlas.find("swordmaster", 
-                          Core.atlas.find("newex-cargo-swordmaster", Core.atlas.find("newex-swordmaster")))));
+        let swordRegion = PerfCore.region("units/cargo/swordmaster", 
+                          PerfCore.region("cargo/swordmaster", 
+                          PerfCore.region("swordmaster", 
+                          PerfCore.region("newex-cargo-swordmaster", PerfCore.region("newex-swordmaster")))));
 
         let angle = b.rotation();
 
@@ -176,10 +177,10 @@ const masterKeySwordFlyEffect = new Effect(25, e => {
     let curX = Mathf.lerp(startX, targetX, e.fin());
     let curY = Mathf.lerp(startY, targetY, e.fin());
 
-    let swordRegion = Core.atlas.find("units/cargo/swordmaster", 
-                      Core.atlas.find("cargo/swordmaster", 
-                      Core.atlas.find("swordmaster", 
-                      Core.atlas.find("newex-cargo-swordmaster", Core.atlas.find("newex-swordmaster")))));
+    let swordRegion = PerfCore.region("units/cargo/swordmaster", 
+                      PerfCore.region("cargo/swordmaster", 
+                      PerfCore.region("swordmaster", 
+                      PerfCore.region("newex-cargo-swordmaster", PerfCore.region("newex-swordmaster")))));
 
     let trailLen = 60.0 * e.fout();
     let backX = curX - Angles.trnsx(angle, trailLen);
@@ -270,10 +271,10 @@ const masterBeamEffect = new Effect(40, e => {
 const masterSwordsSummonEffect = new Effect(70, e => {
     Draw.z(Layer.flyingUnit + 2.5);
 
-    let swordRegion = Core.atlas.find("units/cargo/swordmaster", 
-                      Core.atlas.find("cargo/swordmaster", 
-                      Core.atlas.find("swordmaster", 
-                      Core.atlas.find("newex-cargo-swordmaster", Core.atlas.find("newex-swordmaster")))));
+    let swordRegion = PerfCore.region("units/cargo/swordmaster", 
+                      PerfCore.region("cargo/swordmaster", 
+                      PerfCore.region("swordmaster", 
+                      PerfCore.region("newex-cargo-swordmaster", PerfCore.region("newex-swordmaster")))));
 
     let neAngle = 45;
     let baseOffsetAngle = neAngle + 90;
@@ -319,10 +320,10 @@ const masterSwordsSummonEffect = new Effect(70, e => {
 const skySwordHoverEffect = new Effect(450, e => {
     Draw.z(Layer.flyingUnit + 2.8);
 
-    let swordRegion = Core.atlas.find("units/cargo/swordmaster", 
-                      Core.atlas.find("cargo/swordmaster", 
-                      Core.atlas.find("swordmaster", 
-                      Core.atlas.find("newex-cargo-swordmaster", Core.atlas.find("newex-swordmaster")))));
+    let swordRegion = PerfCore.region("units/cargo/swordmaster", 
+                      PerfCore.region("cargo/swordmaster", 
+                      PerfCore.region("swordmaster", 
+                      PerfCore.region("newex-cargo-swordmaster", PerfCore.region("newex-swordmaster")))));
 
     let alpha = Math.min(1.0, e.fin() * 6.0) * e.fout();
     let angle = e.rotation;
@@ -394,10 +395,10 @@ const skySwordRainEffect = new Effect(14, e => {
     Lines.stroke(2.0 * e.fout());
     Lines.line(currentX, currentY, backX, backY);
 
-    let swordRegion = Core.atlas.find("units/cargo/swordmaster", 
-                      Core.atlas.find("cargo/swordmaster", 
-                      Core.atlas.find("swordmaster", 
-                      Core.atlas.find("newex-cargo-swordmaster", Core.atlas.find("newex-swordmaster")))));
+    let swordRegion = PerfCore.region("units/cargo/swordmaster", 
+                      PerfCore.region("cargo/swordmaster", 
+                      PerfCore.region("swordmaster", 
+                      PerfCore.region("newex-cargo-swordmaster", PerfCore.region("newex-swordmaster")))));
 
     if (swordRegion.found) {
         Draw.color(masterPurpleColor);
@@ -422,10 +423,10 @@ const skySwordRainEffect = new Effect(14, e => {
 const renderAttachedMasterSwordsEffect = new Effect(2, e => {
     Draw.z(Layer.flyingUnit + 2.0);
     
-    let swordRegion = Core.atlas.find("units/cargo/swordmaster", 
-                      Core.atlas.find("cargo/swordmaster", 
-                      Core.atlas.find("swordmaster", 
-                      Core.atlas.find("newex-cargo-swordmaster", Core.atlas.find("newex-swordmaster")))));
+    let swordRegion = PerfCore.region("units/cargo/swordmaster", 
+                      PerfCore.region("cargo/swordmaster", 
+                      PerfCore.region("swordmaster", 
+                      PerfCore.region("newex-cargo-swordmaster", PerfCore.region("newex-swordmaster")))));
 
     let unitAngle = e.rotation; 
     let sideAngle = unitAngle - 90;
@@ -537,10 +538,10 @@ const renderSwordEffect = new Effect(2, e => {
 
     Draw.z(Layer.flyingUnit + 2.0);
 
-    let swordRegion = Core.atlas.find("units/cargo/sword", 
-                      Core.atlas.find("cargo/sword", 
-                      Core.atlas.find("sword", 
-                      Core.atlas.find("newex-cargo-sword", Core.atlas.find("newex-sword")))));
+    let swordRegion = PerfCore.region("units/cargo/sword", 
+                      PerfCore.region("cargo/sword", 
+                      PerfCore.region("sword", 
+                      PerfCore.region("newex-cargo-sword", PerfCore.region("newex-sword")))));
 
     let swordX = rx;
     let swordY = ry;
@@ -649,25 +650,33 @@ Events.on(UnitDestroyEvent, event => {
     }
 });
 
+let cargoTypeCache = null;
 Events.run(Trigger.update, () => {
     if (Vars.state.isPaused()) return;
 
-    let cargoDroneType = Vars.content.getByName(ContentType.unit, "newex-combat-drone") ||
-                        Vars.content.getByName(ContentType.unit, "combat-drone") ||
-                        Vars.content.getByName(ContentType.unit, "newex-cargo-drone") ||
-                        Vars.content.getByName(ContentType.unit, "cargo-drone");
-    
-    let cargoDroneMK2Type = Vars.content.getByName(ContentType.unit, "newex-cargo-drone-mk2") ||
-                           Vars.content.getByName(ContentType.unit, "cargo-drone-mk2") ||
-                           Vars.content.getByName(ContentType.unit, "newex-cargo-dronemk2") ||
-                           Vars.content.getByName(ContentType.unit, "cargo-dronemk2");
-
-    let swordDroneType = Vars.content.getByName(ContentType.unit, "newex-cargo-sword-drone") ||
-                        Vars.content.getByName(ContentType.unit, "cargo-sword-drone") ||
-                        Vars.content.getByName(ContentType.unit, "cargo-sworddrone");
-
-    let masterSwordDroneType = Vars.content.getByName(ContentType.unit, "cargo-master-sword-drone") ||
-                              Vars.content.getByName(ContentType.unit, "newex-cargo-master-sword-drone");
+    let _ct = cargoTypeCache;
+    if (_ct == null) {
+        _ct = {
+            normal: Vars.content.getByName(ContentType.unit, "newex-combat-drone") ||
+                    Vars.content.getByName(ContentType.unit, "combat-drone") ||
+                    Vars.content.getByName(ContentType.unit, "newex-cargo-drone") ||
+                    Vars.content.getByName(ContentType.unit, "cargo-drone"),
+            mk2: Vars.content.getByName(ContentType.unit, "newex-cargo-drone-mk2") ||
+                    Vars.content.getByName(ContentType.unit, "cargo-drone-mk2") ||
+                    Vars.content.getByName(ContentType.unit, "newex-cargo-dronemk2") ||
+                    Vars.content.getByName(ContentType.unit, "cargo-dronemk2"),
+            sword: Vars.content.getByName(ContentType.unit, "newex-cargo-sword-drone") ||
+                    Vars.content.getByName(ContentType.unit, "cargo-sword-drone") ||
+                    Vars.content.getByName(ContentType.unit, "cargo-sworddrone"),
+            master: Vars.content.getByName(ContentType.unit, "cargo-master-sword-drone") ||
+                    Vars.content.getByName(ContentType.unit, "newex-cargo-master-sword-drone")
+        };
+        if (_ct.normal != null || _ct.mk2 != null || _ct.sword != null || _ct.master != null) cargoTypeCache = _ct;
+    }
+    let cargoDroneType = _ct.normal;
+    let cargoDroneMK2Type = _ct.mk2;
+    let swordDroneType = _ct.sword;
+    let masterSwordDroneType = _ct.master;
 
     if (cargoDroneType == null && cargoDroneMK2Type == null && swordDroneType == null && masterSwordDroneType == null) return;
 
@@ -683,7 +692,8 @@ Events.run(Trigger.update, () => {
                 let currentLauncherId = global.droneLauncherMap[id];
                 
                 let hasMasterAlready = false;
-                if (currentLauncherId) {
+                let rollMaster = Mathf.chance(0.10) && unit.type != masterSwordDroneType;
+                if (rollMaster && currentLauncherId) {
                     Groups.unit.each(u => {
                         if (u.type == masterSwordDroneType && !u.dead && global.droneLauncherMap[u.id] === currentLauncherId) {
                             hasMasterAlready = true;
@@ -691,7 +701,7 @@ Events.run(Trigger.update, () => {
                     });
                 }
 
-                if (!hasMasterAlready && Mathf.chance(0.10) && unit.type != masterSwordDroneType) {
+                if (!hasMasterAlready && rollMaster) {
                     let newUnit = masterSwordDroneType.create(unit.team);
                     newUnit.set(unit.x, unit.y);
                     newUnit.add();

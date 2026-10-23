@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const packCons = (func) => new Cons({ get: func }); 
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
@@ -32,7 +33,7 @@ const wingParticleEffect = new Effect(35, e => {
 });
 
 const mk1TrailEffect = new Effect(22, e => {
-    Draw.color(Color.white, Color.valueOf("#fff6c8"), e.fin());
+    Draw.color(Color.white, PerfCore.color("#fff6c8"), e.fin());
     Lines.stroke(1.5 * e.fout());
     let len = 14.0 * e.fout(); 
     let rad = e.rotation * Mathf.degRad;
@@ -41,7 +42,7 @@ const mk1TrailEffect = new Effect(22, e => {
 });
 
 const mk2TrailEffect = new Effect(22, e => {
-    Draw.color(Color.white, Color.valueOf("#b4baff"), e.fin());
+    Draw.color(Color.white, PerfCore.color("#b4baff"), e.fin());
     Lines.stroke(1.5 * e.fout());
     let len = 14.0 * e.fout(); 
     let rad = e.rotation * Mathf.degRad;
@@ -50,7 +51,7 @@ const mk2TrailEffect = new Effect(22, e => {
 });
 
 const mk2bTrailEffect = new Effect(22, e => {
-    Draw.color(Color.white, Color.valueOf("#ff2525"), e.fin());
+    Draw.color(Color.white, PerfCore.color("#ff2525"), e.fin());
     Lines.stroke(1.5 * e.fout());
     let len = 14.0 * e.fout(); 
     let rad = e.rotation * Mathf.degRad;
@@ -158,7 +159,7 @@ const nucleytorBullet = extend(BasicBulletType, {
 const nucleytorMK2Bullet = extend(BasicBulletType, {
     speed: 10, damage: 9, lifetime: 78, width: 13, height: 20, 
     frontColor: Color.valueOf("#ffeb3a"), backColor: Color.valueOf("#50dbc4"),
-    maxRange: 420, circleCheck: true, workspace: true, pierce: true, pierceCap: 5, pierceBuilding: true, knockback: 1.4, impact: true,
+    maxRange: 643.1, circleCheck: true, workspace: true, pierce: true, pierceCap: 5, pierceBuilding: true, knockback: 1.4, impact: true,
     hitEffect: Fx.smoke, despawnEffect: Fx.smoke,
     update(b) {
         this.super$update(b);
@@ -264,17 +265,17 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
     getTier(){ return this.tierState == null ? 0 : this.tierState; },
     setTier(val){ 
         this.tierState = val;
-        if(val == 0) { this.health = 1200; }
-        if(val == 1) { this.health = 1800; }
-        if(val == 2) { this.health = 1600; }
+        if(val == 0) { this.health = 5500; }
+        if(val == 1) { this.health = 8250; }
+        if(val == 2) { this.health = 7333; }
         this.maxHealth = this.health;
     },
 
     range(){
         let tier = this.getTier();
-        if(tier == 1) return 420; 
-        if(tier == 2) return 360; 
-        return 320;               
+        if(tier == 1) return 643.1; 
+        if(tier == 2) return 551.2; 
+        return 490;               
     },
 
     armor() {
@@ -337,14 +338,14 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
 
                 let b1Desc = isVN() ?
                     "Cải tiến cấu trúc nòng hạt nhân gia tốc:\n" +
-                    " [white]• Sát thương cơ bản điều chỉnh thành [green]9 đơn vị[] và tầm bắn rộng [green]420 pixel[].[]\n" +
+                    " [white]• Sát thương cơ bản điều chỉnh thành [green]9 đơn vị[] và tầm bắn rộng [green]643.1 pixel[].[]\n" +
                     " [white]• SÁT THƯƠNG CHUẨN: [scarlet]100% True Damage (Trừ thẳng Máu, xuyên giáp, khiên & cơ chế Vela)[]\n" +
                     " [white]• Đạn xuyên qua tối đa [yellow]5 mục tiêu[].[]\n" +
                     " [white]• Tối ưu hóa tản nhiệt, giữ gia tốc lâu hơn khi dừng bắn.[]\n" +
                     " [white]• Nâng cấp giáp tháp pháo, tăng [green]+50% Máu[].[]"
                     :
                     "Accelerated nuclear barrel structure:\n" +
-                    " [white]• Base damage set to [green]9[] with [green]420 px[] range.[]\n" +
+                    " [white]• Base damage set to [green]9[] with [green]643.1 px[] range.[]\n" +
                     " [white]• TRUE DAMAGE: [scarlet]100% True Damage (Bypasses armor, shields & Vela mechanics)[]\n" +
                     " [white]• Pierces up to [yellow]5 targets[].[]\n" +
                     " [white]• Optimized cooling, retains charge longer when idle.[]\n" +
@@ -372,13 +373,13 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
                     "Chuyển đổi sang lõi nhiệt phân rã:\n" +
                     " [white]• Sát thương tinh chỉnh thành [green]9 đơn vị[], gia tốc nhiệt lượng cực nhanh ([green]+3% mỗi phát bắn[]).[]\n" +
                     " [white]• SÁT THƯƠNG CHUẨN: [scarlet]100% True Damage (Trừ thẳng Máu, xuyên giáp, khiên & cơ chế Vela)[]\n" +
-                    " [white]• Tầm bắn đạt [green]360 pixel[].[]\n" +
+                    " [white]• Tầm bắn đạt [green]551.2 pixel[].[]\n" +
                     " [white]• Loại bỏ hoàn toàn khả năng xuyên thấu và tự dẫn đường.[]"
                     :
                     "Converted to thermal decay core:\n" +
                     " [white]• Base damage set to [green]9[], hyper-fast thermal charge ([green]+3% per shot[]).[]\n" +
                     " [white]• TRUE DAMAGE: [scarlet]100% True Damage (Bypasses armor, shields & Vela mechanics)[]\n" +
-                    " [white]• Range reaches [green]360 px[].[]\n" +
+                    " [white]• Range reaches [green]551.2 px[].[]\n" +
                     " [white]• Removes piercing and homing capabilities completely.[]";
 
                 let b2D = b2.add(b2Desc);
@@ -419,8 +420,8 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
                 title += "[yellow](MK1)[]";
                 descStr = isVN() ?
                     "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                    "[lightgray]Máu tháp pháo:[] [green]1,200[]\n" +
-                    "[lightgray]Tầm bắn hiệu dụng:[] [orange]320 pixel[]\n" +
+                    "[lightgray]Máu tháp pháo:[] [green]5,500[]\n" +
+                    "[lightgray]Tầm bắn hiệu dụng:[] [orange]490 pixel[]\n" +
                     "[lightgray]Sát thương cơ bản:[] [yellow]9.00[]\n" +
                     "[lightgray]Khả năng xuyên thấu:[] [white]3 mục tiêu[]\n" +
                     "[scarlet]⚠ Giới hạn: Tối đa 10 cấu trúc trên sân[]\n\n" +
@@ -431,8 +432,8 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
                     "• [lightgray]Hiệu ứng đạn:[] Đạn bay chậm trong [yellow]0.5 giây đầu[] để tích năng lượng, sau đó bung xòe vòng từ trường phản lực rồi phóng vụt đi với hiệu ứng vệt xé gió màu vàng nhạt."
                     :
                     "[gold]⚡ BASIC STATS (MK1) ⚡[]\n" +
-                    "[lightgray]Turret HP:[] [green]1,200[]\n" +
-                    "[lightgray]Effective Range:[] [orange]320 px[]\n" +
+                    "[lightgray]Turret HP:[] [green]5,500[]\n" +
+                    "[lightgray]Effective Range:[] [orange]490 px[]\n" +
                     "[lightgray]Base Damage:[] [yellow]9.00[]\n" +
                     "[lightgray]Piercing Limit:[] [white]3 targets[]\n" +
                     "[scarlet]⚠ Limit: Maximum 10 turrets built[]\n\n" +
@@ -446,8 +447,8 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
                 title += "[cyan](MK2)[]";
                 descStr = isVN() ?
                     "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
-                    "[lightgray]Máu tháp pháo:[] [green]1,800 [lime](+50%)[]\n" +
-                    "[lightgray]Tầm bắn hiệu dụng:[] [orange]420 pixel [lime](+31.2%)[]\n" +
+                    "[lightgray]Máu tháp pháo:[] [green]8,250 [lime](+50%)[]\n" +
+                    "[lightgray]Tầm bắn hiệu dụng:[] [orange]643.1 pixel [lime](+31.2%)[]\n" +
                     "[lightgray]Loại Sát Thương:[] [scarlet]100% True Damage (Xuyên giáp, khiên, cơ chế Vela)[]\n" +
                     "[lightgray]Sát thương cơ bản:[] [yellow]9.00[]\n" +
                     "[lightgray]Khả năng xuyên thấu:[] [yellow]5 mục tiêu [lime](+2)[]\n" +
@@ -459,8 +460,8 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
                     "• [lightgray]Bộ giữ nhiệt cải tiến:[] Khi dừng bắn, năng lượng hạ nhiệt chậm hơn giúp duy trì trạng thái quá tải lâu hơn."
                     :
                     "[cyan]⚡ BASIC STATS (MK2) ⚡[]\n" +
-                    "[lightgray]Turret HP:[] [green]1,800 [lime](+50%)[]\n" +
-                    "[lightgray]Effective Range:[] [orange]420 px [lime](+31.2%)[]\n" +
+                    "[lightgray]Turret HP:[] [green]8,250 [lime](+50%)[]\n" +
+                    "[lightgray]Effective Range:[] [orange]643.1 px [lime](+31.2%)[]\n" +
                     "[lightgray]Damage Type:[] [scarlet]100% True Damage (Bypasses armor, shields, Vela mechanics)[]\n" +
                     "[lightgray]Base Damage:[] [yellow]9.00[]\n" +
                     "[lightgray]Piercing Limit:[] [yellow]5 targets [lime](+2)[]\n" +
@@ -475,8 +476,8 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
                 title += "[purple](MK2B)[]";
                 descStr = isVN() ?
                     "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
-                    "[lightgray]Máu tháp pháo:[] [green]1,600 [lime](+33.3%)[]\n" +
-                    "[lightgray]Tầm bắn hiệu dụng:[] [orange]360 pixel [lime](+12.5%)[]\n" +
+                    "[lightgray]Máu tháp pháo:[] [green]7,333 [lime](+33.3%)[]\n" +
+                    "[lightgray]Tầm bắn hiệu dụng:[] [orange]551.2 pixel [lime](+12.5%)[]\n" +
                     "[lightgray]Loại Sát Thương:[] [scarlet]100% True Damage (Xuyên giáp, khiên, cơ chế Vela)[]\n" +
                     "[lightgray]Sát thương cơ bản:[] [red]9.00[]\n" +
                     "[lightgray]Khả năng xuyên thấu:[] [red]Không (Mất khả năng xuyên)[]\n" +
@@ -487,8 +488,8 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
                     "• [orange]Trạng thái Nuclear Amplifier:[] Khi tích đầy 100% năng lượng, pháo vào trạng thái [yellow]Nuclear Amplifier trong 30s[]. Nhận thêm [green]+20 Giáp[] và [cyan]+50% Tốc độ bắn[] cho các tháp pháo đồng minh lân cận bán kính 100 pixel."
                     :
                     "[purple]⚡ BASIC STATS (MK2B) ⚡[]\n" +
-                    "[lightgray]Turret HP:[] [green]1,600 [lime](+33.3%)[]\n" +
-                    "[lightgray]Effective Range:[] [orange]360 px [lime](+12.5%)[]\n" +
+                    "[lightgray]Turret HP:[] [green]7,333 [lime](+33.3%)[]\n" +
+                    "[lightgray]Effective Range:[] [orange]551.2 px [lime](+12.5%)[]\n" +
                     "[lightgray]Damage Type:[] [scarlet]100% True Damage (Bypasses armor, shields, Vela mechanics)[]\n" +
                     "[lightgray]Base Damage:[] [red]9.00[]\n" +
                     "[lightgray]Piercing Limit:[] [red]None (Lost piercing)[]\n" +
@@ -536,8 +537,7 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
     updateTile(){
         this.limitCheck += Time.delta;
         if(this.limitCheck >= 15){
-            this.limitCheck = 0; let count = 0; let firstBuild = null;
-            Groups.build.each(packCons(b => { if(b.block == nucleytor && b.team == this.team) { count++; if(firstBuild == null) firstBuild = b; } }));
+            this.limitCheck = 0; let _lim = PerfCore.teamBlocks(this.team, nucleytor); let count = _lim != null ? _lim.size : 0; let firstBuild = (_lim != null && count > 0) ? _lim.first() : null;
             if(count > 10 && this !== firstBuild){ 
                 Call.sendMessage(isVN() ? "[red]Giới hạn: Chỉ được đặt tối đa 10 pháo Nucleytor!" : "[red]Limit: Maximum 10 Nucleytor turrets allowed!"); 
                 this.kill(); 
@@ -702,7 +702,7 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
     draw(){
         let modName = this.block.name.split("-")[0]; 
 
-        let baseRegion = Core.atlas.find(this.block.basePrefix + "" + this.block.size);
+        let baseRegion = PerfCore.region(this.block.basePrefix + "" + this.block.size);
         if(baseRegion.found()){
             Draw.rect(baseRegion, this.x, this.y);
         } else {
@@ -713,15 +713,15 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
         let cos = Math.cos(rad);
         let sin = Math.sin(rad);
 
-        let bodyReg = Core.atlas.find(modName + "-nucleytor-body");
-        let por1Reg = Core.atlas.find(modName + "-nucleytor-por1");
-        let por2Reg = Core.atlas.find(modName + "-nucleytor-por2");
-        let wing1Reg = Core.atlas.find(modName + "-nucleytor-wing1");
-        let wing2Reg = Core.atlas.find(modName + "-nucleytor-wing2");
-        let arr1Reg = Core.atlas.find(modName + "-nucleytor-arr1");
-        let arr2Reg = Core.atlas.find(modName + "-nucleytor-arr2");
-        let cored1Reg = Core.atlas.find(modName + "-nucleytor-cored1");
-        let cored2Reg = Core.atlas.find(modName + "-nucleytor-cored2");
+        let bodyReg = PerfCore.region(modName + "-nucleytor-body");
+        let por1Reg = PerfCore.region(modName + "-nucleytor-por1");
+        let por2Reg = PerfCore.region(modName + "-nucleytor-por2");
+        let wing1Reg = PerfCore.region(modName + "-nucleytor-wing1");
+        let wing2Reg = PerfCore.region(modName + "-nucleytor-wing2");
+        let arr1Reg = PerfCore.region(modName + "-nucleytor-arr1");
+        let arr2Reg = PerfCore.region(modName + "-nucleytor-arr2");
+        let cored1Reg = PerfCore.region(modName + "-nucleytor-cored1");
+        let cored2Reg = PerfCore.region(modName + "-nucleytor-cored2");
 
         if(wing1Reg.found() && wing2Reg.found()){
             let wSide = this.combatProgress * 1.414;   

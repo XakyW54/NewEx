@@ -1,3 +1,5 @@
+const PerfCore = global.PerfCore;
+const _perfRect = new Rect();
 (function() {
     const smoothHpMap = new ObjectMap();
     const smoothShieldMap = new ObjectMap();
@@ -45,7 +47,7 @@
         let currentHpStyle = Core.settings.getString("newex-hp-style", "show-hp");
         if (currentHpStyle === "off") return;
 
-        let bounds = Core.camera.bounds(new Rect());
+        let bounds = Core.camera.bounds(_perfRect);
 
         Groups.unit.intersect(bounds.x, bounds.y, bounds.width, bounds.height, cons(u => {
             if (u == null || !u.isValid() || u.dead || !u.isAdded()) return;
@@ -101,7 +103,7 @@
 
                 Draw.z(115);
 
-                 Draw.color(Color.valueOf("#0d0d11"), 0.8);
+                 Draw.color(PerfCore.color("#0d0d11"), 0.8);
                 Fill.rect(centerX, baseY, barWidth + 1.6, barHeight + 1.6);
 
                  let hpColor = Color.green;
@@ -123,7 +125,7 @@
 
                  if (smoothShield > 0.5) {
                     let shieldWidth = Math.min(barWidth, barWidth * (smoothShield / maxHp));
-                    Draw.color(Color.valueOf("#4ba3e3"), 0.85);
+                    Draw.color(PerfCore.color("#4ba3e3"), 0.85);
                     Fill.rect(centerX - halfW + (shieldWidth / 2), baseY + (barHeight / 2) + 0.8, shieldWidth, 1.2);
                 }
 
@@ -178,7 +180,7 @@
                 let barWidth = 4;
                 let barHeight = 22;
 
-                Draw.color(Color.valueOf("#1f1f1f"));
+                Draw.color(PerfCore.color("#1f1f1f"));
                 Fill.rect(x - 12, y - 8, barWidth, barHeight);
 
                 if (hpPercent <= 20) {

@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const copesBuffCircleEffect = new Effect(35, e => {
     let rand = new Rand(e.id);
     let zoomSpeed = rand.random(6.0, 14.0); 
@@ -18,12 +19,7 @@ function updateMenuVisibility() {
     let playerTeam = Vars.player.team();
     let maxAllowed = playerTeam.cores().size;  
     
-    let currentCount = 0;
-    Groups.build.each(b => {
-        if (b.block === wallBuff && b.team === playerTeam) {
-            currentCount++;
-        }
-    });
+    let currentCount = PerfCore.teamCount(playerTeam, wallBuff);
 
  
     if (currentCount < maxAllowed) {

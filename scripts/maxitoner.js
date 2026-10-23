@@ -218,7 +218,7 @@ const maxitoner = extend(ItemTurret, "maxitoner", {
     configurable: true
 });
 
-maxitoner.health = 120;
+maxitoner.health = 300;
 maxitoner.range = 350;
 maxitoner.reload = 48;
 maxitoner.recoil = 3.0;
@@ -258,7 +258,7 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
     setPerkC(val) { this.perkCState = Number(val); },
 
     maxHealth() {
-        let hp = 120;
+        let hp = 300;
         if (this.getPerkB() == 1) hp *= 6.0;
         if (this.getPerkB() == 3) hp *= 0.5;
         return hp;
@@ -635,13 +635,13 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
             } else {
                 let txtB = "";
                 if (isEnglish()) {
-                    if (perkB == 1) txtB = "[green]✔ ACTIVATED: PERK 1B\n• Fire rate +120%, HP +500% (720 HP), Range -20%\n• Locks target on highest HP unit[]";
+                    if (perkB == 1) txtB = "[green]✔ ACTIVATED: PERK 1B\n• Fire rate +120%, HP +500% (1800 HP), Range -20%\n• Locks target on highest HP unit[]";
                     if (perkB == 2) txtB = "[green]✔ ACTIVATED: PERK 2B\n• Range +260% (1260px), Fire rate -50%\n• Bullet hit instantly applies +3 Nitoui stacks[]";
-                    if (perkB == 3) txtB = "[green]✔ ACTIVATED: PERK 3B\n• Base DMG +2400% (250 Dmg), Shoots +2 extra bullets\n• HP -50% (60 HP), Reduces Nitoui explosion threshold to 7 stacks[]";
+                    if (perkB == 3) txtB = "[green]✔ ACTIVATED: PERK 3B\n• Base DMG +2400% (250 Dmg), Shoots +2 extra bullets\n• HP -50% (150 HP), Reduces Nitoui explosion threshold to 7 stacks[]";
                 } else {
-                    if (perkB == 1) txtB = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1B\n• Tốc bắn +120%, Máu +500% (720 HP), Tầm bắn -20%\n• Khóa mục tiêu nhiều máu nhất[]";
+                    if (perkB == 1) txtB = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1B\n• Tốc bắn +120%, Máu +500% (1800 HP), Tầm bắn -20%\n• Khóa mục tiêu nhiều máu nhất[]";
                     if (perkB == 2) txtB = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2B\n• Tầm bắn +260% (1260px), Tốc bắn -50%\n• Đạn trúng mục tiêu gắn ngay +3 tầng Nitoui[]";
-                    if (perkB == 3) txtB = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3B\n• Sát thương gốc +2400% (250 Dmg), Bắn +2 đạn phụ\n• Máu -50% (60 HP), Giảm mốc nổ Nitoui xuống 7 tầng[]";
+                    if (perkB == 3) txtB = "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3B\n• Sát thương gốc +2400% (250 Dmg), Bắn +2 đạn phụ\n• Máu -50% (150 HP), Giảm mốc nổ Nitoui xuống 7 tầng[]";
                 }
 
                 let txtBCell = boxB.add(txtB);
@@ -725,12 +725,12 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
             let descStr = "";
             if (isEnglish()) {
                 descStr = "[gold]⚡ MAXITONER BASE STATS ⚡[]\n" +
-                          "• HP: 120 HP | Range: 350px (43.7 tiles) | Bullet Damage: 10.0\n" +
+                          "• HP: 300 HP | Range: 350px (43.7 tiles) | Bullet Damage: 10.0\n" +
                           "• Mechanism: Applies Nitoui stacks on hit. Reaching 9 stacks triggers an AoE explosion equal to 4200% of base damage (100px radius).\n" +
                           "• Upgrades: Up to 3 independent Perk groups A, B, C for diverse tactical builds.";
             } else {
                 descStr = "[gold]⚡ THÔNG SỐ CƠ BẢN PHÁO MAXITONER ⚡[]\n" +
-                          "• Máu: 120 HP | Tầm bắn: 350px (43.7 ô) | Sát thương đạn: 10.0\n" +
+                          "• Máu: 300 HP | Tầm bắn: 350px (43.7 ô) | Sát thương đạn: 10.0\n" +
                           "• Cơ chế: Bắn tích tầng hiệu ứng Nitoui lên mục tiêu. Đủ 9 tầng gây nổ diện rộng bằng 4200% Dmg gốc của pháo (Bán kính 100px).\n" +
                           "• Nâng cấp: Tối đa 3 nhóm Phúc lợi độc lập A, B, C nâng cấp đa dạng chiến thuật.";
             }
@@ -755,11 +755,11 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
             if (perkB > 0) {
                 descStr += isEnglish() ? "\n\n[cyan]★ ACTIVATED PERK B ★[]" : "\n\n[cyan]★ ĐÃ KÍCH HOẠT PHÚC LỢI B ★[]";
                 if (isEnglish()) {
-                    if (perkB == 1) descStr += "\n[green]• Perk 1B: Fire rate +120%, HP +500% (720 HP), Range -20%, Targets highest HP enemy.[]";
+                    if (perkB == 1) descStr += "\n[green]• Perk 1B: Fire rate +120%, HP +500% (1800 HP), Range -20%, Targets highest HP enemy.[]";
                     if (perkB == 2) descStr += "\n[green]• Perk 2B: Range +260% (1260px), Fire rate -50%, Hit adds +3 Nitoui stacks.[]";
                     if (perkB == 3) descStr += "\n[green]• Perk 3B: Base DMG +2400%, Shoots +2 extra bullets, HP -50%, Explosion threshold reduced to 7 stacks.[]";
                 } else {
-                    if (perkB == 1) descStr += "\n[green]• Phúc lợi 1B: Tốc bắn +120%, Máu +500% (720 HP), Tầm bắn -20%, Nhắm địch trâu nhất.[]";
+                    if (perkB == 1) descStr += "\n[green]• Phúc lợi 1B: Tốc bắn +120%, Máu +500% (1800 HP), Tầm bắn -20%, Nhắm địch trâu nhất.[]";
                     if (perkB == 2) descStr += "\n[green]• Phúc lợi 2B: Tầm bắn +260% (1260px), Tốc bắn -50%, Bắn trúng +3 tầng Nitoui.[]";
                     if (perkB == 3) descStr += "\n[green]• Phúc lợi 3B: Sát thương gốc +2400%, Bắn thêm 2 đạn, Máu -50%, Mốc nổ giảm còn 7 tầng.[]";
                 }

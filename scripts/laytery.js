@@ -92,7 +92,7 @@ function makeLaytBuild() {
                 let title = en ? " \"Laytery\" Turret Stats: " : " Thông số pháo \"Laytery\": ";
                 let descStr = en ?
                     "[gold]⚡ BASIC STATS ⚡[]\n" +
-                    "[lightgray]Structure Health:[] [green]5,200[]\n" +
+                    "[lightgray]Structure Health:[] [green]13,000[]\n" +
                     "[lightgray]Effective Range:[] [orange]224 pixels[] (28 Tiles)\n" +
                     "[lightgray]Base Damage:[] [yellow]60 DMG / shot[]\n" +
                     "[lightgray]Power Required:[] [gainsboro]12.00 units/sec[]\n\n" +
@@ -101,7 +101,7 @@ function makeLaytBuild() {
                     "• Barrel rotation speed continuously increases while tracking targets.\n" +
                     "• Damage increases linearly up to +100% during sustained firing." :
                     "[gold]⚡ THÔNG SỐ CƠ BẢN ⚡[]\n" +
-                    "[lightgray]Máu cấu trúc:[] [green]5,200[]\n" +
+                    "[lightgray]Máu cấu trúc:[] [green]13,000[]\n" +
                     "[lightgray]Tầm bắn hiệu dụng:[] [orange]224 pixel[] (28 Ô)\n" +
                     "[lightgray]sát thương gốc:[] [yellow]60 DMG / phát bắn[]\n" +
                     "[lightgray]Năng lượng yêu cầu:[] [gainsboro]12.00 đơn vị/giây[]\n\n" +
@@ -266,7 +266,7 @@ function makeLaytBuild() {
  
 const laytery = extend(PowerTurret, "laytery", {});
 
-laytery.health = 5200;         
+laytery.health = 13000;         
 laytery.size = 4;                
 laytery.range = 224;             // Giảm 20% so với gốc 280 (280 * 0.8 = 224)
 laytery.reload = 9999;           

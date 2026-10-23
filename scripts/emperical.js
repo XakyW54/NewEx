@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const COLOR = Color.valueOf("ffff00"); 
 const COLOR_ALT = Color.valueOf("e6005c");  
 const WHITE = Color.valueOf("ffffff");
@@ -20,12 +21,12 @@ let wing2Region = null;
 
 function loadWingRegions() {
     if (!wing1Region || !wing1Region.found()) {
-        wing1Region = Core.atlas.find("newex-emperical-wing1");
-        if (!wing1Region.found()) wing1Region = Core.atlas.find(Vars.content.transformName("newex-emperical-wing1"));
+        wing1Region = PerfCore.region("newex-emperical-wing1");
+        if (!wing1Region.found()) wing1Region = PerfCore.region(Vars.content.transformName("newex-emperical-wing1"));
     }
     if (!wing2Region || !wing2Region.found()) {
-        wing2Region = Core.atlas.find("newex-emperical-wing2");
-        if (!wing2Region.found()) wing2Region = Core.atlas.find(Vars.content.transformName("newex-emperical-wing2"));
+        wing2Region = PerfCore.region("newex-emperical-wing2");
+        if (!wing2Region.found()) wing2Region = PerfCore.region(Vars.content.transformName("newex-emperical-wing2"));
     }
 }
 
@@ -35,12 +36,7 @@ function updateEmpericalMenuVisibility() {
 
     let playerTeam = Vars.player.team();
     let maxAllowed = 1; 
-    let currentCount = 0;
-    Groups.build.each(b => {
-        if (b.block === empericalBlock && b.team === playerTeam) {
-            currentCount++;
-        }
-    });
+    let currentCount = PerfCore.teamCount(playerTeam, empericalBlock);
 
     if (currentCount < maxAllowed) {
         empericalBlock.buildVisibility = BuildVisibility.shown;

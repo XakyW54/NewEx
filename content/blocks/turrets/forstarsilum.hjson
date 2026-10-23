@@ -3,9 +3,9 @@ name: Forstarsilum
 description: Tháp pháo năng lượng nâng cấp. Bắn ra đạn Starsword không lệch tâm mỗi 1 giây. Tự động tích tụ buff năng lượng khi khai hỏa liên tục để tăng sát thương và tốc độ bắn.
 researchCostMultiplier: 0.1
 size: 3
-health: 1200
+health: 3000
 reload: 60
-range: 370
+range: 750
 targetAir: true
 targetGround: true
 recoilAmount: 1.5

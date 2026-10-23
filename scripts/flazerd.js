@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 print("FLAZERD - MK2B MILESTONE SUB-LASER SYSTEM LOADED");
 
 function isVietnamese() {
@@ -83,8 +84,8 @@ const flazerdLaserBullet = extend(BulletType, {
         if(!b) return;
         b.data = {
             mainTargetId: -1,
-            lastX: b.owner.x + Angles.trnsx(b.rotation(), 320),
-            lastY: b.owner.y + Angles.trnsy(b.rotation(), 320)
+            lastX: b.owner.x + Angles.trnsx(b.rotation(), 260),
+            lastY: b.owner.y + Angles.trnsy(b.rotation(), 260)
         };
     },
 
@@ -92,7 +93,7 @@ const flazerdLaserBullet = extend(BulletType, {
         if(!b || !b.owner) return;
         
         let turretId = b.owner.id;
-        let range = 320;
+        let range = 260;
         let centerX = b.owner.x;
         let centerY = b.owner.y;
 
@@ -316,10 +317,10 @@ const flazerd = extend(PowerTurret, "flazerd", {
     init(){ this.super$init(); },
     load(){
         this.super$load();
-        this.bodyRegion = Core.atlas.find(this.name + "-body");
-        this.downxRegion = Core.atlas.find(this.name + "-downx");
-        this.a1Region = Core.atlas.find(this.name + "-a1");
-        this.a2Region = Core.atlas.find(this.name + "-a2");
+        this.bodyRegion = PerfCore.region(this.name + "-body");
+        this.downxRegion = PerfCore.region(this.name + "-downx");
+        this.a1Region = PerfCore.region(this.name + "-a1");
+        this.a2Region = PerfCore.region(this.name + "-a2");
     },
     drawPlace(x, y, rotation, valid){
         this.super$drawPlace(x, y, rotation, valid);
@@ -329,11 +330,11 @@ const flazerd = extend(PowerTurret, "flazerd", {
     }
 });
 
-flazerd.health = 2300;
+flazerd.health = 3750;
 flazerd.size = 4;
 flazerd.targetAir = false;
 flazerd.targetGround = true;
-flazerd.range = 320;
+flazerd.range = 260;
 flazerd.reload = 10; 
 flazerd.shootType = flazerdLaserBullet;
 flazerd.recoil = 0; 
@@ -347,9 +348,9 @@ flazerd.config(java.lang.Integer, packCons2((tile, value) => {
         let valInt = (typeof value.intValue === "function") ? value.intValue() : Number(value);
         
         turretTierMap.put(turretId, valInt);
-        if(valInt == 1) tile.health = 2300;
-        else if(valInt == 2) tile.health = 3500;
-        else if(valInt == 3) tile.health = 4200;
+        if(valInt == 1) tile.health = 3750;
+        else if(valInt == 2) tile.health = 5707;
+        else if(valInt == 3) tile.health = 6848;
     }
 }));
 
@@ -375,7 +376,7 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
 
     updateTile(){
         this.super$updateTile();
-        let targetRadius = 320;
+        let targetRadius = 260;
         let hasTarget = Units.closestTarget(this.team, this.x, this.y, targetRadius, u => !u.dead && !u.type.flying && Mathf.dst(this.x, this.y, u.x, u.y) >= deadZone, b => true) != null;
 
         if(hasTarget){
@@ -386,7 +387,7 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
     },
 
     draw() {
-        let baseRegion = Core.atlas.find(flazerd.basePrefix + "block-" + flazerd.size);
+        let baseRegion = PerfCore.region(flazerd.basePrefix + "block-" + flazerd.size);
         if (baseRegion && baseRegion.found()) {
             Draw.rect(baseRegion, this.x, this.y);
         } else {
@@ -479,12 +480,12 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
                 let b1Text = vi ? "Mô-đun mạch xung hỏa lực bứt tốc:\n" +
                                    " [white]• Tốc độ sạc tụ gia tốc vượt bậc đạt ngưỡng [yellow]150%[].[]\n" +
                                    " [white]• Tăng tiến [red]+2% Sát thương[] tổng ứng với mỗi 1% năng lượng sạc.[]\n" +
-                                   " [white]• Gia cố [green]+3,500 Máu[] và mở rộng tầm phát xạ lên [green]340 pixel[].[]\n" +
+                                   " [white]• Gia cố [green]+5,707 Máu[] và mở rộng tầm phát xạ lên [green]276.2 pixel[].[]\n" +
                                    " [white]• Kích hoạt cặp laze sóng uốn cong đối xứng dọc trục chính."
                                 : "Accelerated Pulse Fire Circuit Module:\n" +
                                    " [white]• Capacitor charging speed boosted up to [yellow]150%[].[]\n" +
                                    " [white]• Gains [red]+2% Total Damage[] per 1% stored charge.[]\n" +
-                                   " [white]• Reinforced to [green]+3,500 Health[] and range expanded to [green]340 pixels[].[]\n" +
+                                   " [white]• Reinforced to [green]+5,707 Health[] and range expanded to [green]276.2 pixels[].[]\n" +
                                    " [white]• Activates dual curved sine-wave sub-lasers along the main axis.";
                 let b1D = b1.add(b1Text);
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
@@ -504,12 +505,12 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                 b2.add("[purple]===(MK2B)===[]").row();
                 let b2Text = vi ? "Lõi hội tụ đa chùm phổ hủy diệt tầng cao:\n" +
-                                   " [white]• Siêu gia cố Máu đạt mốc cực đại [green]4,200 Máu[] (Tầm bắn [orange]320 pixel[]).[]\n" +
+                                   " [white]• Siêu gia cố Máu đạt mốc cực đại [green]6,848 Máu[] (Tầm bắn [orange]260 pixel[]).[]\n" +
                                    " [white]• Tự động kích hoạt phóng thêm các tia laze phụ khi điểm sạc vượt các mốc [yellow]20 -> 200[].[]\n" +
                                    " [white]• Mở rộng tối đa lên tới 10 chùm tia quang phổ phân rã mục tiêu xung quanh.[]\n" +
                                    " [white]• Mỗi tia phụ gây lượng sát thương bằng [red]chính xác 50%[] của tia laze chính."
                                 : "High-tier Spectrum Multi-beam Focus Core:\n" +
-                                   " [white]• Super-reinforced Health reaching maximum [green]4,200 HP[] (Range [orange]320 pixels[]).[]\n" +
+                                   " [white]• Super-reinforced Health reaching maximum [green]6,848 HP[] (Range [orange]260 pixels[]).[]\n" +
                                    " [white]• Automatically fires sub-lasers as charge surpasses thresholds [yellow]20 -> 200[].[]\n" +
                                    " [white]• Expands up to 10 spectral beams disintegrating nearby enemies.[]\n" +
                                    " [white]• Each sub-laser deals [red]exactly 50%[] DMG of the main laser.";
@@ -551,16 +552,16 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
             if (currentTier == 1) {
                 title += "[yellow](MK1)[]";
                 descStr = vi ? "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                               "[lightgray]Máu tháp pháo:[] [green]2,300[]\n" +
-                               "Tầm bắn hiệu dụng:[] [orange]320 pixel[]\n" +
+                               "[lightgray]Máu tháp pháo:[] [green]3,750[]\n" +
+                               "Tầm bắn hiệu dụng:[] [orange]260 pixel[]\n" +
                                "Sát thương liên tục:[] [white]33.00 hỏa lực/s[]\n\n" +
                                "[sky]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
                                "• [lightgray]Phát xạ mục tiêu:[] Phóng chùm tia laze đơn liên tục bám khóa chặt kẻ địch mặt đất.\n" +
                                "• [lightgray]Màn hình Holyder:[] Giao diện kỹ thuật số hiển thị thời gian thực số % sạc tụ lõi tâm.\n" +
                                "• [lightgray]Tích tụ năng lượng:[] Giới hạn sạc mở rộng lên [yellow]200%[] giúp tăng tiến dần sát thương tổng."
                              : "[gold]⚡ BASE SPECS (MK1) ⚡[]\n" +
-                               "[lightgray]Turret Health:[] [green]2,300[]\n" +
-                               "Effective Range:[] [orange]320 pixels[]\n" +
+                               "[lightgray]Turret Health:[] [green]3,750[]\n" +
+                               "Effective Range:[] [orange]260 pixels[]\n" +
                                "Continuous Damage:[] [white]33.00 DPS[]\n\n" +
                                "[sky]⚡ THERMAL CIRCUIT MECHANICS:[]\n" +
                                "• [lightgray]Target Emission:[] Fires a continuous single laser beam locking onto ground targets.\n" +
@@ -570,8 +571,8 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
             else if (currentTier == 2) {
                 title += "[cyan](MK2)[]";
                 descStr = vi ? "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
-                               "[lightgray]Máu tháp pháo:[] [green]3,500 [lime](+52%)[]\n" +
-                               "Tầm bắn hiệu dụng:[] [orange]340 pixel [lime](+6.25%)[]\n" +
+                               "[lightgray]Máu tháp pháo:[] [green]5,707 [lime](+52%)[]\n" +
+                               "Tầm bắn hiệu dụng:[] [orange]276.2 pixel [lime](+6.25%)[]\n" +
                                "Sát thương cơ bản:[] [white]115.50 hỏa lực/s[]\n\n" +
                                "[lime]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
                                "• [lightgray]Mạch hỏa tốc:[] Tốc độ sạc tụ năng lượng gia tốc vượt bậc đạt ngưỡng đỉnh [yellow]150%[].\n" +
@@ -579,8 +580,8 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
                                "• [lightgray]Laser Helix:[] Kích hoạt thêm 2 tia sóng phụ uốn lượn hình sin bám dọc đối xứng hai bên trục chính.\n" +
                                "• [lightgray]Xả quá tải an toàn:[] Tự động đếm ngược và reset điểm về 0 sau khi duy trì đỉnh năng lượng."
                              : "[cyan]⚡ BASE SPECS (MK2) ⚡[]\n" +
-                               "[lightgray]Turret Health:[] [green]3,500 [lime](+52%)[]\n" +
-                               "Effective Range:[] [orange]340 pixels [lime](+6.25%)[]\n" +
+                               "[lightgray]Turret Health:[] [green]5,707 [lime](+52%)[]\n" +
+                               "Effective Range:[] [orange]276.2 pixels [lime](+6.25%)[]\n" +
                                "Base Damage:[] [white]115.50 DPS[]\n\n" +
                                "[lime]⚡ THERMAL CIRCUIT MECHANICS:[]\n" +
                                "• [lightgray]Rapid Fire Circuit:[] Capacitor charging speed greatly accelerated up to [yellow]150%[].\n" +
@@ -591,16 +592,16 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
             else if (currentTier == 3) {
                 title += "[purple](MK2B)[]";
                 descStr = vi ? "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
-                               "[lightgray]Máu tháp pháo:[] [green]4,200 [lime](+82.6%)[]\n" +
-                               "Tầm bắn hiệu dụng:[] [orange]320 pixel[]\n" +
+                               "[lightgray]Máu tháp pháo:[] [green]6,848 [lime](+82.6%)[]\n" +
+                               "Tầm bắn hiệu dụng:[] [orange]260 pixel[]\n" +
                                "Sát thương cơ bản:[] [white]198.00 hỏa lực/s[]\n\n" +
                                "[purple]🔥 CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
                                "• [lightgray]Phân chùm đa mốc:[] Tách thêm tia laze phụ xanh lá bắn phá mục tiêu xung quanh khi điểm sạc vượt qua các mốc [yellow]20, 40, 60, 80, 100, 120, 140, 160, 180, 200[].\n" +
                                "• [lightgray]Hỏa lực rẽ nhánh:[] Mỗi tia phụ rẽ nhánh tự động gây sát thương bằng [red]chính xác 50%[] hỏa lực tia chính.\n" +
                                "• [lightgray]Xả tụ thông minh:[] Tự động thiết lập lại điểm năng lượng về 0 sau chu kỳ bắn để chuẩn bị cho loạt xung năng mới."
                              : "[purple]⚡ BASE SPECS (MK2B) ⚡[]\n" +
-                               "[lightgray]Turret Health:[] [green]4,200 [lime](+82.6%)[]\n" +
-                               "Effective Range:[] [orange]320 pixels[]\n" +
+                               "[lightgray]Turret Health:[] [green]6,848 [lime](+82.6%)[]\n" +
+                               "Effective Range:[] [orange]260 pixels[]\n" +
                                "Base Damage:[] [white]198.00 DPS[]\n\n" +
                                "[purple]🔥 THERMAL CIRCUIT MECHANICS:[]\n" +
                                "• [lightgray]Milestone Multi-beam:[] Splits extra green sub-lasers hitting nearby enemies when charge crosses [yellow]20, 40, 60, 80, 100, 120, 140, 160, 180, 200[].\n" +
@@ -620,7 +621,7 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
     },
 
     findTarget(){
-        this.target = Units.closestTarget(this.team, this.x, this.y, 320, u => !u.dead && !u.type.flying && Mathf.dst(this.x, this.y, u.x, u.y) >= deadZone, b => true);
+        this.target = Units.closestTarget(this.team, this.x, this.y, 260, u => !u.dead && !u.type.flying && Mathf.dst(this.x, this.y, u.x, u.y) >= deadZone, b => true);
     },
     drawSelect(){ this.super$drawSelect(); dashCircle(this.x, this.y, deadZone, Pal.remove); },
     write(write){ this.super$write(write); write.b(turretTierMap.containsKey(this.id) ? turretTierMap.get(this.id) : 1); },

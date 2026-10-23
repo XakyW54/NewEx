@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
@@ -38,7 +39,7 @@ const bulletSlashEffect = new Effect(15, e => {
     let pTailX = getX(-len * 0.2, 0);   
     let pTailY = getY(-len * 0.2, 0);
 
-    Draw.color(Color.valueOf("#ffe18f"));
+    Draw.color(PerfCore.color("#ffe18f"));
     Lines.stroke(stroke);
     
     Lines.line(pTailX, pTailY, pMidLeftX, pMidLeftY);
@@ -198,9 +199,9 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
         this.paidTitanium = 0;
         this.paidSilicon = 0;
         this.paidPlastanium = 0;
-        if(val == 0) { this.health = 1200; }
-        if(val == 1) { this.health = 1800; }
-        if(val == 2) { this.health = 1600; }
+        if(val == 0) { this.health = 5500; }
+        if(val == 1) { this.health = 8250; }
+        if(val == 2) { this.health = 7333; }
         this.maxHealth = this.health;
     },
 
@@ -243,9 +244,9 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
 
     range(){
         let tier = this.getTier();
-        if(tier == 1) return 420; 
-        if(tier == 2) return 360; 
-        return 320;               
+        if(tier == 1) return 538.1; 
+        if(tier == 2) return 461.2; 
+        return 410;               
     },
 
     buildConfiguration(table){
@@ -296,12 +297,12 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                 b1.add("[cyan]===(MK2 - PENETRATION)===[]").row();
                 let b1D = b1.add(isEn() ? 
-                                "[white]• Health: [green]+50%[] (1,800 HP)\n" +
-                                "• Range: [green]+31.25%[] (420 px)\n" +
+                                "[white]• Health: [green]+50%[] (8,250 HP)\n" +
+                                "• Range: [green]+31.25%[] (538.1 px)\n" +
                                 "• Base Damage: [green]+44.4%[] (97.5 DMG)\n\n" +
                                 "[lightgray]Special Ability: Penetrating Magnetic Acceleration — Expands pierce cap to 5 enemy targets or structures, built-in supercharge circuit reduces full energy recharge time to 3.0s.[]" :
-                                "[white]• Máu cấu trúc: [green]+50%[] (1,800 HP)\n" +
-                                "• Tầm bắn: [green]+31.25%[] (420 px)\n" +
+                                "[white]• Máu cấu trúc: [green]+50%[] (8,250 HP)\n" +
+                                "• Tầm bắn: [green]+31.25%[] (538.1 px)\n" +
                                 "• Sát thương gốc: [green]+44.4%[] (97.5 DMG)\n\n" +
                                 "[lightgray]Kỹ năng đặc biệt: Gia Tốc Từ Tính Xuyên Thấu — Đạn mở rộng khả năng xuyên qua tối đa 5 mục tiêu kẻ địch hoặc công trình, tích hợp mạch siêu sạc giúp rút ngắn thời gian hồi đầy năng lượng xuống 3.0 giây.[]");
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
@@ -318,12 +319,12 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                 b2.add("[purple]===(MK2B - HOMING)===[]").row();
                 let b2D = b2.add(isEn() ? 
-                                "[white]• Health: [green]+33.3%[] (1,600 HP)\n" +
-                                "• Range: [green]+12.5%[] (360 px)\n" +
+                                "[white]• Health: [green]+33.3%[] (7,333 HP)\n" +
+                                "• Range: [green]+12.5%[] (461.2 px)\n" +
                                 "• Base Damage: [green]+172.2%[] (183.75 DMG)\n\n" +
                                 "[lightgray]Special Ability: Homing Heat-Seeking Impulse — Removes piercing to integrate smart sensors that automatically steer towards nearby targets, saving 70% energy per shot.[]" :
-                                "[white]• Máu cấu trúc: [green]+33.3%[] (1,600 HP)\n" +
-                                "• Tầm bắn: [green]+12.5%[] (360 px)\n" +
+                                "[white]• Máu cấu trúc: [green]+33.3%[] (7,333 HP)\n" +
+                                "• Tầm bắn: [green]+12.5%[] (461.2 px)\n" +
                                 "• Sát thương gốc: [green]+172.2%[] (183.75 DMG)\n\n" +
                                 "[lightgray]Kỹ năng đặc biệt: Xung Kích Tầm Nhiệt Truy Đuổi — Loại bỏ xuyên thấu để tích hợp chip cảm biến thông minh tự động bẻ lái truy đuổi mục tiêu xung quanh, tiết kiệm 70% năng lượng mỗi phát bắn.[]");
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
@@ -361,8 +362,8 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                 title += "[yellow](MK1)[]";
                 descStr = isEn() ? 
                           "[gold]⚡ BASE STATS (MK1) ⚡[]\n" +
-                          "[lightgray]Turret HP:[] [green]1,200[]\n" +
-                          "[lightgray]Effective Range:[] [orange]320 px[]\n" +
+                          "[lightgray]Turret HP:[] [green]5,500[]\n" +
+                          "[lightgray]Effective Range:[] [orange]410 px[]\n" +
                           "[lightgray]Base Damage (Silicon):[] [yellow]67.50 DMG[]\n" +
                           "[lightgray]Base Damage (Copper):[] [orange]33.75 DMG[]\n" +
                           "[lightgray]Penetration:[] [white]3 targets[]\n\n" +
@@ -370,8 +371,8 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                           "• [lightgray]Energy Loss:[] Each shot consumes [red]1.0%[] stored core energy. Damage scales directly with current energy.\n" +
                           "• [lightgray]Recharge Speed:[] Takes about [yellow]5.0s[] to recharge from 0% to 100% when idle." :
                           "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]1,200[]\n" +
-                          "[lightgray]Tầm bắn hiệu dụng:[] [orange]320 pixel[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]5,500[]\n" +
+                          "[lightgray]Tầm bắn hiệu dụng:[] [orange]410 pixel[]\n" +
                           "[lightgray]Sát thương Silicon:[] [yellow]67.50 DMG[]\n" +
                           "[lightgray]Sát thương Đồng (Copper):[] [orange]33.75 DMG[]\n" +
                           "[lightgray]Khả năng xuyên thấu:[] [white]3 mục tiêu[]\n\n" +
@@ -383,8 +384,8 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                 title += "[cyan](MK2)[]";
                 descStr = isEn() ? 
                           "[cyan]⚡ BASE STATS (MK2) ⚡[]\n" +
-                          "[lightgray]Turret HP:[] [green]1,800 [lime](+50%)[]\n" +
-                          "[lightgray]Effective Range:[] [orange]420 px [lime](+31.2%)[]\n" +
+                          "[lightgray]Turret HP:[] [green]8,250 [lime](+50%)[]\n" +
+                          "[lightgray]Effective Range:[] [orange]538.1 px [lime](+31.2%)[]\n" +
                           "[lightgray]Base Damage (Silicon):[] [yellow]97.50 DMG [lime](+44.4%)[]\n" +
                           "[lightgray]Base Damage (Copper):[] [orange]48.75 DMG[]\n" +
                           "[lightgray]Penetration:[] [yellow]5 targets [lime](+2 targets)[]\n\n" +
@@ -392,8 +393,8 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                           "• [lightgray]Consumption Optimization:[] Reduces energy loss down to [red]0.5%[] per shot (-50%).\n" +
                           "• [lightgray]Jet Supercharge:[] Recharge speed significantly increased, taking only [green]3.0s[] to fully recharge." :
                           "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]1,800 [lime](+50%)[]\n" +
-                          "[lightgray]Tầm bắn hiệu dụng:[] [orange]420 pixel [lime](+31.2%)[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]8,250 [lime](+50%)[]\n" +
+                          "[lightgray]Tầm bắn hiệu dụng:[] [orange]538.1 pixel [lime](+31.2%)[]\n" +
                           "[lightgray]Sát thương Silicon:[] [yellow]97.50 DMG [lime](+44.4%)[]\n" +
                           "[lightgray]Sát thương Đồng (Copper):[] [orange]48.75 DMG[]\n" +
                           "[lightgray]Khả năng xuyên thấu:[] [yellow]5 mục tiêu [lime](+2 mục tiêu)[]\n\n" +
@@ -405,8 +406,8 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                 title += "[purple](MK2B)[]";
                 descStr = isEn() ? 
                           "[purple]⚡ BASE STATS (MK2B) ⚡[]\n" +
-                          "[lightgray]Turret HP:[] [green]1,600 [lime](+33.3%)[]\n" +
-                          "[lightgray]Effective Range:[] [orange]360 px [lime](+12.5%)[]\n" +
+                          "[lightgray]Turret HP:[] [green]7,333 [lime](+33.3%)[]\n" +
+                          "[lightgray]Effective Range:[] [orange]461.2 px [lime](+12.5%)[]\n" +
                           "[lightgray]Base Damage (Silicon):[] [red]183.75 DMG (+172.2%)[]\n" +
                           "[lightgray]Base Damage (Copper):[] [orange]91.875 DMG[]\n" +
                           "[lightgray]Penetration:[] [red]None (Lost piercing)[]\n\n" +
@@ -414,8 +415,8 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                           "• [lightgray]Homing Circuit:[] Replaces pierce with homing sensors, bullets [pink]automatically steer toward targets[] within 200px.\n" +
                           "• [lightgray]High Stability:[] Energy loss per shot reduced to [green]0.3%[] for extremely stable sustained fire." :
                           "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]1,600 [lime](+33.3%)[]\n" +
-                          "[lightgray]Tầm bắn hiệu dụng:[] [orange]360 pixel [lime](+12.5%)[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]7,333 [lime](+33.3%)[]\n" +
+                          "[lightgray]Tầm bắn hiệu dụng:[] [orange]461.2 pixel [lime](+12.5%)[]\n" +
                           "[lightgray]Sát thương Silicon:[] [red]183.75 DMG (+172.2%)[]\n" +
                           "[lightgray]Sát thương Đồng (Copper):[] [orange]91.875 DMG[]\n" +
                           "[lightgray]Khả năng xuyên thấu:[] [red]Không (Mất khả năng xuyên)[]\n\n" +
@@ -488,7 +489,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
 
     draw(){
         let modName = this.block.name.split("-")[0]; 
-        let baseRegion = Core.atlas.find(this.block.basePrefix + "" + this.block.size);
+        let baseRegion = PerfCore.region(this.block.basePrefix + "" + this.block.size);
         if(baseRegion.found()){
             Draw.rect(baseRegion, this.x, this.y);
         } else {
@@ -503,14 +504,14 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
         let invEnergy = 1.0 - this.energyState; 
         let sideMoveDistance = invEnergy * 4.0; 
 
-        let barrel1Region = Core.atlas.find(modName + "-vendicum-barrel1");
+        let barrel1Region = PerfCore.region(modName + "-vendicum-barrel1");
         if(barrel1Region.found()){
             let b1x = this.x - (sideMoveDistance * sin);
             let b1y = this.y + (sideMoveDistance * cos);
             Draw.rect(barrel1Region, b1x, b1y, this.rotation);
         }
 
-        let barrel2Region = Core.atlas.find(modName + "-vendicum-barrel2");
+        let barrel2Region = PerfCore.region(modName + "-vendicum-barrel2");
         if(barrel2Region.found()){
             let b2x = this.x + (sideMoveDistance * sin);
             let b2y = this.y - (sideMoveDistance * cos);
@@ -518,7 +519,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
         }
 
         let b1Offset = this.customRecoil * maxBarrelRecoilDistance;
-        let b1Region = Core.atlas.find(modName + "-vendicum-b1");
+        let b1Region = PerfCore.region(modName + "-vendicum-b1");
         if (b1Region.found()) {
             let b1ax = this.x + b1Offset * cos;
             let b1ay = this.y + b1Offset * sin;

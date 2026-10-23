@@ -199,9 +199,9 @@ Events.on(ClientLoadEvent, new Cons({
                 setTier(val) {  
                     let numTier = Number(val);
                     this.tierState = numTier; 
-                    if (numTier === 0) this.health = 848; 
-                    if (numTier === 1) this.health = 1103;  
-                    if (numTier === 2) this.health = 1425; 
+                    if (numTier === 0) this.health = 3913; 
+                    if (numTier === 1) this.health = 5089;  
+                    if (numTier === 2) this.health = 6575; 
                     this.maxHealth = this.health; 
                 },
 
@@ -285,12 +285,12 @@ Events.on(ClientLoadEvent, new Cons({
                             let b1 = new Table(); b1.background(Styles.black6); b1.margin(12); 
                             b1.add("[cyan]===(MK2)===[]").row(); 
                             let b1Text = isEn ? "Integrated area explosive technology:\n" + 
-                                                " [white]• Increases HP to [green]1103 HP[].[]\n" + 
+                                                " [white]• Increases HP to [green]5089 HP[].[]\n" + 
                                                 " [white]• Retains multi-target (Ground & Air) and base range.[]\n" + 
                                                 " [white]• Bullets explode in a [orange]50 pixel[] radius on hit.[]\n" + 
                                                 " [white]• Max damage stack: [yellow]" + maxStackNormal + " stacks (+9990% DMG)[].[]"
                                               : "Tích hợp công nghệ nổ mảnh diện rộng:\n" + 
-                                                " [white]• Tăng lượng máu chống chịu lên [green]1103 HP[].[]\n" + 
+                                                " [white]• Tăng lượng máu chống chịu lên [green]5089 HP[].[]\n" + 
                                                 " [white]• Giữ nguyên cơ chế bắn đa mục tiêu (Đất & Không) và tầm bắn gốc.[]\n" + 
                                                 " [white]• Đạn chạm mục tiêu kích nổ lan phạm vi [orange]50 pixel[].[]\n" + 
                                                 " [white]• Tích tầng sát thương tối đa: [yellow]" + maxStackNormal + " tầng (+9990% DMG)[].[]";
@@ -311,13 +311,13 @@ Events.on(ClientLoadEvent, new Cons({
                             let b2 = new Table(); b2.background(Styles.black6); b2.margin(12); 
                             b2.add("[purple]===(MK2B)===[]").row(); 
                             let b2Text = isEn ? "Converts to long-range super-growth mortar:\n" + 
-                                                " [white]• Increases max HP to [green]1425 HP[].[]\n" + 
+                                                " [white]• Increases max HP to [green]6575 HP[].[]\n" + 
                                                 " [white]• Extends effective range by [ultra-light]2x [green](x2 Range)[][].[]\n" + 
                                                 " [white]• Fire rate [red]reduced by 40%[][white], attacks [orange]Ground & Air[].[]\n" + 
                                                 " [white]• Max stack breakthrough up to [gold]" + maxStackMK2B + " stacks (Max +9990% DMG)[].[]\n" + 
                                                 " [white]• Pressure wave blast area up to [pink]150 pixels[].[]"
                                               : "Chuyển đổi sang pháo cối tầm xa siêu tăng trưởng:\n" + 
-                                                " [white]• Gia tăng lượng máu tối đa lên cực đại [green]1425 HP[].[]\n" + 
+                                                " [white]• Gia tăng lượng máu tối đa lên cực đại [green]6575 HP[].[]\n" + 
                                                 " [white]• Mở rộng [ultra-light]gấp đôi tầm bắn hiệu dụng [green](x2 Range)[][].[]\n" + 
                                                 " [white]• Tốc độ bắn [red]giảm 40%[][white], tấn công cả [orange]Đất & Không[].[]\n" + 
                                                 " [white]• Giới hạn tích tầng đột phá lên tới [gold]" + maxStackMK2B + " tầng (Tối đa +9990% DMG)[].[]\n" + 
@@ -373,25 +373,25 @@ Events.on(ClientLoadEvent, new Cons({
                         if (currentTier === 0) { 
                             title += "[yellow](MK1)[]"; 
                             descStr = isEn ? "[gold]⚡ UNUPGRADED BASE STATS (MK1) ⚡[]\n" + 
-                                             "[lightgray]Turret Health:[] [green]848 HP[]\n" + 
+                                             "[lightgray]Turret Health:[] [green]3913 HP[]\n" + 
                                              "[lightgray]Target Type:[] Ground & Air\n" + 
                                              "[lightgray]Single Target Damage:[] [red]" + this.getModifiedDamage(1673) + " Damage[] (Base: 1673)\n" + 
                                              statStackStr
                                            : "[gold]⚡ THÔNG SỐ GỐC CHƯA NÂNG CẤP (MK1) ⚡[]\n" + 
-                                             "[lightgray]Máu tháp pháo:[] [green]848 HP[]\n" + 
+                                             "[lightgray]Máu tháp pháo:[] [green]3913 HP[]\n" + 
                                              "[lightgray]Trạng thái mục tiêu:[] Đất & Không\n" + 
                                              "[lightgray]Sát thương mục tiêu đơn:[] [red]" + this.getModifiedDamage(1673) + " Sát thương[] (Gốc: 1673)\n" + 
                                              statStackStr; 
                         } else if (currentTier === 1) { 
                             title += "[cyan](MK2)[]"; 
                             descStr = isEn ? "[cyan]⚡ AREA DAMAGE CONFIG (MK2) ⚡[]\n" + 
-                                             "[lightgray]Turret Health:[] [green]1103 HP[]\n" + 
+                                             "[lightgray]Turret Health:[] [green]5089 HP[]\n" + 
                                              "[lightgray]Splash Area:[] [orange]50 Pixels[]\n" + 
                                              "[lightgray]Direct Damage:[] [red]" + this.getModifiedDamage(1673) + " Damage[] (Base: 1673)\n" + 
                                              "[lightgray]Splash Damage:[] [yellow]" + this.getModifiedDamage(837) + " Damage[] (Base: 837)\n" + 
                                              statStackStr
                                            : "[cyan]⚡ CẤU HÌNH ĐẠN DIỆN RỘNG (MK2) ⚡[]\n" + 
-                                             "[lightgray]Máu tháp pháo:[] [green]1103 HP[]\n" + 
+                                             "[lightgray]Máu tháp pháo:[] [green]5089 HP[]\n" + 
                                              "[lightgray]Vùng nổ lan (Splash):[] [orange]50 Pixel[]\n" + 
                                              "[lightgray]Sát thương trực diện:[] [red]" + this.getModifiedDamage(1673) + " Sát thương[] (Gốc: 1673)\n" + 
                                              "[lightgray]Sát thương nổ lan:[] [yellow]" + this.getModifiedDamage(837) + " Sát thương[] (Gốc: 837)\n" + 
@@ -399,7 +399,7 @@ Events.on(ClientLoadEvent, new Cons({
                         } else if (currentTier === 2) { 
                             title += "[purple](MK2B)[]"; 
                             descStr = isEn ? "[purple]⚡ ENHANCED LONG RANGE ARTILLERY CONFIG (MK2B) ⚡[]\n" + 
-                                             "[lightgray]Turret Health:[] [green]1425 HP[]\n" + 
+                                             "[lightgray]Turret Health:[] [green]6575 HP[]\n" + 
                                              "[lightgray]Range:[] [green]Double Base Range (x2 Range)[]\n" + 
                                              "[lightgray]Attack Speed:[] [red]40% Slower[]\n" + 
                                              "[lightgray]Target Type:[] Ground & Air\n" + 
@@ -407,7 +407,7 @@ Events.on(ClientLoadEvent, new Cons({
                                              "[lightgray]Splash Damage (-20% Base):[] [orange]" + this.getModifiedDamage(1070) + " Damage[] (Base: 1070)\n" + 
                                              statStackStr
                                            : "[purple]⚡ CẤU HÌNH PHÁO TẦM XA CƯỜNG HÓA (MK2B) ⚡[]\n" + 
-                                             "[lightgray]Máu tháp pháo:[] [green]1425 HP[]\n" + 
+                                             "[lightgray]Máu tháp pháo:[] [green]6575 HP[]\n" + 
                                              "[lightgray]Tầm bắn:[] [green]Gấp đôi tầm bắn gốc (x2 Range)[]\n" + 
                                              "[lightgray]Tốc độ bắn:[] [red]Chậm hơn 40%[]\n" + 
                                              "[lightgray]Trạng thái mục tiêu:[] Đất & Không\n" + 

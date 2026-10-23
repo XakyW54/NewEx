@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 
@@ -221,9 +222,9 @@ Events.on(ContentInitEvent, cons(e => {
             this.paidTitanium = 0;
             this.paidSilicon = 0;
             this.paidPlastanium = 0;
-            if(val == 0) { this.health = 1200; }
-            if(val == 1) { this.health = 1800; }
-            if(val == 2) { this.health = 1600; }
+            if(val == 0) { this.health = 3000; }
+            if(val == 1) { this.health = 4500; }
+            if(val == 2) { this.health = 4000; }
             this.maxHealth = this.health;
         },
 
@@ -319,11 +320,11 @@ Events.on(ContentInitEvent, cons(e => {
                     let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                     b1.add("[cyan]===(MK2 - PENETRATION)===[]").row();
                     let b1D = b1.add(isEn() ? 
-                                    "[white]• Health: [green]+50%[] (1,800 HP)\n" +
+                                    "[white]• Health: [green]+50%[] (4,500 HP)\n" +
                                     "• Range: [green]+31.25%[] (420 px)\n" +
                                     "• Base Damage: [green]+44.4%[] (97.5 DMG)\n\n" +
                                     "[lightgray]Special Perk: Full Heat Empowerment — Reaching max stack adds +1% Max HP true damage per bullet.[]" :
-                                    "[white]• Máu cấu trúc: [green]+50%[] (1,800 HP)\n" +
+                                    "[white]• Máu cấu trúc: [green]+50%[] (4,500 HP)\n" +
                                     "• Tầm bắn: [green]+31.25%[] (420 px)\n" +
                                     "• Sát thương gốc: [green]+44.4%[] (97.5 DMG)\n\n" +
                                     "[lightgray]Nội tại nâng cấp: Tích đủ tần giới hạn, đạn bắn ra sẽ gây thêm 1% Max HP của mục tiêu.[]");
@@ -341,11 +342,11 @@ Events.on(ContentInitEvent, cons(e => {
                     let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                     b2.add("[purple]===(MK2B - HOMING)===[]").row();
                     let b2D = b2.add(isEn() ? 
-                                    "[white]• Health: [green]+33.3%[] (1,600 HP)\n" +
+                                    "[white]• Health: [green]+33.3%[] (4,000 HP)\n" +
                                     "• Range: [green]+12.5%[] (360 px)\n" +
                                     "• Base Damage: [green]+172.2%[] (183.75 DMG)\n\n" +
                                     "[lightgray]Special Perk: Full Heat Blast — Reaching max stack causes bullet hits to trigger a 35-tile explosion dealing 0.5% Max HP.[]" :
-                                    "[white]• Máu cấu trúc: [green]+33.3%[] (1,600 HP)\n" +
+                                    "[white]• Máu cấu trúc: [green]+33.3%[] (4,000 HP)\n" +
                                     "• Tầm bắn: [green]+12.5%[] (360 px)\n" +
                                     "• Sát thương gốc: [green]+172.2%[] (183.75 DMG)\n\n" +
                                     "[lightgray]Nội tại nâng cấp: Tích đủ tần giới hạn, đạn bắn ra nổ phạm vi 35 ô với 0.5% Max HP.[]");
@@ -384,7 +385,7 @@ Events.on(ContentInitEvent, cons(e => {
                     title += "[yellow](MK1)[]";
                     descStr = isEn() ? 
                               "[gold]⚡ BASE STATS (MK1) ⚡[]\n" +
-                              "[lightgray]Turret HP:[] [green]1,200[]\n" +
+                              "[lightgray]Turret HP:[] [green]3,000[]\n" +
                               "[lightgray]Effective Range:[] [orange]320 px[]\n" +
                               "[lightgray]Base Damage (Silicon):[] [yellow]67.50 DMG[]\n" +
                               "[lightgray]Base Damage (Copper):[] [orange]33.75 DMG[]\n" +
@@ -393,7 +394,7 @@ Events.on(ContentInitEvent, cons(e => {
                               "• Starts at 500% Attack Speed, decreasing by 5%/s while firing.\n" +
                               "• Damage starts at 0% bonus and increases by 50%/s up to 5000%." :
                               "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                              "[lightgray]Máu tháp pháo:[] [green]1,200[]\n" +
+                              "[lightgray]Máu tháp pháo:[] [green]3,000[]\n" +
                               "[lightgray]Tầm bắn hiệu dụng:[] [orange]320 pixel[]\n" +
                               "[lightgray]Sát thương Silicon:[] [yellow]67.50 DMG[]\n" +
                               "[lightgray]Sát thương Đồng (Copper):[] [orange]33.75 DMG[]\n" +
@@ -406,7 +407,7 @@ Events.on(ContentInitEvent, cons(e => {
                     title += "[cyan](MK2)[]";
                     descStr = isEn() ? 
                               "[cyan]⚡ BASE STATS (MK2) ⚡[]\n" +
-                              "[lightgray]Turret HP:[] [green]1,800 [lime](+50%)[]\n" +
+                              "[lightgray]Turret HP:[] [green]4,500 [lime](+50%)[]\n" +
                               "[lightgray]Effective Range:[] [orange]420 px [lime](+31.2%)[]\n" +
                               "[lightgray]Base Damage (Silicon):[] [yellow]97.50 DMG [lime](+44.4%)[]\n" +
                               "[lightgray]Base Damage (Copper):[] [orange]48.75 DMG[]\n" +
@@ -414,7 +415,7 @@ Events.on(ContentInitEvent, cons(e => {
                               "[lime]⚡ SPECIAL EFFECT:[]\n" +
                               "• Firing until max stack deals [green]+1% Max HP[] bonus damage." :
                               "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
-                              "[lightgray]Máu tháp pháo:[] [green]1,800 [lime](+50%)[]\n" +
+                              "[lightgray]Máu tháp pháo:[] [green]4,500 [lime](+50%)[]\n" +
                               "[lightgray]Tầm bắn hiệu dụng:[] [orange]420 pixel [lime](+31.2%)[]\n" +
                               "[lightgray]Sát thương Silicon:[] [yellow]97.50 DMG [lime](+44.4%)[]\n" +
                               "[lightgray]Sát thương Đồng (Copper):[] [orange]48.75 DMG[]\n" +
@@ -426,14 +427,14 @@ Events.on(ContentInitEvent, cons(e => {
                     title += "[purple](MK2B)[]";
                     descStr = isEn() ? 
                               "[purple]⚡ BASE STATS (MK2B) ⚡[]\n" +
-                              "[lightgray]Turret HP:[] [green]1,600 [lime](+33.3%)[]\n" +
+                              "[lightgray]Turret HP:[] [green]4,000 [lime](+33.3%)[]\n" +
                               "[lightgray]Effective Range:[] [orange]360 px [lime](+12.5%)[]\n" +
                               "[lightgray]Base Damage (Silicon):[] [red]183.75 DMG (+172.2%)[]\n" +
                               "[lightgray]Base Damage (Copper):[] [orange]91.875 DMG[]\n\n" +
                               "[purple]🔥 SPECIAL EFFECT:[]\n" +
                               "• Firing until max stack triggers a 35-tile AOE explosion dealing [pink]0.5% Max HP[]." :
                               "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
-                              "[lightgray]Máu tháp pháo:[] [green]1,600 [lime](+33.3%)[]\n" +
+                              "[lightgray]Máu tháp pháo:[] [green]4,000 [lime](+33.3%)[]\n" +
                               "[lightgray]Tầm bắn hiệu dụng:[] [orange]360 pixel [lime](+12.5%)[]\n" +
                               "[lightgray]Sát thương Silicon:[] [red]183.75 DMG (+172.2%)[]\n" +
                               "[lightgray]Sát thương Đồng (Copper):[] [orange]91.875 DMG[]\n\n" +
@@ -492,7 +493,7 @@ Events.on(ContentInitEvent, cons(e => {
 
         draw(){
             let modName = this.block.name.split("-")[0]; 
-            let baseRegion = Core.atlas.find(this.block.basePrefix + "" + this.block.size);
+            let baseRegion = PerfCore.region(this.block.basePrefix + "" + this.block.size);
             if(baseRegion.found()){
                 Draw.rect(baseRegion, this.x, this.y);
             } else {
@@ -506,14 +507,14 @@ Events.on(ContentInitEvent, cons(e => {
             let maxBarrelRecoilDistance = -5.0; 
             let sideMoveDistance = (this.energyState || 0) * 4.0; 
 
-            let barrel1Region = Core.atlas.find(modName + "-tenytisyr-barrel1");
+            let barrel1Region = PerfCore.region(modName + "-tenytisyr-barrel1");
             if(barrel1Region.found()){
                 let b1x = this.x - (sideMoveDistance * sin);
                 let b1y = this.y + (sideMoveDistance * cos);
                 Draw.rect(barrel1Region, b1x, b1y, this.rotation);
             }
 
-            let barrel2Region = Core.atlas.find(modName + "-tenytisyr-barrel2");
+            let barrel2Region = PerfCore.region(modName + "-tenytisyr-barrel2");
             if(barrel2Region.found()){
                 let b2x = this.x + (sideMoveDistance * sin);
                 let b2y = this.y - (sideMoveDistance * cos);
@@ -521,7 +522,7 @@ Events.on(ContentInitEvent, cons(e => {
             }
 
             let b1Offset = this.customRecoil * maxBarrelRecoilDistance;
-            let b1Region = Core.atlas.find(modName + "-tenytisyr-b1");
+            let b1Region = PerfCore.region(modName + "-tenytisyr-b1");
             if (b1Region.found()) {
                 let b1ax = this.x + b1Offset * cos;
                 let b1ay = this.y + b1Offset * sin;

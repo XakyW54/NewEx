@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const zojBullet = extend(BasicBulletType, {
     speed: 15,
     damage: 30,
@@ -46,10 +47,7 @@ Events.on(ClientLoadEvent, cons(e => {
         const maxCost = 99999;
 
         function getDynamicCost() {
-            let count = 0;
-            Groups.build.each(b => {
-                if (b.block === zojBlock) count++;
-            });
+            let count = PerfCore.teamCount(null, zojBlock);
             let cost = Math.floor(baseCost * Math.pow(2, count));
             if (cost > maxCost) {
                 cost = maxCost;
@@ -93,6 +91,7 @@ Events.on(ClientLoadEvent, cons(e => {
         });
 
         Events.run(Trigger.update, () => {
+            if (!PerfCore.every("zoj-cost", 20)) return;
             updateCost();
         });
     }

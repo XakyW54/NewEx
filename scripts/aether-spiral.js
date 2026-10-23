@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packCons = (func) => new Cons({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
@@ -209,7 +210,7 @@ const GOLDEN_RATIO = 1.61803398875;
 const GOLDEN_ANGLE_DEG = 137.507764;
 
 const acidCorrosionEffect = new Effect(30, cons(e => {
-    Draw.color(Color.valueOf("#a3e635"), Color.valueOf("#65a30d"), e.fin());
+    Draw.color(PerfCore.color("#a3e635"), PerfCore.color("#65a30d"), e.fin());
     Lines.stroke(e.fout() * 2);
     Mathf.rand.setSeed(e.id);
     for(let i = 0; i < 5; i++){
@@ -420,7 +421,7 @@ const createAetherStarBullet = (frontCol, backCol, hitEf, statusEff) => {
 };
 
 const darkVoidHitFx = new Effect(30, cons(e => {
-    Draw.color(Color.valueOf("#2e1065"), Color.valueOf("#a855f7"), e.fin());
+    Draw.color(PerfCore.color("#2e1065"), PerfCore.color("#a855f7"), e.fin());
     Lines.stroke(3 * e.fout());
     Lines.circle(e.x, e.y, 25 * e.fin());
     Fill.circle(e.x, e.y, 8 * e.fout());
@@ -549,12 +550,7 @@ function updateAetherSpiralVisibility() {
     let playerTeam = Vars.player.team();
     let maxAllowed = playerTeam.cores().size;
 
-    let currentCount = 0;
-    Groups.build.each(b => {
-        if (b.block === aetherTurret && b.team === playerTeam) {
-            currentCount++;
-        }
-    });
+    let currentCount = PerfCore.teamCount(playerTeam, aetherTurret);
 
     if (currentCount < maxAllowed) {
         aetherTurret.buildVisibility = BuildVisibility.shown;
@@ -952,7 +948,7 @@ Events.on(ContentInitEvent, () => {
                 let cos = Mathf.cos(rad);
                 let sin = Mathf.sin(rad);
 
-                let topRegion = Core.atlas.find("newex-aether-spiral-top");
+                let topRegion = PerfCore.region("newex-aether-spiral-top");
                 if(topRegion.found){
                     let recoilPx = this.customRecoil;
                     let drawOffset = 10 - recoilPx;

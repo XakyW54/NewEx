@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 // ==========================================
 // 1. HELPER & UTILS
 // ==========================================
@@ -51,22 +52,22 @@ const miniCrosshairWarningFx = new Effect(60, e => {
 });
 
 const chargedExplosionFx = new Effect(35, e => {
-    Draw.color(Color.valueOf("a855f7"), Color.valueOf("fef08a"), e.fin());
+    Draw.color(PerfCore.color("a855f7"), PerfCore.color("fef08a"), e.fin());
     Lines.stroke(e.fout() * 4.0); Lines.circle(e.x, e.y, e.finpow() * 20.0);
     Lines.stroke(e.fout() * 2.0); Lines.circle(e.x, e.y, e.finpow() * 12.0);
-    Draw.color(Color.valueOf("fef08a")); Fill.circle(e.x, e.y, e.fout() * 8.0);
+    Draw.color(PerfCore.color("fef08a")); Fill.circle(e.x, e.y, e.fout() * 8.0);
 });
 
 const laserBeamFx = new Effect(20, e => {
     if (!e.data) return;
-    Draw.color(Color.valueOf("fef08a"), Color.valueOf("a855f7"), e.fin());
+    Draw.color(PerfCore.color("fef08a"), PerfCore.color("a855f7"), e.fin());
     Lines.stroke(e.fout() * 3.5); Lines.line(e.x, e.y, e.data.x, e.data.y);
     Fill.circle(e.x, e.y, e.fout() * 4.0); Fill.circle(e.data.x, e.data.y, e.fout() * 5.0);
 });
 
 const mainToSpawnLaserFx = new Effect(20, e => {
     if (!e.data) return;
-    Draw.color(Color.valueOf("fef08a"), Color.white, e.fin());
+    Draw.color(PerfCore.color("fef08a"), Color.white, e.fin());
     Lines.stroke(e.fout() * 3.0); Lines.line(e.x, e.y, e.data.x, e.data.y);
     Fill.circle(e.x, e.y, e.fout() * 5.0);
 });
@@ -77,7 +78,7 @@ const starSwordBullet = extend(BasicBulletType, {
     trailColor: Color.valueOf("#75e3ff"), trailEffect: Fx.disperseTrail, trailChance: 0.3,
     pierce: true, pierceCap: 2, hitEffect: critEffect, despawnEffect: critEffect,
     draw(b) {
-        let region = Core.atlas.find("newex-starsword", Core.atlas.find("starsword"));
+        let region = PerfCore.region("newex-starsword", PerfCore.region("starsword"));
         if (region.found()) Draw.rect(region, b.x, b.y, this.width, this.height, b.rotation() - 90);
         else this.super$draw(b);
     }

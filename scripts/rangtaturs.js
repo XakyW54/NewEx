@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const chargeTimeMax = 180;   
 const berserkTimeMax = 300;  
 const chargeTimeMaxMK2 = 140;   
@@ -7,7 +8,7 @@ const berserkTimeMaxMK2 = 360;
 const reqRangtatursMK2B = { copper: 840, lead: 665, silicon: 385 };
 
 const acidCorrosionEffect = new Effect(30, cons(e => {
-    Draw.color(Color.valueOf("#a3e635"), Color.valueOf("#65a30d"), e.fin());
+    Draw.color(PerfCore.color("#a3e635"), PerfCore.color("#65a30d"), e.fin());
     Lines.stroke(e.fout() * 2);
     Mathf.rand.setSeed(e.id);
     for(let i = 0; i < 5; i++){
@@ -172,7 +173,7 @@ const normalBulletBCorroded = extend(BasicBulletType, {
 
 const createLaser = (dmg, w, lt, col, st, hitEf) => {
     return extend(LaserBulletType, {
-        length: 240, damage: dmg, width: w, lifetime: lt, colors: col, status: st, statusDuration: 180,
+        length: 352, damage: dmg, width: w, lifetime: lt, colors: col, status: st, statusDuration: 180,
         hitEffect: hitEf, chargeEffect: Fx.lancerLaserCharge, smokeEffect: Fx.smoke
     });
 };
@@ -254,7 +255,7 @@ const rangtaturs = extend(ItemTurret, "rangtaturs", {
     squareSprite: false,
 });
 
-rangtaturs.health = 1400; rangtaturs.size = 3; rangtaturs.reload = 95; rangtaturs.range = 240; rangtaturs.configurable = true;
+rangtaturs.health = 950; rangtaturs.size = 3; rangtaturs.reload = 95; rangtaturs.range = 352; rangtaturs.configurable = true;
 rangtaturs.ammo(Items.silicon, rangtatursNormalBullet);
 
 rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {

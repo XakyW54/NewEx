@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 function dashCircle(x, y, radius, color) {
     Draw.color(color);
     let segments = 48;
@@ -87,9 +88,9 @@ const shieldHealthMK1 = 5000;
 const shieldHealthMK2 = 6500;
 const shieldHealthMK3 = 12000;
 
-const turretHealthMK1 = 2200;
-const turretHealthMK2 = 2860;
-const turretHealthMK3 = 4400;
+const turretHealthMK1 = 5500;
+const turretHealthMK2 = 7150;
+const turretHealthMK3 = 11000;
 
 function getMaxShieldHealth(tier) {
     if (tier == 1) return shieldHealthMK2;
@@ -337,14 +338,14 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                 b1.add("[cyan]===(MK2)===[]").row();
                 let b1Text = isEn ?
                     "Firepower Enhancement & Pulse Energy Upgrades:\n" +
-                    " [white]• Structure HP greatly increased to [green]2860 HP[] (+30%).[]\n" + 
+                    " [white]• Structure HP greatly increased to [green]7150 HP[] (+30%).[]\n" + 
                     " [white]• Shield core expanded, boosting matrix durability to [cyan]6500[].[]\n" +
                     " [white]• Long-range targeting drastically expanded to [green]468 pixels[] (+30%).[]\n" +
                     " [white]• Ranged ammo upgraded to MK2 variant (Speed: 10.4, Damage: 196).[]\n" +
                     " [white]• Close Combat: Retains 100 range, boosts shotgun damage to [yellow]107.1[].[]\n" +
                     " [white]• Special: Instantly recharges shield when target enters close-range for the first time.[]" :
                     "Cải tiến năng lực hỏa lực và năng lượng xung kích:\n" +
-                    " [white]• Kết cấu HP pháo tăng mạnh lên [green]2860 HP[] (+30%).[]\n" + 
+                    " [white]• Kết cấu HP pháo tăng mạnh lên [green]7150 HP[] (+30%).[]\n" + 
                     " [white]• Lõi khiên mở rộng, gia tăng độ bền màng chắn lên [cyan]6500[].[]\n" +
                     " [white]• Tầm bắn tầm xa mở rộng vượt trội đạt [green]468 pixel[] (+30%).[]\n" +
                     " [white]• Đạn tầm xa nâng cấp lên dạng MK2 (Vận tốc: 10.4, Sát thương: 196).[]\n" +
@@ -365,13 +366,13 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                 b2.add("[purple]===(MK2B)===[]").row();
                 let b2Text = isEn ?
                     "Complete Conversion to Compressed Heavy Laser Variant:\n" +
-                    " [white]• Reinforced frame boosts turret HP to ultra tier [green]4400 HP[] (+100%).[]\n" +
+                    " [white]• Reinforced frame boosts turret HP to ultra tier [green]11000 HP[] (+100%).[]\n" +
                     " [white]• Shield matrix capacity maxes out at [cyan]12000[] health points.[]\n" +
                     " [white]• Ranged attack distance reduced to [red]252 pixels[], but converts to [orange]Piercing Laser Beams[] with [red]427 heavy damage[].[]\n" +
                     " [white]• Close Combat: Shotgun trigger threshold expanded to [yellow]145 pixels[].[]\n" +
                     " [white]• Hybrid Shotgun Fire: Simultaneously launches [scarlet]14 red pellets[] and [orange]6 wide-spread spread beams[] to clear enemies.[]" :
                     "Chuyển đổi toàn diện sang dạng Trọng Pháo Laser bạo nén:\n" +
-                    " [white]• Kết cấu khung vững chắc nâng HP pháo lên mức siêu cấp [green]4400 HP[] (+100%).[]\n" +
+                    " [white]• Kết cấu khung vững chắc nâng HP pháo lên mức siêu cấp [green]11000 HP[] (+100%).[]\n" +
                     " [white]• Lõi nén lá chắn hấp thụ đạt mốc tối đa [cyan]12000[] độ bền.[]\n" +
                     " [white]• Tầm bắn tầm xa thu hẹp còn [red]252 pixel[], bù lại chuyển sang dạng [orange]Chùm tia Laser xuyên phá[] tầm trung cực đại [red]427 sát thương[].[]\n" +
                     " [white]• Cận chiến: Tầm quét kích hoạt shotgun mở rộng lên [yellow]145 pixel[].[]\n" +
@@ -415,7 +416,7 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                 title += "[yellow](MK1)[]";
                 descStr = isEn ?
                           "[gold]⚡ BASE STATS (MK1) ⚡[]\n" +
-                          "• [lightgray]Turret Health:[] [green]2200 HP[]\n" +
+                          "• [lightgray]Turret Health:[] [green]5500 HP[]\n" +
                           "• [lightgray]Shield Health:[] [cyan]" + shieldHealthMK1 + "[]\n" +
                           "• [lightgray]Effective Range:[] [orange]" + this.range() + " pixels[]\n" +
                           "• [lightgray]Ranged Damage:[] [yellow]220.5[] (Bullet Speed: 7)\n\n" +
@@ -423,7 +424,7 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                           "• [lightgray]Energy Shield:[] Automatically deploys a 120° shield blocking incoming projectiles in aiming direction.\n" +
                           "• [lightgray]Close Combat Mode (Shotgun):[] Deploys mechanical claws when enemies step within [yellow]100 pixels[]. Fires a burst of 14 pellets (Damage: 73.5) across 10 rapid magazines." :
                           "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                          "• [lightgray]Máu tháp pháo:[] [green]2200 HP[]\n" +
+                          "• [lightgray]Máu tháp pháo:[] [green]5500 HP[]\n" +
                           "• [lightgray]Độ bền lá chắn:[] [cyan]" + shieldHealthMK1 + "[]\n" +
                           "• [lightgray]Tầm bắn hiệu dụng:[] [orange]" + this.range() + " pixel[]\n" +
                           "• [lightgray]Sát thương tầm xa:[] [yellow]220.5[] (Tốc độ đạn: 7)\n\n" +
@@ -435,7 +436,7 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                 title += "[cyan](MK2)[]";
                 descStr = isEn ?
                           "[cyan]⚡ UPGRADED CONFIGURATION STATS (MK2) ⚡[]\n" +
-                          "• [lightgray]Turret Health:[] [green]2860 HP [yellow](+30%)[]\n" +
+                          "• [lightgray]Turret Health:[] [green]7150 HP [yellow](+30%)[]\n" +
                           "• [lightgray]Shield Health:[] [cyan]" + shieldHealthMK2 + "[]\n" +
                           "• [lightgray]Effective Range:[] [orange]" + this.range() + " pixels [yellow](+30%)[]\n" +
                           "• [lightgray]Ranged Damage:[] [yellow]196.0[] (Velocity boosted: 10.4)\n\n" +
@@ -443,7 +444,7 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                           "• [lightgray]Instant Shield Recharge:[] Shield instantly recharges to full capacity when an enemy enters close-range for the first time.\n" +
                           "• [lightgray]Enhanced Shotgun:[] Significantly increases pellet shotgun damage to [yellow]107.1[]." :
                           "[cyan]⚡ THÔNG SỐ CẤU HÌNH NÂNG CẤP (MK2) ⚡[]\n" +
-                          "• [lightgray]Máu tháp pháo:[] [green]2860 HP [yellow](+30%)[]\n" +
+                          "• [lightgray]Máu tháp pháo:[] [green]7150 HP [yellow](+30%)[]\n" +
                           "• [lightgray]Độ bền lá chắn:[] [cyan]" + shieldHealthMK2 + "[]\n" +
                           "• [lightgray]Tầm bắn hiệu dụng:[] [orange]" + this.range() + " pixel [yellow](+30%)[]\n" +
                           "• [lightgray]Sát thương tầm xa:[] [yellow]196.0[] (Gia tốc đạn tăng vọt: 10.4)\n\n" +
@@ -455,7 +456,7 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                 title += "[purple](MK2B)[]";
                 descStr = isEn ?
                           "[purple]⚡ HEAVY GRAVITY VARIANT STATS (MK2B) ⚡[]\n" +
-                          "• [lightgray]Turret Health:[] [green]4400 HP [yellow](+100%)[]\n" +
+                          "• [lightgray]Turret Health:[] [green]11000 HP [yellow](+100%)[]\n" +
                           "• [lightgray]Shield Health:[] [cyan]" + shieldHealthMK3 + "[]\n" +
                           "• [lightgray]Effective Range:[] [orange]" + this.range() + " pixels [coral](Reduced)[]\n" +
                           "• [lightgray]Ranged Mode:[] Replaced with [orange]Destructive Laser Beam[] dealing [red]427 direct damage[].\n\n" +
@@ -463,7 +464,7 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                           "• [lightgray]Expanded Shotgun Range:[] Threshold expanded to [yellow]145 pixels[].\n" +
                           "• [lightgray]Hybrid Firepower:[] Fires a combined combo of [scarlet]14 red pellets[] (Damage: 80.5) and [sharp]6 angled spread beams (12°)[] (Damage: 80.5) to obliterate nearby targets instantly." :
                           "[purple]⚡ THÔNG SỐ BIẾN THỂ TRỌNG LỰC (MK2B) ⚡[]\n" +
-                          "• [lightgray]Máu tháp pháo:[] [green]4400 HP [yellow](+100%)[]\n" +
+                          "• [lightgray]Máu tháp pháo:[] [green]11000 HP [yellow](+100%)[]\n" +
                           "• [lightgray]Độ bền lá chắn:[] [cyan]" + shieldHealthMK3 + "[]\n" +
                           "• [lightgray]Tầm bắn hiệu dụng:[] [orange]" + this.range() + " pixel [coral](Thu hẹp)[]\n" +
                           "• [lightgray]Chế độ tầm xa:[] Chuyển hẳn thành [orange]Laser hủy diệt[] nén điểm gây [red]427 sát thương[] trực diện.\n\n" +
@@ -645,7 +646,7 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
         let currentRadius = maxShieldRadius * this.shieldScale;
 
         if(this.shieldHealth > 0 && this.shieldScale > 0.2){
-            Groups.bullet.each(b => {
+            Groups.bullet.intersect(this.x - currentRadius - 16, this.y - currentRadius - 16, (currentRadius + 16) * 2, (currentRadius + 16) * 2, cons(b => {
                 if(b.team != this.team && b.type != null && b.type.damage > 0){
                     let dst = Mathf.dst(this.x, this.y, b.x, b.y);
                     if(dst >= (currentRadius - 12) && dst <= (currentRadius + 8)){
@@ -664,7 +665,7 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                         }
                     }
                 }
-            });
+            }));
         }
         if(this.shieldHitTime > 0) this.shieldHitTime -= Time.delta;
     },
@@ -729,7 +730,7 @@ shoot(type){
     draw(){
         let modName = this.block.name.split("-")[0]; 
 
-        let baseRegion = Core.atlas.find(this.block.basePrefix + "block-" + this.block.size);
+        let baseRegion = PerfCore.region(this.block.basePrefix + "block-" + this.block.size);
         if(baseRegion.found()){
             Draw.rect(baseRegion, this.x, this.y);
         } else {
@@ -747,14 +748,14 @@ shoot(type){
             Draw.rect(this.block.region, this.x, this.y, this.rotation);
         }
 
-        let bodyRegion = Core.atlas.find(modName + "-dtg-soldern-body");
+        let bodyRegion = PerfCore.region(modName + "-dtg-soldern-body");
         if(bodyRegion.found()){
             Draw.rect(bodyRegion, this.x, this.y, this.rotation);
         }
 
         let spreadX = this.subWeaponVisual * 5.0; 
-        let subLeftRegion = Core.atlas.find(modName + "-dtg-soldern-sub-left");
-        let subRightRegion = Core.atlas.find(modName + "-dtg-soldern-sub-right");
+        let subLeftRegion = PerfCore.region(modName + "-dtg-soldern-sub-left");
+        let subRightRegion = PerfCore.region(modName + "-dtg-soldern-sub-right");
         
         if (subLeftRegion.found() && subRightRegion.found()) {
             let lx = this.x - spreadX * sin;
@@ -765,12 +766,12 @@ shoot(type){
             let ry = this.y - spreadX * cos;
             Draw.rect(subRightRegion, rx, ry, this.rotation);
         } else {
-            let subFallback = Core.atlas.find(modName + "-dtg-soldern-sub");
+            let subFallback = PerfCore.region(modName + "-dtg-soldern-sub");
             if (subFallback.found()) Draw.rect(subFallback, this.x, this.y, this.rotation);
         }
 
         let pushY = this.mainWeaponVisual * 4.5; 
-        let mainRegion = Core.atlas.find(modName + "-dtg-soldern-main");
+        let mainRegion = PerfCore.region(modName + "-dtg-soldern-main");
         if (mainRegion.found()) {
             let mx = this.x + pushY * cos;
             let my = this.y + pushY * sin;
@@ -778,7 +779,7 @@ shoot(type){
         }
 
         let barrelOffset = this.shotgunBarrelRecoil * maxBarrelRecoilDistance;
-        let barrelRegion = Core.atlas.find(modName + "-dtg-soldern-barrel");
+        let barrelRegion = PerfCore.region(modName + "-dtg-soldern-barrel");
         if (barrelRegion.found()) {
             let bx = this.x + barrelOffset * cos;
             let by = this.y + barrelOffset * sin;
@@ -786,7 +787,7 @@ shoot(type){
         }
 
         let b1Offset = this.mainWeaponRecoil * maxBarrelRecoilDistance;
-        let barrel1aRegion = Core.atlas.find(modName + "-dtg-soldern-b1");
+        let barrel1aRegion = PerfCore.region(modName + "-dtg-soldern-b1");
         if (barrel1aRegion.found()) {
             let b1ax = this.x + b1Offset * cos;
             let b1ay = this.y + b1Offset * sin;
@@ -810,8 +811,8 @@ shoot(type){
 
         Draw.z(Layer.turret + 0.01);
 
-        let clawR1 = Core.atlas.find(modName + "-dtg-soldern-claw-r1");
-        let clawR2 = Core.atlas.find(modName + "-dtg-soldern-claw-r2");
+        let clawR1 = PerfCore.region(modName + "-dtg-soldern-claw-r1");
+        let clawR2 = PerfCore.region(modName + "-dtg-soldern-claw-r2");
 
         if(clawR1.found()){
             let cx = this.x + ((clawRecoilOffset + clawForwardMove) * cos) - (clawSideMove * sin);
@@ -827,7 +828,7 @@ shoot(type){
 
         Draw.z(Layer.turret);
 
-        let topRegion = Core.atlas.find(modName + "-dtg-soldern-top");
+        let topRegion = PerfCore.region(modName + "-dtg-soldern-top");
         if (topRegion.found()) {
             Draw.rect(topRegion, this.x, this.y, this.rotation);
         }

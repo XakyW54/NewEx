@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 
@@ -8,7 +9,7 @@ const isEn = () => Core.settings.get("locale", "").startsWith("en");
 
 const customHitEffect = new Effect(20, new Cons({
     get: function(e){
-        Draw.color(Color.valueOf("90caf9"), Color.white, e.fout());
+        Draw.color(PerfCore.color("90caf9"), Color.white, e.fout());
         Lines.stroke(e.fout() * 2.0);
         Lines.circle(e.x, e.y, e.fin() * 12.0);
     }
@@ -90,11 +91,11 @@ const closeRangeBullet = extend(BasicBulletType, {
     pierce: true,
 
     draw(b){
-        Draw.color(Color.valueOf("90caf9"));
+        Draw.color(PerfCore.color("90caf9"));
         Lines.stroke(3.5);
         Lines.lineAngle(b.x, b.y, b.rotation(), 14);
         
-        Draw.color(Color.valueOf("e3f2fd"));
+        Draw.color(PerfCore.color("e3f2fd"));
         Lines.stroke(1.5);
         Lines.lineAngle(b.x, b.y, b.rotation(), 10);
         
@@ -180,9 +181,9 @@ Events.on(ClientLoadEvent, new Cons({
                 setTier(val){
                     let numTier = Number(val);
                     this.tierState = numTier;
-                    if(numTier === 0) this.health = 1250;
-                    if(numTier === 1) this.health = 1650;
-                    if(numTier === 2) this.health = 2100;
+                    if(numTier === 0) this.health = 3125;
+                    if(numTier === 1) this.health = 4125;
+                    if(numTier === 2) this.health = 5250;
                     this.maxHealth = this.health;
                 },
 
@@ -294,7 +295,7 @@ Events.on(ClientLoadEvent, new Cons({
                 drawSelect(){
                     this.super$drawSelect();
                     
-                    Draw.color(Color.valueOf("90caf9"));
+                    Draw.color(PerfCore.color("90caf9"));
                     Lines.stroke(1.0);
                     Lines.dashCircle(this.x, this.y, 280);
                     Draw.reset();
@@ -372,11 +373,11 @@ Events.on(ClientLoadEvent, new Cons({
                             b1.add(english ? "[cyan]===(MK2 - SUPER FIREPOWER SPEED)===[]" : "[cyan]===(MK2 - SIÊU TỐC HỎA LỰC)===[]").row();
                             let b1Text = english ?
                                 "Optimize reload system and firepower output:\n" +
-                                " [white]• Max health increased to [green]1650 HP[].[]\n" +
+                                " [white]• Max health increased to [green]4125 HP[].[]\n" +
                                 " [white]• [cyan]+130% missile turret speed[].[]\n" +
                                 " [white]• Ultra-fast melee ammo ([yellow]0.1s/shot[]).[]" :
                                 "Tối ưu hóa hệ thống nạp đạn và xả hỏa lực:\n" +
-                                " [white]• Tăng lượng máu tối đa lên [green]1650 HP[].[]\n" +
+                                " [white]• Tăng lượng máu tối đa lên [green]4125 HP[].[]\n" +
                                 " [white]• Tăng [cyan]130% tốc độ pháo tên lửa[].[]\n" +
                                 " [white]• Đạn cận chiến bắn siêu tốc ([yellow]0.1s/viên[]).[]";
                             
@@ -398,10 +399,10 @@ Events.on(ClientLoadEvent, new Cons({
                             b2.add(english ? "[purple]===(MK2B - DAMAGE ENHANCEMENT)===[]" : "[purple]===(MK2B - CƯỜNG HÓA SÁT THƯƠNG)===[]").row();
                             let b2Text = english ?
                                 "Breakthrough in energy enhancement technology:\n" +
-                                " [white]• Max health increased to [green]2100 HP[].[]\n" +
+                                " [white]• Max health increased to [green]5250 HP[].[]\n" +
                                 " [white]• [red]+50% damage[] for all sub-bullets and Repulsor Beam.[]" :
                                 "Đột phá công nghệ cường hóa năng lượng:\n" +
-                                " [white]• Gia tăng lượng máu lên tối đa [green]2100 HP[].[]\n" +
+                                " [white]• Gia tăng lượng máu lên tối đa [green]5250 HP[].[]\n" +
                                 " [white]• Tăng [red]50% sát thương[] cho tất cả đạn phụ và Chưởng Repulsor.[]";
 
                             let b2D = b2.add(b2Text);
@@ -457,32 +458,32 @@ Events.on(ClientLoadEvent, new Cons({
                             title += "[yellow](MK1)[]";
                             descStr = english ?
                                 "[gold]⚡ BASE STATS (MK1) ⚡[]\n" +
-                                "[lightgray]Health:[] [green]1250 HP[]\n" +
+                                "[lightgray]Health:[] [green]3125 HP[]\n" +
                                 "[lightgray]Melee Ammo:[] Fires every 0.2s\n" +
                                 "[lightgray]Repulsor Beam:[] Emits every 5s when target acquired" + buffStatus :
                                 "[gold]⚡ THÔNG SỐ GỐC (MK1) ⚡[]\n" +
-                                "[lightgray]Máu:[] [green]1250 HP[]\n" +
+                                "[lightgray]Máu:[] [green]3125 HP[]\n" +
                                 "[lightgray]Đạn cận chiến:[] Bắn mỗi 0.2s\n" +
                                 "[lightgray]Tia Repulsor:[] Phát mỗi 5s khi có mục tiêu" + buffStatus;
                         } else if(currentTier === 1){
                             title += "[cyan](MK2)[]";
                             descStr = english ?
                                 "[cyan]⚡ SPEED CONFIG (MK2) ⚡[]\n" +
-                                "[lightgray]Health:[] [green]1650 HP[]\n" +
+                                "[lightgray]Health:[] [green]4125 HP[]\n" +
                                 "[lightgray]Fire Rate:[] [green]+130% Fire Rate[]\n" +
                                 "[lightgray]Melee Ammo:[] Fires every 0.1s" + buffStatus :
                                 "[cyan]⚡ CẤU HÌNH TỐC ĐỘ (MK2) ⚡[]\n" +
-                                "[lightgray]Máu:[] [green]1650 HP[]\n" +
+                                "[lightgray]Máu:[] [green]4125 HP[]\n" +
                                 "[lightgray]Tốc độ xả đạn:[] [green]+130% Tốc độ bắn[]\n" +
                                 "[lightgray]Đạn cận chiến:[] Bắn mỗi 0.1s" + buffStatus;
                         } else if(currentTier === 2){
                             title += "[purple](MK2B)[]";
                             descStr = english ?
                                 "[purple]⚡ DAMAGE CONFIG (MK2B) ⚡[]\n" +
-                                "[lightgray]Health:[] [green]2100 HP[]\n" +
+                                "[lightgray]Health:[] [green]5250 HP[]\n" +
                                 "[lightgray]Repulsor Beam:[] [orange]+50% Base Damage[]" + buffStatus :
                                 "[purple]⚡ CẤU HÌNH SÁT THƯƠNG (MK2B) ⚡[]\n" +
-                                "[lightgray]Máu:[] [green]2100 HP[]\n" +
+                                "[lightgray]Máu:[] [green]5250 HP[]\n" +
                                 "[lightgray]Chưởng Repulsor:[] [orange]+50% Sát thương gốc[]" + buffStatus;
                         }
 

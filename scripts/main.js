@@ -1,3 +1,4 @@
+require("perf-core");
 
 require("show-hp");
 require("fix-save");

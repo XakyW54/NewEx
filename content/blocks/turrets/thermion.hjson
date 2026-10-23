@@ -9,7 +9,7 @@ Một công trình chiến thuật cao cấp với 3 dạng thức chuyển đ�
 '''
 type: "Block"
 size: 3
-health: 3000
+health: 7500
 solid: true
 update: true
 hasPower: true

@@ -1,5 +1,6 @@
+const PerfCore = global.PerfCore;
 const customUnibeamHit = new Effect(14, e => {
-    Draw.color(Color.white, Color.valueOf("#00c8ff"), e.fin());
+    Draw.color(Color.white, PerfCore.color("#00c8ff"), e.fin());
     Lines.stroke(e.fout() * 2.2);
     Lines.circle(e.x, e.y, e.fin() * 14);
     Angles.randLenVectors(e.id, 5, e.fin() * 16, (x, y) => {
@@ -8,7 +9,7 @@ const customUnibeamHit = new Effect(14, e => {
 });
 
 const overloadHitEffect = new Effect(20, e => {
-    Draw.color(Color.valueOf("#ff0055"), Color.valueOf("#ff99bb"), e.fin());
+    Draw.color(PerfCore.color("#ff0055"), PerfCore.color("#ff99bb"), e.fin());
     Lines.stroke(e.fout() * 3);
     Lines.circle(e.x, e.y, e.fin() * 26);
     Angles.randLenVectors(e.id, 8, e.fin() * 30, (x, y) => {
@@ -28,7 +29,7 @@ const secondaryLaserEffect = new Effect(12, e => {
     let targetX = e.data.x;
     let targetY = e.data.y;
 
-    Draw.color(Color.valueOf("#ff0055"), Color.white, e.fout());
+    Draw.color(PerfCore.color("#ff0055"), Color.white, e.fout());
     Lines.stroke(e.fout() * 2.5);
     Lines.line(e.x, e.y, targetX, targetY);
     Fill.circle(targetX, targetY, e.fout() * 3);
@@ -41,12 +42,7 @@ function updateRepulsyronVisibility() {
     let playerTeam = Vars.player.team();
     let maxAllowed = playerTeam.cores().size;  
     
-    let currentCount = 0;
-    Groups.build.each(b => {
-        if (b.block === repulsyronBlock && b.team === playerTeam) {
-            currentCount++;
-        }
-    });
+    let currentCount = PerfCore.teamCount(playerTeam, repulsyronBlock);
 
     if (currentCount < maxAllowed) {
         repulsyronBlock.buildVisibility = BuildVisibility.shown;
@@ -281,10 +277,10 @@ Events.on(ContentInitEvent, () => {
             let muzzleY = this.y + Angles.trnsy(this.rotation, repulsyron.size * 4);
 
             if (wing1Region == null || !wing1Region.found()) {
-                wing1Region = Core.atlas.find("newex-repulsyron-wing1", Core.atlas.find("repulsyron-wing1"));
+                wing1Region = PerfCore.region("newex-repulsyron-wing1", PerfCore.region("repulsyron-wing1"));
             }
             if (wing2Region == null || !wing2Region.found()) {
-                wing2Region = Core.atlas.find("newex-repulsyron-wing2", Core.atlas.find("repulsyron-wing2"));
+                wing2Region = PerfCore.region("newex-repulsyron-wing2", PerfCore.region("repulsyron-wing2"));
             }
 
             if (wing1Region && wing1Region.found() && wing2Region && wing2Region.found()) {
@@ -302,7 +298,7 @@ Events.on(ContentInitEvent, () => {
                 Draw.rect(wing2Region, w2X, w2Y, this.rotation);
 
                 if (this.wingHeatProgress > 0) {
-                    Draw.color(Color.valueOf("#ffbb88"));
+                    Draw.color(PerfCore.color("#ffbb88"));
                     Draw.alpha(this.wingHeatProgress * 0.85);
                     Draw.blend(Blending.additive);
                     
@@ -317,7 +313,7 @@ Events.on(ContentInitEvent, () => {
             if (this.isCharging) {
                 let chargeRatio = Mathf.clamp(this.chargeTimer / 30);
                 Draw.z(Layer.bullet + 2);
-                Draw.color(Color.valueOf("#00e1ff"), Color.white, chargeRatio);
+                Draw.color(PerfCore.color("#00e1ff"), Color.white, chargeRatio);
                 Fill.circle(muzzleX, muzzleY, chargeRatio * 5);
                 Lines.stroke((1 - chargeRatio) * 3);
                 Lines.circle(muzzleX, muzzleY, (1 - chargeRatio) * 16);

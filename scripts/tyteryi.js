@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
@@ -563,11 +564,11 @@ TyterYi.shootSound = Sounds.none;
 TyterYi.requirements = ItemStack.with(Items.copper, 400, Items.lead, 280, Items.silicon, 200, Items.titanium, 150);
 TyterYi.buildVisibility = BuildVisibility.shown;
 
-TyterYi.health = 1000; 
+TyterYi.health = 3000; 
 TyterYi.size = 3;
 TyterYi.reload = 34.0;          
 TyterYi.inaccuracy = 1.0;      
-TyterYi.range = 1200.0;
+TyterYi.range = 320.0;
 TyterYi.configurable = true; 
 TyterYi.category = Category.turret;
 
@@ -590,17 +591,17 @@ TyterYi.buildType = () => extend(ItemTurret.ItemTurretBuild, TyterYi, {
     getTier(){ return this.tierState == null ? 0 : this.tierState; },
     setTier(val){ 
         this.tierState = val;
-        if(val == 0) this.health = 1000;   
-        if(val == 1) this.health = 1800; // MK2: +80% HP
-        if(val == 2) this.health = 2200; // MK3: +120% HP
+        if(val == 0) this.health = 3000;   
+        if(val == 1) this.health = 5400; // MK2: +80% HP
+        if(val == 2) this.health = 6600; // MK3: +120% HP
         this.maxHealth = this.health;
     },
 
     range(){
         let tier = this.getTier();
-        if(tier == 1) return 1600.0;
-        if(tier == 2) return 2640.0; // MK3: +120% tầm bắn
-        return 1200.0;
+        if(tier == 1) return 426.7;
+        if(tier == 2) return 704.0; // MK3: +120% tầm bắn
+        return 320.0;
     },
 
     drawSelect(){
@@ -695,8 +696,7 @@ TyterYi.buildType = () => extend(ItemTurret.ItemTurretBuild, TyterYi, {
     updateTile(){
         this.limitCheck += Time.delta;
         if(this.limitCheck >= 15){
-            this.limitCheck = 0; let count = 0; let firstBuild = null;
-            Groups.build.each(b => { if(b.block == TyterYi && b.team == this.team) { count++; if(firstBuild == null) firstBuild = b; } });
+            this.limitCheck = 0; let _lim = PerfCore.teamBlocks(this.team, TyterYi); let count = _lim != null ? _lim.size : 0; let firstBuild = (_lim != null && count > 0) ? _lim.first() : null;
             if(count > 10 && this !== firstBuild){ Call.sendMessage("[red]CẢNH BÁO QUÁ TẢI MẠNG LƯỚI: Giới hạn tối đa 10 đơn vị TyterYi trên cùng hệ thống![]"); this.kill(); return; }
         }
 

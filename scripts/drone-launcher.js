@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
@@ -47,9 +48,9 @@ Events.on(ClientLoadEvent, cons(e => {
 
         setTier(val) { 
             this.tierState = val;
-            if (val == 0) this.health = 1200;
-            else if (val == 1) this.health = 1800; 
-            else if (val == 2) this.health = 2400;
+            if (val == 0) this.health = 3000;
+            else if (val == 1) this.health = 4500; 
+            else if (val == 2) this.health = 6000;
             this.maxHealth = this.health;
         },
 
@@ -92,6 +93,7 @@ Events.on(ClientLoadEvent, cons(e => {
         },
 
         countActiveDrones() {
+            if (this._cdT !== undefined && Time.time - this._cdT < 10 && Time.time >= this._cdT) return this._cdV;
             let count = 0;
             let types = [
                 this.getNormalUnitType(),
@@ -103,16 +105,19 @@ Events.on(ClientLoadEvent, cons(e => {
             Groups.unit.each(u => {
                 if (this.isMyDrone(u, types)) count++;
             });
+            this._cdT = Time.time; this._cdV = count;
             return count;
         },
 
         countActiveMK2Drones() {
+            if (this._cmT !== undefined && Time.time - this._cmT < 10 && Time.time >= this._cmT) return this._cmV;
             let count = 0;
             let mk2Type = this.getMK2UnitType();
 
             Groups.unit.each(u => {
                 if (this.isMyDrone(u, [mk2Type])) count++;
             });
+            this._cmT = Time.time; this._cmV = count;
             return count;
         },
 
@@ -212,10 +217,10 @@ Events.on(ClientLoadEvent, cons(e => {
 
             let offset = progress * 6.0;
 
-            let top1 = Core.atlas.find("newex-drone-launcher-top1", Core.atlas.find("drone-launcher-top1"));
-            let top2 = Core.atlas.find("newex-drone-launcher-top2", Core.atlas.find("drone-launcher-top2"));
-            let top3 = Core.atlas.find("newex-drone-launcher-top3", Core.atlas.find("drone-launcher-top3"));
-            let top4 = Core.atlas.find("newex-drone-launcher-top4", Core.atlas.find("drone-launcher-top4"));
+            let top1 = PerfCore.region("newex-drone-launcher-top1", PerfCore.region("drone-launcher-top1"));
+            let top2 = PerfCore.region("newex-drone-launcher-top2", PerfCore.region("drone-launcher-top2"));
+            let top3 = PerfCore.region("newex-drone-launcher-top3", PerfCore.region("drone-launcher-top3"));
+            let top4 = PerfCore.region("newex-drone-launcher-top4", PerfCore.region("drone-launcher-top4"));
 
             if (top1.found) Draw.rect(top1, this.x - offset, this.y);
             if (top2.found) Draw.rect(top2, this.x, this.y + offset);
@@ -284,10 +289,10 @@ Events.on(ClientLoadEvent, cons(e => {
                     let b1Text = english ?
                         "Enhance air force capabilities:\n" +
                         " [white]• Adds [green]+2 Drone Mk2 Units[] (Total 6 Drones: 2 MK2 + 4 Normal/Sword).[]\n" +
-                        " [white]• Increases turret health to [green]1800 HP[].[]" :
+                        " [white]• Increases turret health to [green]4500 HP[].[]" :
                         "Tăng cường lực lượng không quân:\n" +
                         " [white]• Tăng thêm [green]+2 Unit Drone Mk2[] (Tổng 6 Drones: 2 MK2 + 4 Thường/Sword).[]\n" +
-                        " [white]• Tăng máu tháp pháo lên [green]1800 HP[].[]";
+                        " [white]• Tăng máu tháp pháo lên [green]4500 HP[].[]";
 
                     let b1D = b1.add(b1Text);
                     b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
@@ -314,13 +319,13 @@ Events.on(ClientLoadEvent, cons(e => {
                         " [white]• Adds [red]+100% Damage[], [sky]+100% Range[] for shots/slashes.[]\n" +
                         " [white]• Adds [yellow]+20% Flight Speed[] for Drones.[]\n" +
                         " [white]• Adds [gold]+120% Firing Range[] for Turret.[]\n" +
-                        " [white]• Increases turret health to [green]2400 HP[].[]" :
+                        " [white]• Increases turret health to [green]6000 HP[].[]" :
                         "Đột phá công nghệ cường hóa toàn diện:\n" +
                         " [white]• Tăng [green]+100% Máu gốc[], [green]+100% Giáp[] cho Drone.[]\n" +
                         " [white]• Tăng [red]+100% Sát thương[], [sky]+100% Tầm bắn[] đạn/chém.[]\n" +
                         " [white]• Tăng [yellow]+20% Tốc độ bay[] cho Drone.[]\n" +
                         " [white]• Tăng [gold]+120% Phạm vi bắn[] cho Tháp Pháo.[]\n" +
-                        " [white]• Gia tăng máu tháp pháo lên [green]2400 HP[].[]";
+                        " [white]• Gia tăng máu tháp pháo lên [green]6000 HP[].[]";
 
                     let b2D = b2.add(b2Text);
                     b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
@@ -368,36 +373,36 @@ Events.on(ClientLoadEvent, cons(e => {
                     title += english ? "[yellow](MK1 - Default)[]" : "[yellow](MK1 - Mặc định)[]";
                     descStr = english ?
                         "[gold]⚡ ORIGINAL STATUS (MK1) ⚡[]\n" +
-                        "[lightgray]Turret Health:[] [green]1200 HP[]\n" +
+                        "[lightgray]Turret Health:[] [green]3000 HP[]\n" +
                         "[lightgray]Max Drone Count:[] [yellow]4 Units[]\n" +
                         "[lightgray]Drone Type:[] Combat / Sword / Cargo Drone (50% Sword)" :
                         "[gold]⚡ TRẠNG THÁI NGUYÊN BẢN (MK1) ⚡[]\n" +
-                        "[lightgray]Máu pháo:[] [green]1200 HP[]\n" +
+                        "[lightgray]Máu pháo:[] [green]3000 HP[]\n" +
                         "[lightgray]Số lượng Drone tối đa:[] [yellow]4 Units[]\n" +
                         "[lightgray]Loại Drone:[] Combat / Sword / Cargo Drone (50% Sword)";
                 } else if (currentTier == 1) {
                     title += english ? "[cyan](MK2 - Quantity)[]" : "[cyan](MK2 - Số Lượng)[]";
                     descStr = english ?
                         "[cyan]⚡ MK2 SUMMON CONFIG ⚡[]\n" +
-                        "[lightgray]Turret Health:[] [green]1800 HP[]\n" +
+                        "[lightgray]Turret Health:[] [green]4500 HP[]\n" +
                         "[lightgray]Max Drone Count:[] [green]6 Units[]\n" +
                         "[lightgray]Composition:[] [yellow]2 Cargo Drone Mk2[] + [white]4 Normal/Sword Drones[]" :
                         "[cyan]⚡ CẤU HÌNH TRIỆU HỒI MK2 ⚡[]\n" +
-                        "[lightgray]Máu pháo:[] [green]1800 HP[]\n" +
+                        "[lightgray]Máu pháo:[] [green]4500 HP[]\n" +
                         "[lightgray]Số lượng Drone tối đa:[] [green]6 Units[]\n" +
                         "[lightgray]Thành phần:[] [yellow]2 Cargo Drone Mk2[] + [white]4 Drone Thường/Sword[]";
                 } else if (currentTier == 2) {
                     title += english ? "[purple](MK2B - Enhancement)[]" : "[purple](MK2B - Cường Hóa)[]";
                     descStr = english ?
                         "[purple]⚡ MK2B VARIANT CONFIG ⚡[]\n" +
-                        "[lightgray]Turret Health:[] [green]2400 HP[]\n" +
+                        "[lightgray]Turret Health:[] [green]6000 HP[]\n" +
                         "[lightgray]Turret Range:[] [gold]+120%[]\n" +
                         "[lightgray]Drone Count:[] [yellow]4 Units[]\n" +
                         "[lightgray]Drone Health & Armor:[] [green]+100%[]\n" +
                         "[lightgray]Movement Speed:[] [yellow]+20%[]\n" +
                         "[lightgray]Dash & Shooting Damage:[] [red]+100%[]" :
                         "[purple]⚡ CẤU HÌNH BIẾN THỂ MK2B ⚡[]\n" +
-                        "[lightgray]Máu pháo:[] [green]2400 HP[]\n" +
+                        "[lightgray]Máu pháo:[] [green]6000 HP[]\n" +
                         "[lightgray]Phạm vi pháo:[] [gold]+120%[]\n" +
                         "[lightgray]Số lượng Drone:[] [yellow]4 Units[]\n" +
                         "[lightgray]Máu & Giáp Drone:[] [green]+100%[]\n" +

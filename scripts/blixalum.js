@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const packCons = (func) => new Cons({ get: func });
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
@@ -113,23 +114,23 @@ let blixalum = extend(ItemTurret, "blixalum", {
     
     load() {
         this.super$load();
-        this.customBaseRegion = Core.atlas.find(this.basePrefix + "block-" + this.size);
-        this.btu1Region = Core.atlas.find("newex-blixalum-barrel");
-        this.region = Core.atlas.find("newex-blixalum-body");
+        this.customBaseRegion = PerfCore.region(this.basePrefix + "block-" + this.size);
+        this.btu1Region = PerfCore.region("newex-blixalum-barrel");
+        this.region = PerfCore.region("newex-blixalum-body");
         
-        this.w1Region = Core.atlas.find("newex-blixalum-w1");
-        this.w2Region = Core.atlas.find("newex-blixalum-w2");
-        this.wing1Region = Core.atlas.find("newex-blixalum-wing1");
-        this.wing2Region = Core.atlas.find("newex-blixalum-wing2");
+        this.w1Region = PerfCore.region("newex-blixalum-w1");
+        this.w2Region = PerfCore.region("newex-blixalum-w2");
+        this.wing1Region = PerfCore.region("newex-blixalum-wing1");
+        this.wing2Region = PerfCore.region("newex-blixalum-wing2");
         
-        this.wa1Region = Core.atlas.find("newex-blixalum-wa1");
-        this.wa2Region = Core.atlas.find("newex-blixalum-wa2");
-        this.winga1Region = Core.atlas.find("newex-blixalum-winga1");
-        this.winga2Region = Core.atlas.find("newex-blixalum-winga2");
+        this.wa1Region = PerfCore.region("newex-blixalum-wa1");
+        this.wa2Region = PerfCore.region("newex-blixalum-wa2");
+        this.winga1Region = PerfCore.region("newex-blixalum-winga1");
+        this.winga2Region = PerfCore.region("newex-blixalum-winga2");
     }
 });
 
-blixalum.health = 3500;
+blixalum.health = 9500;
 blixalum.size = 3;
 blixalum.reload = 60; 
 blixalum.configurable = true;
@@ -299,7 +300,7 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
             if (currentTier == 0) {
                 title += "[yellow](MK1)[]";
                 descStr = vi ? "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                               "[lightgray]Máu cấu trúc:[] [green]3,500 HP[]\n" +
+                               "[lightgray]Máu cấu trúc:[] [green]9,500 HP[]\n" +
                                "[lightgray]Tầm bắn hiệu dụng:[] [orange]442 pixel[]\n" +
                                "[lightgray]Sát thương gốc:[] [white]625 DMG / phát bắn[]\n" +
                                "[lightgray]Sát thương nổ lan:[] [white]875 DMG (64 px)[]\n" +
@@ -309,7 +310,7 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                                "• Tích Năng Lượng Từ Trường: Cần 2 giây nạp sạc trước khi xả đạn xung kích.\n" +
                                "• Tốc hỏa thích ứng: Tự động tăng +10% tốc độ bắn với mỗi kẻ địch xuất hiện trong tầm bắn (tối đa +100%)."
                              : "[gold]⚡ BASE SPECS (MK1) ⚡[]\n" +
-                               "[lightgray]Structure Health:[] [green]3,500 HP[]\n" +
+                               "[lightgray]Structure Health:[] [green]9,500 HP[]\n" +
                                "[lightgray]Effective Range:[] [orange]442 pixels[]\n" +
                                "[lightgray]Base Damage:[] [white]625 DMG / shot[]\n" +
                                "[lightgray]Splash Damage:[] [white]875 DMG (64 px)[]\n" +
@@ -321,7 +322,7 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
             } else if (currentTier == 1) {
                 title += vi ? "[cyan]THÔNG SỐ NÂNG CẤP MK2[]" : "[cyan]UPGRADE SPECS MK2[]";
                 descStr = vi ? "[cyan]⚡ THÔNG SỐ NÂNG CẤP MK2 ⚡[]\n" +
-                               "[lightgray]Máu cấu trúc:[] [green]3,500 HP[]\n" +
+                               "[lightgray]Máu cấu trúc:[] [green]9,500 HP[]\n" +
                                "[lightgray]Tầm bắn hiệu dụng:[] [orange]578 pixel[]\n" +
                                "[lightgray]Sát thương gốc:[] [white]625 DMG / phát bắn[]\n" +
                                "[lightgray]Sát thương nổ lan:[] [white]875 DMG (80 px) (+25%)[]\n" +
@@ -331,7 +332,7 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                                "• Mở Rộng Tần Tốc Thông Minh: Cải tiến lõi từ trường tối ưu tần suất quét tự động.\n" +
                                "• Tốc hỏa đột biến: Tăng +10% tốc độ bắn cho mỗi kẻ địch trong tầm bắn (tối đa +300%)."
                              : "[cyan]⚡ UPGRADE SPECS MK2 ⚡[]\n" +
-                               "[lightgray]Structure Health:[] [green]3,500 HP[]\n" +
+                               "[lightgray]Structure Health:[] [green]9,500 HP[]\n" +
                                "[lightgray]Effective Range:[] [orange]578 pixels[]\n" +
                                "[lightgray]Base Damage:[] [white]625 DMG / shot[]\n" +
                                "[lightgray]Splash Damage:[] [white]875 DMG (80 px) (+25%)[]\n" +
@@ -343,7 +344,7 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
             } else if (currentTier == 2) {
                 title += vi ? "[purple]THÔNG SỐ NÂNG CẤP MK2B[]" : "[purple]UPGRADE SPECS MK2B[]";
                 descStr = vi ? "[purple]⚡ THÔNG SỐ NÂNG CẤP MK2B ⚡[]\n" +
-                               "[lightgray]Máu cấu trúc:[] [green]3,500 HP[]\n" +
+                               "[lightgray]Máu cấu trúc:[] [green]9,500 HP[]\n" +
                                "[lightgray]Tầm bắn hiệu dụng:[] [red]442 pixel[]\n" +
                                "[lightgray]Sát thương gốc:[] [white]750 DMG / phát bắn[]\n" +
                                "[lightgray]Sát thương nổ lan:[] [white]150 DMG (48 px) (-25%)[]\n" +
@@ -353,7 +354,7 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                                "• Bảo Táp Laser Đột Phá: Hợp nhất ma trận lõi năng lượng laser phá hủy cơ động.\n" +
                                "• Xung kích phụ: Mỗi 5 giây nạp sạc sẽ tự động bắn 4 tia Laser (375 DMG/tia) dội thẳng vào mục tiêu."
                              : "[purple]⚡ UPGRADE SPECS MK2B ⚡[]\n" +
-                               "[lightgray]Structure Health:[] [green]3,500 HP[]\n" +
+                               "[lightgray]Structure Health:[] [green]9,500 HP[]\n" +
                                "[lightgray]Effective Range:[] [red]442 pixels[]\n" +
                                "[lightgray]Base Damage:[] [white]750 DMG / shot[]\n" +
                                "[lightgray]Splash Damage:[] [white]150 DMG (48 px) (-25%)[]\n" +

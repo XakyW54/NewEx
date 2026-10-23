@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const packCons = (func) => new Cons({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 
@@ -81,8 +82,8 @@ const meteorFallingEffect = new Effect(50, packCons((e) => {
     if (f < 0.85) {
         let portalAlpha = f < 0.15 ? f / 0.15 : (0.85 - f) / 0.7;
 
-        let starRegion = Core.atlas.find("newex-star-field");
-        if (!starRegion.found()) starRegion = Core.atlas.find("star-field");
+        let starRegion = PerfCore.region("newex-star-field");
+        if (!starRegion.found()) starRegion = PerfCore.region("star-field");
 
         if (starRegion.found()) {
             Draw.color(Color.white);
@@ -90,8 +91,8 @@ const meteorFallingEffect = new Effect(50, packCons((e) => {
             Draw.rect(starRegion, portalX, portalY, 108, 108, Time.time * 3.0);
         }
 
-        let blackholeRegion = Core.atlas.find("newex-blackhole-pulse");
-        if (!blackholeRegion.found()) blackholeRegion = Core.atlas.find("blackhole-pulse");
+        let blackholeRegion = PerfCore.region("newex-blackhole-pulse");
+        if (!blackholeRegion.found()) blackholeRegion = PerfCore.region("blackhole-pulse");
 
         if (blackholeRegion.found()) {
             Draw.color(Color.white);
@@ -99,7 +100,7 @@ const meteorFallingEffect = new Effect(50, packCons((e) => {
             Draw.rect(blackholeRegion, portalX, portalY, 90, 90, Time.time * -6.0);
         }
 
-        Draw.color(Color.valueOf("1a1721"));
+        Draw.color(PerfCore.color("1a1721"));
         Draw.alpha(portalAlpha * 0.6);
         Fill.circle(portalX, portalY, 18 + Math.sin(Time.time * 0.15) * 2);
 
@@ -122,9 +123,9 @@ const meteorFallingEffect = new Effect(50, packCons((e) => {
         Fx.smoke.at(tailX + Mathf.range(3), tailY + Mathf.range(3));
     }
 
-    let meteorRegion = Core.atlas.find("newex-basalt-bluff");
+    let meteorRegion = PerfCore.region("newex-basalt-bluff");
     if (!meteorRegion.found()) {
-        meteorRegion = Core.atlas.find("basalt-bluff");
+        meteorRegion = PerfCore.region("basalt-bluff");
     }
 
     if (meteorRegion.found()) {
@@ -132,7 +133,7 @@ const meteorFallingEffect = new Effect(50, packCons((e) => {
         let rotation = Time.time * 15.0; 
         Draw.rect(meteorRegion, currentX, currentY, 24, 24, rotation);
     } else {
-        Draw.color(Color.valueOf("594e48"));
+        Draw.color(PerfCore.color("594e48"));
         Fill.circle(currentX, currentY, 9);
     }
 

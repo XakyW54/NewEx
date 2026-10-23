@@ -2,7 +2,7 @@ type: ItemTurret
 name: Tankani-4k
 description: Phiên bản tối thượng của dòng Tankani, tăng thêm 50% Máu và Sát thương so với bản 2k, giới hạn đặt tối đa 1 trụ mỗi đội (đặt thừa tự hủy). Bắn trúng liên tục tăng tối đa 80% sát thương. Đặc biệt, khi sạc đầy năng lượng, pháo sẽ kích hoạt thêm khả năng xuyên 40% giáp và giảm một nửa giáp của kẻ địch. Trạng thái cơ bản gây 1,673 sát thương lên cả mục tiêu mặt đất và trên không.
 size: 5
-health: 1565
+health: 3913
 category: turret
 researchCostMultiplier: 0.7
 

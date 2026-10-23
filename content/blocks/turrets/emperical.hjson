@@ -3,7 +3,7 @@ type: ItemTurret
 localizedName: Emperical
 description: "Fire energy orbs, lasers, and missiles; unleash lightning strikes; and pull in enemies."
 
-health: 19300
+health: 48250
 size: 3
 configurable: true
 logicConfigurable: true

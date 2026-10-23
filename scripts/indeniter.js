@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
@@ -49,14 +50,14 @@ function trI(key) {
     if (key === "mk2_desc") {
         return currentIsEn ?
             "Firepower Microchip Acceleration Upgrade:\n" +
-            " • Range increased [green]350 pixels (+40%)[]\n" +
+            " • Range increased [green]574 pixels (+40%)[]\n" +
             " • Damage increased [green]12.15 (+35%)[]\n" +
             " • Fire rate increased [pink]+15%[]\n" +
             " • Bemod apply chance: [yellow]45% (+15%)[]\n" +
             " • Bemod Explosion Dmg: [red]500 + 3% Max HP[]"
             :
             "Nâng cấp vi mạch gia tốc hỏa lực:\n" +
-            " • Tầm bắn tăng [green]350 pixel (+40%)[]\n" +
+            " • Tầm bắn tăng [green]574 pixel (+40%)[]\n" +
             " • Sát thương tăng [green]12.15 (+35%)[]\n" +
             " • Tốc độ bắn tăng [pink]+15%[]\n" +
             " • Tỉ lệ gán Bemod: [yellow]45% (+15%)[]\n" +
@@ -68,13 +69,13 @@ function trI(key) {
     if (key === "mk2b_desc") {
         return currentIsEn ?
             "Long-Range Targeting Bombardment Config:\n" +
-            " • Ultra long range [green]750 pixels (+200%)[]\n" +
+            " • Ultra long range [green]1230 pixels (+200%)[]\n" +
             " • Burst fire [orange]10 consecutive shots[] with [pink]3s[] cooldown\n" +
             " • Strong homing bullets [red](homingPower = 0.25)[]\n" +
             " • Bemod apply chance: [yellow]100% absolute[]"
             :
             "Cấu hình Oanh tạc Tầm xa Định vị:\n" +
-            " • Phạm vi bắn siêu xa [green]750 pixel (+200%)[]\n" +
+            " • Phạm vi bắn siêu xa [green]1230 pixel (+200%)[]\n" +
             " • Bắn loạt [orange]10 viên liên tiếp[] nghỉ [pink]3 giây[]\n" +
             " • Đạn truy đuổi mục tiêu mạnh [red](homingPower = 0.25)[]\n" +
             " • Tỉ lệ gán Bemod: [yellow]100% tuyệt đối[]";
@@ -86,9 +87,9 @@ function trI(key) {
     if (key === "status_mk2b") return currentIsEn ? "[purple]UPGRADED TO MK2B TURRET[]" : "[purple]ĐÃ NÂNG CẤP THÀNH PHÁO MK2B[]";
     
     if (key === "info_title") return currentIsEn ? " Indeniter Turret Stats " : " Thông số pháo Indeniter ";
-    if (key === "info_mk1") return currentIsEn ? "[gold]⚡ BASE STATS (MK1) ⚡[]\n• Health: 1,200 | Range: 250px | Bullet Damage: 9.0\n• Bemod Chance: 30%" : "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n• Máu: 1,200 | Tầm bắn: 250px | Sát thương đạn: 9.0\n• Tỉ lệ gán Bemod: 30%";
-    if (key === "info_mk2") return currentIsEn ? "[cyan]⚡ BASE STATS (MK2) ⚡[]\n• Health: 1,800 | Range: 350px | Bullet Damage: 12.15\n• Bemod Chance: 45% | Bemod Explosion: 500 + 3% Max HP" : "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n• Máu: 1,800 | Tầm bắn: 350px | Sát thương đạn: 12.15\n• Tỉ lệ gán Bemod: 45% | Nổ Bemod: 500 + 3% Max HP";
-    if (key === "info_mk2b") return currentIsEn ? "[purple]⚡ BASE STATS (MK2B) ⚡[]\n• Health: 1,600 | Range: 750px | Bullet Damage: 9.0\n• Mode: 10-shot Burst | Bemod Chance: 100%" : "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n• Máu: 1,600 | Tầm bắn: 750px | Sát thương đạn: 9.0\n• Chế độ: Bắn loạt 10 viên | Tỉ lệ gán Bemod: 100%";
+    if (key === "info_mk1") return currentIsEn ? "[gold]⚡ BASE STATS (MK1) ⚡[]\n• Health: 5,500 | Range: 410px | Bullet Damage: 9.0\n• Bemod Chance: 30%" : "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n• Máu: 5,500 | Tầm bắn: 410px | Sát thương đạn: 9.0\n• Tỉ lệ gán Bemod: 30%";
+    if (key === "info_mk2") return currentIsEn ? "[cyan]⚡ BASE STATS (MK2) ⚡[]\n• Health: 8,250 | Range: 574px | Bullet Damage: 12.15\n• Bemod Chance: 45% | Bemod Explosion: 500 + 3% Max HP" : "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n• Máu: 8,250 | Tầm bắn: 574px | Sát thương đạn: 12.15\n• Tỉ lệ gán Bemod: 45% | Nổ Bemod: 500 + 3% Max HP";
+    if (key === "info_mk2b") return currentIsEn ? "[purple]⚡ BASE STATS (MK2B) ⚡[]\n• Health: 7,333 | Range: 1230px | Bullet Damage: 9.0\n• Mode: 10-shot Burst | Bemod Chance: 100%" : "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n• Máu: 7,333 | Tầm bắn: 1230px | Sát thương đạn: 9.0\n• Chế độ: Bắn loạt 10 viên | Tỉ lệ gán Bemod: 100%";
     
     if (key === "info_perk_header") return currentIsEn ? "\n\n[gold]★ SPECIAL PERKS ACTIVATED ★[]" : "\n\n[gold]★ ĐÃ KÍCH HOẠT PHÚC LỢI ĐẶC BIỆT ★[]";
     if (key === "info_p1") return currentIsEn ? "\n[yellow]• Perk 1: Damage +215%, Explosion adds 10 sub stacks, Threshold: 7 stacks.[]" : "\n[yellow]• Phúc lợi 1: Sát thương +215%, Nổ gán 10 tầng Bemod phụ, Giới hạn nổ: 7 tầng.[]";
@@ -168,7 +169,7 @@ const hel = new Effect(35, cons(e => {
     let alpha = 1.0 - e.fin();
 
     let colorRand = Mathf.randomSeed(e.id + Math.floor(e.fin() * 10));
-    Draw.color(Color.valueOf("#00ffcc"), Color.valueOf("#ffffff"), colorRand);
+    Draw.color(PerfCore.color("#00ffcc"), PerfCore.color("#ffffff"), colorRand);
     Lines.stroke(1.2 * alpha);
 
     let segments = 8;
@@ -436,7 +437,7 @@ const indeniterMK2Bullet = createCustomBulletType({
 const indeniterMK2BBullet = createCustomBulletType({
     speed: 8.5, damage: 9, lifetime: 90, width: 20, height: 20, 
     frontColor: Color.white, backColor: Color.valueOf("#d63031"),
-    pierce: false, homingPower: 0.25, homingRange: 350,
+    pierce: false, homingPower: 0.25, homingRange: 574,
     hitEffect: Fx.disperseTrail, despawnEffect: Fx.disperseTrail,
     trailEffect: bulletCircleTrailFx,
     trailInterval: 2
@@ -501,15 +502,15 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
         let pMult = (perk == 3) ? 1.50 : 1.0;
 
         if(this.tierState == 0) { 
-            this.health = Math.round(1200 * pMult); 
+            this.health = Math.round(5500 * pMult); 
             this.reload = (60 / pMult);
         }
         if(this.tierState == 1) { 
-            this.health = Math.round(1800 * pMult); 
+            this.health = Math.round(8250 * pMult); 
             this.reload = (52 / pMult); 
         }
         if(this.tierState == 2) { 
-            this.health = Math.round(1600 * pMult); 
+            this.health = Math.round(7333 * pMult); 
             this.reload = (180 / pMult);
         }
         this.maxHealth = this.health;
@@ -517,9 +518,9 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
 
     range(){
         let tier = this.getTier();
-        let baseR = 250;
-        if(tier == 1) baseR = 350; 
-        if(tier == 2) baseR = 750; 
+        let baseR = 410;
+        if(tier == 1) baseR = 574; 
+        if(tier == 2) baseR = 1230; 
 
         return (this.getPerkTier() == 3) ? baseR * 1.50 : baseR;
     },
@@ -914,7 +915,7 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
 
     draw(){
         let modName = this.block.name.split("-")[0]; 
-        let baseRegion = Core.atlas.find(this.block.basePrefix + "" + this.block.size);
+        let baseRegion = PerfCore.region(this.block.basePrefix + "" + this.block.size);
         
         if(baseRegion.found()){
             Draw.rect(baseRegion, this.x, this.y);
@@ -931,14 +932,14 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
 
         let wingSpread = this.shootingVisual * 15.0;
 
-        let wing1Region = Core.atlas.find(modName + "-indeniter-wing1");
+        let wing1Region = PerfCore.region(modName + "-indeniter-wing1");
         if (wing1Region.found()) {
             let w1x = this.x - wingSpread * sin;
             let w1y = this.y + wingSpread * cos;
             Draw.rect(wing1Region, w1x, w1y, this.rotation);
         }
 
-        let wing2Region = Core.atlas.find(modName + "-indeniter-wing2");
+        let wing2Region = PerfCore.region(modName + "-indeniter-wing2");
         if (wing2Region.found()) {
             let w2x = this.x + wingSpread * sin;
             let w2y = this.y - wingSpread * cos;
@@ -950,7 +951,7 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
         let nonBaseBack = -8.8; 
         let nonBaseLeft = 8.8;  
 
-        let nonRegion = Core.atlas.find(modName + "-indeniter-non");
+        let nonRegion = PerfCore.region(modName + "-indeniter-non");
         if (nonRegion.found()) {
             let nonX = this.x + (nonBaseBack + nonRecoilOffset) * cos - nonBaseLeft * sin;
             let nonY = this.y + (nonBaseBack + nonRecoilOffset) * sin + nonBaseLeft * cos;
@@ -960,14 +961,14 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
 
         Draw.z(baseZ);
 
-        let barrel1Region = Core.atlas.find(modName + "-indeniter-barrel1");
+        let barrel1Region = PerfCore.region(modName + "-indeniter-barrel1");
         if(barrel1Region.found()) Draw.rect(barrel1Region, this.x, this.y, this.rotation);
 
-        let barrel2Region = Core.atlas.find(modName + "-indeniter-barrel2");
+        let barrel2Region = PerfCore.region(modName + "-indeniter-barrel2");
         if(barrel2Region.found()) Draw.rect(barrel2Region, this.x, this.y, this.rotation);
 
         let b1Offset = this.customRecoil * -5.0;
-        let b1Region = Core.atlas.find(modName + "-indeniter-b1");
+        let b1Region = PerfCore.region(modName + "-indeniter-b1");
         if (b1Region.found()) {
             let b1ax = this.x + b1Offset * cos;
             let b1ay = this.y + b1Offset * sin;

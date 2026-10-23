@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
@@ -10,10 +11,10 @@ function isVN() {
 const shootSoundBlaster = Vars.tree.loadSound("loudly-blaster-shot-1");
 
 function getModRegion(spriteName) {
-    if (Core.atlas.has(spriteName)) return Core.atlas.find(spriteName);
-    if (Core.atlas.has("newex-" + spriteName)) return Core.atlas.find("newex-" + spriteName);
-    if (Core.atlas.has("reinforced-" + spriteName)) return Core.atlas.find("reinforced-" + spriteName);
-    return Core.atlas.find("clear");
+    if (Core.atlas.has(spriteName)) return PerfCore.region(spriteName);
+    if (Core.atlas.has("newex-" + spriteName)) return PerfCore.region("newex-" + spriteName);
+    if (Core.atlas.has("reinforced-" + spriteName)) return PerfCore.region("reinforced-" + spriteName);
+    return PerfCore.region("clear");
 }
 
 const reqMK2 = { copper: 8000, lead: 4000, titanium: 0 };
@@ -108,7 +109,7 @@ let heliyron = extend(ItemTurret, "heliyron", {
     }
 });
 
-heliyron.health = 1450;
+heliyron.health = 3625;
 heliyron.size = 3;
 heliyron.reload = 35;
 heliyron.recoil = 0; 
@@ -132,9 +133,9 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
     getTier(){ return this.tierState == null ? 0 : this.tierState; },
     setTier(val){
         this.tierState = val;
-        if(val == 0) this.health = 1450;
-        if(val == 1) this.health = 2175;
-        if(val == 2) this.health = 2610;
+        if(val == 0) this.health = 3625;
+        if(val == 1) this.health = 5438;
+        if(val == 2) this.health = 6525;
         this.maxHealth = this.health;
     },
 
@@ -331,13 +332,13 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
                 b1.add(b1Title).row();
 
                 let b1Desc = isVN() ?
-                    " [white]• Máu: [green]+50%[] (lên 2,175 HP)\n" +
+                    " [white]• Máu: [green]+50%[] (lên 5,438 HP)\n" +
                     " [white]• Sát thương gốc: [lightgray]150[]\n" +
                     " [white]• Phạm vi bắn: [orange]+3.6%[] (lên 570 px)\n" +
                     " [white]• Nội tại: [yellow]+50% Sát thương[] với mỗi [red]10% HP mất[]\n" +
                     " [white]• Cơ chế: Mất [red]1% HP[] khi trúng địch | 40% cơ hội bắn thêm 8 đạn phụ (4 thẳng 80% SD, 4 chéo 80% SD tầm xa)"
                     :
-                    " [white]• Health: [green]+50%[] (up to 2,175 HP)\n" +
+                    " [white]• Health: [green]+50%[] (up to 5,438 HP)\n" +
                     " [white]• Base Damage: [lightgray]150[]\n" +
                     " [white]• Range: [orange]+3.6%[] (up to 570 px)\n" +
                     " [white]• Passive: [yellow]+50% Damage[] per [red]10% missing HP[]\n" +
@@ -361,13 +362,13 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
                 b2.add(b2Title).row();
 
                 let b2Desc = isVN() ?
-                    " [white]• Máu: [green]+80%[] (lên 2,610 HP)\n" +
+                    " [white]• Máu: [green]+80%[] (lên 6,525 HP)\n" +
                     " [white]• Sát thương gốc: [lightgray]150[] (Đạn tự dẫn đường 12%)\n" +
                     " [white]• Phạm vi bắn: [orange]+1.8%[] (lên 560 px)\n" +
                     " [white]• Nội tại Cuồng Bạo: Khi Máu [red]< 50% HP[] -> [yellow]+200% Tốc bắn (x3)[]\n" +
                     " [white]• Cơ chế: Mất [red]1% HP[] khi trúng địch | 40% cơ hội bắn thêm 8 đạn phụ (4 thẳng 80% SD, 4 chéo 80% SD tầm xa)"
                     :
-                    " [white]• Health: [green]+80%[] (up to 2,610 HP)\n" +
+                    " [white]• Health: [green]+80%[] (up to 6,525 HP)\n" +
                     " [white]• Base Damage: [lightgray]150[] (12% Homing)\n" +
                     " [white]• Range: [orange]+1.8%[] (up to 560 px)\n" +
                     " [white]• Berserk Passive: When HP [red]< 50%[] -> [yellow]+200% Fire Rate (x3)[]\n" +
@@ -410,7 +411,7 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
                 title += "[yellow](MK1)[]";
                 descStr = isVN() ?
                     "[gold]⚡ THÔNG SỐ HELIYRON MK1 ⚡[]\n" +
-                    "[lightgray]Máu tối đa:[] [green]1,450 HP[]\n" +
+                    "[lightgray]Máu tối đa:[] [green]3,625 HP[]\n" +
                     "[lightgray]Sát thương gốc:[] [orange]150[]\n" +
                     "[lightgray]Phạm vi bắn:[] [orange]550 px[]\n\n" +
                     "[yellow]CƠ CHẾ BẮN & NỘI TẠI:[]\n" +
@@ -421,7 +422,7 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
                     "   - [cyan]4 viên bắn chéo:[] Phạm vi truy đuổi rộng (tầm xa)."
                     :
                     "[gold]⚡ HELIYRON MK1 STATS ⚡[]\n" +
-                    "[lightgray]Max Health:[] [green]1,450 HP[]\n" +
+                    "[lightgray]Max Health:[] [green]3,625 HP[]\n" +
                     "[lightgray]Base Damage:[] [orange]150[]\n" +
                     "[lightgray]Range:[] [orange]550 px[]\n\n" +
                     "[yellow]MECHANICS & PASSIVE:[]\n" +
@@ -434,7 +435,7 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
                 title += "[cyan](MK2)[]";
                 descStr = isVN() ?
                     "[cyan]⚡ THÔNG SỐ HELIYRON MK2 ⚡[]\n" +
-                    "[lightgray]Máu tối đa:[] [green]2,175 HP[] [lime](+50%)[]\n" +
+                    "[lightgray]Máu tối đa:[] [green]5,438 HP[] [lime](+50%)[]\n" +
                     "[lightgray]Sát thương gốc:[] [orange]150[]\n" +
                     "[lightgray]Phạm vi bắn:[] [orange]570 px[] [lime](+3.6%)[]\n\n" +
                     "[yellow]CƠ CHẾ BẮN & NỘI TẠI:[]\n" +
@@ -445,7 +446,7 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
                     "   - [cyan]4 viên bắn chéo:[] Phạm vi truy đuổi rộng (tầm xa)."
                     :
                     "[cyan]⚡ HELIYRON MK2 STATS ⚡[]\n" +
-                    "[lightgray]Max Health:[] [green]2,175 HP[] [lime](+50%)[]\n" +
+                    "[lightgray]Max Health:[] [green]5,438 HP[] [lime](+50%)[]\n" +
                     "[lightgray]Base Damage:[] [orange]150[]\n" +
                     "[lightgray]Range:[] [orange]570 px[] [lime](+3.6%)[]\n\n" +
                     "[yellow]MECHANICS & PASSIVE:[]\n" +
@@ -458,7 +459,7 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
                 title += "[purple](MK2B)[]";
                 descStr = isVN() ?
                     "[purple]⚡ THÔNG SỐ HELIYRON MK2B ⚡[]\n" +
-                    "[lightgray]Máu tối đa:[] [green]2,610 HP[] [lime](+80%)[]\n" +
+                    "[lightgray]Máu tối đa:[] [green]6,525 HP[] [lime](+80%)[]\n" +
                     "[lightgray]Sát thương gốc:[] [orange]150[] [cyan](Đạn tự dẫn đường 12%)[]\n" +
                     "[lightgray]Phạm vi bắn:[] [orange]560 px[] [lime](+1.8%)[]\n\n" +
                     "[yellow]CƠ CHẾ BẮN & NỘI TẠI:[]\n" +
@@ -470,7 +471,7 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
                     "   - [cyan]4 viên bắn chéo:[] Phạm vi truy đuổi rộng (tầm xa)."
                     :
                     "[purple]⚡ HELIYRON MK2B STATS ⚡[]\n" +
-                    "[lightgray]Max Health:[] [green]2,610 HP[] [lime](+80%)[]\n" +
+                    "[lightgray]Max Health:[] [green]6,525 HP[] [lime](+80%)[]\n" +
                     "[lightgray]Base Damage:[] [orange]150[] [cyan](12% Homing)[]\n" +
                     "[lightgray]Range:[] [orange]560 px[] [lime](+1.8%)[]\n\n" +
                     "[yellow]MECHANICS & PASSIVE:[]\n" +

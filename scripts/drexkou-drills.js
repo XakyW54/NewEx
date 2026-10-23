@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const globalLockedTiles = new ObjectSet();
 const isEn = () => Core.settings.getString("locale").startsWith("en");
 
@@ -331,7 +332,7 @@ Events.on(ContentInitEvent, () => {
             draw() {
                 this.super$draw();
 
-                let region = Core.atlas.find(this.block.name + "-barr");
+                let region = PerfCore.region(this.block.name + "-barr");
                 if (region.found()) {
                     Draw.rect(region, this.x, this.y, this.rotation - 90);
                 }

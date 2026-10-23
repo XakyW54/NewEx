@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packCons = (func) => new Cons({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
@@ -23,7 +24,7 @@ const interceptBulletType = extend(BasicBulletType, {
     sprite: "newex-sonicor-bullet",
     
     draw(b) {
-        let region = Core.atlas.find("newex-sonicor-bullet", Core.atlas.find("sonicor-bullet", Core.atlas.find("bullet")));
+        let region = PerfCore.region("newex-sonicor-bullet", PerfCore.region("sonicor-bullet", PerfCore.region("bullet")));
         Draw.color(Pal.accent);
         Draw.rect(region, b.x, b.y, b.rotation() - 90);
         Draw.reset();
@@ -380,7 +381,7 @@ Events.on(ContentInitEvent, () => {
                     Draw.z(Layer.effect);
                     drawVanillaRect(rect.minX, rect.minY, rect.width, rect.height, Pal.accent, alpha);
 
-                    let topRegion = Core.atlas.find("newex-sonicor-top", Core.atlas.find("sonicor-top", this.block.region));
+                    let topRegion = PerfCore.region("newex-sonicor-top", PerfCore.region("sonicor-top", this.block.region));
                     if (topRegion.found()) {
                         let scale = 1.0 + (this.waveProgress * 0.8);
 

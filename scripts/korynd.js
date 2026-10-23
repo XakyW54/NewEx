@@ -1,5 +1,6 @@
+const PerfCore = global.PerfCore;
 const koryndMineFx = new Effect(25, cons(e => {
-    Draw.color(Color.valueOf("3a3a3a"), Color.gray, e.fin());
+    Draw.color(PerfCore.color("3a3a3a"), Color.gray, e.fin());
     let rand = new Rand(e.id);
     for (let i = 0; i < 6; i++) {
         let v = rand.range(360);
@@ -11,7 +12,7 @@ const koryndMineFx = new Effect(25, cons(e => {
 }));
 
 const koryndCraftFx = new Effect(30, cons(e => {
-    Draw.color(Color.valueOf("5b637a"), Color.valueOf("98a2b3"), e.fin());
+    Draw.color(PerfCore.color("5b637a"), PerfCore.color("98a2b3"), e.fin());
     Lines.stroke(2.0 * e.fout());
     Lines.circle(e.x, e.y, 8.0 * e.finpow());
     Fill.circle(e.x, e.y, 3.0 * e.fout());

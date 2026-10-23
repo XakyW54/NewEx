@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 print("LYVERVON SYSTEM CORE - BREATHING HALO ENERGY UPDATE");
 
 const greenColor = Color.valueOf("7fd4ff");
@@ -171,8 +172,8 @@ const lyvervon = extend(PowerTurret, "lyvervon", {
     }
 });
 
-lyvervon.health = 1700; lyvervon.size = 4; lyvervon.targetAir = false; lyvervon.targetGround = true;
-lyvervon.range = 300; lyvervon.reload = 6; 
+lyvervon.health = 2475; lyvervon.size = 4; lyvervon.targetAir = false; lyvervon.targetGround = true;
+lyvervon.range = 260; lyvervon.reload = 6; 
 lyvervon.shootType = lyvervonBulletSystem;
 
 lyvervon.powerCapacity = 5000;         
@@ -205,13 +206,13 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
     setTier(val){
         this.lyvervonTier = val;
         if(val == 1){
-            this.health = 1700; this.block.reload = 6; this.block.range = 300;
+            this.health = 2475; this.block.reload = 6; this.block.range = 260;
             this.block.consPower.usage = 100 / 60;   
         } else if(val == 2){
-            this.health = 2950; this.block.reload = 6; this.block.range = 350;
+            this.health = 4295; this.block.reload = 6; this.block.range = 303.3;
             this.block.consPower.usage = 1200 / 60;  
         } else if(val == 3){
-            this.health = 3600; this.block.reload = 6; this.block.range = 380;
+            this.health = 5241; this.block.reload = 6; this.block.range = 329.3;
             this.block.consPower.usage = 850 / 60;   
         }
     },
@@ -366,12 +367,12 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                 b1.add("[cyan]===(MK2)===[]").row();
                 let b1Text = en ?
-                    "[white]• Health: [green]+73.5%[] (2,950 HP)\n" +
-                    "• Range: [green]+16.6%[] (350 px)\n" +
+                    "[white]• Health: [green]+73.5%[] (4,295 HP)\n" +
+                    "• Range: [green]+16.6%[] (303.3 px)\n" +
                     "• Power Usage: [orange]+1100%[] (1,200/s)\n\n" +
                     "[lightgray]Special Ability: Chain green Discharge — Continuous firing increases damage up to +1499%. green chains across up to 5 targets, triggering Sonic Shockwaves at max charge.[]" :
-                    "[white]• Máu cấu trúc: [green]+73.5%[] (2,950 HP)\n" +
-                    "• Tầm bắn: [green]+16.6%[] (350 px)\n" +
+                    "[white]• Máu cấu trúc: [green]+73.5%[] (4,295 HP)\n" +
+                    "• Tầm bắn: [green]+16.6%[] (303.3 px)\n" +
                     "• Tiêu thụ điện: [orange]+1100%[] (1,200/s)\n\n" +
                     "[lightgray]Kỹ năng đặc biệt: Chuỗi Điện Truyền Dẫn — Bắn liên tục tăng tiến sát thương lên tới +1499%. Sét tự động nảy qua 5 mục tiêu và kích nổ xung Sonic khi tích đủ điểm.[]";
                 let b1D = b1.add(b1Text);
@@ -389,12 +390,12 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                 b2.add("[purple]===(MK2B)===[]").row();
                 let b2Text = en ?
-                    "[white]• Health: [green]+111.7%[] (3,600 HP)\n" +
-                    "• Range: [green]+26.6%[] (380 px)\n" +
+                    "[white]• Health: [green]+111.7%[] (5,241 HP)\n" +
+                    "• Range: [green]+26.6%[] (329.3 px)\n" +
                     "• Power Usage: [orange]+750%[] (850/s)\n\n" +
                     "[lightgray]Special Ability: Dual Chaos Explosion — Charges 5 pts/sec while firing. Reaching max charge triggers simultaneous explosions at both turret and target, releasing 13 Chaos green bolts.[]" :
-                    "[white]• Máu cấu trúc: [green]+111.7%[] (3,600 HP)\n" +
-                    "• Tầm bắn: [green]+26.6%[] (380 px)\n" +
+                    "[white]• Máu cấu trúc: [green]+111.7%[] (5,241 HP)\n" +
+                    "• Tầm bắn: [green]+26.6%[] (329.3 px)\n" +
                     "• Tiêu thụ điện: [orange]+750%[] (850/s)\n\n" +
                     "[lightgray]Kỹ năng đặc biệt: Kích Nổ Kép Chaos — Bắn duy trì nạp 5 điểm/giây. Đạt mốc kích nổ đồng thời tại tâm pháo và mục tiêu, tung 13 luồng sét Chaos diện rộng.[]";
                 let b2D = b2.add(b2Text);
@@ -433,9 +434,9 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                 title += en ? "[yellow]Base Config (MK1)[]" : "[yellow]Cấu hình gốc (MK1)[]";
                 descStr = en ?
                           "[gold]⚡ BASE STATS (MK1) ⚡[]\n" +
-                          "[lightgray]Turret HP:[] [green]1,700[]\n" +
+                          "[lightgray]Turret HP:[] [green]2,475[]\n" +
                           "[gray]📐 Block Size:[] [white]4x4[]\n" +
-                          "[lightgray]Effective Range:[] [orange]300 px[]\n" +
+                          "[lightgray]Effective Range:[] [orange]260 px[]\n" +
                           "[lightgray]Base Beam Damage:[] [purple]510 DMG / pulse[]\n" +
                           "[green] Fire Rate:[] [white]0.1s / shot[]\n" +
                           "[green] Power Usage:[] [white]100 / sec[]\n" +
@@ -444,9 +445,9 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                           "• [lightgray]Targeting:[] Only locks onto [lightgray]Ground[] targets outside the deadzone.\n" +
                           "• [lightgray]Energy Core:[] Internal battery holds up to 5,000 units." :
                           "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]1,700[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]2,475[]\n" +
                           "[gray]📐 Kích thước khối:[] [white]4x4[]\n" +
-                          "Tầm bắn hiệu dụng:[] [orange]300 pixel[]\n" +
+                          "Tầm bắn hiệu dụng:[] [orange]260 pixel[]\n" +
                           "[lightgray]Sát thương gốc:[] [purple]510 DMG / xung[]\n" +
                           "[green] Tốc độ xả đạn:[] [white]0.1s / phát[]\n" +
                           "[green] Tiêu thụ điện:[] [white]100 / giây[]\n" +
@@ -459,9 +460,9 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                 title += en ? "[cyan]STANDARD CONFIG (MK2)[]" : "[cyan]CẤU HÌNH TIÊU CHUẨN (MK2)[]";
                 descStr = en ?
                           "[cyan]⚡ BASE STATS (MK2) ⚡[]\n" +
-                          "[lightgray]Turret HP:[] [green]2,950 [lime](+73.5%)[]\n" +
+                          "[lightgray]Turret HP:[] [green]4,295 [lime](+73.5%)[]\n" +
                           "[gray]📐 Block Size:[] [white]4x4[]\n" +
-                          "[lightgray]Effective Range:[] [orange]350 px [lime](+16.6%)[]\n" +
+                          "[lightgray]Effective Range:[] [orange]303.3 px [lime](+16.6%)[]\n" +
                           "[lightgray]Base Beam Damage:[] [purple]408 DMG / pulse[]\n" +
                           "[green] Power Usage:[] [orange]1,200 / sec [red](+1100%)[]\n" +
                           "[green] Max Charge Boost:[] [yellow]Up to +1499% DMG[]\n\n" +
@@ -470,9 +471,9 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                           "• [lightgray]Multi-Chain:[] green chains sequentially through 5 targets within [lightgray]180 px[].\n" +
                           "• [lightgray]Sonic Finish:[] Chain links deal 70% DMG. Reaching 100 pts triggers a sonic shockwave launching 5 sub-bolts at high HP targets." :
                           "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]2,950 [lime](+73.5%)[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]4,295 [lime](+73.5%)[]\n" +
                           "[gray]📐 Kích thước khối:[] [white]4x4[]\n" +
-                          "Tầm bắn hiệu dụng:[] [orange]350 pixel [lime](+16.6%)[]\n" +
+                          "Tầm bắn hiệu dụng:[] [orange]303.3 pixel [lime](+16.6%)[]\n" +
                           "[lightgray]Sát thương gốc:[] [purple]408 DMG / xung[]\n" +
                           "[green] Tiêu thụ điện:[] [orange]1,200 / giây [red](+1100%)[]\n" +
                           "[green] Gia tốc tích tụ:[] [yellow]Tối đa +1499% Sát thương[]\n\n" +
@@ -485,9 +486,9 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                 title += en ? "[purple]CHAOS EXPLOSION VARIANT (MK2B)[]" : "[purple]BIẾN THỂ KÍCH NỔ CHAOS (MK2B)[]";
                 descStr = en ?
                           "[purple]⚡ BASE STATS (MK2B) ⚡[]\n" +
-                          "[lightgray]Turret HP:[] [green]3,600 [lime](+111.7%)[]\n" +
+                          "[lightgray]Turret HP:[] [green]5,241 [lime](+111.7%)[]\n" +
                           "[gray]📐 Block Size:[] [white]4x4[]\n" +
-                          "[lightgray]Effective Range:[] [orange]380 px [lime](+26.6%)[]\n" +
+                          "[lightgray]Effective Range:[] [orange]329.3 px [lime](+26.6%)[]\n" +
                           "[lightgray]Base Beam Damage:[] [purple]612 DMG / pulse[]\n" +
                           "[green] Power Usage:[] [orange]850 / sec [red](+750%)[]\n" +
                           "[green] Explosion Cycle:[] [pink]Every 5 pts (1 sec)[]\n\n" +
@@ -496,9 +497,9 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                           "• [lightgray]Dual Detonation:[] Reaching 5 pts triggers dual explosions at both [yellow]Turret Center[] and [yellow]Target Position[].\n" +
                           "• [lightgray]Chaos Scatter:[] Each blast deals 1,530 DMG (2.5x) and releases [orange]13 Chaos sub-bolts[] within a 45 px radius." :
                           "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
-                          "[lightgray]Máu tháp pháo:[] [green]3,600 [lime](+111.7%)[]\n" +
+                          "[lightgray]Máu tháp pháo:[] [green]5,241 [lime](+111.7%)[]\n" +
                           "[gray]📐 Kích thước khối:[] [white]4x4[]\n" +
-                          "Tầm bắn hiệu dụng:[] [orange]380 pixel [lime](+26.6%)[]\n" +
+                          "Tầm bắn hiệu dụng:[] [orange]329.3 pixel [lime](+26.6%)[]\n" +
                           "[lightgray]Sát thương gốc:[] [purple]612 DMG / xung[]\n" +
                           "[green] Tiêu thụ điện:[] [orange]850 / giây [red](+750%)[]\n" +
                           "[green] Chu kỳ kích nổ:[] [pink]Mỗi 5 điểm (1 giây)[]\n\n" +
@@ -624,9 +625,9 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
     },
 
     draw(){
-        let baseRegion = Core.atlas.find(this.block.name + "-base");
-        if(!baseRegion.found) baseRegion = Core.atlas.find("lyvervon-base");
-        if(!baseRegion.found) baseRegion = Core.atlas.find("block-" + this.block.size); 
+        let baseRegion = PerfCore.region(this.block.name + "-base");
+        if(!baseRegion.found) baseRegion = PerfCore.region("lyvervon-base");
+        if(!baseRegion.found) baseRegion = PerfCore.region("block-" + this.block.size); 
 
         Draw.z(Layer.turret - 1); 
         if(baseRegion.found){

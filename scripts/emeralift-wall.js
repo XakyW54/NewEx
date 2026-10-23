@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 Events.on(ContentInitEvent, () => {
  
     const emeraliftWall = Vars.content.block("newex-emeralift-wall");
@@ -5,7 +6,7 @@ Events.on(ContentInitEvent, () => {
     if (emeraliftWall != null) {
  
         const circleWaveFx = new Effect(30, cons(e => {
-            Draw.color(Color.valueOf("84e070"));  
+            Draw.color(PerfCore.color("84e070"));  
             Lines.stroke(1.5 * e.fout());  
             Lines.circle(e.x, e.y, 4 + e.fin() * 16); 
             Draw.reset();

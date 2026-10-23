@@ -9,6 +9,24 @@ let unitLastAngles = new java.util.HashMap();
 let lastEditorTile = null;
 let lastCoreCount = -1;
 let frameCount = 0;
+let antikeiDrawVersion = 0;
+let drawCacheVersion = -1;
+let drawCacheLen = -1;
+let drawXs = [];
+let drawYs = [];
+let drawKeys = [];
+let angleCache = {};
+let nearestCache = {};
+let unitTargetCache = {};
+
+// Tìm ô antikei gần nhất rất tốn (quét xoắn ốc bán kính 300) -> nhớ kết quả 20 frame, lệch pha theo id đơn vị.
+function findNearestAntikeiCached(unit) {
+    let e = nearestCache[unit.id];
+    if (e !== undefined && frameCount - e.f < 20) return e.t;
+    let t = findNearestAntikeiFast(unit);
+    nearestCache[unit.id] = { t: t, f: frameCount - (unit.id % 10) };
+    return t;
+}
 
 Events.on(ContentInitEvent, () => {
     antikeiBlock = Vars.content.block("newex-antikei");
@@ -121,6 +139,7 @@ function findNearestAntikeiFast(unit) {
 
 function cacheAntikeiTiles() {
     antikeiTilesList.clear();
+    antikeiDrawVersion++;
     autoFlowMap.clear();
     mapHasAntikei = false;
     if (!antikeiBlock || Vars.world == null) return;
@@ -301,6 +320,7 @@ Events.run(Trigger.update, () => {
     if (!antikeiBlock || Vars.state.isMenu()) return;
 
     frameCount++;
+    if (frameCount % 1800 == 0) { nearestCache = {}; unitTargetCache = {}; }
 
     if (Vars.state.isEditor() && !Core.input.keyDown(KeyCode.r) && (Core.input.keyDown(KeyCode.mouseLeft) || Core.input.isTouched())) {
         let mouseVec = Core.camera.unproject(Core.input.mouse());
@@ -392,7 +412,7 @@ Events.run(Trigger.update, () => {
             moveAngle = getOptimalAngle(worldX, worldY, currentKey, unit.team);
             unitLastAngles.put(unit.id, java.lang.Float.valueOf(moveAngle));
         } else {
-            let nearest = findNearestAntikeiFast(unit);
+            let nearest = findNearestAntikeiCached(unit);
             if (nearest != null) {
                 moveAngle = unit.angleTo(nearest.worldx(), nearest.worldy());
             } else {
@@ -408,7 +428,14 @@ Events.run(Trigger.update, () => {
         unit.vel.trns(moveAngle, unit.speed());
 
         let range = unit.range ? unit.range() : 100;
-        let target = Units.closestTarget(unit.team, unit.x, unit.y, range);
+        let target = null;
+        let tc = unitTargetCache[unit.id];
+        if (tc !== undefined && frameCount - tc.f < 6 && (tc.t == null || tc.t.isValid())) {
+            target = tc.t;
+        } else {
+            target = Units.closestTarget(unit.team, unit.x, unit.y, range);
+            unitTargetCache[unit.id] = { t: target, f: frameCount - (unit.id % 6) };
+        }
 
         if (target != null) {
             unit.lookAt(target.x, target.y);
@@ -424,28 +451,46 @@ Events.run(Trigger.update, () => {
 
 Events.run(Trigger.draw, () => {
     if (!antikeiBlock || Vars.state.isMenu()) return;
+    let total = antikeiTilesList.size();
+    if (total == 0) return;
+
+    // Parse khóa "x_y" một lần duy nhất (trước đây split/parseInt cho TỪNG ô MỖI frame)
+    if (drawCacheVersion !== antikeiDrawVersion || drawCacheLen !== total) {
+        drawXs = []; drawYs = []; drawKeys = [];
+        for (let i = 0; i < total; i++) {
+            let key = String(antikeiTilesList.get(i));
+            let parts = key.split("_");
+            drawKeys.push(key);
+            drawXs.push(parseInt(parts[0]) * Vars.tilesize + Vars.tilesize / 2);
+            drawYs.push(parseInt(parts[1]) * Vars.tilesize + Vars.tilesize / 2);
+        }
+        drawCacheVersion = antikeiDrawVersion;
+        drawCacheLen = total;
+        angleCache = {};
+    }
 
     Draw.z(Layer.floor + 0.1);
-    
-    for (let i = 0; i < antikeiTilesList.size(); i++) {
-        let key = antikeiTilesList.get(i);
-        let parts = key.split("_");
-        let x = parseInt(parts[0]);
-        let y = parseInt(parts[1]);
-        
-        let worldX = x * Vars.tilesize + Vars.tilesize / 2;
-        let worldY = y * Vars.tilesize + Vars.tilesize / 2;
+    let cb = Core.camera.bounds(Tmp.r1);
+    let cx0 = cb.x - 8, cy0 = cb.y - 8, cx1 = cb.x + cb.width + 8, cy1 = cb.y + cb.height + 8;
+    Draw.color(Pal.accent);
+    Lines.stroke(1.2);
 
-        if (Core.camera.bounds(Tmp.r1).contains(worldX, worldY)) {
-            let angle = getOptimalAngle(worldX, worldY, key, Team.crux);
-            
-            Draw.color(Pal.accent);
-            Lines.stroke(1.2);
-            
-            Lines.lineAngleCenter(worldX, worldY, angle, 4);
-            Lines.lineAngle(worldX + Angles.trnsx(angle, 2), worldY + Angles.trnsy(angle, 2), angle + 135, 2);
-            Lines.lineAngle(worldX + Angles.trnsx(angle, 2), worldY + Angles.trnsy(angle, 2), angle - 135, 2);
+    for (let i = 0; i < total; i++) {
+        let worldX = drawXs[i];
+        let worldY = drawYs[i];
+        if (worldX < cx0 || worldX > cx1 || worldY < cy0 || worldY > cy1) continue;
+
+        let key = drawKeys[i];
+        let ac = angleCache[key];
+        if (ac === undefined || frameCount - ac.f >= 30) {
+            ac = { a: getOptimalAngle(worldX, worldY, key, Team.crux), f: frameCount + (i % 15) };
+            angleCache[key] = ac;
         }
+        let angle = ac.a;
+
+        Lines.lineAngleCenter(worldX, worldY, angle, 4);
+        Lines.lineAngle(worldX + Angles.trnsx(angle, 2), worldY + Angles.trnsy(angle, 2), angle + 135, 2);
+        Lines.lineAngle(worldX + Angles.trnsx(angle, 2), worldY + Angles.trnsy(angle, 2), angle - 135, 2);
     }
 
     Draw.reset();

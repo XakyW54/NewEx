@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const RANGE_IN_TILES = 15;
 const CHARGE_TIME = 90;
 
@@ -111,10 +112,10 @@ Events.on(ContentInitEvent, () => {
                     let orbPulse = Mathf.absin(this.animTime, 1.5, 0.8);
                     let orbRadius = (this.chargeProgress * 6.5) + orbPulse * this.chargeProgress;
 
-                    Draw.color(Color.valueOf("389bfb"), 0.35 * this.chargeProgress);
+                    Draw.color(PerfCore.color("389bfb"), 0.35 * this.chargeProgress);
                     Fill.circle(this.x, this.y, orbRadius + 5);
 
-                    Draw.color(Color.valueOf("66b1ff"), 0.7 * this.chargeProgress);
+                    Draw.color(PerfCore.color("66b1ff"), 0.7 * this.chargeProgress);
                     Fill.circle(this.x, this.y, orbRadius + 2);
 
                     Draw.color(Color.white, this.chargeProgress);
@@ -127,7 +128,7 @@ Events.on(ContentInitEvent, () => {
                             let px = this.x + Angles.trnsx(angle, dist);
                             let py = this.y + Angles.trnsy(angle, dist);
 
-                            Draw.color(Color.valueOf("66b1ff"), this.chargeProgress);
+                            Draw.color(PerfCore.color("66b1ff"), this.chargeProgress);
                             Fill.circle(px, py, 1.5);
                         }
                     }
@@ -138,15 +139,15 @@ Events.on(ContentInitEvent, () => {
                         let pulse = Mathf.absin(this.animTime, 1.2, 1.8);
                         let baseWidth = 7.0 + pulse;
 
-                        Draw.color(Color.valueOf("1f65ca"), 0.25);
+                        Draw.color(PerfCore.color("1f65ca"), 0.25);
                         Lines.stroke(baseWidth + 12.0);
                         Lines.line(this.x, this.y, reactorBuild.x, reactorBuild.y);
 
-                        Draw.color(Color.valueOf("389bfb"), 0.6);
+                        Draw.color(PerfCore.color("389bfb"), 0.6);
                         Lines.stroke(baseWidth + 5.0);
                         Lines.line(this.x, this.y, reactorBuild.x, reactorBuild.y);
 
-                        Draw.color(Color.valueOf("66b1ff"));
+                        Draw.color(PerfCore.color("66b1ff"));
                         Lines.stroke(baseWidth);
                         Lines.line(this.x, this.y, reactorBuild.x, reactorBuild.y);
 
@@ -166,7 +167,7 @@ Events.on(ContentInitEvent, () => {
                             createLyvervonLightning(lx1, ly1, lx2, ly2, 2.5);
                         }
 
-                        Draw.color(Color.valueOf("66b1ff"), 0.7);
+                        Draw.color(PerfCore.color("66b1ff"), 0.7);
                         Fill.circle(reactorBuild.x, reactorBuild.y, 7 + pulse);
                         Draw.color(Color.white);
                         Fill.circle(reactorBuild.x, reactorBuild.y, 3.5 + pulse * 0.5);

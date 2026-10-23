@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
@@ -18,8 +19,8 @@ function t(viText, enText) {
 }
 
  function drawSwordRegion(x, y, rot, scale) {
-    let swordRegion = Core.atlas.find("newex-swordoder-sword");
-    if (!swordRegion.found()) swordRegion = Core.atlas.find("swordoder-sword");
+    let swordRegion = PerfCore.region("newex-swordoder-sword");
+    if (!swordRegion.found()) swordRegion = PerfCore.region("swordoder-sword");
 
     if (swordRegion.found()) {
         let width = swordRegion.width * Draw.scl * scale;
@@ -93,7 +94,7 @@ function t(viText, enText) {
     let currentSweep = (startAngle + (endAngle - startAngle) * headProgress) - startAngle;
 
     if (currentSweep > 0) {
-        Draw.color(Color.valueOf("#ffe066"), Color.valueOf("#ff5500"), fin);
+        Draw.color(PerfCore.color("#ffe066"), PerfCore.color("#ff5500"), fin);
         Draw.alpha(alpha);
         Lines.stroke(36.0 * (scale / 3.0));
         Lines.arc(originX, originY, radius - 18.0, currentSweep / 360, startAngle);
@@ -133,7 +134,7 @@ function t(viText, enText) {
             Fill.circle(smX, smY, smSize);
 
             if (Mathf.randomSeed(smokeSeed + 3, 0, 1) > 0.4) {
-                Draw.color(Color.valueOf("#aee5ff"), Color.white, Mathf.randomSeed(smokeSeed + 4, 0, 1));
+                Draw.color(PerfCore.color("#aee5ff"), Color.white, Mathf.randomSeed(smokeSeed + 4, 0, 1));
                 Lines.stroke((1.5 + Mathf.randomSeed(smokeSeed + 5, 0, 1.5)) * (1.0 - particleLife));
 
                 let sparkSeed = e.id * 1000 + i * 10 + Math.floor(fin * 15);
@@ -147,7 +148,7 @@ function t(viText, enText) {
         }
     }
 
-    Draw.color(Color.valueOf("#aee5ff"), Color.white, Mathf.randomSeed(e.id + 99, 0, 1));
+    Draw.color(PerfCore.color("#aee5ff"), Color.white, Mathf.randomSeed(e.id + 99, 0, 1));
     Lines.stroke(2.5 * alpha);
     
     let beamLines = 3;
@@ -220,8 +221,8 @@ function triggerSlashArea(b) {
     draw(b) {
         Draw.z(Layer.bullet);
 
-        let reg = Core.atlas.find("newex-swordoder-sword");
-        if (!reg.found()) reg = Core.atlas.find("swordoder-sword");
+        let reg = PerfCore.region("newex-swordoder-sword");
+        if (!reg.found()) reg = PerfCore.region("swordoder-sword");
 
         if (reg.found()) {
             Draw.rect(reg, b.x, b.y, reg.width * Draw.scl, reg.height * Draw.scl, b.rotation() - 90);
@@ -236,7 +237,7 @@ function triggerSlashArea(b) {
     configurable: true
 });
 
-swordoder.health = 3600;
+swordoder.health = 17000;
 swordoder.range = 105;
 swordoder.reload = 120;
 swordoder.recoil = 8;
@@ -310,8 +311,8 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
     draw() {
         this.super$draw();
 
-        let swordRegion = Core.atlas.find("newex-swordoder-sword");
-        if (!swordRegion.found()) swordRegion = Core.atlas.find("swordoder-sword");
+        let swordRegion = PerfCore.region("newex-swordoder-sword");
+        if (!swordRegion.found()) swordRegion = PerfCore.region("swordoder-sword");
 
         if (swordRegion.found()) {
             Draw.z(Layer.turret + 0.01);
@@ -672,13 +673,13 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
             
             let descStr = t(
                 "[gold]⚡ THÔNG SỐ CƠ BẢN PHÁO SWORDODER (MK1) ⚡[]\n" +
-                "• Máu: 3,600 | Tầm bắn: 105px (13.1 ô) | Sát thương gốc: 30.0 + 19 (Chém)\n" +
+                "• Máu: 17,000 | Tầm bắn: 105px (13.1 ô) | Sát thương gốc: 30.0 + 19 (Chém)\n" +
                 "• [red]Nội tại Tận diệt: Mục tiêu bị giảm còn <= 1% máu lập tức chịu 999,999 sát thương kết liễu![]\n" +
                 "• Cơ chế gốc: Bắn 1 viên đạn đơn. Khi đạn chạm/despawn tạo vệt chém gây 19 sát thương diện rộng.\n" +
                 "• Nâng cấp: Nâng cấp trực tiếp chỉ số và kỹ năng qua hệ thống Phúc lợi A & B.",
 
                 "[gold]⚡ SWORDODER TURRET BASIC STATS (MK1) ⚡[]\n" +
-                "• Health: 3,600 | Range: 105px (13.1 tiles) | Base Damage: 30.0 + 19 (Slash)\n" +
+                "• Health: 17,000 | Range: 105px (13.1 tiles) | Base Damage: 30.0 + 19 (Slash)\n" +
                 "• [red]Execute Passive: Target drops to <= 1% HP instantly receives 999,999 lethal damage![]\n" +
                 "• Base Mechanism: Fires 1 bullet. On hit/despawn creates a slash arc dealing 19 AoE damage.\n" +
                 "• Upgrades: Directly upgrade stats and skills via Perk A & B system."

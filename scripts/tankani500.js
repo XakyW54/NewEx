@@ -146,9 +146,9 @@ Events.on(ClientLoadEvent, cons(e => {
             
             setTier(val) { 
                 this.tierState = val;
-                if (val == 0) this.health = 565;
-                if (val == 1) this.health = 735; 
-                if (val == 2) this.health = 950;
+                if (val == 0) this.health = 1413;
+                if (val == 1) this.health = 1838; 
+                if (val == 2) this.health = 2375;
                 this.maxHealth = this.health;
             },
 
@@ -241,13 +241,13 @@ Events.on(ClientLoadEvent, cons(e => {
                         let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                         b1.add("[cyan]===(MK2)===[]").row();
                         let b1Text = isEn ? "Integrated area explosive technology:\n" +
-                                            " [white]• Increases HP to [green]735 HP[].[]\n" +
+                                            " [white]• Increases HP to [green]1838 HP[].[]\n" +
                                             " [white]• Retains multi-target (Ground & Air) and base range.[]\n" +
                                             " [white]• Bullets explode in a [orange]50 pixel[] radius on hit.[]\n" +
                                             " [white]• Primary target takes [red]558 base damage[] directly.[]\n" +
                                             " [white]• Nearby enemies take [yellow]279 splash damage[] (50%).[]"
                                           : "Tích hợp công nghệ nổ mảnh diện rộng:\n" +
-                                            " [white]• Tăng lượng máu chống chịu lên [green]735 HP[].[]\n" +
+                                            " [white]• Tăng lượng máu chống chịu lên [green]1838 HP[].[]\n" +
                                             " [white]• Giữ nguyên cơ chế bắn đa mục tiêu (Đất & Không) và tầm bắn gốc.[]\n" +
                                             " [white]• Đạn chạm mục tiêu kích nổ lan phạm vi [orange]50 pixel[].[]\n" +
                                             " [white]• Mục tiêu chính nhận [red]558 sát thương gốc[] trực diện.[]\n" +
@@ -270,14 +270,14 @@ Events.on(ClientLoadEvent, cons(e => {
                         let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                         b2.add("[purple]===(MK2B)===[]").row();
                         let b2Text = isEn ? "Converts to heavy anti-air artillery complex:\n" +
-                                            " [white]• Increases max HP to [green]950 HP[].[]\n" +
+                                            " [white]• Increases max HP to [green]2375 HP[].[]\n" +
                                             " [white]• Extends effective range by [ultra-light]2x [green](x2 Range)[][].[]\n" +
                                             " [white]• [red]Completely removes ground targeting capability[].[]\n" +
                                             " [white]• Increases bullet speed to [sky]20.0[] dedicated anti-air.[]\n" +
                                             " [white]• Pressure wave blast area up to [pink]150 pixels[].[]\n" +
                                             " [white]• Deals [orange]446 AOE damage[] (80% of base damage).[]"
                                           : "Chuyển đổi sang tổ hợp pháo phòng không hạng nặng:\n" +
-                                            " [white]• Gia tăng lượng máu tối đa lên cực đại [green]950 HP[].[]\n" +
+                                            " [white]• Gia tăng lượng máu tối đa lên cực đại [green]2375 HP[].[]\n" +
                                             " [white]• Mở rộng [ultra-light]gấp đôi tầm bắn hiệu dụng [green](x2 Range)[][].[]\n" +
                                             " [white]• [red]Loại bỏ hoàn toàn khả năng bắn mục tiêu mặt đất[].[]\n" +
                                             " [white]• Tăng tốc độ đạn bay lên [sky]20.0[] chuyên dụng diệt Không Quân.[]\n" +
@@ -332,25 +332,25 @@ Events.on(ClientLoadEvent, cons(e => {
                     if (currentTier == 0) {
                         title += "[yellow](MK1)[]";
                         descStr = isEn ? "[gold]⚡ UNUPGRADED BASE STATS (MK1) ⚡[]\n" +
-                                         "[lightgray]Turret Health:[] [green]565 HP[]\n" +
+                                         "[lightgray]Turret Health:[] [green]1413 HP[]\n" +
                                          "[lightgray]Target Type:[] Ground & Air\n" +
                                          "[lightgray]Single Target Damage:[] [red]" + this.getModifiedDamage(558) + " Damage[] (Base: 558)\n" +
                                          statStackStr
                                        : "[gold]⚡ THÔNG SỐ GỐC CHƯA NÂNG CẤP (MK1) ⚡[]\n" +
-                                         "[lightgray]Máu tháp pháo:[] [green]565 HP[]\n" +
+                                         "[lightgray]Máu tháp pháo:[] [green]1413 HP[]\n" +
                                          "[lightgray]Trạng thái mục tiêu:[] Đất & Không\n" +
                                          "[lightgray]Sát thương mục tiêu đơn:[] [red]" + this.getModifiedDamage(558) + " Sát thương[] (Gốc: 558)\n" +
                                          statStackStr;
                     } else if (currentTier == 1) {
                         title += "[cyan](MK2)[]";
                         descStr = isEn ? "[cyan]⚡ AREA DAMAGE CONFIG (MK2) ⚡[]\n" +
-                                         "[lightgray]Turret Health:[] [green]735 HP[]\n" +
+                                         "[lightgray]Turret Health:[] [green]1838 HP[]\n" +
                                          "[lightgray]Splash Area:[] [orange]50 Pixels[]\n" +
                                          "[lightgray]Direct Damage:[] [red]" + this.getModifiedDamage(558) + " Damage[] (Base: 558)\n" +
                                          "[lightgray]Splash Damage:[] [yellow]" + this.getModifiedDamage(279) + " Damage[] (Base: 279)\n" +
                                          statStackStr
                                        : "[cyan]⚡ CẤU HÌNH ĐẠN DIỆN RỘNG (MK2) ⚡[]\n" +
-                                         "[lightgray]Máu tháp pháo:[] [green]735 HP[]\n" +
+                                         "[lightgray]Máu tháp pháo:[] [green]1838 HP[]\n" +
                                          "[lightgray]Vùng nổ lan (Splash):[] [orange]50 Pixel[]\n" +
                                          "[lightgray]Sát thương trực diện:[] [red]" + this.getModifiedDamage(558) + " Sát thương[] (Gốc: 558)\n" +
                                          "[lightgray]Sát thương nổ lan:[] [yellow]" + this.getModifiedDamage(279) + " Sát thương[] (Gốc: 279)\n" +
@@ -358,14 +358,14 @@ Events.on(ClientLoadEvent, cons(e => {
                     } else if (currentTier == 2) {
                         title += "[purple](MK2B)[]";
                         descStr = isEn ? "[purple]⚡ HEAVY ANTI-AIR CONFIG (MK2B) ⚡[]\n" +
-                                         "[lightgray]Turret Health:[] [green]950 HP[]\n" +
+                                         "[lightgray]Turret Health:[] [green]2375 HP[]\n" +
                                          "[lightgray]Range:[] [green]Double Base Range (x2 Range)[]\n" +
                                          "[lightgray]Target Type:[] [red]AIR ONLY[]\n" +
                                          "[lightgray]Pressure Splash Area:[] [pink]150 Pixels[]\n" +
                                          "[lightgray]Anti-Air Splash Damage:[] [orange]" + this.getModifiedDamage(446) + " Damage[] (Base: 446)\n" +
                                          statStackStr
                                        : "[purple]⚡ CẤU HÌNH PHÒNG KHÔNG HẠNG NẶNG (MK2B) ⚡[]\n" +
-                                         "[lightgray]Máu tháp pháo:[] [green]950 HP[]\n" +
+                                         "[lightgray]Máu tháp pháo:[] [green]2375 HP[]\n" +
                                          "[lightgray]Tầm bắn:[] [green]Gấp đôi tầm bắn gốc (x2 Range)[]\n" +
                                          "[lightgray]Trạng thái mục tiêu:[] [red]Chỉ bắn KHÔNG QUÂN[]\n" +
                                          "[lightgray]Vùng nổ lan áp suất:[] [pink]150 Pixel[]\n" +

@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 function getSuv27UpgradeRequirements(currentLevel) {
     return {
         leadNeeded: 340 + (currentLevel * 100),
@@ -376,11 +377,11 @@ function applyTransformLogic(unitEntity, uType, targetUnitName, isSUV) {
                 let maxRadius = 26 * scale;
 
                 Draw.z(Layer.effect + 0.1);
-                Draw.color(Color.valueOf("c084fc"));
+                Draw.color(PerfCore.color("c084fc"));
                 Lines.stroke(3.0 * scale);
                 Lines.circle(this.x, this.y, maxRadius + 2.0);
 
-                Draw.color(Color.valueOf("7e22ce"));
+                Draw.color(PerfCore.color("7e22ce"));
                 Fill.circle(this.x, this.y, maxRadius);
 
                 Draw.color(Color.black);
@@ -421,7 +422,7 @@ Events.on(PlayerChatEvent, event => {
 
 Events.on(ClientLoadEvent, function() {
     pulseBurstEffect = new Effect(30, cons(e => {
-        Draw.color(Color.valueOf("8aa3f4"), Color.valueOf("c084fc"), e.fin());
+        Draw.color(PerfCore.color("8aa3f4"), PerfCore.color("c084fc"), e.fin());
         Lines.stroke(4.0 * e.fout());
         Lines.circle(e.x, e.y, 60.0 * e.fin());
         Draw.color(Color.white, e.fout());
@@ -429,7 +430,7 @@ Events.on(ClientLoadEvent, function() {
     }));
 
     healEffect = new Effect(40, cons(e => {
-        Draw.color(Color.valueOf("84cc16"), Color.white, e.fin());
+        Draw.color(PerfCore.color("84cc16"), Color.white, e.fin());
         Lines.stroke(3.0 * e.fout());
         Lines.circle(e.x, e.y, 25.0 * e.fin());
         Fill.circle(e.x, e.y, 10.0 * e.fout());
@@ -546,11 +547,11 @@ Events.on(ClientLoadEvent, function() {
 
                 Draw.color(Color.black, 0.4);
                 Fill.circle(cx, cy, outerRadius);
-                Draw.color(Color.valueOf("c084fc"), 0.8);
+                Draw.color(PerfCore.color("c084fc"), 0.8);
                 Lines.stroke(3);
                 Lines.circle(cx, cy, outerRadius);
 
-                Draw.color(Color.valueOf("7e22ce"), 0.9);
+                Draw.color(PerfCore.color("7e22ce"), 0.9);
                 Fill.circle(cx + moveKnobX, cy + moveKnobY, innerRadius);
                 Draw.color(Color.white, 0.9);
                 Lines.stroke(2);

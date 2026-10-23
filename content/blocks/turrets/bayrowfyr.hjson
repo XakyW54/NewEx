@@ -2,7 +2,7 @@ type: ItemTurret
 name: bayrowfyr
 description: "Pháo phòng không hạng nặng chuyên bắn ra quả cầu quang phổ đa sắc (RGB/Rainbow). Đạn liên tục đổi màu theo thời gian, phát ra các tia sét 6 màu và bùng nổ thành dải sóng sắc màu rực rỡ."
 size: 2
-health: 2400
+health: 6000
 armor: 18
 reload: 60
 range: 620

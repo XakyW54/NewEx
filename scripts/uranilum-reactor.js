@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const lightningColor = Color.valueOf("7fd4ff");
 const decayLightningColor = Color.valueOf("a957ff");
 
@@ -348,7 +349,7 @@ Events.on(ContentInitEvent, () => {
                                 let mx = this.x + offsetX;
                                 let my = this.y + offsetY;
 
-                                Draw.color(Color.valueOf("99d1ff"));
+                                Draw.color(PerfCore.color("99d1ff"));
                                 Fill.circle(mx, my, orb.radius + 1.0);
 
                                 Draw.color(Color.white);
@@ -362,11 +363,11 @@ Events.on(ContentInitEvent, () => {
 
                         let beamWidth = 5.0 + Mathf.absin(this.animTime, 1.5, 1.5);
 
-                        Draw.color(Color.valueOf("389bfb"), 0.4);
+                        Draw.color(PerfCore.color("389bfb"), 0.4);
                         Lines.stroke(beamWidth + 4.0);
                         Lines.line(this.x, this.y, this.targetBuilding.x, this.targetBuilding.y);
 
-                        Draw.color(Color.valueOf("66b1ff"));
+                        Draw.color(PerfCore.color("66b1ff"));
                         Lines.stroke(beamWidth);
                         Lines.line(this.x, this.y, this.targetBuilding.x, this.targetBuilding.y);
 
@@ -395,7 +396,7 @@ Events.on(ContentInitEvent, () => {
                 this.drawTargetLink();
 
                 Draw.z(Layer.power);
-                Draw.color(Color.valueOf("66b1ff"), 0.35);
+                Draw.color(PerfCore.color("66b1ff"), 0.35);
                 Lines.stroke(1.5);
                 Lines.circle(this.x, this.y, 150 * Vars.tilesize);
                 Draw.reset();
@@ -404,7 +405,7 @@ Events.on(ContentInitEvent, () => {
             drawTargetLink() {
                 if (this.targetBuilding != null && this.targetBuilding.isValid()) {
                     Draw.z(Layer.power);
-                    Draw.color(Color.valueOf("66b1ff"));
+                    Draw.color(PerfCore.color("66b1ff"));
                     Lines.stroke(2);
                     Lines.square(this.targetBuilding.x, this.targetBuilding.y, (this.targetBuilding.block.size * Vars.tilesize) / 2 + 2);
                     Lines.dashLine(this.x, this.y, this.targetBuilding.x, this.targetBuilding.y, 8);
@@ -433,7 +434,7 @@ Events.on(ContentInitEvent, () => {
                                    Math.abs(tile.build.x - wx) < 8 && Math.abs(tile.build.y - wy) < 8;
 
                     if (isPlaced) {
-                        Draw.color(Color.valueOf("66b1ff"));
+                        Draw.color(PerfCore.color("66b1ff"));
                     } else {
                         Draw.color(Color.orange, Color.white, Mathf.absin(this.animTime, 4, 0.3));
                     }

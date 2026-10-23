@@ -1,3 +1,4 @@
+const _perfRect = new Rect();
 const damagePopups = new Seq();
 const tempColor = new Color();
 const entityHpCache = new ObjectMap();
@@ -139,7 +140,7 @@ Events.run(Trigger.update, () => {
 
     if (Vars.state.isPaused()) return;
 
-    let bounds = Core.camera.bounds(new Rect());
+    let bounds = Core.camera.bounds(_perfRect);
 
     Groups.unit.intersect(bounds.x, bounds.y, bounds.width, bounds.height, cons(u => {
         if (!u.isValid() || u.health === Number.POSITIVE_INFINITY) return;

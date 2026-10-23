@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
@@ -63,7 +64,7 @@ const royalStarExplosionFx = new Effect(25, cons(e => {
 }));
 
 const royalCritHitFx = new Effect(18, cons(e => {
-    Draw.color(Color.valueOf("#ffcc00"), Color.white, e.fin());
+    Draw.color(PerfCore.color("#ffcc00"), Color.white, e.fin());
     Lines.stroke(2.0 * e.fout());
     Lines.circle(e.x, e.y, 12.0 * e.finpow());
     Angles.randLenVectors(e.id, 5, 16.0 * e.finpow(), (x, y) => {
@@ -319,9 +320,9 @@ Events.on(ContentInitEvent, () => {
             this.paidTitanium = 0;
             this.paidSilicon = 0;
             this.paidPlastanium = 0;
-            if(val == 0) { this.health = 1200; }
-            if(val == 1) { this.health = 1800; }
-            if(val == 2) { this.health = 1600; }
+            if(val == 0) { this.health = 3000; }
+            if(val == 1) { this.health = 4500; }
+            if(val == 2) { this.health = 4000; }
             this.maxHealth = this.health;
         },
 
@@ -376,18 +377,18 @@ Events.on(ContentInitEvent, () => {
             let r40 = maxR * 0.4;
             let r60 = maxR * 0.6;
 
-            Draw.color(Color.valueOf("#4488ff"));
+            Draw.color(PerfCore.color("#4488ff"));
             Lines.dashCircle(this.x, this.y, r40);
 
-            Draw.color(Color.valueOf("#00ffff"));
+            Draw.color(PerfCore.color("#00ffff"));
             Lines.stroke(1.5);
             Lines.dashCircle(this.x, this.y, r60);
 
-            Draw.color(Color.valueOf("#ff3300"));
+            Draw.color(PerfCore.color("#ff3300"));
             Lines.stroke(2.0);
             Lines.dashCircle(this.x, this.y, maxR);
             
-            Draw.color(Color.valueOf("#ffaa00"));
+            Draw.color(PerfCore.color("#ffaa00"));
             Draw.alpha(0.08);
             Fill.circle(this.x, this.y, maxR);
 
@@ -397,8 +398,7 @@ Events.on(ContentInitEvent, () => {
         updateTile(){
             this.limitCheck += Time.delta;
             if(this.limitCheck >= 15){
-                this.limitCheck = 0; let count = 0; let firstBuild = null;
-                Groups.build.each(b => { if(b.block == Ravendes && b.team == this.team) { count++; if(firstBuild == null) firstBuild = b; } });
+                this.limitCheck = 0; let _lim = PerfCore.teamBlocks(this.team, Ravendes); let count = _lim != null ? _lim.size : 0; let firstBuild = (_lim != null && count > 0) ? _lim.first() : null;
                 if(count > 10 && this !== firstBuild){ Call.sendMessage("[red]CẢNH BÁO QUÁ TẢI MẠNG LƯỚI: Giới hạn tối đa 10 đơn vị Ravendes trên cùng hệ thống![]"); this.kill(); return; }
             }
 
@@ -519,7 +519,7 @@ Events.on(ContentInitEvent, () => {
                     let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                     b2.add("[#ffaa00]⚡ PHÂN NHÁNH B: PROTOCOL MK2B [GOLDEN OVERCLOCK][]").row();
                     let b2D = b2.add("Sấy đạn ngôi sao hoàng gia cực nhanh càn quét mục tiêu.\n" +
-                                     " • [#ffe066]Khung vách:[] Ép xung bền bỉ [green]1,600 HP[].\n" +
+                                     " • [#ffe066]Khung vách:[] Ép xung bền bỉ [green]4,000 HP[].\n" +
                                      " • [#ffe066]Tầm bắn:[] [yellow]1300px[] kèm đạn định vị tầm nhiệt.");
                     b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
                     b2.button("[#ffaa00]KÍCH HOẠT MK2B[]", packRun(() => {

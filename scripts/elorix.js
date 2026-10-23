@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 function findSafeDashTarget(unit, startX, startY, targetX, targetY) {
     let angle = Angles.angle(startX, startY, targetX, targetY);
     let maxDist = Mathf.dst(startX, startY, targetX, targetY);
@@ -39,7 +40,7 @@ function getElorixUpgradeRequirements(currentLevel) {
 }
 
 const acidCorrosionEffect = new Effect(30, cons(e => {
-    Draw.color(Color.valueOf("#a3e635"), Color.valueOf("#65a30d"), e.fin());
+    Draw.color(PerfCore.color("#a3e635"), PerfCore.color("#65a30d"), e.fin());
     Lines.stroke(e.fout() * 2);
     Mathf.rand.setSeed(e.id);
     for(let i = 0; i < 5; i++){
@@ -183,9 +184,9 @@ let elorixWing2Region = null;
 let thinArmorRegion = null;
 
 Events.on(ClientLoadEvent, () => {
-    elorixWing1Region = Core.atlas.find("newex-elorix-wing1") || Core.atlas.find("elorix-wing1");
-    elorixWing2Region = Core.atlas.find("newex-elorix-wing2") || Core.atlas.find("elorix-wing2");
-    thinArmorRegion = Core.atlas.find("newex-thin-armor") || Core.atlas.find("thin-armor");
+    elorixWing1Region = PerfCore.region("newex-elorix-wing1") || PerfCore.region("elorix-wing1");
+    elorixWing2Region = PerfCore.region("newex-elorix-wing2") || PerfCore.region("elorix-wing2");
+    thinArmorRegion = PerfCore.region("newex-thin-armor") || PerfCore.region("thin-armor");
 
     let elorixUnit = Vars.content.getByName(ContentType.unit, "newex-elorix") || Vars.content.getByName(ContentType.unit, "elorix");
 

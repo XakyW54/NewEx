@@ -1,6 +1,6 @@
 name: Flazerd 
 description: Pháo Flazerd: Pháo laser thế hệ mới sử dụng chùm tia hội tụ năng lượng cao, có khả năng khóa mục tiêu và duy trì hỏa lực liên tục. Sức mạnh của tia laser tăng dần theo thời gian bắn, trở thành mối đe dọa đáng gờm trên chiến trường.
-health: 1500
+health: 3750
 size: 3
 range: 260
 inaccuracy: 2

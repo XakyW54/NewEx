@@ -1,7 +1,7 @@
 
 name: Dor
 description: "Pháo Dor: Sản phẩm quân sự đầu tay của NewEx. Pháo bắn đạn thường liên tục, xen kẽ các loạt đạn chùm theo chu kỳ. Bắn đủ số loạt đạn chùm sẽ kích hoạt trạng thái Cuồng Bạo, tăng mạnh tốc độ bắn đạn thường."
-health: 380
+health: 950
 size: 2
 reload: 20
 range: 300

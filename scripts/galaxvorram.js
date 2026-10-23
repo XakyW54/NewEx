@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 
@@ -465,7 +466,7 @@ const vChainLinkFx = new Effect(15, cons(e => {
         let tx = e.data.x;
         let ty = e.data.y;
         
-        Draw.color(Color.valueOf("#c084fc"), Color.white, e.fin());
+        Draw.color(PerfCore.color("#c084fc"), Color.white, e.fin());
         Lines.stroke(2.0 * fout);
         Lines.line(e.x, e.y, tx, ty);
 
@@ -493,8 +494,8 @@ const galaxvorram = extend(PowerTurret, "galaxvorram", {
     configurable: true
 });
 
-galaxvorram.health = 4500;
-galaxvorram.range = 1400; 
+galaxvorram.health = 17000;
+galaxvorram.range = 1; 
 galaxvorram.reload = 240;
 
 galaxvorram.hasItems = true;
@@ -664,7 +665,7 @@ galaxvorram.buildType = () => extend(PowerTurret.PowerTurretBuild, galaxvorram, 
         let adjacentRadius = (this.block.size * 8) + 8.0;
 
         Draw.z(Layer.power + 1);
-        Draw.color(Color.valueOf("#fb7185"));
+        Draw.color(PerfCore.color("#fb7185"));
         Lines.stroke(1.0);
         Lines.dashCircle(this.x, this.y, 21 * 8);
         Draw.reset();
@@ -694,7 +695,7 @@ galaxvorram.buildType = () => extend(PowerTurret.PowerTurretBuild, galaxvorram, 
         let redstoneList = this.getCornerBuildings("redstone", 0);
         redstoneList.each(b => {
             Draw.z(Layer.power + 1);
-            Draw.color(Color.valueOf("#ef4444"));
+            Draw.color(PerfCore.color("#ef4444"));
             Lines.stroke(1.0);
             Lines.dashLine(this.x, this.y, b.x, b.y, Math.floor(Mathf.dst(this.x, this.y, b.x, b.y) / 12));
 
@@ -998,8 +999,8 @@ galaxvorram.buildType = () => extend(PowerTurret.PowerTurretBuild, galaxvorram, 
             let descStr = "";
             if (isEnglish()) {
                 descStr = "[gold]⚡ GALAXVORRAM WEAPON STATS ⚡[]\n" +
-                          "• Health: 4,500\n" +
-                          "• Base Range: 1,400px\n" +
+                          "• Health: 17,000\n" +
+                          "• Base Range: 1px\n" +
                           "• Ammo Capacity: 2,000\n" +
                           "• Base Damage: [accent]5600 Dmg[]\n\n" +
                           "[scarlet]━━━━ REALTIME BUFF STATUS ━━━━[]\n\n" +
@@ -1015,7 +1016,7 @@ galaxvorram.buildType = () => extend(PowerTurret.PowerTurretBuild, galaxvorram, 
                           "  └ Stacking Effect: [pink]Unlimited Stacks[]";
             } else {
                 descStr = "[gold]⚡ THÔNG SỐ VŨ KHÍ GALAXVORRAM ⚡[]\n" +
-                          "• Máu: 4,500\n" +
+                          "• Máu: 17,000\n" +
                           "• Tầm ngắm gốc: 1,400px\n" +
                           "• Sức chứa kho đạn: 2,000\n" +
                           "• Sát thương gốc: [accent]5600 Dmg[]\n\n" +

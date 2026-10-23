@@ -1,7 +1,7 @@
 name: laytery
 displayName: Laytery
 description: "Tập trung năng lượng khóa và xả tia laser liên tục vào mục tiêu không và đất. Sát thương tăng dần theo thời gian duy trì."
-health: 5200
+health: 13000
 size: 2
 range: 224
 reload: 9999

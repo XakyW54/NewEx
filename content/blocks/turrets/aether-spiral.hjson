@@ -2,7 +2,7 @@ type: ItemTurret
 name: Aether Spiral
 description: .
 size: 5
-health: 8500
+health: 21250
 range: 320
 reload: 35
 rotateSpeed: 2.8

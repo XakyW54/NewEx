@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packCons = (func) => new Cons({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
@@ -35,7 +36,7 @@ const laserBeamFx = new Effect(20, e => {
     let tx = e.data.x;
     let ty = e.data.y;
 
-    Draw.color(Color.valueOf("fef08a"), Color.valueOf("a855f7"), e.fin());
+    Draw.color(PerfCore.color("fef08a"), PerfCore.color("a855f7"), e.fin());
     Lines.stroke(e.fout() * 3.5);
     Lines.line(e.x, e.y, tx, ty);
     Fill.circle(e.x, e.y, e.fout() * 4.0);
@@ -47,7 +48,7 @@ const mainToSpawnLaserFx = new Effect(20, e => {
     let spawnX = e.data.x;
     let spawnY = e.data.y;
 
-    Draw.color(Color.valueOf("fef08a"), Color.white, e.fin());
+    Draw.color(PerfCore.color("fef08a"), Color.white, e.fin());
     Lines.stroke(e.fout() * 3.0);
     Lines.line(e.x, e.y, spawnX, spawnY);
     Fill.circle(e.x, e.y, e.fout() * 5.0);

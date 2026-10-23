@@ -1,7 +1,7 @@
 type: PowerTurret
 name: "Tháp Điều Phối Drone"
 description: "Tháp pháo không bắn đạn trực tiếp. Triệu hồi Drone chiến đấu tấn công kẻ địch từ khoảng cách an toàn và tự hủy sau 10 giây."
-health: 1200
+health: 3000
 size: 2
 range: 600
 reload: 12

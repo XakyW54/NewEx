@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
  
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
@@ -24,10 +25,10 @@ const C_WHITE        = Color.valueOf("#ffffff");
         "newex-sprites-" + name
     ];
     for (let i = 0; i < candidates.length; i++) {
-        let reg = Core.atlas.find(candidates[i]);
+        let reg = PerfCore.region(candidates[i]);
         if (reg != null && reg.found()) return reg;
     }
-    return Core.atlas.find("clear");
+    return PerfCore.region("clear");
 }
 
 let barrel1Region, barrel2Region;
@@ -473,10 +474,10 @@ let emperfum = extend(ItemTurret, "emperfum", {
     }
 });
 
-emperfum.health = 1450;
+emperfum.health = 3625;
 emperfum.size = 3;
 emperfum.reload = 300;
-emperfum.range = 380;
+emperfum.range = 550;
 emperfum.configurable = true;
 emperfum.category = Category.turret;
 
@@ -504,9 +505,9 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
     getTier(){ return this.tierState == null ? 0 : this.tierState; },
     setTier(val){ 
         this.tierState = val;
-        if(val == 0) { this.health = 1450; }
-        if(val == 1) { this.health = 1885; }
-        if(val == 2) { this.health = 2610; }
+        if(val == 0) { this.health = 3625; }
+        if(val == 1) { this.health = 4713; }
+        if(val == 2) { this.health = 6525; }
         this.maxHealth = this.health;
     },
 
@@ -655,14 +656,14 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
                 b1.add().height(6).row();
                 let b1Desc = isVN() ? 
                     "[lightgray]Tối ưu hóa rãnh nòng từ tính tím, gia tăng hỏa lực càn quét mặt đất:\n" +
-                    "• [white]Máu tháp pháo: [green]1,885 HP[] [lime](+30%)[]\n" +
-                    "• [white]Tầm bắn: [orange]420 pixel[]\n" +
+                    "• [white]Máu tháp pháo: [green]4,713 HP[] [lime](+30%)[]\n" +
+                    "• [white]Tầm bắn: [orange]607.9 pixel[]\n" +
                     "• [white]Sát thương: [yellow]500 thô + 750 nổ diện rộng[]\n" +
                     "• [white]Đặc tính: [gold]Xuyên qua 15 mục tiêu[], phân tách đạn chùm 2 tầng càn quét công trình/kẻ địch."
                     :
                     "[lightgray]Optimized purple magnetic barrel grooves, increasing ground sweeping firepower:\n" +
-                    "• [white]Turret Health: [green]1,885 HP[] [lime](+30%)[]\n" +
-                    "• [white]Range: [orange]420 pixels[]\n" +
+                    "• [white]Turret Health: [green]4,713 HP[] [lime](+30%)[]\n" +
+                    "• [white]Range: [orange]607.9 pixels[]\n" +
                     "• [white]Damage: [yellow]500 raw + 750 splash[]\n" +
                     "• [white]Features: [gold]Pierces up to 15 targets[], splits into 2-tier cluster bullets.";
 
@@ -700,14 +701,14 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
 
                 let b2Desc = isVN() ?
                     "[lightgray]Chuyển đổi sang hệ thống phòng không tầm xa chuyên dụng:\n" +
-                    "• [white]Máu tháp pháo: [green]2,610 HP[] [lime](+80%)[]\n" +
-                    "• [white]Tầm bắn: [orange]380 pixel[]\n" +
+                    "• [white]Máu tháp pháo: [green]6,525 HP[] [lime](+80%)[]\n" +
+                    "• [white]Tầm bắn: [orange]550 pixel[]\n" +
                     "• [white]Sát thương: [red]1,175 thô + 1,762 nổ diện rộng[]\n" +
                     "• [white]Đặc tính: [#e9d5ff]Tự động bẻ lái khóa mục tiêu bay[], đạn nổ tỏa ra mảnh đạn ngôi sao tím truy đuổi."
                     :
                     "[lightgray]Converted into a specialized long-range anti-air system:\n" +
-                    "• [white]Turret Health: [green]2,610 HP[] [lime](+80%)[]\n" +
-                    "• [white]Range: [orange]380 pixels[]\n" +
+                    "• [white]Turret Health: [green]6,525 HP[] [lime](+80%)[]\n" +
+                    "• [white]Range: [orange]550 pixels[]\n" +
                     "• [white]Damage: [red]1,175 raw + 1,762 splash[]\n" +
                     "• [white]Features: [#e9d5ff]Homing onto flying targets[], bursts into purple star shrapnel.";
 
@@ -762,16 +763,16 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
                 title += "[yellow](MK1)[]";
                 descStr = isVN() ?
                     "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1 - CƠ BẢN) ⚡[]\n\n" +
-                    "• [lightgray]Máu pháo:[] [green]1,450 HP[]\n" +
-                    "• [lightgray]Tầm bắn:[] [orange]380 pixel[]\n" +
+                    "• [lightgray]Máu pháo:[] [green]3,625 HP[]\n" +
+                    "• [lightgray]Tầm bắn:[] [orange]550 pixel[]\n" +
                     "• [lightgray]Mục tiêu:[] Đất & Khai hỏa Pyro\n" +
                     "• [lightgray]Sát thương:[] [yellow]500 thô[] + đạn chùm phân tách\n" +
                     "• [lightgray]Khả năng xuyên:[] [white]15 mục tiêu[]\n\n" +
                     "[#c084fc]💡 Mô tả: Pháo càn quét diện rộng giai đoạn đầu. Bắn đạn chính tích tụ vòng năng lượng oval tím-trắng, khi chạm mục tiêu sẽ giải phóng đạn ngôi sao tím bộc phá.[]"
                     :
                     "[gold]⚡ BASIC STATS (MK1 - BASE) ⚡[]\n\n" +
-                    "• [lightgray]Health:[] [green]1,450 HP[]\n" +
-                    "• [lightgray]Range:[] [orange]380 pixels[]\n" +
+                    "• [lightgray]Health:[] [green]3,625 HP[]\n" +
+                    "• [lightgray]Range:[] [orange]550 pixels[]\n" +
                     "• [lightgray]Target:[] Ground & Pyratite Ammo\n" +
                     "• [lightgray]Damage:[] [yellow]500 raw[] + cluster splits\n" +
                     "• [lightgray]Piercing:[] [white]15 targets[]\n\n" +
@@ -781,16 +782,16 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
                 title += "[#c084fc](MK2)[]";
                 descStr = isVN() ?
                     "[#c084fc]⚡ THÔNG SỐ CẤU HÌNH (MK2 - XUYÊN PHÁ) ⚡[]\n\n" +
-                    "• [lightgray]Máu pháo:[] [green]1,885 HP [lime](+30%)[]\n" +
-                    "• [lightgray]Tầm bắn:[] [orange]420 pixel[]\n" +
+                    "• [lightgray]Máu pháo:[] [green]4,713 HP [lime](+30%)[]\n" +
+                    "• [lightgray]Tầm bắn:[] [orange]607.9 pixel[]\n" +
                     "• [lightgray]Mục tiêu:[] Chuyên Đánh Đất\n" +
                     "• [lightgray]Sát thương:[] [yellow]500 thô + 750 nổ diện rộng[]\n" +
                     "• [lightgray]Khả năng xuyên:[] [yellow]15 mục tiêu[]\n\n" +
                     "[lime]💡 Mô tả: Tăng cường kết cấu nòng từ tính tím thẫm. Đạn chính bay nhanh hơn, xuyên qua toàn bộ đội hình địch và kích hoạt chuỗi nổ bộc phá liên hoàn.[]"
                     :
                     "[#c084fc]⚡ CONFIG STATS (MK2 - PIERCING) ⚡[]\n\n" +
-                    "• [lightgray]Health:[] [green]1,885 HP [lime](+30%)[]\n" +
-                    "• [lightgray]Range:[] [orange]420 pixels[]\n" +
+                    "• [lightgray]Health:[] [green]4,713 HP [lime](+30%)[]\n" +
+                    "• [lightgray]Range:[] [orange]607.9 pixels[]\n" +
                     "• [lightgray]Target:[] Ground specialized\n" +
                     "• [lightgray]Damage:[] [yellow]500 raw + 750 splash[]\n" +
                     "• [lightgray]Piercing:[] [yellow]15 targets[]\n\n" +
@@ -800,16 +801,16 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
                 title += "[#e9d5ff](MK2B)[]";
                 descStr = isVN() ?
                     "[#e9d5ff]⚡ THÔNG SỐ CẤU HÌNH (MK2B - TRUY ĐUỔI TẦM NHIỆT) ⚡[]\n\n" +
-                    "• [lightgray]Máu pháo:[] [green]2,610 HP [lime](+80%)[]\n" +
-                    "• [lightgray]Tầm bắn:[] [orange]380 pixel[]\n" +
+                    "• [lightgray]Máu pháo:[] [green]6,525 HP [lime](+80%)[]\n" +
+                    "• [lightgray]Tầm bắn:[] [orange]550 pixel[]\n" +
                     "• [lightgray]Mục tiêu:[] Chuyên Phòng Không (Bay)\n" +
                     "• [lightgray]Sát thương:[] [red]1,175 thô + 1,762 nổ diện rộng[]\n" +
                     "• [lightgray]Khả năng bẻ lái:[] [#e9d5ff]Truy đuổi tầm nhiệt 200px[]\n\n" +
                     "[#c084fc]🔥 Mô tả: Chuyển đổi toàn bộ mạch năng lượng sang sắc tím xung kích. Tự động bẻ lái đuổi theo các đơn vị không quân địch, phát nổ thành mảnh đạn ngôi sao 4 cánh tím-trắng.[]"
                     :
                     "[#e9d5ff]⚡ CONFIG STATS (MK2B - HOMING IMPULSE) ⚡[]\n\n" +
-                    "• [lightgray]Health:[] [green]2,610 HP [lime](+80%)[]\n" +
-                    "• [lightgray]Range:[] [orange]380 pixels[]\n" +
+                    "• [lightgray]Health:[] [green]6,525 HP [lime](+80%)[]\n" +
+                    "• [lightgray]Range:[] [orange]550 pixels[]\n" +
                     "• [lightgray]Target:[] Anti-Air specialized\n" +
                     "• [lightgray]Damage:[] [red]1,175 raw + 1,762 splash[]\n" +
                     "• [lightgray]Homing:[] [#e9d5ff]200px homing radius[]\n\n" +

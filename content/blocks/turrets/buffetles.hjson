@@ -391,7 +391,7 @@ shootX: 0
 shootY: 11
 reload: 6
 range: 240
-health: 4400
+health: 11000
 armor: 6
 shake: 1
 ammoUseEffect: casing2

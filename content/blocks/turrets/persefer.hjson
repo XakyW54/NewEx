@@ -2,7 +2,7 @@ type: ItemTurret
 name: Persefer
 description: Pháo phòng không Gatling siêu việt 6 nòng. Càng xả đạn liên tục, tốc độ bắn và chu kỳ xoay nòng càng được đẩy lên cực hạn.
 size: 4
-health: 3200
+health: 8000
 range: 900
 
 reload: 0.5

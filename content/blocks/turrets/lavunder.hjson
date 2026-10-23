@@ -1,6 +1,6 @@
 name: Lavunder 
 description: Pháo Lavunder: Tháp pháo năng lượng tầm trung cao cấp. Chiếu tia laser Photon liên tục vào các mục tiêu mặt đất để tích lũy năng lượng, càng bắn lâu sát thương càng mạnh. Khi đầy tải sẽ kích hoạt vụ nổ quang phổ cực lớn.
-health: 1500
+health: 3750
 size: 3
 range: 260
 inaccuracy: 2

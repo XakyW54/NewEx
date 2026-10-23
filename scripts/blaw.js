@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
@@ -94,13 +95,13 @@ let blaw = extend(ItemTurret, "blaw", {
     
     load(){
         this.super$load();
-        this.leftBarrelRegion = Core.atlas.find(this.name + "-at");
-        this.rightBarrelRegion = Core.atlas.find(this.name + "-ap");
-        this.customBaseRegion = Core.atlas.find(this.basePrefix + "block-" + this.size);
+        this.leftBarrelRegion = PerfCore.region(this.name + "-at");
+        this.rightBarrelRegion = PerfCore.region(this.name + "-ap");
+        this.customBaseRegion = PerfCore.region(this.basePrefix + "block-" + this.size);
     }
 });
 
-blaw.health = 3000;
+blaw.health = 950;
 blaw.size = 3;
 blaw.reload = 30; 
 blaw.deadZone = 0; 
@@ -124,7 +125,7 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
     getTier(){ return this.tierState == null ? 0 : this.tierState; },
     setTier(val){ 
         this.tierState = val;
-        this.health = (val == 2) ? 4500 : 3000; 
+        this.health = (val == 2) ? 1425 : 950; 
         this.maxHealth = this.health;
         this.shotCount = 0;
     },
@@ -202,12 +203,12 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
 
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                 b2.add("[purple]===(MK2B)===[]").row();
-                let b2Text = vi ? "[white]• Máu cấu trúc: [green]+150%[] (4,500 HP)\n" +
+                let b2Text = vi ? "[white]• Máu cấu trúc: [green]+150%[] (1,425 HP)\n" +
                                    "• Tầm bắn: [orange]309.4 px[]\n" +
                                    "• Sát thương gốc: [green]550 DMG[] / viên\n" +
                                    "• Bạo kích: [green]80% Tỉ lệ | +120% ST Bạo kích[]\n\n" +
                                    "[lightgray]Kỹ năng đặc biệt: Cận Chiến Shotgun — Bắn tỏa chùm 20 viên đạn hỗn hợp Băng Hỏa cực đại, tối ưu diệt Boss tầm gần kèm cơ chế Xả-Hồi.[]"
-                                : "[white]• Health: [green]+150%[] (4,500 HP)\n" +
+                                : "[white]• Health: [green]+150%[] (1,425 HP)\n" +
                                    "• Range: [orange]309.4 px[]\n" +
                                    "• Base Damage: [green]550 DMG[] / bullet\n" +
                                    "• Critical: [green]80% Rate | +120% Crit DMG[]\n\n" +
@@ -256,7 +257,7 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
             if (currentTier == 0) {
                 title += "[yellow](MK1)[]";
                 descStr = vi ? "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                               "[lightgray]Máu cấu trúc:[] [green]3,000 HP[]\n" +
+                               "[lightgray]Máu cấu trúc:[] [green]950 HP[]\n" +
                                "[lightgray]Tầm bắn hiệu dụng:[] [orange]442 pixel[]\n" +
                                "[lightgray]Sát thương gốc:[] [white]25 DMG / viên[]\n" +
                                "[lightgray]Tỉ lệ bạo kích:[] [yellow]80%[]\n" +
@@ -266,7 +267,7 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
                                "• Khuếch đại sát thương: Tăng +1% DMG cho mỗi 100 HP của mục tiêu khi HP > 100.\n" +
                                "• Xung nhịp tốc độ bắn ngẫu nhiên từ 0% đến 200%."
                              : "[gold]⚡ BASE SPECS (MK1) ⚡[]\n" +
-                               "[lightgray]Structure Health:[] [green]3,000 HP[]\n" +
+                               "[lightgray]Structure Health:[] [green]950 HP[]\n" +
                                "[lightgray]Effective Range:[] [orange]442 pixels[]\n" +
                                "[lightgray]Base Damage:[] [white]25 DMG / bullet[]\n" +
                                "[lightgray]Crit Chance:[] [yellow]80%[]\n" +
@@ -278,7 +279,7 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
             } else if (currentTier == 1) {
                 title += vi ? "[cyan]THÔNG SỐ NÂNG CẤP MK2[]" : "[cyan]UPGRADE SPECS MK2[]";
                 descStr = vi ? "[cyan]⚡ THÔNG SỐ NÂNG CẤP MK2 ⚡[]\n" +
-                               "[lightgray]Máu cấu trúc:[] [green]3,000 HP[]\n" +
+                               "[lightgray]Máu cấu trúc:[] [green]950 HP[]\n" +
                                "[lightgray]Tầm bắn hiệu dụng:[] [orange]663 pixel[]\n" +
                                "[lightgray]Sát thương gốc:[] [white]50 DMG / viên[]\n" +
                                "[lightgray]Tỉ lệ bạo kích:[] [yellow]80%[]\n" +
@@ -288,7 +289,7 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
                                "• Sát thương Trảm Tướng: Tăng +2% DMG cho mỗi 100 HP mục tiêu, cộng thêm +1% DMG mỗi 1,000 HP khi HP > 1,000.\n" +
                                "• Tăng cố định +20% tốc độ nạp đạn kết hợp xung nhịp ngẫu nhiên."
                              : "[cyan]⚡ UPGRADE SPECS MK2 ⚡[]\n" +
-                               "[lightgray]Structure Health:[] [green]3,000 HP[]\n" +
+                               "[lightgray]Structure Health:[] [green]950 HP[]\n" +
                                "[lightgray]Effective Range:[] [orange]663 pixels[]\n" +
                                "[lightgray]Base Damage:[] [white]50 DMG / bullet[]\n" +
                                "[lightgray]Crit Chance:[] [yellow]80%[]\n" +
@@ -300,7 +301,7 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
             } else if (currentTier == 2) {
                 title += vi ? "[purple]THÔNG SỐ NÂNG CẤP MK2B[]" : "[purple]UPGRADE SPECS MK2B[]";
                 descStr = vi ? "[purple]⚡ THÔNG SỐ NÂNG CẤP MK2B ⚡[]\n" +
-                               "[lightgray]Máu cấu trúc:[] [green]4,500 HP (+150%)[]\n" +
+                               "[lightgray]Máu cấu trúc:[] [green]1,425 HP (+150%)[]\n" +
                                "[lightgray]Tầm bắn hiệu dụng:[] [red]309.4 pixel[]\n" +
                                "[lightgray]Sát thương gốc:[] [white]550 DMG / viên[]\n" +
                                "[lightgray]Tỉ lệ bạo kích:[] [yellow]80%[]\n" +
@@ -310,7 +311,7 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
                                "• Sát thương Diệt Boss: Tăng +5% DMG cho mỗi 100 HP của mục tiêu khi HP > 100.\n" +
                                "• Cơ chế Xả-Hồi: Đi vào thời gian hồi chiêu 3 giây sau mỗi 2 đợt xả chùm đạn."
                              : "[purple]⚡ UPGRADE SPECS MK2B ⚡[]\n" +
-                               "[lightgray]Structure Health:[] [green]4,500 HP (+150%)[]\n" +
+                               "[lightgray]Structure Health:[] [green]1,425 HP (+150%)[]\n" +
                                "[lightgray]Effective Range:[] [red]309.4 pixels[]\n" +
                                "[lightgray]Base Damage:[] [white]550 DMG / bullet[]\n" +
                                "[lightgray]Crit Chance:[] [yellow]80%[]\n" +
@@ -458,13 +459,13 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
 
         Draw.draw(Layer.effect + 1, packRun(() => {
             let zoomLeft = baseRadius * (1.0 + this.recoilLeft * 1.5);
-            Draw.color(Color.valueOf("0031FFFF"), 0.35);
+            Draw.color(PerfCore.color("0031FFFF"), 0.35);
             Fill.circle(bxLeft, byLeft, zoomLeft * 2.0);
             Draw.color(Color.white);
             Fill.circle(bxLeft, byLeft, zoomLeft);
 
             let zoomRight = baseRadius * (1.0 + this.recoilRight * 1.5);
-            Draw.color(Color.valueOf("FF3B00FF"), 0.35);
+            Draw.color(PerfCore.color("FF3B00FF"), 0.35);
             Fill.circle(bxRight, byRight, zoomRight * 2.0);
             Draw.color(Color.white);
             Fill.circle(bxRight, byRight, zoomRight);

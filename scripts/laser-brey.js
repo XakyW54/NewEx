@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const RAYKSTONE_NAME = "newex-raykstone";
 const CORE_RAYKSTONE_NAME = "newex-core-raykstone";
 const EMERALIFT_NAMES = ["emeralift-wall", "newex-emeralift-wall"];
@@ -366,7 +367,7 @@ Events.on(ContentInitEvent, () => {
                 if (this.items != null) {
                     let totalItems = this.items.total();
                     if (totalItems > 0) {
-                        let storageRegion = Core.atlas.find("newex-storage", Core.atlas.find("storage"));
+                        let storageRegion = PerfCore.region("newex-storage", PerfCore.region("storage"));
                         if (storageRegion != null && storageRegion.found()) {
                             let tier = Math.floor(totalItems / 10);
                             let calculatedSize = 4 + (tier * 1.2);

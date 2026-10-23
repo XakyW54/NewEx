@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
@@ -14,7 +15,7 @@ const reqMK2B = {
 };
 
 const tyberExplosionFx = new Effect(40, cons(e => {
-    Draw.color(Color.valueOf("d1efff"), Color.valueOf("66b1ff"), e.fin());
+    Draw.color(PerfCore.color("d1efff"), PerfCore.color("66b1ff"), e.fin());
     Lines.stroke(3 * e.fout());
     Lines.circle(e.x, e.y, 80 * e.fin()); 
     Angles.randLenVectors(e.id, 15, 80 * e.fin(), e.rotation, 360, new Floatc2({
@@ -23,7 +24,7 @@ const tyberExplosionFx = new Effect(40, cons(e => {
 }));
 
 const tyberExplosionBigFx = new Effect(50, cons(e => {
-    Draw.color(Color.valueOf("ff8a80"), Color.valueOf("ff1744"), e.fin());
+    Draw.color(PerfCore.color("ff8a80"), PerfCore.color("ff1744"), e.fin());
     Lines.stroke(4 * e.fout());
     Lines.circle(e.x, e.y, 136 * e.fin()); 
     Angles.randLenVectors(e.id, 25, 136 * e.fin(), e.rotation, 360, new Floatc2({
@@ -287,7 +288,7 @@ Events.on(EventType.ContentInitEvent, () => {
                         title += (ev == 0) ? "[yellow](MK1)[]" : "[cyan](MK2)[]";
                         if (isEn) {
                             descStr = (ev == 0) ? "[gold]⚡ BASE STATS (MK1) ⚡[]\n" : "[cyan]⚡ BASE STATS (MK2) ⚡[]\n";
-                            descStr += "[lightgray]Turret Health:[] [green]565 HP[]\n" +
+                            descStr += "[lightgray]Turret Health:[] [green]1413 HP[]\n" +
                                       "[lightgray]Effective Range:[] " + (ev == 1 ? "[orange]930 pixels [lime](+50%)[]" : "[orange]620 pixels[]") + "\n\n" +
                                       "[sky]⚡ MAIN FIREPOWER MECHANIC:[]\n" +
                                       "• [lightgray]Barrel System:[] " + (ev == 1 ? "Upgraded [cyan]5 parallel barrels[] alternating fire (Delay: 4)." : "Default [yellow]3 core barrels[] alternating fire (Delay: 6).") + "\n" +
@@ -297,7 +298,7 @@ Events.on(EventType.ContentInitEvent, () => {
                                       "• [lightgray]Ground Blast Pulse:[] Detonates core fusion at center every " + (ev == 1 ? "[green]6.0s[]" : "[yellow]7.0s[]") + ", dealing [red]1700 Area Damage[] within [lightgray]176 tiles[] to deter close threats.";
                         } else {
                             descStr = (ev == 0) ? "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" : "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n";
-                            descStr += "[lightgray]Máu tháp pháo:[] [green]565 HP[]\n" +
+                            descStr += "[lightgray]Máu tháp pháo:[] [green]1413 HP[]\n" +
                                       "[lightgray]Tầm bắn hiệu dụng:[] " + (ev == 1 ? "[orange]930 pixel [lime](+50%)[]" : "[orange]620 pixel[]") + "\n\n" +
                                       "[sky]⚡ CƠ CHẾ HỎA LỰC CHÍNH:[]\n" +
                                       "• [lightgray]Hệ thống nòng súng:[] " + (ev == 1 ? "Cải tiến [cyan]5 nòng song song[] bắn luân phiên liên tục (Giãn cách: 4)." : "Mặc định gồm [yellow]3 nòng cốt lõi[] xả loạt đạn luân phiên (Giãn cách: 6).") + "\n" +
@@ -311,7 +312,7 @@ Events.on(EventType.ContentInitEvent, () => {
                         title += "[purple](MK2B)[]";
                         if (isEn) {
                             descStr = "[purple]⚡ VARIANT STATS (MK2B) ⚡[]\n" +
-                                      "[lightgray]Turret Health:[] [green]565 HP[]\n" +
+                                      "[lightgray]Turret Health:[] [green]1413 HP[]\n" +
                                       "[lightgray]Effective Range:[] [orange]620 pixels[]\n\n" +
                                       "[purple]🔥 CONCENTRATED HEAVY FIREPOWER:[]\n" +
                                       "• [lightgray]Core Barrel Mode:[] Focuses fire into [red]1 single crit bullet[], reducing reload to [green]40 ticks[] (Double fire rate).\n\n" +
@@ -320,7 +321,7 @@ Events.on(EventType.ContentInitEvent, () => {
                                       "• [lightgray]Rapid Ground Pulse:[] Center burst recharge time reduced to [green]3.0s/pulse[], releasing nuclear shockwaves dealing [red]1700 Area Damage[] within [lightgray]176 tiles[].";
                         } else {
                             descStr = "[purple]⚡ THÔNG SỐ BIẾN THỂ (MK2B) ⚡[]\n" +
-                                      "[lightgray]Máu tháp pháo:[] [green]565 HP[]\n" +
+                                      "[lightgray]Máu tháp pháo:[] [green]1413 HP[]\n" +
                                       "[lightgray]Tầm bắn hiệu dụng:[] [orange]620 pixel[]\n\n" +
                                       "[purple]🔥 HỎA LỰC HỘI TỤ SIÊU TRỌNG:[]\n" +
                                       "• [lightgray]Chế độ nòng tâm:[] Gom hỏa lực xả [red]1 viên bạo kích duy nhất[] tập trung, giảm Reload xuống chỉ còn [green]40 tích tắc[] (Tốc độ bắn nhanh gấp đôi).\n\n" +

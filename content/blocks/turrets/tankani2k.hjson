@@ -2,7 +2,7 @@ type: ItemTurret
 name: Tankani-2k
 description: Tháp pháo phòng thủ có độ chính xác tuyệt đối, giới hạn đặt tối đa 1 trụ mỗi đội (đặt thừa tự hủy). Bắn trúng liên tục giúp sạc năng lượng, tăng tối đa 80% sát thương. Ở trạng thái cơ bản, pháo bắn được cả mục tiêu mặt đất và trên không với 1,115 sát thương.
 size: 4
-health: 565
+health: 1413
 category: turret
 researchCostMultiplier: 0.7
 

@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
@@ -39,7 +40,7 @@ function t(viText, enText) {
      if (Vars.state.isPaused()) return;
 
     Draw.z(Layer.effect);
-    Draw.color(Color.valueOf("#ffcc44"), Color.valueOf("#ff5500"), e.fin());
+    Draw.color(PerfCore.color("#ffcc44"), PerfCore.color("#ff5500"), e.fin());
     
     let stroke = (1.0 - e.fin()) * 1.8;
     Lines.stroke(stroke);
@@ -96,7 +97,7 @@ const therdum = extend(ItemTurret, "therdum", {
     configurable: true
 });
 
-therdum.health = 3600;
+therdum.health = 17000;
 therdum.range = 105;
 therdum.reload = 120;
 therdum.shootOffset = 12.0; 
@@ -415,12 +416,12 @@ therdum.buildType = () => extend(ItemTurret.ItemTurretBuild, therdum, {
             
             let descStr = t(
                 "[gold]⚡ THÔNG SỐ CƠ BẢN PHÁO THERDUM (MK1) ⚡[]\n" +
-                "• Máu: 3,600 | Tầm bắn: 105px (13.1 ô) | Sát thương gốc: 48.0\n" +
+                "• Máu: 17,000 | Tầm bắn: 105px (13.1 ô) | Sát thương gốc: 48.0\n" +
                 "• Cơ chế: Bắn shotgun tỏa 40 viên đạn, lifetime đạn tự điều chỉnh chuẩn theo tầm bắn.\n" +
                 "• Nâng cấp: Nâng cấp trực tiếp chỉ số và kỹ năng qua hệ thống Phúc lợi A & B.",
 
                 "[gold]⚡ THERDUM TURRET BASIC STATS (MK1) ⚡[]\n" +
-                "• Health: 3,600 | Range: 105px (13.1 tiles) | Base Damage: 48.0\n" +
+                "• Health: 17,000 | Range: 105px (13.1 tiles) | Base Damage: 48.0\n" +
                 "• Mechanism: Shotgun spread firing 40 bullets, bullet lifetime auto-adjusts to range.\n" +
                 "• Upgrades: Directly upgrade stats and skills via Perk A & B system."
             );

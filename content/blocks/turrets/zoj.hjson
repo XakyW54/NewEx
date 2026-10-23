@@ -2,7 +2,7 @@ type: ItemTurret
 name: ZoJ
 description: Tháp pháo này là một sản phẩm vội vàng làm để nhận thêm tài nguyên nhưng cái giá là thời gian... Nhận 20 Copper mỗi khi bắn trúng mục tiêu. Khi bắn trúng có 50% cơ hội hồi 10% máu và 50% cơ hội giảm 10% máu của pháo. Không thể nhận hồi máu từ bên ngoài!
 size: 1
-health: 300
+health: 750
 reload: 12             
 inaccuracy: 0          
 rotateSpeed: 15

@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const laserAimColor = Color.valueOf("#ff8888"); 
 const secondaryLaserAimColor = Color.valueOf("#ffaa00"); 
 const bulletColor = Color.valueOf("#00ffff");   
@@ -59,8 +60,8 @@ function drawExpandingBarrels(build) {
         let drawX = build.x + Angles.trnsx(finalAngle, openOffset);
         let drawY = build.y + Angles.trnsy(finalAngle, openOffset);
         
-        let region = Core.atlas.find("newex-" + spriteNames[i]);
-        if (!region.found) region = Core.atlas.find(spriteNames[i]); 
+        let region = PerfCore.region("newex-" + spriteNames[i]);
+        if (!region.found) region = PerfCore.region(spriteNames[i]); 
         if (region.found) Draw.rect(region, drawX, drawY, baseAngle);
     }
     Draw.reset();
@@ -186,13 +187,13 @@ function makeBuildSetup(initialTier) {
             this.holyderInternalTier = val;
             if (val == 1) {
                 this.maxShield = 9000;
-                this.health = 2500;
+                this.health = 550;
             } else if (val == 2) {
                 this.maxShield = 9000;
-                this.health = 3200;
+                this.health = 704;
             } else if (val == 3) {
                 this.maxShield = 1000; 
-                this.health = 4000;
+                this.health = 880;
             }
             this.shieldHealth = this.maxShield;
         },
@@ -323,16 +324,16 @@ function makeBuildSetup(initialTier) {
                     title += "[yellow](MK1)[]";
                     descStr = en ?
                         "[gold]⚡ BASIC STATS (MK1) ⚡[]\n" +
-                        "[lightgray]Turret Health:[] [green]2,500 HP (3x3 Size)[]\n" +
+                        "[lightgray]Turret Health:[] [green]550 HP (3x3 Size)[]\n" +
                         "Raw Damage:[] [purple]380 / shot[] (Damage scales with charge ratio)\n" +
-                        "Effective Range:[] [orange]320 pixels[] | [lightgray]Target:[] Ground\n\n" +
+                        "Effective Range:[] [orange]410 pixels[] | [lightgray]Target:[] Ground\n\n" +
                         "[sky]⚡ THERMAL CIRCUIT & SHIELD MECHANICS:[]\n" +
                         "• [lightgray]Targeting:[] Uses red laser beam to lock position before charging.\n" +
                         "• [lightgray]Energy Shield:[] Automatically activates shield absorbing [teal]9,000 HP[]. Requires [yellow]10.0 seconds[] to restart core when broken." :
                         "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                        "[lightgray]Máu tháp pháo:[] [green]2,500 HP (Quy cách 3x3)[]\n" +
+                        "[lightgray]Máu tháp pháo:[] [green]550 HP (Quy cách 3x3)[]\n" +
                         "Sát thương thô:[] [purple]380 / viên[] (Sát thương tăng theo tỷ lệ sạc hỏa lực)\n" +
-                        "Tầm bắn hiệu dụng:[] [orange]320 pixel[] | [lightgray]Mục tiêu:[] Mặt đất\n\n" +
+                        "Tầm bắn hiệu dụng:[] [orange]410 pixel[] | [lightgray]Mục tiêu:[] Mặt đất\n\n" +
                         "[sky]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH & KHIÊN:[]\n" +
                         "• [lightgray]Định vị mục tiêu:[] Sử dụng tia laser đỏ để khóa cứng vị trí trước khi tích sạc.\n" +
                         "• [lightgray]Trường khiên năng lượng:[] Tự động kích hoạt khiên hấp thụ [teal]9,000 HP[]. Khi vỡ cần [yellow]10.0 giây[] để tái khởi động lõi khiên.";
@@ -341,7 +342,7 @@ function makeBuildSetup(initialTier) {
                     title += "[cyan](MK2)[]";
                     descStr = en ?
                         "[cyan]⚡ BASIC STATS (MK2) ⚡[]\n" +
-                        "[lightgray]Turret Health:[] [green]3,200 HP [lime](+28%)[]\n" +
+                        "[lightgray]Turret Health:[] [green]704 HP [lime](+28%)[]\n" +
                         "Primary Damage:[] [purple]380[] + [orange]50% secondary barrel damage[]\n" +
                         "Effective Range:[] [orange]340 pixels [lime](+6.25%)[]\n\n" +
                         "[lime]⚡ THERMAL CIRCUIT & SHIELD MECHANICS:[]\n" +
@@ -349,7 +350,7 @@ function makeBuildSetup(initialTier) {
                         "• [lightgray]Multi-Target:[] Activates secondary accelerated barrel, firing support rounds at a secondary target.\n" +
                         "• [lightgray]Energy Shield:[] Maintains strong core shield protecting [teal]9,000 HP[]." :
                         "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
-                        "[lightgray]Máu tháp pháo:[] [green]3,200 HP [lime](+28%)[]\n" +
+                        "[lightgray]Máu tháp pháo:[] [green]704 HP [lime](+28%)[]\n" +
                         "Sát thương chính:[] [purple]380[] + [orange]50% sát thương từ nòng phụ[]\n" +
                         "Tầm bắn hiệu dụng:[] [orange]340 pixel [lime](+6.25%)[]\n\n" +
                         "[lime]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH & KHIÊN:[]\n" +
@@ -361,14 +362,14 @@ function makeBuildSetup(initialTier) {
                     title += "[purple](MK2B)[]";
                     descStr = en ?
                         "[purple]⚡ BASIC STATS (MK2B) ⚡[]\n" +
-                        "[lightgray]Reinforced Health:[] [green]4,000 HP [lime](+60%)[]\n" +
+                        "[lightgray]Reinforced Health:[] [green]880 HP [lime](+60%)[]\n" +
                         "Impulse Damage:[] [pink]Max scaled by charge progress[]\n" +
                         "Effective Range:[] [orange]360 pixels [lime](+12.5%)[]\n\n" +
                         "[purple]🔥 THERMAL CIRCUIT & SHIELD MECHANICS:[]\n" +
                         "• [lightgray]Rapid Fire:[] Charge threshold reduced to [yellow]50%[] for fast fire cycles.\n" +
                         "• [lightgray]Overloaded Circuit:[] Energy shield core reduced to [purple]1,000 HP[] (Recovers 12s after break). When broken, charge speed and firing cycle boost by [red]+500%[] (5x speed)." :
                         "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
-                        "[lightgray]Máu siêu gia cố:[] [green]4,000 HP [lime](+60%)[]\n" +
+                        "[lightgray]Máu siêu gia cố:[] [green]880 HP [lime](+60%)[]\n" +
                         "Sát thương xung kích:[] [pink]Tối đa theo tiến trình nạp sạc[]\n" +
                         "Tầm bắn hiệu dụng:[] [orange]360 pixel [lime](+12.5%)[]\n\n" +
                         "[purple]🔥 CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH & KHIÊN:[]\n" +
@@ -627,9 +628,9 @@ const holyder = extend(PowerTurret, "holyder", {
     setBars() { this.super$setBars(); }
 });
 
-holyder.health = 2500;
+holyder.health = 550;
 holyder.size = 3;
-holyder.range = 320;
+holyder.range = 410;
 holyder.reload = 9999;           
 holyder.shootType = holyderlaser;
 holyder.consumePower(15);

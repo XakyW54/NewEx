@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 (function() {
     const packCons = (func) => new Cons({ get: func });
     const packCons2 = (func) => new Cons2({ get: func });
@@ -56,7 +57,7 @@
         let cosA = Math.cos(rad);
         let sinA = Math.sin(rad);
 
-        Draw.color(Color.white, Color.valueOf("66B1FF"), fin);
+        Draw.color(Color.white, PerfCore.color("66B1FF"), fin);
         Lines.stroke(5.0 * fout);
 
         let radiusX = fin * 30;  
@@ -82,7 +83,7 @@
             lastY = ry;
         }
 
-        Draw.color(Color.valueOf("A9D8FF"), Color.valueOf("3399FF"), fin);
+        Draw.color(PerfCore.color("A9D8FF"), PerfCore.color("3399FF"), fin);
         Lines.stroke(3.0 * fout);
 
         let radiusX2 = fin * 20;
@@ -264,9 +265,9 @@
             getTier(){ return this.tierState == null ? 0 : this.tierState; },
             setTier(val){ 
                 this.tierState = val;
-                if(val == 0) { this.health = 1200; }
-                if(val == 1) { this.health = 1800; }
-                if(val == 2) { this.health = 1600; }
+                if(val == 0) { this.health = 3000; }
+                if(val == 1) { this.health = 4500; }
+                if(val == 2) { this.health = 4000; }
                 this.maxHealth = this.health;
             },
 
@@ -328,11 +329,11 @@
                         let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                         b1.add(english ? "[cyan]===(MK2 - ENERGY PIERCING)===[]" : "[cyan]===(MK2 - XUYÊN PHÁ NĂNG LƯỢNG)===[]").row();
                         let b1Text = english ?
-                            "[white]• Max Health: [green]+50%[] (1,800 HP)\n" +
+                            "[white]• Max Health: [green]+50%[] (4,500 HP)\n" +
                             "• Range: [gold]750 px[]\n" +
                             "• Base Damage: [green]+34.6%[] (105 DMG)\n\n" +
                             "[lightgray]Special Skill: Magnetic Acceleration — Doubles buff accumulation (+20%/shot), [gold]40% chance to fire charged attack (1s charge, deals 75% True Damage)[] per regular shot.[]" :
-                            "[white]• Máu cấu trúc: [green]+50%[] (1,800 HP)\n" +
+                            "[white]• Máu cấu trúc: [green]+50%[] (4,500 HP)\n" +
                             "• Tầm bắn: [gold]750 px[]\n" +
                             "• Sát thương gốc: [green]+34.6%[] (105 DMG)\n\n" +
                             "[lightgray]Kỹ năng đặc biệt: Gia Tốc Từ Tính — Tích lũy buff gấp đôi (+20%/viên), [gold]40% cơ hội bắn đòn dồn lực (tụ kiếm 1s, gây 75% True Damage)[] theo mỗi phát bắn thường.[]";
@@ -352,11 +353,11 @@
                         let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                         b2.add(english ? "[purple]===(MK2B - THERMAL TRACKING)===[]" : "[purple]===(MK2B - TRUY ĐUỔI TẦM NHIỆT)===[]").row();
                         let b2Text = english ?
-                            "[white]• Max Health: [green]+33.3%[] (1,600 HP)\n" +
+                            "[white]• Max Health: [green]+33.3%[] (4,000 HP)\n" +
                             "• Range: [gold]750 px[]\n" +
                             "• Base Damage: [green]+111.5%[] (165 DMG)\n\n" +
                             "[lightgray]Special Skill: Energy Retention — After firing charged attack (deals 75% True Damage), [gold]has a chance to NOT RESET buff bar (80% -> 70% -> ... -> 0%)[].[]" :
-                            "[white]• Máu cấu trúc: [green]+33.3%[] (1,600 HP)\n" +
+                            "[white]• Máu cấu trúc: [green]+33.3%[] (4,000 HP)\n" +
                             "• Tầm bắn: [gold]750 px[]\n" +
                             "• Sát thương gốc: [green]+111.5%[] (165 DMG)\n\n" +
                             "[lightgray]Kỹ năng đặc biệt: Duy Trì Năng Lượng — Sau khi bắn đòn dồn lực (gây 75% True Damage), [gold]có xác suất KHÔNG RESET thanh buff (80% -> 70% -> ... -> 0%)[].[]";
@@ -401,7 +402,7 @@
                         title += "[yellow](MK1)[]";
                         descStr = (english ?
                             "[gold]⚡ BASE STATS (MK1) ⚡[]\n" +
-                            "[lightgray]Turret Health:[] [green]1,200[]\n" +
+                            "[lightgray]Turret Health:[] [green]3,000[]\n" +
                             "[lightgray]Effective Range:[] [orange]750 pixels[]\n" +
                             "[lightgray]Base Damage:[] [yellow]78.00 DMG[]\n" +
                             "[lightgray]Charged Strike (Sword):[] [scarlet]75% True Damage (Pierces armor, shields & Vela mechanics)[]\n" +
@@ -410,7 +411,7 @@
                             "• [lightgray]Buff Accumulation:[] Each hit/activation gains [green]+10.0%[] buff.\n" +
                             "• [lightgray]Decay:[] Automatically decays over time when not attacking targets." :
                             "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
-                            "[lightgray]Máu tháp pháo:[] [green]1,200[]\n" +
+                            "[lightgray]Máu tháp pháo:[] [green]3,000[]\n" +
                             "[lightgray]Tầm bắn hiệu dụng:[] [orange]750 pixel[]\n" +
                             "[lightgray]Sát thương gốc:[] [yellow]78.00 DMG[]\n" +
                             "[lightgray]Đòn Tụ Lực (Kiếm):[] [scarlet]75% True Damage (Xuyên giáp, khiên & cơ chế Vela)[]\n" +
@@ -423,7 +424,7 @@
                         title += "[cyan](MK2)[]";
                         descStr = (english ?
                             "[cyan]⚡ BASE STATS (MK2) ⚡[]\n" +
-                            "[lightgray]Turret Health:[] [green]1,800 [lime](+50%)[]\n" +
+                            "[lightgray]Turret Health:[] [green]4,500 [lime](+50%)[]\n" +
                             "[lightgray]Effective Range:[] [orange]750 pixels[]\n" +
                             "[lightgray]Base Damage:[] [yellow]105.00 DMG [lime](+34.6%)[]\n" +
                             "[lightgray]Charged Strike (Sword):[] [scarlet]75% True Damage (Pierces armor, shields & Vela mechanics)[]\n\n" +
@@ -432,7 +433,7 @@
                             "• [lightgray]Accumulation Speed:[] Gains [green]+20.0%[] buff per shot.\n" +
                             "• [lightgray]Stable Retention:[] Buff drop rate when idle reduced to [green]0.08/s[]." :
                             "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
-                            "[lightgray]Máu tháp pháo:[] [green]1,800 [lime](+50%)[]\n" +
+                            "[lightgray]Máu tháp pháo:[] [green]4,500 [lime](+50%)[]\n" +
                             "[lightgray]Tầm bắn hiệu dụng:[] [orange]750 pixel[]\n" +
                             "[lightgray]Sát thương gốc:[] [yellow]105.00 DMG [lime](+34.6%)[]\n" +
                             "[lightgray]Đòn Tụ Lực (Kiếm):[] [scarlet]75% True Damage (Xuyên giáp, khiên & cơ chế Vela)[]\n\n" +
@@ -445,7 +446,7 @@
                         title += "[purple](MK2B)[]";
                         descStr = (english ?
                             "[purple]⚡ BASE STATS (MK2B) ⚡[]\n" +
-                            "[lightgray]Turret Health:[] [green]1,600 [lime](+33.3%)[]\n" +
+                            "[lightgray]Turret Health:[] [green]4,000 [lime](+33.3%)[]\n" +
                             "[lightgray]Effective Range:[] [orange]750 pixels[]\n" +
                             "[lightgray]Base Damage:[] [red]165.00 DMG (+111.5%)[]\n" +
                             "[lightgray]Charged Strike (Sword):[] [scarlet]75% True Damage (Pierces armor, shields & Vela mechanics)[]\n\n" +
@@ -454,7 +455,7 @@
                             "• [lightgray]Homing Circuit:[] Starsword ammo [pink]automatically homes into targets[] (300px).\n" +
                             "• [lightgray]Firepower Stacking:[] Gains [green]+15.0%[] buff/shot." :
                             "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
-                            "[lightgray]Máu tháp pháo:[] [green]1,600 [lime](+33.3%)[]\n" +
+                            "[lightgray]Máu tháp pháo:[] [green]4,000 [lime](+33.3%)[]\n" +
                             "[lightgray]Tầm bắn hiệu dụng:[] [orange]750 pixel[]\n" +
                             "[lightgray]Sát thương gốc:[] [red]165.00 DMG (+111.5%)[]\n" +
                             "[lightgray]Đòn Tụ Lực (Kiếm):[] [scarlet]75% True Damage (Xuyên giáp, khiên & cơ chế Vela)[]\n\n" +
@@ -627,7 +628,7 @@
             getAsRatio(){ return this.energyState; },
 
             draw(){
-                let baseRegion = Core.atlas.find(this.block.basePrefix + "" + this.block.size);
+                let baseRegion = PerfCore.region(this.block.basePrefix + "" + this.block.size);
                 if(baseRegion.found()){
                     Draw.rect(baseRegion, this.x, this.y);
                 } else {
@@ -642,14 +643,14 @@
                 let energyVal = this.energyState; 
                 let sideMoveDistance = energyVal * 4.0; 
 
-                let barrel1Region = Core.atlas.find(modPrefix + "-forstarsilum-barrel1");
+                let barrel1Region = PerfCore.region(modPrefix + "-forstarsilum-barrel1");
                 if(barrel1Region.found()){
                     let b1x = this.x - (sideMoveDistance * sin);
                     let b1y = this.y + (sideMoveDistance * cos);
                     Draw.rect(barrel1Region, b1x, b1y, this.rotation);
                 }
 
-                let barrel2Region = Core.atlas.find(modPrefix + "-forstarsilum-barrel2");
+                let barrel2Region = PerfCore.region(modPrefix + "-forstarsilum-barrel2");
                 if(barrel2Region.found()){
                     let b2x = this.x + (sideMoveDistance * sin);
                     let b2y = this.y - (sideMoveDistance * cos);
@@ -657,7 +658,7 @@
                 }
 
                 let b1Offset = this.customRecoil * maxBarrelRecoilDistance;
-                let b1Region = Core.atlas.find(modPrefix + "-forstarsilum-b1");
+                let b1Region = PerfCore.region(modPrefix + "-forstarsilum-b1");
                 if (b1Region.found()) {
                     let b1ax = this.x + b1Offset * cos;
                     let b1ay = this.y + b1Offset * sin;
@@ -665,7 +666,7 @@
                 }
 
                 if(this.isChargingUlt){
-                    let swordRegion = Core.atlas.find(modPrefix + "-starsword");
+                    let swordRegion = PerfCore.region(modPrefix + "-starsword");
                     if(swordRegion.found()){
                         Draw.z(Layer.effect + 1);
                         let progress = Math.min(this.chargeTimer / 60.0, 1.0); 

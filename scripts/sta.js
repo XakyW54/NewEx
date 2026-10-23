@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 global.deotLastHealth = {};  
 global.deotDamagedTime = {}; 
 global.doteiStacks = {};     
@@ -10,7 +11,7 @@ let isDoteiDamageActive = false;
 // Effect hình tứ giác méo biến dạng theo hướng va chạm khi Bất Tử
 const atraxShieldHitFx = new Effect(15, cons(e => {
     Draw.z(Layer.effect + 0.2);
-    Draw.color(Color.valueOf("ff3333"), Color.white, e.fout());
+    Draw.color(PerfCore.color("ff3333"), Color.white, e.fout());
     
     let hitAngle = (e.data != null) ? e.data : 0;
     let size = 16 + e.fout() * 6;
@@ -31,7 +32,7 @@ const atraxShieldHitFx = new Effect(15, cons(e => {
 
 const atraxSoloAuraFx = new Effect(20, cons(e => {
     Draw.z(Layer.effect - 0.01);
-    Draw.color(Color.valueOf("e56f48"));
+    Draw.color(PerfCore.color("e56f48"));
     Lines.stroke(1.5 * e.fout());
     Lines.circle(e.x, e.y, 6 + e.fin() * 10);
     Draw.reset();
@@ -52,7 +53,7 @@ var atraxSoloBuff = extend(StatusEffect, "atraxSoloBuff", {
     draw(unit) {
         this.super$draw(unit);
         Draw.z(Layer.effect);
-        Draw.color(Color.valueOf("e56f48"));
+        Draw.color(PerfCore.color("e56f48"));
         Lines.stroke(1.2);
         Lines.circle(unit.x, unit.y, unit.hitSize + 3 + Math.sin(Time.time * 0.15) * 2);
         Draw.reset();
@@ -68,7 +69,7 @@ var atraxInvulnerableBuff = extend(StatusEffect, "atraxInvulnerableBuff", {
     draw(unit) {
         this.super$draw(unit);
         Draw.z(Layer.effect + 0.1);
-        Draw.color(Color.valueOf("ff3333"));
+        Draw.color(PerfCore.color("ff3333"));
         Lines.stroke(1.8);
         Lines.circle(unit.x, unit.y, unit.hitSize + 4 + Math.sin(Time.time * 0.3) * 2);
         Draw.reset();
@@ -78,7 +79,7 @@ atraxInvulnerableBuff.init();
 
 var daggerAuraFx = new Effect(20, cons(e => {
     Draw.z(Layer.effect - 0.01);
-    Draw.color(Color.valueOf("84f491"));
+    Draw.color(PerfCore.color("84f491"));
     Lines.stroke(1.2 * e.fout());
     Lines.circle(e.x, e.y, 4 + e.fin() * 8);
     Draw.reset();
@@ -101,7 +102,7 @@ var daggerProtect = extend(StatusEffect, "daggerProtect", {
     draw(unit) {
         this.super$draw(unit);
         Draw.z(Layer.effect);
-        Draw.color(Color.valueOf("84f491"));
+        Draw.color(PerfCore.color("84f491"));
         Lines.stroke(1.2);
         Lines.circle(unit.x, unit.y, unit.hitSize + 2 + Math.sin(Time.time * 0.1) * 1.5);
         Draw.reset();
@@ -117,7 +118,7 @@ const ceiSmokeIngatherFx = new Effect(30, cons(e => {
     let px = e.x + Angles.trnsx(angle, dist);
     let py = e.y + Angles.trnsy(angle, dist);
     let size = (2.5 + Mathf.randomSeed(e.id * 3, 0, 1.5)) * e.fout();
-    Draw.color(Color.valueOf("90e0ef"));
+    Draw.color(PerfCore.color("90e0ef"));
     Draw.alpha(0.8 * e.fout());
     Fill.circle(px, py, size);
     Draw.reset();
@@ -127,10 +128,10 @@ const ceiFieldFx = new Effect(1800, cons(e => {
     let radius = (e.data != null && typeof e.data === "number") ? e.data : 200; 
     let x = e.x, y = e.y;
     Draw.z(Layer.effect + 0.5);
-    Draw.color(Color.valueOf("90e0ef"));
+    Draw.color(PerfCore.color("90e0ef"));
     Draw.alpha(0.18 * e.fout());
     Fill.circle(x, y, radius);
-    Draw.color(Color.valueOf("00b4d8"));
+    Draw.color(PerfCore.color("00b4d8"));
     Draw.alpha(0.85 * e.fout());
     Lines.stroke(1.2); 
     Lines.circle(x, y, radius);
@@ -167,7 +168,7 @@ const ceiFieldFx = new Effect(1800, cons(e => {
         let dir = (i % 3 === 0) ? -1 : 1;
         let angle = Mathf.randomSeed(seed + 2, 0, 360) + (Time.time * arcSpeed * dir);
         let arcLength = Mathf.randomSeed(seed + 3, 12, 28); 
-        Draw.color(Color.valueOf("caf0f8"));
+        Draw.color(PerfCore.color("caf0f8"));
         Draw.alpha(0.6 * e.fout());
         Lines.arc(x, y, arcDist, arcLength / 360, angle);
     }
@@ -273,7 +274,7 @@ var cei = extend(StatusEffect, "cei", {
         let stacks = global.ceiStacks[unit.id] || 0;
         if (stacks <= 0) return;
         Draw.z(Layer.effect + 0.05);
-        Draw.color(Color.valueOf("90e0ef"));
+        Draw.color(PerfCore.color("90e0ef"));
         Lines.stroke(1.2 / Scl.scl(1.0));
         let arcDegree = 12;                      
         let arcFraction = arcDegree / 360.0;     
@@ -336,7 +337,7 @@ const bemodLoopFx = new Effect(35, cons(e => {
     let seed = e.id;
     let baseSize = 20 + Mathf.randomSeed(seed, -5, 10);
     let radius = baseSize * (1.0 - e.fin());
-    Draw.color(Color.valueOf("ff4500"));
+    Draw.color(PerfCore.color("ff4500"));
     Draw.alpha(e.fout());
     Lines.stroke(1.5 * e.fout());
     Lines.circle(e.x, e.y, radius);
@@ -365,7 +366,7 @@ function packRun(func) { return new java.lang.Runnable({ run: func }); }
 
 const customAtkSpeedFx = new Effect(45, cons(e => {
     Draw.z(Layer.effect + 0.01);
-    Draw.color(Color.valueOf("ff6e6e"));
+    Draw.color(PerfCore.color("ff6e6e"));
     Lines.stroke(1.5);
     let randX = Mathf.randomSeed(e.id * 2, -14, 14);
     let startY = Mathf.randomSeed(e.id * 3, -12, 4);
@@ -397,11 +398,11 @@ var velaSiege = extend(StatusEffect, "velaSiege", {
         let radius = unit.hitSize + 6;
         let rot = Time.time * 1.2;
 
-        Draw.color(Color.valueOf("ffaa59"));
+        Draw.color(PerfCore.color("ffaa59"));
         Lines.stroke(1.8);
         Lines.poly(unit.x, unit.y, 6, radius + Math.sin(Time.time * 0.1) * 1.5, rot);
 
-        Draw.color(Color.valueOf("ff8833"));
+        Draw.color(PerfCore.color("ff8833"));
         Draw.alpha(0.4 + Math.sin(Time.time * 0.2) * 0.2);
         Lines.stroke(1.2);
         Lines.poly(unit.x, unit.y, 6, radius * 0.82, -rot * 0.6);

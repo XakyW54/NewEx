@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
@@ -25,7 +26,7 @@ const vChainLinkFx = new Effect(15, cons(e => {
         let tx = e.data.x;
         let ty = e.data.y;
         
-        Draw.color(Color.valueOf("#ff2222"), Color.white, e.fin());
+        Draw.color(PerfCore.color("#ff2222"), Color.white, e.fin());
         Lines.stroke(4.0 * fout);
         Lines.line(e.x, e.y, tx, ty);
 
@@ -51,7 +52,7 @@ const vChargeFx = new Effect(20, cons(e => {
     let endX = startX + Angles.trnsx(rot, slashLength);
     let endY = startY + Angles.trnsy(rot, slashLength);
 
-    Draw.color(Color.valueOf("#ff4444"), Color.white, fin);
+    Draw.color(PerfCore.color("#ff4444"), Color.white, fin);
     Draw.alpha(fin * 0.5);
     Lines.stroke(1.2 * fin);
     Lines.line(startX, startY, endX, endY);
@@ -74,7 +75,7 @@ const vSlashHitFx = new Effect(25, cons(e => {
     let endX = startX + Angles.trnsx(rot, slashLength * Math.min(1.0, fin * 1.5));
     let endY = startY + Angles.trnsy(rot, slashLength * Math.min(1.0, fin * 1.5));
 
-    Draw.color(Color.valueOf("#ff3333"), Color.valueOf("#ff6644"), fin);
+    Draw.color(PerfCore.color("#ff3333"), PerfCore.color("#ff6644"), fin);
     Draw.alpha(fout * 0.7);
     Lines.stroke(24.0 * wMult * fout);
     Lines.line(startX, startY, endX, endY);
@@ -98,7 +99,7 @@ const energyOrbBullet = extend(BasicBulletType, {
 
     draw(b) {
         Draw.z(Layer.bullet);
-        Draw.color(Color.valueOf("#ff3333"));
+        Draw.color(PerfCore.color("#ff3333"));
         Fill.circle(b.x, b.y, 8.0);
         
         Draw.color(Color.white);
@@ -124,8 +125,8 @@ const lazash = extend(PowerTurret, "lazash", {
     configurable: true
 });
 
-lazash.health = 3600;
-lazash.range = 1100;
+lazash.health = 17000;
+lazash.range = 105;
 lazash.reload = 120; 
 
 lazash.targetAir = false;
@@ -194,7 +195,7 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
 
     range() {
         let perkA = this.getPerkA();
-        return (perkA == 2) ? 1100.0 * 1.12 : 1100.0;
+        return (perkA == 2) ? 105.0 * 1.12 : 105.0;
     },
 
     findTarget() {
@@ -329,7 +330,7 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
                 if (isAdjacent) {
                     Draw.z(Layer.power + 1);
                     
-                    Draw.color(Color.valueOf("#ff2222"));
+                    Draw.color(PerfCore.color("#ff2222"));
                     Lines.stroke(2.5);
                     Lines.line(this.x, this.y, b.x, b.y);
 
@@ -337,7 +338,7 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
                     Lines.stroke(1.0);
                     Lines.line(this.x, this.y, b.x, b.y);
 
-                    Draw.color(Color.valueOf("#ff4444"));
+                    Draw.color(PerfCore.color("#ff4444"));
                     Fill.circle(b.x, b.y, 3.5);
 
                     Draw.reset();
@@ -635,13 +636,13 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
             let title = t(" Thông số pháo Lazash ", " Lazash Turret Stats ");
             let descStr = t(
                 "[gold]⚡ THÔNG SỐ CƠ BẢN PHÁO LAZASH ⚡[]\n" +
-                "• Máu: 3,600 | Tầm bắn mặc định: 1100px\n" +
+                "• Máu: 17,000 | Tầm bắn mặc định: 105px\n" +
                 "• Mục tiêu: Chỉ bắn Công Trình phe địch\n" +
                 "• Sát thương vSlashHitFx: 49.0 | Sát thương Laser Vanilla: 10.0 (0.2s/lần)\n" +
                 "• [cyan]Cơ chế liên kết:[] Xây các pháo kề sát vách 4 hướng. Khi player nhảy vào điều khiển 1 pháo, toàn bộ pháo liên kết sẽ ngưng tự bắn, tự động xoay và chỉ xả đạn đồng loạt khi player bấm nút bắn!",
 
                 "[gold]⚡ LAZASH TURRET BASIC STATS ⚡[]\n" +
-                "• Health: 3,600 | Default Range: 1100px\n" +
+                "• Health: 17,000 | Default Range: 105px\n" +
                 "• Target: Enemy Structures Only\n" +
                 "• Slash Damage: 49.0 | Vanilla Laser Damage: 10.0 (0.2s tick)\n" +
                 "• [cyan]Link Mechanism:[] Place turrets adjacent in 4 directions. When a player manually controls 1 turret, all linked turrets stop auto-firing, rotate automatically, and sync fire when player shoots!"

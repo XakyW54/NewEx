@@ -1,3 +1,4 @@
+const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packCons = (func) => new Cons({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
@@ -665,7 +666,7 @@ Events.on(ContentInitEvent, () => {
 
                 Draw.rect(turretRegion, this.x, this.y, this.spinAngle);
 
-                let bulletRegion = Core.atlas.find("newex-overyr-bullet");
+                let bulletRegion = PerfCore.region("newex-overyr-bullet");
 
                 for (let i = 0; i < this.orbitingBullets.length; i++) {
                     let b = this.orbitingBullets[i];

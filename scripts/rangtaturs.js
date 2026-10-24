@@ -5,7 +5,7 @@ const berserkTimeMax = 300;
 const chargeTimeMaxMK2 = 140;
 const berserkTimeMaxMK2 = 360;
 
- const reqRangtatursMK2 = { copper: 560, lead: 490, silicon: 0 };
+const reqRangtatursMK2 = { copper: 560, lead: 490, silicon: 0 };
 const reqRangtatursMK2B = { copper: 840, lead: 665, silicon: 385 };
 
 const acidCorrosionEffect = new Effect(30, cons(e => {
@@ -265,6 +265,40 @@ rangtaturs.config(java.lang.Integer, new Cons2({
     }
 }));
 
+// Đăng ký sự kiện mạng NexNet để xử lý đồng bộ nâng cấp cho toàn bộ client/server
+NexNet.on("rangtaturs-upgrade", (player, payload) => {
+    if (Vars.state == null || !Vars.state.isGame() || Vars.world == null) return;
+    let parts = payload.split("|");
+    if (parts.length < 3) return;
+    let tileX = parseInt(parts[0]);
+    let tileY = parseInt(parts[1]);
+    let targetTier = parseInt(parts[2]);
+
+    let tile = Vars.world.tile(tileX, tileY);
+    if (tile == null || tile.build == null) return;
+    let build = tile.build;
+
+    let core = build.team.core();
+    if (!core) return;
+
+    if (targetTier == 1) {
+        if (core.items.get(Items.copper) >= reqRangtatursMK2.copper && core.items.get(Items.lead) >= reqRangtatursMK2.lead) {
+            NexNet.take(core, Items.copper, reqRangtatursMK2.copper);
+            NexNet.take(core, Items.lead, reqRangtatursMK2.lead);
+            NexNet.configure(build, java.lang.Integer.valueOf(1));
+            NexNet.fx(Fx.upgradeCore, build.x, build.y);
+        }
+    } else if (targetTier == 2) {
+        if (core.items.get(Items.copper) >= reqRangtatursMK2B.copper && core.items.get(Items.lead) >= reqRangtatursMK2B.lead && core.items.get(Items.silicon) >= reqRangtatursMK2B.silicon) {
+            NexNet.take(core, Items.copper, reqRangtatursMK2B.copper);
+            NexNet.take(core, Items.lead, reqRangtatursMK2B.lead);
+            NexNet.take(core, Items.silicon, reqRangtatursMK2B.silicon);
+            NexNet.configure(build, java.lang.Integer.valueOf(2));
+            NexNet.fx(Fx.bigShockwave, build.x, build.y);
+        }
+    }
+}, true, 200);
+
 rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
     evolutionTier: 0,
     chargeTimer: 0, superShotCount: 0, berserkTimer: 0,
@@ -340,10 +374,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                 b1.button(isEn ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", run(() => {
                     let core = this.team.core();
                     if(core && core.items.get(Items.copper) >= reqRangtatursMK2.copper && core.items.get(Items.lead) >= reqRangtatursMK2.lead){
-                        NexNet.take(core, Items.copper, reqRangtatursMK2.copper);
-                        NexNet.take(core, Items.lead, reqRangtatursMK2.lead);
-                        NexNet.configure(this, java.lang.Integer.valueOf(1));
-                        NexNet.fx(Fx.upgradeCore, this.x, this.y);
+                        NexNet.send("rangtaturs-upgrade", this.tile.x + "|" + this.tile.y + "|1");
                         dialog.hide(); this.deselect();
                     } else {
                         Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2 branch![]" : "[red]Không đủ tài nguyên nâng cấp cho nhánh MK2![]");
@@ -369,11 +400,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                 b2.button(isEn ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", run(() => {
                     let core = this.team.core();
                     if(core && core.items.get(Items.copper) >= reqRangtatursMK2B.copper && core.items.get(Items.lead) >= reqRangtatursMK2B.lead && core.items.get(Items.silicon) >= reqRangtatursMK2B.silicon){
-                        NexNet.take(core, Items.copper, reqRangtatursMK2B.copper);
-                        NexNet.take(core, Items.lead, reqRangtatursMK2B.lead);
-                        NexNet.take(core, Items.silicon, reqRangtatursMK2B.silicon);
-                        NexNet.configure(this, java.lang.Integer.valueOf(2));
-                        NexNet.fx(Fx.bigShockwave, this.x, this.y);
+                        NexNet.send("rangtaturs-upgrade", this.tile.x + "|" + this.tile.y + "|2");
                         dialog.hide(); this.deselect();
                     } else {
                         Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2B branch![]" : "[red]Không đủ tài nguyên nâng cấp cho nhánh MK2B![]");
@@ -475,7 +502,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
     },
 
     updateTile(){
-         this.super$updateTile();
+        this.super$updateTile();
 
         if(this.evolutionTier == 2){
             if (this.customReloadTimer > 0) {

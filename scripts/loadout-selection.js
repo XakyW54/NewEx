@@ -592,7 +592,8 @@ const NexNet = global.NexNet;
         }
     }
 
-    const canUseHud = () => !Vars.mobile || Vars.net.active();
+    // Đã chỉnh sửa: Chỉ cho phép hiển thị nếu là chủ server (Vars.net.host()) và không phải thiết bị di động (!Vars.mobile)
+    const canUseHud = () => !Vars.mobile && Vars.net.host();
 
     function centerWaveButton() {
         if (!canUseHud()) return;

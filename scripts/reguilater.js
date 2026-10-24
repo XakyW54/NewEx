@@ -187,7 +187,7 @@ function makeReguBuild() {
                         if (core && core.items.get(Items.copper) >= reguReqMK2.copper && core.items.get(Items.silicon) >= reguReqMK2.silicon) {
                             NexNet.take(core, Items.copper, reguReqMK2.copper);
                             NexNet.take(core, Items.silicon, reguReqMK2.silicon);
-                            this.configure(java.lang.Integer.valueOf(2));
+                            NexNet.configure(this, java.lang.Integer.valueOf(2));
                             NexNet.fx(Fx.upgradeCore, this.x, this.y); dialog.hide(); this.deselect();
                         } else {
                             Vars.ui.showInfo(en ? "[red]Not enough resources for MK2 branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]");
@@ -212,7 +212,7 @@ function makeReguBuild() {
                         if (core && core.items.get(Items.thorium) >= reguReqMK3.thorium && core.items.get(Items.titanium) >= reguReqMK3.titanium) {
                             NexNet.take(core, Items.thorium, reguReqMK3.thorium);
                             NexNet.take(core, Items.titanium, reguReqMK3.titanium);
-                            this.configure(java.lang.Integer.valueOf(3));
+                            NexNet.configure(this, java.lang.Integer.valueOf(3));
                             NexNet.fx(Fx.bigShockwave, this.x, this.y); dialog.hide(); this.deselect();
                         } else {
                             Vars.ui.showInfo(en ? "[red]Not enough resources for MK2B branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]");

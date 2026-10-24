@@ -262,7 +262,7 @@ Events.on(ContentInitEvent, cons(e => {
                                 NexNet.fx(Fx.upgradeCore, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
 
                                 this.setTier(1);
-                                this.configure(java.lang.Integer.valueOf(1));
+                                NexNet.configure(this, java.lang.Integer.valueOf(1));
 
                                 dialog.hide(); this.deselect();
                             } else { Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]"); }
@@ -293,7 +293,7 @@ Events.on(ContentInitEvent, cons(e => {
                                 NexNet.fx(Fx.bigShockwave, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
 
                                 this.setTier(2);
-                                this.configure(java.lang.Integer.valueOf(2));
+                                NexNet.configure(this, java.lang.Integer.valueOf(2));
 
                                 dialog.hide(); this.deselect();
                             } else { Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2B![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]"); }

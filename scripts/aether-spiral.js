@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packCons = (func) => new Cons({ get: func });
@@ -91,11 +92,11 @@ const UniversalItemUI = {
                 }
             }), Styles.defaultb, () => {
                 if (currentItem != null) {
-                    build.configure(java.lang.Integer(this.buildMask(build, slotIndex, 0)));
+                    NexNet.configure(build, java.lang.Integer(this.buildMask(build, slotIndex, 0)));
                     if (onConfigChange) onConfigChange();
                 } else {
                     this.showItemSelectionDialog(build, (selectedType) => {
-                        build.configure(java.lang.Integer(this.buildMask(build, slotIndex, selectedType)));
+                        NexNet.configure(build, java.lang.Integer(this.buildMask(build, slotIndex, selectedType)));
                         if (onConfigChange) onConfigChange();
                     });
                 }

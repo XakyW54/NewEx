@@ -7,16 +7,19 @@ const packProv = (func) => new Prov({ get: func });
 function isVietnamese() {
     let lang = "";
     try {
-        lang = String(Core.bundle.getLocale().getLanguage());
+        lang = String(Core.settings.getString("locale", ""));
     } catch (err) {
         lang = "";
     }
-    if (lang == "" || lang == "null" || lang == "undefined") {
-        let loc = Core.settings.get("locale", "en");
-        if (!loc) loc = Core.settings.get("language", "en");
-        lang = loc != null ? loc.toString() : "en";
+    if (lang == "" || lang == "null" || lang == "undefined" || lang == "default") {
+        try {
+            lang = String(Core.bundle.getLocale().getLanguage());
+        } catch (err) {
+            lang = "";
+        }
     }
-    return lang.toLowerCase().startsWith("vi");
+    if (lang == "null" || lang == "undefined") lang = "";
+    return !lang.toLowerCase().startsWith("en");
 }
 
 const shootSoundCannon = Vars.tree.loadSound("cannon-shot-1");
@@ -205,7 +208,7 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
                     if(core != null && core.items.get(Items.copper) >= reqBlawMK2.copper && core.items.get(Items.lead) >= reqBlawMK2.lead){
                         NexNet.take(core, Items.copper, reqBlawMK2.copper); NexNet.take(core, Items.lead, reqBlawMK2.lead);
                         NexNet.fx(Fx.upgradeCore, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
-                        this.configure(java.lang.Integer(1)); dialog.hide(); this.deselect();
+                        NexNet.configure(this, java.lang.Integer(1)); dialog.hide(); this.deselect();
                     } else {
                         Vars.ui.showInfo(vi ? "[red]Không đủ tài nguyên cho nhánh MK2![]" : "[red]Not enough resources for MK2 path![]");
                     }
@@ -232,7 +235,7 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
                     if(core != null && core.items.get(Items.copper) >= reqBlawMK2B.copper && core.items.get(Items.lead) >= reqBlawMK2B.lead && core.items.get(Items.titanium) >= reqBlawMK2B.titanium){
                         NexNet.take(core, Items.copper, reqBlawMK2B.copper); NexNet.take(core, Items.lead, reqBlawMK2B.lead); NexNet.take(core, Items.titanium, reqBlawMK2B.titanium);
                         NexNet.fx(Fx.bigShockwave, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
-                        this.configure(java.lang.Integer(2)); dialog.hide(); this.deselect();
+                        NexNet.configure(this, java.lang.Integer(2)); dialog.hide(); this.deselect();
                     } else {
                         Vars.ui.showInfo(vi ? "[red]Không đủ tài nguyên cho nhánh MK2B![]" : "[red]Not enough resources for MK2B path![]");
                     }

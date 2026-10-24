@@ -237,7 +237,7 @@ Events.on(EventType.ContentInitEvent, () => {
                                 NexNet.take(core, Items.titanium, reqMK2.titanium);
                                 NexNet.take(core, Items.silicon, reqMK2.silicon);
                                 NexNet.fx(Fx.upgradeCore, this.x, this.y);
-                                this.configure(java.lang.Integer.valueOf(1)); dialog.hide(); this.deselect();
+                                NexNet.configure(this, java.lang.Integer.valueOf(1)); dialog.hide(); this.deselect();
                             } else { Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2![]" : "[red]Không đủ tài nguyên cho cấu hình MK2![]"); }
                         })).size(180, 38);
 
@@ -266,7 +266,7 @@ Events.on(EventType.ContentInitEvent, () => {
                                 NexNet.take(core, Items.plastanium, reqMK2B.plastanium);
 
                                 if (typeof Fx.bigShockwave !== 'undefined') NexNet.fx(Fx.bigShockwave, this.x, this.y);
-                                this.configure(java.lang.Integer.valueOf(2)); dialog.hide(); this.deselect();
+                                NexNet.configure(this, java.lang.Integer.valueOf(2)); dialog.hide(); this.deselect();
                             } else { Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2B![]" : "[red]Không đủ tài nguyên cho cấu hình MK2B![]"); }
                         })).size(180, 38);
 

@@ -8,16 +8,19 @@ const packProv = (func) => new Prov({ get: func });
 function isVietnamese() {
     let lang = "";
     try {
-        lang = String(Core.bundle.getLocale().getLanguage());
+        lang = String(Core.settings.getString("locale", ""));
     } catch (err) {
         lang = "";
     }
-    if (lang == "" || lang == "null" || lang == "undefined") {
-        let loc = Core.settings.get("locale", "en");
-        if (!loc) loc = Core.settings.get("language", "en");
-        lang = loc != null ? loc.toString() : "en";
+    if (lang == "" || lang == "null" || lang == "undefined" || lang == "default") {
+        try {
+            lang = String(Core.bundle.getLocale().getLanguage());
+        } catch (err) {
+            lang = "";
+        }
     }
-    return lang.toLowerCase().startsWith("vi");
+    if (lang == "null" || lang == "undefined") lang = "";
+    return !lang.toLowerCase().startsWith("en");
 }
 
 const chargeSound = Vars.tree.loadSound("plasma-charge");
@@ -240,7 +243,7 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                         NexNet.fx(Fx.upgradeCore, this.x, this.y);
                         NexNet.fx(Fx.mineHuge, this.x, this.y);
                         NexNet.shake(5, 5, this.x, this.y);
-                        this.configure(java.lang.Integer.valueOf(1));
+                        NexNet.configure(this, java.lang.Integer.valueOf(1));
                         dialog.hide();
                         this.deselect();
                     } else {
@@ -277,7 +280,7 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                         NexNet.fx(Fx.bigShockwave, this.x, this.y);
                         NexNet.fx(Fx.mineHuge, this.x, this.y);
                         NexNet.shake(5, 5, this.x, this.y);
-                        this.configure(java.lang.Integer.valueOf(2));
+                        NexNet.configure(this, java.lang.Integer.valueOf(2));
                         dialog.hide();
                         this.deselect();
                     } else {

@@ -170,11 +170,11 @@ Events.on(ContentInitEvent, () => {
                     let found = this.findDtgBuilding();
 
                     if (found != null) {
-                        this.configure(java.lang.Boolean.valueOf(true));
+                        NexNet.configure(this, java.lang.Boolean.valueOf(true));
                         NexNet.fx(Fx.select, found.x, found.y);
                         Vars.ui.showInfoToast(isEn() ? "[green]Linked with DTG-Soldern! Interception Active.[]" : "[green]Đã liên kết với DTG-Soldern! Kích hoạt đạn đánh chặn.[]", 3);
                     } else {
-                        this.configure(java.lang.Boolean.valueOf(false));
+                        NexNet.configure(this, java.lang.Boolean.valueOf(false));
                         NexNet.fx(Fx.smeltsmoke, this.x, this.y);
                         Vars.ui.showInfoToast(isEn() ? "[red]No DTG-Soldern found within range![]" : "[red]Không tìm thấy công trình liên kết trong phạm vi![]", 3);
                     }
@@ -275,7 +275,7 @@ Events.on(ContentInitEvent, () => {
                         let tile = Vars.world.tileWorld(worldVec.x, worldVec.y);
 
                         if (tile != null) {
-                            this.configure(java.lang.Integer(Point2.pack(tile.x, tile.y)));
+                            NexNet.configure(this, java.lang.Integer(Point2.pack(tile.x, tile.y)));
                         }
                         this.selectingTarget = false;
                     }

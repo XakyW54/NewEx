@@ -952,7 +952,7 @@ galaxvorram.buildType = () => extend(PowerTurret.PowerTurretBuild, galaxvorram, 
 
                 mainTable.button(btnText, packRun(() => {
                     this.setAmmoTypeIndex(ammo.val);
-                    this.configure(java.lang.Integer.valueOf(ammo.val));
+                    NexNet.configure(this, java.lang.Integer.valueOf(ammo.val));
                     NexNet.fx(Fx.upgradeCore, this.x, this.y);
                     let infoText = isEnglish() ? "[gold]Ammo type installed:[]\n" : "[gold]Đã cài đặt loại đạn:[]\n";
                     Vars.ui.showInfo(infoText + ammoName);

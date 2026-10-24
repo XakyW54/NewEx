@@ -5,16 +5,19 @@ print("FLAZERD - MK2B MILESTONE SUB-LASER SYSTEM LOADED");
 function isVietnamese() {
     let lang = "";
     try {
-        lang = String(Core.bundle.getLocale().getLanguage());
+        lang = String(Core.settings.getString("locale", ""));
     } catch (err) {
         lang = "";
     }
-    if (lang == "" || lang == "null" || lang == "undefined") {
-        let loc = Core.settings.get("locale", "en");
-        if (!loc) loc = Core.settings.get("language", "en");
-        lang = loc != null ? loc.toString() : "en";
+    if (lang == "" || lang == "null" || lang == "undefined" || lang == "default") {
+        try {
+            lang = String(Core.bundle.getLocale().getLanguage());
+        } catch (err) {
+            lang = "";
+        }
     }
-    return lang.toLowerCase().startsWith("vi");
+    if (lang == "null" || lang == "undefined") lang = "";
+    return !lang.toLowerCase().startsWith("en");
 }
 
 const deadZone = 40;
@@ -506,7 +509,7 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
                     if(core != null && core.items.get(Items.copper) >= reqMK2.copper && core.items.get(Items.graphite) >= reqMK2.graphite){
                         NexNet.take(core, Items.copper, reqMK2.copper); NexNet.take(core, Items.graphite, reqMK2.graphite);
                         NexNet.fx(Fx.upgradeCore, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
-                        this.configure(new java.lang.Integer(2)); dialog.hide(); this.deselect();
+                        NexNet.configure(this, new java.lang.Integer(2)); dialog.hide(); this.deselect();
                     } else {
                         Vars.ui.showInfoToast(vi ? "[red]Không đủ tài nguyên cho nhánh MK2![]" : "[red]Not enough resources for MK2 path![]", 2);
                     }
@@ -533,7 +536,7 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
                     if(core != null && core.items.get(Items.lead) >= reqMK3.lead && core.items.get(Items.silicon) >= reqMK3.silicon){
                         NexNet.take(core, Items.lead, reqMK3.lead); NexNet.take(core, Items.silicon, reqMK3.silicon);
                         NexNet.fx(Fx.bigShockwave, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
-                        this.configure(new java.lang.Integer(3)); dialog.hide(); this.deselect();
+                        NexNet.configure(this, new java.lang.Integer(3)); dialog.hide(); this.deselect();
                     } else {
                         Vars.ui.showInfoToast(vi ? "[red]Không đủ tài nguyên cho nhánh MK2B![]" : "[red]Not enough resources for MK2B path![]", 2);
                     }

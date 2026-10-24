@@ -392,7 +392,7 @@ Events.on(ContentInitEvent, new Cons({
                                     NexNet.fx(Fx.upgradeCore, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
 
                                     this.setTier(1);
-                                    this.configure(java.lang.Integer.valueOf(1));
+                                    NexNet.configure(this, java.lang.Integer.valueOf(1));
                                     dialog.hide(); this.deselect();
                                 } else { Vars.ui.showInfo(english ? "[red]Not enough resources for MK2 branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                             })).size(180, 38);
@@ -416,7 +416,7 @@ Events.on(ContentInitEvent, new Cons({
                                     NexNet.fx(Fx.bigShockwave, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
 
                                     this.setTier(2);
-                                    this.configure(java.lang.Integer.valueOf(2));
+                                    NexNet.configure(this, java.lang.Integer.valueOf(2));
                                     dialog.hide(); this.deselect();
                                 } else { Vars.ui.showInfo(english ? "[red]Not enough resources for MK2B branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
                             })).size(180, 38);

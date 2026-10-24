@@ -342,7 +342,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                     if(core && core.items.get(Items.copper) >= reqRangtatursMK2.copper && core.items.get(Items.lead) >= reqRangtatursMK2.lead){
                         NexNet.take(core, Items.copper, reqRangtatursMK2.copper);
                         NexNet.take(core, Items.lead, reqRangtatursMK2.lead);
-                        this.configure(java.lang.Integer.valueOf(1));
+                        NexNet.configure(this, java.lang.Integer.valueOf(1));
                         NexNet.fx(Fx.upgradeCore, this.x, this.y);
                         dialog.hide(); this.deselect();
                     } else {
@@ -372,7 +372,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                         NexNet.take(core, Items.copper, reqRangtatursMK2B.copper);
                         NexNet.take(core, Items.lead, reqRangtatursMK2B.lead);
                         NexNet.take(core, Items.silicon, reqRangtatursMK2B.silicon);
-                        this.configure(java.lang.Integer.valueOf(2));
+                        NexNet.configure(this, java.lang.Integer.valueOf(2));
                         NexNet.fx(Fx.bigShockwave, this.x, this.y);
                         dialog.hide(); this.deselect();
                     } else {

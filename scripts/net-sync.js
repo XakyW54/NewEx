@@ -107,6 +107,15 @@
         if (!Vars.net.client()) core.items.add(item, n);
     }
 
+    function configure(build, value) {
+        if (build == null) return;
+        if (Vars.net.active()) {
+            Call.tileConfig(Vars.player, build, value);
+        } else {
+            build.configure(value);
+        }
+    }
+
     function setOverlay(tile, block) {
         if (tile == null || Vars.net.client()) return;
         tile.setOverlayNet(block);
@@ -180,6 +189,7 @@
         send: send,
         take: take,
         give: give,
+        configure: configure,
         fx: fx,
         shake: shake,
         toastTo: toastTo,

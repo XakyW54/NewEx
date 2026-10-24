@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const packRun = (fn) => new java.lang.Runnable({ run: fn });
 const packProv = (fn) => new Packages.arc.func.Prov({ get: fn });
 const packCons2 = (fn) => new Cons2({ get: fn });
@@ -81,24 +82,24 @@ reflecounum.config(java.lang.Integer, packCons2((tile, value) => {
 }));
 
 reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
-    
+
     created() {
         this.super$created();
-        this._tier = 0;                  
-        this._perkTier = 0;              
-        this._maxShieldHp = 5000;        
-        this._shieldHp = 5000;           
-        this._absorbedDamage = 0;        
-        this._shieldBroken = false;      
-        this._cooldownTimer = 0;         
-        this._hitTimer = 0;              
-        
+        this._tier = 0;
+        this._perkTier = 0;
+        this._maxShieldHp = 5000;
+        this._shieldHp = 5000;
+        this._absorbedDamage = 0;
+        this._shieldBroken = false;
+        this._cooldownTimer = 0;
+        this._hitTimer = 0;
+
         this._perk1Timer = 0;
         this._perk2Timer = 0;
         this._rebuildTimer = 0;
         this._perk5Timer = 0;
         this._perk6Absorbed = 0;
-        this._orbitingBullets = [];      
+        this._orbitingBullets = [];
 
         this.updateMaxShield();
         this._shieldHp = this._maxShieldHp;
@@ -142,10 +143,10 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
 
     damageShield(amount) {
         if (this.isShieldBroken()) return;
-        
+
         this._shieldHp = (this.getShieldHp()) - amount;
         this._absorbedDamage = (this._absorbedDamage || 0) + amount;
-        
+
         if (this._shieldHp <= 0) {
             this._shieldHp = 0;
             this._shieldBroken = true;
@@ -159,12 +160,12 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
         let perkMult = 1.0;
         let p = this.getPerkTier();
 
-        if (p === 1) perkMult += 1.50;      
-        else if (p === 2) perkMult += 0.50; 
-        else if (p === 3) perkMult += 0.30; 
-        else if (p === 4) perkMult += 1.00; 
-        else if (p === 5) perkMult += 2.00; 
-        else if (p === 6) perkMult += 2.00; 
+        if (p === 1) perkMult += 1.50;
+        else if (p === 2) perkMult += 0.50;
+        else if (p === 3) perkMult += 0.30;
+        else if (p === 4) perkMult += 1.00;
+        else if (p === 5) perkMult += 2.00;
+        else if (p === 6) perkMult += 2.00;
 
         return baseRadius * perkMult;
     },
@@ -172,17 +173,17 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
     updateMaxShield() {
         let t = this.getTier();
         let baseMax = 5000;
-        if (t === 1) baseMax = 7500;       
-        else if (t === 2) baseMax = 15000; 
+        if (t === 1) baseMax = 7500;
+        else if (t === 2) baseMax = 15000;
 
         let perkMult = 1.0;
         let p = this.getPerkTier();
-        if (p === 1) perkMult += 0.50;      
-        else if (p === 2) perkMult += 0.90; 
-        else if (p === 3) perkMult += 0.30; 
-        else if (p === 4) perkMult += 1.00; 
-        else if (p === 5) perkMult += 3.00; 
-        else if (p === 6) perkMult += 3.00; 
+        if (p === 1) perkMult += 0.50;
+        else if (p === 2) perkMult += 0.90;
+        else if (p === 3) perkMult += 0.30;
+        else if (p === 4) perkMult += 1.00;
+        else if (p === 5) perkMult += 3.00;
+        else if (p === 6) perkMult += 3.00;
 
         let oldMax = this._maxShieldHp || baseMax;
         this._maxShieldHp = baseMax * perkMult;
@@ -196,16 +197,16 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
 
     getAbsorbRatio() {
         let t = this.getTier();
-        if (t === 1) return 0.80; 
-        if (t === 2) return 0.40; 
-        return 0.50;             
+        if (t === 1) return 0.80;
+        if (t === 2) return 0.40;
+        return 0.50;
     },
 
     getReflectingChance() {
         let t = this.getTier();
-        if (t === 1) return 0.75; 
-        if (t === 2) return 1.00; 
-        return 0.60;             
+        if (t === 1) return 0.75;
+        if (t === 2) return 1.00;
+        return 0.60;
     },
 
     updateTile() {
@@ -218,7 +219,7 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
         if (this.isShieldBroken()) {
             this._shieldHp = 0;
             this._cooldownTimer += Time.delta;
-            
+
             if (this._cooldownTimer >= 300) {
                 this.updateMaxShield();
                 this._shieldBroken = false;
@@ -266,18 +267,18 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
 
                     for (let i = teamData.plans.size - 1; i >= 0; i--) {
                         let plan = teamData.plans.get(i);
-                        
+
                         if (plan != null && plan.block != null) {
                             let wx = plan.x * Vars.tilesize;
                             let wy = plan.y * Vars.tilesize;
 
                             if (Mathf.within(this.x, this.y, wx, wy, range)) {
                                 let tile = Vars.world.tile(plan.x, plan.y);
-                                
+
                                 if (tile != null) {
                                     if (tile.block() === plan.block) {
                                         teamData.plans.remove(i);
-                                        continue; 
+                                        continue;
                                     }
 
                                     tile.setNet(plan.block, this.team, plan.rotation);
@@ -287,7 +288,7 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
 
                                     teamData.plans.remove(i);
                                     rebuiltAny = true;
-                                    break; 
+                                    break;
                                 }
                             }
                         }
@@ -326,7 +327,7 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
                     if (this.isShieldBroken()) return;
 
                     if (b != null && b.team != this.team && b.type != null && Mathf.within(this.x, this.y, b.x, b.y, currentRadius)) {
-                        
+
                         this._hitTimer = 25;
                         let rawDamage = b.damage;
                         let absorbRatio = this.getAbsorbRatio();
@@ -430,7 +431,7 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
             if (isHit) {
                 Draw.color(reflectorGlow, hitFactor);
                 Lines.stroke(1.2);
-                
+
                 let innerRad = currentRadius * 0.65;
                 Lines.poly(this.x, this.y, 6, innerRad);
 
@@ -467,7 +468,7 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
         table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
             let dialogTitle = isEn() ? "Reflecounum Turret Upgrade Center" : "Trung tâm nâng cấp pháo Reflecounum";
             let dialog = extend(BaseDialog, dialogTitle, {});
-            
+
             let reqCell = dialog.cont.label(packProv(() => {
                 let core = this.team.core();
                 if (core == null) return isEn() ? "[red]Team Core Not Found![]" : "[red]Không tìm thấy Lõi Đội![]";
@@ -505,15 +506,15 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
                        "[cyan]Nhánh MK2:[] Titan: " + titColor1 + currentTitanium + "[]/" + reqMK2.titanium + " | Silicon: " + silColor1 + currentSilicon + "[]/" + reqMK2.silicon + " | Thorium: " + thoColor1 + currentThorium + "[]/" + reqMK2.thorium + "\n" +
                        "[purple]Nhánh MK2B:[] Titan: " + titColor2 + currentTitanium + "[]/" + reqMK2B.titanium + " | Silicon: " + silColor2 + currentSilicon + "[]/" + reqMK2B.silicon + " | Nhựa: " + plaColor2 + currentPlastanium + "[]/" + reqMK2B.plastanium + " | Surge: " + surColor2 + currentSurge + "[]/" + reqMK2B.surgeAlloy;
             }));
-            
+
             reqCell.width(380).get().setWrap(true);
             reqCell.get().setAlignment(Align.left);
             dialog.cont.row(); dialog.cont.add().height(10).row();
 
             let branchesTable = new Table();
 
-            let spBox = new Table(); 
-            spBox.background(Styles.black6); 
+            let spBox = new Table();
+            spBox.background(Styles.black6);
             spBox.margin(12);
             spBox.add(isEn() ? "[gold]★ SPECIAL UPGRADE PERKS (RANDOM) ★[]" : "[gold]★ PHÚC LỢI NÂNG CẤP ĐẶC BIỆT (NGẪU NHIÊN) ★[]").row();
 
@@ -537,25 +538,25 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
                     " • [red]Phúc lợi 6 (1% SIÊU HIẾM):[] Bán kính khiên +200%, HP khiên +300%, Tích 100 Dmg đẻ 1 đạn năng lượng quanh pháo, Đủ 1000 Dmg bắn 8 đạn xé gió mục tiêu HP cao nhất!";
 
                 let spD = spBox.add(spDText);
-                spD.width(360).get().setWrap(true); 
-                spD.get().setAlignment(Align.left); 
+                spD.width(360).get().setWrap(true);
+                spD.get().setAlignment(Align.left);
                 spBox.row();
 
                 let rollBtnText = isEn() ? "[gold]ROLL PERK (4K Copper/Lead/Silicon)[]" : "[gold]QUAY PHÚC LỢI (4K Đồng/Chì/Silicon)[]";
                 spBox.button(rollBtnText, packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.copper) >= 4000 && core.items.get(Items.lead) >= 4000 && core.items.get(Items.silicon) >= 4000) {
-                        core.items.remove(Items.copper, 4000); 
-                        core.items.remove(Items.lead, 4000); 
-                        core.items.remove(Items.silicon, 4000);
+                        NexNet.take(core, Items.copper, 4000);
+                        NexNet.take(core, Items.lead, 4000);
+                        NexNet.take(core, Items.silicon, 4000);
 
                         let rand = Mathf.random(100);
-                        let resultPerk = 3; 
+                        let resultPerk = 3;
 
                         if (rand < 1.0) {
-                            resultPerk = 5; 
+                            resultPerk = 5;
                         } else if (rand < 2.0) {
-                            resultPerk = 6; 
+                            resultPerk = 6;
                         } else if (rand < 2.0 + 19.6) {
                             resultPerk = 1;
                         } else if (rand < 2.0 + 19.6 + 29.4) {
@@ -567,10 +568,10 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
                         }
 
                         this.setPerkTier(resultPerk);
-                        this.configure(10 + resultPerk); 
+                        this.configure(java.lang.Integer(10 + resultPerk));
 
-                        Fx.upgradeCore.at(this.x, this.y); 
-                        Effect.shake(6, 6, this.x, this.y);
+                        NexNet.fx(Fx.upgradeCore, this.x, this.y);
+                        NexNet.shake(6, 6, this.x, this.y);
 
                         let perkName = "";
                         if (isEn()) {
@@ -591,10 +592,10 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
                             Vars.ui.showInfo("[gold]BẠN ĐÃ TRÚNG:[]\n" + perkName);
                         }
 
-                        dialog.hide(); 
+                        dialog.hide();
                         this.deselect();
-                    } else { 
-                        Vars.ui.showInfo(isEn() ? "[red]Not enough resources for Special Perk![]" : "[red]Không đủ tài nguyên cho Phúc Lợi Đặc Biệt![]"); 
+                    } else {
+                        Vars.ui.showInfo(isEn() ? "[red]Not enough resources for Special Perk![]" : "[red]Không đủ tài nguyên cho Phúc Lợi Đặc Biệt![]");
                     }
                 })).size(300, 40);
             } else {
@@ -616,18 +617,18 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
                 }
 
                 let spD = spBox.add(perkText);
-                spD.width(360).get().setWrap(true); 
+                spD.width(360).get().setWrap(true);
                 spD.get().setAlignment(Align.left);
             }
 
-            branchesTable.add(spBox).width(360); 
+            branchesTable.add(spBox).width(360);
             branchesTable.row();
             branchesTable.add().height(12).row();
 
             if (tier == 0) {
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                 b1.add(isEn() ? "[cyan]===(MK2 - SHIELD DEFENDER)===[]" : "[cyan]===(MK2 - TRỐNG THỦ KHIÊN)===[]").row();
-                
+
                 let b1DText = isEn() ?
                     "[white]• Shield Dmg Absorb: [green]80%[] (+30%)\n" +
                     "• Base Shield HP: [green]7,500 HP[] (+50%)\n" +
@@ -637,28 +638,28 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
                     "• Độ bền khiên gốc: [green]7,500 HP[] (+50%)\n" +
                     "• Tỷ lệ phản ngược đạn: [yellow]75%[] (+15%)\n" +
                     "• Thời gian hồi khi khiên vỡ: [white]5.0 giây[]";
-                
+
                 let b1D = b1.add(b1DText);
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
-                
+
                 let b1Btn = isEn() ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]";
                 b1.button(b1Btn, packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.titanium) >= reqMK2.titanium && core.items.get(Items.silicon) >= reqMK2.silicon && core.items.get(Items.thorium) >= reqMK2.thorium) {
-                        core.items.remove(Items.titanium, reqMK2.titanium); 
-                        core.items.remove(Items.silicon, reqMK2.silicon);
-                        core.items.remove(Items.thorium, reqMK2.thorium);
-                        
-                        Fx.upgradeCore.at(this.x, this.y); Fx.shieldWave.at(this.x, this.y, this.getShieldRadius(), reflectorColor); Effect.shake(4, 4, this.x, this.y);
+                        NexNet.take(core, Items.titanium, reqMK2.titanium);
+                        NexNet.take(core, Items.silicon, reqMK2.silicon);
+                        NexNet.take(core, Items.thorium, reqMK2.thorium);
+
+                        NexNet.fx(Fx.upgradeCore, this.x, this.y); NexNet.fx(Fx.shieldWave, this.x, this.y, this.getShieldRadius(), reflectorColor); NexNet.shake(4, 4, this.x, this.y);
                         this.setTier(1);
-                        this.configure(1);
+                        this.configure(java.lang.Integer(1));
                         dialog.hide(); this.deselect();
                     } else { Vars.ui.showInfo(isEn() ? "[red]Not enough resources for MK2 branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                 })).size(180, 38);
 
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                 b2.add(isEn() ? "[purple]===(MK2B - ABSOLUTE REFLECTION)===[]" : "[purple]===(MK2B - PHẢN XẠ TUYỆT ĐỐI)===[]").row();
-                
+
                 let b2DText = isEn() ?
                     "[white]• Shield Dmg Absorb: [red]40%[] (-10%)\n" +
                     "• Base Shield HP: [green]15,000 HP[] (+200%)\n" +
@@ -671,19 +672,19 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
 
                 let b2D = b2.add(b2DText);
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
-                
+
                 let b2Btn = isEn() ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]";
                 b2.button(b2Btn, packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.titanium) >= reqMK2B.titanium && core.items.get(Items.silicon) >= reqMK2B.silicon && core.items.get(Items.plastanium) >= reqMK2B.plastanium && core.items.get(Items.surgeAlloy) >= reqMK2B.surgeAlloy) {
-                        core.items.remove(Items.titanium, reqMK2B.titanium); 
-                        core.items.remove(Items.silicon, reqMK2B.silicon); 
-                        core.items.remove(Items.plastanium, reqMK2B.plastanium);
-                        core.items.remove(Items.surgeAlloy, reqMK2B.surgeAlloy);
-                        
-                        Fx.bigShockwave.at(this.x, this.y); Fx.shieldWave.at(this.x, this.y, this.getShieldRadius(), reflectorColor); Effect.shake(4, 4, this.x, this.y);
+                        NexNet.take(core, Items.titanium, reqMK2B.titanium);
+                        NexNet.take(core, Items.silicon, reqMK2B.silicon);
+                        NexNet.take(core, Items.plastanium, reqMK2B.plastanium);
+                        NexNet.take(core, Items.surgeAlloy, reqMK2B.surgeAlloy);
+
+                        NexNet.fx(Fx.bigShockwave, this.x, this.y); NexNet.fx(Fx.shieldWave, this.x, this.y, this.getShieldRadius(), reflectorColor); NexNet.shake(4, 4, this.x, this.y);
                         this.setTier(2);
-                        this.configure(2);
+                        this.configure(java.lang.Integer(2));
                         dialog.hide(); this.deselect();
                     } else { Vars.ui.showInfo(isEn() ? "[red]Not enough resources for MK2B branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
                 })).size(180, 38);
@@ -775,7 +776,7 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
         this._shieldHp = read.f();
         this._absorbedDamage = read.f();
         this._shieldBroken = read.bool();
-        
+
         this.updateMaxShield();
         if (isNaN(this._shieldHp)) this._shieldHp = this.getMaxShieldHp();
     }
@@ -789,10 +790,10 @@ reflecounum.addBar("shield", packFunc(e => {
 
             if (!e) return labelText + "0 / 0";
             if (e.isShieldBroken()) return brokenText;
-            
+
             let cur = Math.floor(e.getShieldHp());
             let max = Math.floor(e.getMaxShieldHp());
-            
+
             return labelText + cur + " / " + max;
         }),
         packProv(() => (e && e.isShieldBroken()) ? Color.gray : reflectorColor),
@@ -801,7 +802,7 @@ reflecounum.addBar("shield", packFunc(e => {
             let cur = e.getShieldHp();
             let max = e.getMaxShieldHp();
             if (max <= 0) return 0.0;
-            
+
             return Math.max(0.0, Math.min(1.0, cur / max));
         })
     );

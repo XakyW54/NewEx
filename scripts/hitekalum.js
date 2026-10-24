@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 print("HITEKALUM SYSTEM INITIALIZED - EVENT-BASED PERK SYSTEM READY");
 
 function isEn() {
@@ -46,7 +47,7 @@ const sonicShockwaveEffect = new Effect(45, e => {
 const mk3ExplosionFX = new Effect(30, e => {
     Draw.color(hitekalumColor, Color.white, e.fin());
     Lines.stroke(3 * e.fout());
-    Lines.circle(e.x, e.y, e.fin() * 45); 
+    Lines.circle(e.x, e.y, e.fin() * 45);
     Angles.randLenVectors(e.id, 20, 45 * e.fin(), (x, y) => {
         Fill.circle(e.x + x, y + y, 3.5 * e.fout());
     });
@@ -73,14 +74,14 @@ function createLightningStandard(x1, y1, x2, y2, thickness, isMicro){
         let t = i / segs;
         let px = Mathf.lerp(x1, x2, t);
         let py = Mathf.lerp(y1, y2, t);
-        let jitter = isMicro ? 4 : 10;   
+        let jitter = isMicro ? 4 : 10;
         let noise = Mathf.range(jitter) * (1 - t);
 
         Tmp.v1.trns(angle + 90, noise);
         points.add(new Vec2(px + Tmp.v1.x, py + Tmp.v1.y));
     }
     points.add(new Vec2(x2, y2));
-    
+
     if(isMicro){
         microLightningEffect.at((x1 + x2) / 2, (x2 + x2) / 2, thickness, points);
     } else {
@@ -177,17 +178,17 @@ Events.on(ContentInitEvent, () => {
                 this.applyStatsFromPerk();
             },
 
-            config() { 
-                return java.lang.Integer(this.getPerkA() * 100 + this.getPerkB() * 10 + this.getPerkC()); 
+            config() {
+                return java.lang.Integer(this.getPerkA() * 100 + this.getPerkB() * 10 + this.getPerkC());
             },
 
             range(){
                 let baseR = 320;
                 let rangeMult = 1.0;
 
-                if(this.getPerkA() == 1) rangeMult += 0.40; 
-                if(this.getPerkC() == 3) rangeMult += 0.10; 
-                if(this.getPerkC() == 4) rangeMult += 1.0; 
+                if(this.getPerkA() == 1) rangeMult += 0.40;
+                if(this.getPerkC() == 3) rangeMult += 0.10;
+                if(this.getPerkC() == 4) rangeMult += 1.0;
 
                 if(this.redstoneBuffStacks > 0) rangeMult += (0.10 * this.redstoneBuffStacks);
 
@@ -198,9 +199,9 @@ Events.on(ContentInitEvent, () => {
                 let baseDmg = 120;
                 let dmgMult = 1.0;
 
-                if(this.getPerkA() == 3) dmgMult += 0.30; 
-                if(this.getPerkC() == 3) dmgMult += 0.10; 
-                if(this.getPerkC() == 4) dmgMult += 1.0; 
+                if(this.getPerkA() == 3) dmgMult += 0.30;
+                if(this.getPerkC() == 3) dmgMult += 0.10;
+                if(this.getPerkC() == 4) dmgMult += 1.0;
 
                 if(this.redstoneBuffStacks > 0) dmgMult += (0.50 * this.redstoneBuffStacks);
 
@@ -209,8 +210,8 @@ Events.on(ContentInitEvent, () => {
                 let critChance = 0.05;
                 let critDmgMult = 1.50;
 
-                if(this.getPerkC() == 1) { critChance += 0.10; critDmgMult += 1.50; } 
-                if(this.getPerkC() == 3) { critChance += 0.20; critDmgMult += 0.50; } 
+                if(this.getPerkC() == 1) { critChance += 0.10; critDmgMult += 1.50; }
+                if(this.getPerkC() == 3) { critChance += 0.20; critDmgMult += 0.50; }
 
                 if(this.redstoneBuffStacks > 0) {
                     critChance += (0.15 * this.redstoneBuffStacks);
@@ -287,7 +288,7 @@ Events.on(ContentInitEvent, () => {
                 if(this.getPerkB() == 2){
                     let rangeVal = this.range();
                     let list = new Seq();
-                    
+
                     Units.nearbyEnemies(this.team, this.x - rangeVal, this.y - rangeVal, rangeVal * 2, rangeVal * 2, u => {
                         if(!u.dead && this.dst(u) <= rangeVal){
                             list.add(u);
@@ -300,7 +301,7 @@ Events.on(ContentInitEvent, () => {
                     for(let i = 0; i < list.size; i++){
                         if(count >= 3) break;
                         let tankyUnit = list.get(i);
-                        
+
                         createLightningStandard(this.x, this.y, tankyUnit.x, tankyUnit.y, 2.5, true);
                         let subDmg = (currentDmg * 0.20) + (tankyUnit.maxHealth * 0.01);
                         this.applyHitekalumDamage(tankyUnit, subDmg);
@@ -319,7 +320,7 @@ Events.on(ContentInitEvent, () => {
                 let reloadBonus = 0.05 * this.redstoneBuffStacks;
 
                 if(this.getPerkB() == 3 && this.reloadCounter > 0){
-                    this.reloadCounter += Time.delta * (1.0 + reloadBonus); 
+                    this.reloadCounter += Time.delta * (1.0 + reloadBonus);
                 } else if(reloadBonus > 0 && this.reloadCounter > 0) {
                     this.reloadCounter += Time.delta * reloadBonus;
                 }
@@ -436,15 +437,15 @@ Events.on(ContentInitEvent, () => {
                             let core = this.team.core();
                             let itemObsidis = Vars.content.getByName(ContentType.item, "newex-obsidis");
                             if (core != null && itemObsidis != null && core.items.get(Items.copper) >= reqPerkHitekA.copper && core.items.get(Items.lead) >= reqPerkHitekA.lead && core.items.get(itemObsidis) >= reqPerkHitekA.obsidis) {
-                                core.items.remove(Items.copper, reqPerkHitekA.copper);
-                                core.items.remove(Items.lead, reqPerkHitekA.lead);
-                                core.items.remove(itemObsidis, reqPerkHitekA.obsidis);
+                                NexNet.take(core, Items.copper, reqPerkHitekA.copper);
+                                NexNet.take(core, Items.lead, reqPerkHitekA.lead);
+                                NexNet.take(core, itemObsidis, reqPerkHitekA.obsidis);
 
-                                let res = Mathf.rand.nextInt(3) + 1; 
+                                let res = Mathf.rand.nextInt(3) + 1;
                                 this.setPerkA(res);
 
-                                Fx.upgradeCore.at(this.x, this.y);
-                                Effect.shake(4, 4, this.x, this.y);
+                                NexNet.fx(Fx.upgradeCore, this.x, this.y);
+                                NexNet.shake(4, 4, this.x, this.y);
 
                                 let descMapA = isEn() ? {
                                     1: "• Range +40%\n• Chain lightning jumps to 1 nearby target.",
@@ -500,15 +501,15 @@ Events.on(ContentInitEvent, () => {
                             let core = this.team.core();
                             let itemObsidis = Vars.content.getByName(ContentType.item, "newex-obsidis");
                             if (core != null && itemObsidis != null && core.items.get(Items.titanium) >= reqPerkHitekB.titanium && core.items.get(Items.thorium) >= reqPerkHitekB.thorium && core.items.get(itemObsidis) >= reqPerkHitekB.obsidis) {
-                                core.items.remove(Items.titanium, reqPerkHitekB.titanium);
-                                core.items.remove(Items.thorium, reqPerkHitekB.thorium);
-                                core.items.remove(itemObsidis, reqPerkHitekB.obsidis);
+                                NexNet.take(core, Items.titanium, reqPerkHitekB.titanium);
+                                NexNet.take(core, Items.thorium, reqPerkHitekB.thorium);
+                                NexNet.take(core, itemObsidis, reqPerkHitekB.obsidis);
 
-                                let res = Mathf.rand.nextInt(3) + 1; 
+                                let res = Mathf.rand.nextInt(3) + 1;
                                 this.setPerkB(res);
 
-                                Fx.upgradeCore.at(this.x, this.y);
-                                Effect.shake(4, 4, this.x, this.y);
+                                NexNet.fx(Fx.upgradeCore, this.x, this.y);
+                                NexNet.shake(4, 4, this.x, this.y);
 
                                 let descMapB = isEn() ? {
                                     1: "• +200% Turret HP\n• Reflects 15% melee damage.",
@@ -566,16 +567,16 @@ Events.on(ContentInitEvent, () => {
                             let core = this.team.core();
                             let itemObsidis = Vars.content.getByName(ContentType.item, "newex-obsidis");
                             if (core != null && itemObsidis != null && core.items.get(Items.surgeAlloy) >= reqPerkHitekC.surgeAlloy && core.items.get(Items.phaseFabric) >= reqPerkHitekC.phaseFabric && core.items.get(itemObsidis) >= reqPerkHitekC.obsidis) {
-                                core.items.remove(Items.surgeAlloy, reqPerkHitekC.surgeAlloy);
-                                core.items.remove(Items.phaseFabric, reqPerkHitekC.phaseFabric);
-                                core.items.remove(itemObsidis, reqPerkHitekC.obsidis);
+                                NexNet.take(core, Items.surgeAlloy, reqPerkHitekC.surgeAlloy);
+                                NexNet.take(core, Items.phaseFabric, reqPerkHitekC.phaseFabric);
+                                NexNet.take(core, itemObsidis, reqPerkHitekC.obsidis);
 
                                 let chance = Mathf.rand.nextInt(100);
                                 let res = chance < 40 ? 1 : (chance < 70 ? 2 : (chance < 90 ? 3 : 4));
                                 this.setPerkC(res);
 
-                                Fx.upgradeCore.at(this.x, this.y);
-                                Effect.shake(4, 4, this.x, this.y);
+                                NexNet.fx(Fx.upgradeCore, this.x, this.y);
+                                NexNet.shake(4, 4, this.x, this.y);
 
                                 let descMapC = isEn() ? {
                                     1: "• Crit Damage +150%\n• Crit Chance +10%.",
@@ -619,18 +620,18 @@ Events.on(ContentInitEvent, () => {
 
                 table.button(Icon.info, Styles.cleari, 40, packRun(() => {
                     let title = isEn() ? " Hitekalum Turret Stats " : " Thông số pháo Hitekalum ";
-                    
+
                     let curHp = Math.round(this.health);
                     let maxHp = Math.round(this.maxHealth);
-                    let curRng = Math.round(this.range() / 8); 
+                    let curRng = Math.round(this.range() / 8);
                     let curDmg = Math.round(this.getRawDamage());
 
                     let redstoneStatus = isEn() ?
-                        ((this.redstoneBuffStacks > 0) 
-                            ? "[green]✔ REDSTONE WALL ACTIVATED (Stacks: " + this.redstoneBuffStacks + "/4 corners)[]\n  └ (Per stack: +10% Range, +5% Fire Rate, +15% Crit Rate, +30% Crit Dmg, +50% Dmg)" 
+                        ((this.redstoneBuffStacks > 0)
+                            ? "[green]✔ REDSTONE WALL ACTIVATED (Stacks: " + this.redstoneBuffStacks + "/4 corners)[]\n  └ (Per stack: +10% Range, +5% Fire Rate, +15% Crit Rate, +30% Crit Dmg, +50% Dmg)"
                             : "[red]✘ No Redstone Wall placed at corners[]") :
-                        ((this.redstoneBuffStacks > 0) 
-                            ? "[green]✔ ĐÃ KÍCH HOẠT KHỐI REDSTONE WALL (Cộng dồn: " + this.redstoneBuffStacks + "/4 góc)[]\n  └ (Mỗi stack: +10% Range, +5% Tốc bắn, +15% Crit Rate, +30% Crit Dmg, +50% Dmg)" 
+                        ((this.redstoneBuffStacks > 0)
+                            ? "[green]✔ ĐÃ KÍCH HOẠT KHỐI REDSTONE WALL (Cộng dồn: " + this.redstoneBuffStacks + "/4 góc)[]\n  └ (Mỗi stack: +10% Range, +5% Tốc bắn, +15% Crit Rate, +30% Crit Dmg, +50% Dmg)"
                             : "[red]✘ Chưa đặt khối Redstone Wall ở góc nào[]");
 
                     let descStr = isEn() ?

@@ -9,7 +9,6 @@ Events.on(ContentInitEvent, () => {
                 updateTile() {
                     this.super$updateTile();
 
- 
                     if (this.power && this.power.status > 0) {
                         let capacity = this.block.consPower.capacity;
                         let currentStored = this.power.status * capacity;
@@ -19,7 +18,7 @@ Events.on(ContentInitEvent, () => {
 
                             let target = this.nearby(i);
                             if (target != null && target.team === this.team && target.power != null && target.block.consPower != null) {
-                               
+
                                 if (target.block === pinfyr) continue;
 
                                 let targetCap = target.block.consPower.capacity;

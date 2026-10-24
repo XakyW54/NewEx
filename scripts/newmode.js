@@ -1,7 +1,7 @@
 (function() {
     const CURRENT_MOD_NAME = "newex";
     const GACHA_POINTS_KEY = "newex-gacha-points";
-    
+
     let activeMapName = null;
     let isPlayingNewMode = false;
     let pendingGachaReward = 0;
@@ -188,7 +188,7 @@
     Events.on(WaveEvent, event => {
         if (isPlayingNewMode && Vars.state.isGame()) {
             saveNewModeGame();
-            
+
             if (Vars.state.wave > 0 && Vars.state.wave % 10 === 0) {
                 let currentPts = Core.settings.getInt(GACHA_POINTS_KEY, 0) + 1;
                 Core.settings.put(GACHA_POINTS_KEY, java.lang.Integer(currentPts));

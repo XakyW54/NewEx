@@ -4,9 +4,6 @@ const packRun = (func) => new java.lang.Runnable({ run: func });
 
 const isEn = () => Core.settings.getString("locale").startsWith("en");
 
-// ==========================================
-// HÀM VẼ HIỆU ỨNG TÙY CHỈNH (KHÔNG DÙNG VANILLA FX)
-// ==========================================
 function drawCustomElectricEffect(x, y, radius, color, points) {
     Draw.color(color);
     Lines.stroke(1.5);
@@ -36,10 +33,10 @@ function drawCustomDualBlade(x, y, radius, angle) {
     Lines.stroke(3);
     let a1 = angle;
     let a2 = angle + 180;
-    
+
     Lines.arc(x, y, radius, 60, a1);
     Lines.arc(x, y, radius, 60, a2);
-    
+
     Fill.circle(x + Mathf.cosDeg(a1) * radius, y + Mathf.sinDeg(a1) * radius, 4);
     Fill.circle(x + Mathf.cosDeg(a2) * radius, y + Mathf.sinDeg(a2) * radius, 4);
     Draw.reset();
@@ -49,18 +46,15 @@ function drawCustomMeteorImpact(x, y, radius, progress) {
     Draw.color(Color.scarlet, Color.orange, progress);
     Lines.stroke(3 * (1 - progress));
     Lines.circle(x, y, radius * progress);
-    
+
     Draw.color(Color.orange);
     Fill.circle(x, y, (1 - progress) * 8);
     Draw.reset();
 }
 
-// ==========================================
-// HÀM VẼ PHẠM VI ẢNH HƯỞNG TÙY CHỈNH
-// ==========================================
 function drawCustomThermionRange(x, y, radius, formColor, level) {
     Draw.z(Layer.overlayUI);
-    
+
     Draw.color(formColor);
     Draw.alpha(0.6);
     Lines.stroke(2);
@@ -108,7 +102,7 @@ Events.on(ContentInitEvent, () => {
             megaHypnosisCooldown: 0,
             asteroidChargeTimer: 0,
             isAsteroidCharging: false,
-            
+
             generalTimer: 0,
             bladeAngle: 0,
 
@@ -135,13 +129,12 @@ Events.on(ContentInitEvent, () => {
 
                 let requiredPower = this.level * this.level * 1000;
                 let currentSurplus = (this.power != null && this.power.graph != null) ? (this.power.graph.powerProduction - this.power.graph.powerNeeded) : 0;
-                
+
                 table.add(isEn() ? "[lightgray]Req Power: [orange]" + requiredPower + "[]" : "[lightgray]Năng lượng yêu cầu: [orange]" + requiredPower + "[]").colspan(3);
                 table.row();
                 table.add(isEn() ? "[lightgray]Net Surplus: [sky]" + Math.floor(currentSurplus) + "[]" : "[lightgray]Lưới điện dư: [sky]" + Math.floor(currentSurplus) + "[]").colspan(3);
                 table.row();
 
-                // --- 1. CHỌN DẠNG (FORM) ---
                 table.button("💛 Form Yellow", packRun(() => {
                     this.currentForm = ThermionForm.YELLOW;
                     this.deselect();
@@ -159,7 +152,6 @@ Events.on(ContentInitEvent, () => {
 
                 table.row();
 
-                // --- 2. TĂNG / GIẢM CẤP ĐỘ (LEVEL) ---
                 table.button("Lv -", packRun(() => {
                     if (this.level > 1) this.level--;
                 })).size(40, 40);
@@ -172,7 +164,6 @@ Events.on(ContentInitEvent, () => {
 
                 table.row();
 
-                // --- 3. KỸ NĂNG CHỦ ĐỘNG CẤP 5 ---
                 if (this.level >= 5) {
                     if (this.currentForm === ThermionForm.YELLOW) {
                         let isReady = this.empCooldown <= 0;
@@ -205,7 +196,7 @@ Events.on(ContentInitEvent, () => {
 
             useElectromagneticPulse() {
                 this.empCooldown = 7200;
-                
+
                 Groups.unit.each(packCons(u => {
                     if (u.team != this.team && Mathf.dst(this.x, this.y, u.x, u.y) <= this.affectRadius) {
                         u.apply(StatusEffects.unmoving, 300);
@@ -224,7 +215,7 @@ Events.on(ContentInitEvent, () => {
             useMegaHypnosis() {
                 this.megaHypnosisCooldown = 10800;
                 let count = 0;
-                
+
                 Groups.unit.each(packCons(u => {
                     if (u.team != this.team && Mathf.dst(this.x, this.y, u.x, u.y) <= this.affectRadius) {
                         u.team = this.team;
@@ -375,7 +366,7 @@ Events.on(ContentInitEvent, () => {
 
             drawConfigure() {
                 this.super$drawConfigure();
-                
+
                 let formColor = Color.gold;
                 if (this.currentForm === ThermionForm.BLUE) formColor = Color.sky;
                 else if (this.currentForm === ThermionForm.PURPLE) formColor = Color.purple;

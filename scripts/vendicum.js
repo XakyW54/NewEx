@@ -6,14 +6,14 @@ const packProv = (func) => new Prov({ get: func });
 const isEn = () => Core.settings.getString("locale").startsWith("en");
 
 const reqMK2 = { titanium: 500, silicon: 300, plastanium: 0 };
-const reqMK2B = { titanium: 800, silicon: 400, plastanium: 200 }; 
+const reqMK2B = { titanium: 800, silicon: 400, plastanium: 200 };
 
-const lossPerShotMK1 = 0.01; 
-const regenSpeedMK1 = 0.20; 
-const lossPerShotMK2 = 0.005; 
-const regenSpeedMK2 = 0.34;    
-const lossPerShotMK2B = 0.003; 
-const regenSpeedMK2B = 0.40;   
+const lossPerShotMK1 = 0.01;
+const regenSpeedMK1 = 0.20;
+const lossPerShotMK2 = 0.005;
+const regenSpeedMK2 = 0.34;
+const lossPerShotMK2B = 0.003;
+const regenSpeedMK2B = 0.40;
 
 const bulletSlashEffect = new Effect(15, e => {
     let baseAngle = e.rotation;
@@ -30,18 +30,18 @@ const bulletSlashEffect = new Effect(15, e => {
     function getX(localX, localY) { return cx + (localX * cosA - localY * sinA); }
     function getY(localX, localY) { return cy + (localX * sinA + localY * cosA); }
 
-    let pTipX = getX(len, 0);           
+    let pTipX = getX(len, 0);
     let pTipY = getY(len, 0);
-    let pMidLeftX = getX(len * 0.4, width * 0.5);   
+    let pMidLeftX = getX(len * 0.4, width * 0.5);
     let pMidLeftY = getY(len * 0.4, width * 0.5);
-    let pMidRightX = getX(len * 0.4, -width * 0.5);  
+    let pMidRightX = getX(len * 0.4, -width * 0.5);
     let pMidRightY = getY(len * 0.4, -width * 0.5);
-    let pTailX = getX(-len * 0.2, 0);   
+    let pTailX = getX(-len * 0.2, 0);
     let pTailY = getY(-len * 0.2, 0);
 
     Draw.color(PerfCore.color("#ffe18f"));
     Lines.stroke(stroke);
-    
+
     Lines.line(pTailX, pTailY, pMidLeftX, pMidLeftY);
     Lines.line(pMidLeftX, pMidLeftY, pTipX, pTipY);
     Lines.line(pTipX, pTipY, pMidRightX, pMidRightY);
@@ -49,8 +49,8 @@ const bulletSlashEffect = new Effect(15, e => {
 
     if (e.fout() > 0.15) {
         Draw.color(Color.white);
-        Lines.stroke(stroke * 0.4);  
-        
+        Lines.stroke(stroke * 0.4);
+
         let cTipX = getX(len * 0.9, 0);
         let cTipY = getY(len * 0.9, 0);
         let cMidLeftX = getX(len * 0.4, width * 0.3);
@@ -68,9 +68,8 @@ const bulletSlashEffect = new Effect(15, e => {
     Draw.reset();
 });
 
-// --- Silicon Bullets ---
 const vendicumBullet = extend(BasicBulletType, {
-    speed: 8, damage: 67.5, lifetime: 48, width: 11, height: 16, 
+    speed: 8, damage: 67.5, lifetime: 48, width: 11, height: 16,
     frontColor: Color.white, backColor: Color.valueOf("#e0b080"),
     textType: "vendicumBullet",
     pierce: true, pierceCap: 3, pierceBuilding: true, knockback: 1, impact: true,
@@ -79,7 +78,7 @@ const vendicumBullet = extend(BasicBulletType, {
 });
 
 const vendicumMK2Bullet = extend(BasicBulletType, {
-    speed: 10, damage: 97.5, lifetime: 45, width: 13, height: 20, 
+    speed: 10, damage: 97.5, lifetime: 45, width: 13, height: 20,
     frontColor: Color.white, backColor: Color.valueOf("#ffaa66"),
     pierce: true, pierceCap: 5, pierceBuilding: true, knockback: 1.4, impact: true,
     hitEffect: Fx.disperseTrail, despawnEffect: Fx.disperseTrail,
@@ -87,18 +86,17 @@ const vendicumMK2Bullet = extend(BasicBulletType, {
 });
 
 const vendicumMK2BBullet = extend(BasicBulletType, {
-    speed: 9, damage: 183.75, lifetime: 50, width: 5, height: 64, 
+    speed: 9, damage: 183.75, lifetime: 50, width: 5, height: 64,
     frontColor: Color.white, backColor: Color.valueOf("#831006"),
-    trailEffect: Fx.disperseTrail, trailChance: 0.40, 
+    trailEffect: Fx.disperseTrail, trailChance: 0.40,
     trailColor: Color.valueOf("#ff2525"),
-    pierce: false, pierceBuilding: false, knockback: 2.8, impact: true, 
+    pierce: false, pierceBuilding: false, knockback: 2.8, impact: true,
     homingPower: 0.15, homingRange: 200,
     hitEffect: Fx.disperseTrail, despawnEffect: Fx.disperseTrail
 });
 
-// --- Copper Bullets (Giảm 50% sát thương so với Silicon) ---
 const vendicumCopperBullet = extend(BasicBulletType, {
-    speed: 8, damage: 33.75, lifetime: 48, width: 11, height: 16, 
+    speed: 8, damage: 33.75, lifetime: 48, width: 11, height: 16,
     frontColor: Color.white, backColor: Color.valueOf("#d99d73"),
     textType: "vendicumCopperBullet",
     pierce: true, pierceCap: 3, pierceBuilding: true, knockback: 1, impact: true,
@@ -107,7 +105,7 @@ const vendicumCopperBullet = extend(BasicBulletType, {
 });
 
 const vendicumCopperMK2Bullet = extend(BasicBulletType, {
-    speed: 10, damage: 48.75, lifetime: 45, width: 13, height: 20, 
+    speed: 10, damage: 48.75, lifetime: 45, width: 13, height: 20,
     frontColor: Color.white, backColor: Color.valueOf("#d99d73"),
     pierce: true, pierceCap: 5, pierceBuilding: true, knockback: 1.4, impact: true,
     hitEffect: Fx.disperseTrail, despawnEffect: Fx.disperseTrail,
@@ -115,11 +113,11 @@ const vendicumCopperMK2Bullet = extend(BasicBulletType, {
 });
 
 const vendicumCopperMK2BBullet = extend(BasicBulletType, {
-    speed: 9, damage: 91.875, lifetime: 50, width: 5, height: 64, 
+    speed: 9, damage: 91.875, lifetime: 50, width: 5, height: 64,
     frontColor: Color.white, backColor: Color.valueOf("#b85b37"),
-    trailEffect: Fx.disperseTrail, trailChance: 0.40, 
+    trailEffect: Fx.disperseTrail, trailChance: 0.40,
     trailColor: Color.valueOf("#d99d73"),
-    pierce: false, pierceBuilding: false, knockback: 2.8, impact: true, 
+    pierce: false, pierceBuilding: false, knockback: 2.8, impact: true,
     homingPower: 0.15, homingRange: 200,
     hitEffect: Fx.disperseTrail, despawnEffect: Fx.disperseTrail
 });
@@ -131,9 +129,9 @@ const vendicum = extend(ItemTurret, "vendicum", {
 vendicum.addBar("dmg_bonus", new Func({
     get: function(e){
         return new Bar(
-            new Prov({ get: function(){ 
+            new Prov({ get: function(){
                 let totalBonus = Math.floor((e.getDmgRatio() * 5 + (e.stackDmgBonus || 0)) * 100);
-                return "DMG: +" + totalBonus + "%"; 
+                return "DMG: +" + totalBonus + "%";
             } }),
             new Prov({ get: function(){ return Color.orange; } }),
             new Floatp({ get: function(){ return Math.min(1.0, (e.getDmgRatio() * 5 + (e.stackDmgBonus || 0)) / 14.99); } })
@@ -169,7 +167,7 @@ vendicum.config(java.lang.Integer, packCons2((tile, value) => {
 
 vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
     energyState: 1.0,
-    tierState: 0, 
+    tierState: 0,
     customRecoil: 0.0,
     stackDmgBonus: 0.0,
 
@@ -194,7 +192,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
     },
 
     getTier(){ return this.tierState == null ? 0 : this.tierState; },
-    setTier(val){ 
+    setTier(val){
         this.tierState = val;
         this.paidTitanium = 0;
         this.paidSilicon = 0;
@@ -244,9 +242,9 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
 
     range(){
         let tier = this.getTier();
-        if(tier == 1) return 538.1; 
-        if(tier == 2) return 461.2; 
-        return 410;               
+        if(tier == 1) return 538.1;
+        if(tier == 2) return 461.2;
+        return 410;
     },
 
     buildConfiguration(table){
@@ -261,7 +259,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                 let availP = core ? core.items.get(Items.plastanium) : 0;
 
                 let dialog = extend(BaseDialog, isEn() ? "Vendicum Upgrade Center" : "Trung tâm nâng cấp pháo Vendicum", {});
-                
+
                 let textT_MK2 = (availT >= reqMK2.titanium ? "[green]" : "[scarlet]") + availT + "[] / " + reqMK2.titanium;
                 let textS_MK2 = (availS >= reqMK2.silicon ? "[green]" : "[scarlet]") + availS + "[] / " + reqMK2.silicon;
 
@@ -296,7 +294,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
 
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                 b1.add("[cyan]===(MK2 - PENETRATION)===[]").row();
-                let b1D = b1.add(isEn() ? 
+                let b1D = b1.add(isEn() ?
                                 "[white]• Health: [green]+50%[] (8,250 HP)\n" +
                                 "• Range: [green]+31.25%[] (538.1 px)\n" +
                                 "• Base Damage: [green]+44.4%[] (97.5 DMG)\n\n" +
@@ -318,7 +316,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
 
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                 b2.add("[purple]===(MK2B - HOMING)===[]").row();
-                let b2D = b2.add(isEn() ? 
+                let b2D = b2.add(isEn() ?
                                 "[white]• Health: [green]+33.3%[] (7,333 HP)\n" +
                                 "• Range: [green]+12.5%[] (461.2 px)\n" +
                                 "• Base Damage: [green]+172.2%[] (183.75 DMG)\n\n" +
@@ -360,7 +358,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
 
             if (currentTier == 0) {
                 title += "[yellow](MK1)[]";
-                descStr = isEn() ? 
+                descStr = isEn() ?
                           "[gold]⚡ BASE STATS (MK1) ⚡[]\n" +
                           "[lightgray]Turret HP:[] [green]5,500[]\n" +
                           "[lightgray]Effective Range:[] [orange]410 px[]\n" +
@@ -379,10 +377,10 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                           "[sky]⚡ CƠ CHẾ NĂNG LƯỢNG TIÊU HAO:[]\n" +
                           "• [lightgray]Tiêu hao (Energy Loss):[] Mỗi phát bắn làm tiêu trừ [red]1.0%[] năng lượng tích lũy của lõi. Sát thương đầu ra tỷ lệ thuận với lượng điện tích hiện có.\n" +
                           "• [lightgray]Tốc độ tái nạp:[] Mất khoảng [yellow]5.0 giây[] để nạp đầy lại từ thanh trống (0% -> 100%) khi ngừng khai hỏa.";
-            } 
+            }
             else if (currentTier == 1) {
                 title += "[cyan](MK2)[]";
-                descStr = isEn() ? 
+                descStr = isEn() ?
                           "[cyan]⚡ BASE STATS (MK2) ⚡[]\n" +
                           "[lightgray]Turret HP:[] [green]8,250 [lime](+50%)[]\n" +
                           "[lightgray]Effective Range:[] [orange]538.1 px [lime](+31.2%)[]\n" +
@@ -401,10 +399,10 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                           "[lime]⚡ CƠ CHẾ NĂNG LƯỢNG TIÊU HAO:[]\n" +
                           "• [lightgray]Tối ưu tiêu hao:[] Giảm thiểu mức tiêu hao năng lượng xuống chỉ còn [red]0.5%[] cho mỗi phát bắn (Giảm -50%).\n" +
                           "• [lightgray]Siêu sạc phản lực:[] Tốc độ nạp năng lượng đẩy mạnh vượt trội, chỉ mất [green]3.0 giây[] để hồi đầy bình tích lũy.";
-            } 
+            }
             else if (currentTier == 2) {
                 title += "[purple](MK2B)[]";
-                descStr = isEn() ? 
+                descStr = isEn() ?
                           "[purple]⚡ BASE STATS (MK2B) ⚡[]\n" +
                           "[lightgray]Turret HP:[] [green]7,333 [lime](+33.3%)[]\n" +
                           "[lightgray]Effective Range:[] [orange]461.2 px [lime](+12.5%)[]\n" +
@@ -446,63 +444,61 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
         if(tier == 1) currentRegen = regenSpeedMK2;
         if(tier == 2) currentRegen = regenSpeedMK2B;
 
-        if(!this.isShooting || !this.hasAmmo() || !this.isActive()){ 
-            if(this.energyState < 1.0){ 
-                this.energyState = Math.min(this.energyState + (currentRegen * Time.delta / 60), 1.0); 
-            } 
+        if(!this.isShooting || !this.hasAmmo() || !this.isActive()){
+            if(this.energyState < 1.0){
+                this.energyState = Math.min(this.energyState + (currentRegen * Time.delta / 60), 1.0);
+            }
         }
 
         this.customRecoil = Mathf.approach(this.customRecoil, 0.0, 0.12 * Time.delta);
     },
 
     shoot(type){
-        this.super$shoot(type); 
+        this.super$shoot(type);
         let tier = this.getTier();
         let currentLoss = lossPerShotMK1;
         if(tier == 1) currentLoss = lossPerShotMK2;
         if(tier == 2) currentLoss = lossPerShotMK2B;
 
-        // Trừ năng lượng theo mỗi phát bắn
-        this.energyState = Math.max(this.energyState - currentLoss, 0.0); 
+        this.energyState = Math.max(this.energyState - currentLoss, 0.0);
 
-        // Kích hoạt nội tại ngay lập tức khi thanh năng lượng/buff giảm về 0
         if(this.energyState <= 0.0){
-            this.stackDmgBonus = Math.min((this.stackDmgBonus || 0) + 0.09, 9.99); // Tích lũy +9% sát thương (tối đa +999%)
-            this.energyState = 1.0; // Tái nạp đầy ngay lập tức 100% hai thanh buff
+            this.stackDmgBonus = Math.min((this.stackDmgBonus || 0) + 0.09, 9.99);
+            this.energyState = 1.0;
         }
 
         this.customRecoil = 1.0;
     },
 
-    handleBullet(bullet, x, y, angle){ 
+    handleBullet(bullet, x, y, angle){
         if(bullet != null) {
             let totalDmgMult = 1 + (this.energyState * 5) + (this.stackDmgBonus || 0);
-            bullet.damage = bullet.type.damage * totalDmgMult; 
+            bullet.damage = bullet.type.damage * totalDmgMult;
             bullet.data = this;
         }
-        this.super$handleBullet(bullet, x, y, angle); 
+        this.super$handleBullet(bullet, x, y, angle);
     },
 
     baseReloadSpeed(){ return this.efficiency * (1 + this.energyState * 2.5); },
-    getDmgRatio(){ return this.energyState; }, 
+    getDmgRatio(){ return this.energyState; },
     getAsRatio(){ return this.energyState; },
 
     draw(){
-        let modName = this.block.name.split("-")[0]; 
+        let modName = this.block.name.split("-")[0];
         let baseRegion = PerfCore.region(this.block.basePrefix + "" + this.block.size);
         if(baseRegion.found()){
             Draw.rect(baseRegion, this.x, this.y);
         } else {
-            this.super$draw(); 
+            this.super$draw();
         }
 
         let rad = this.rotation * Mathf.degRad;
         let cos = Math.cos(rad);
         let sin = Math.sin(rad);
 
-        let maxBarrelRecoilDistance = -5.0; 
-        let invEnergy = 1.0 - this.energyState; 
-        let sideMoveDistance = invEnergy * 4.0; 
+        let maxBarrelRecoilDistance = -5.0;
+        let invEnergy = 1.0 - this.energyState;
+        let sideMoveDistance = invEnergy * 4.0;
 
         let barrel1Region = PerfCore.region(modName + "-vendicum-barrel1");
         if(barrel1Region.found()){
@@ -527,22 +523,22 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
         }
     },
 
-    write(write){ 
-        this.super$write(write); 
-        write.b(this.getTier()); 
+    write(write){
+        this.super$write(write);
+        write.b(this.getTier());
         write.i(this.paidTitanium);
         write.i(this.paidSilicon);
         write.i(this.paidPlastanium);
-        write.f(this.energyState != null ? this.energyState : 1.0); 
+        write.f(this.energyState != null ? this.energyState : 1.0);
         write.f(this.stackDmgBonus != null ? this.stackDmgBonus : 0.0);
     },
-    read(read, revision){ 
-        this.super$read(read, revision); 
-        this.setTier(read.b()); 
+    read(read, revision){
+        this.super$read(read, revision);
+        this.setTier(read.b());
         this.paidTitanium = read.i();
         this.paidSilicon = read.i();
         this.paidPlastanium = read.i();
-        if(revision >= 1) this.energyState = read.f(); 
+        if(revision >= 1) this.energyState = read.f();
         if(revision >= 2) this.stackDmgBonus = read.f(); else this.stackDmgBonus = 0.0;
         this.customRecoil = 0.0;
     }

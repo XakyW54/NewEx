@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
@@ -8,8 +9,8 @@ function isEnglish() {
 
 const shootSound = Vars.tree.loadSound("shotbatt");
 
-const EXPLODE_COLOR = Color.orange; 
-const EXPLODE_COLOR_LIGHT = Color.valueOf("#ffdfa9");  
+const EXPLODE_COLOR = Color.orange;
+const EXPLODE_COLOR_LIGHT = Color.valueOf("#ffdfa9");
 
 const reqPerkA = { copper: 1500, lead: 1500, silicon: 1500 };
 const reqPerkB = { titanium: 1500, thorium: 1500, silicon: 1500 };
@@ -19,14 +20,14 @@ const nitouiMap = new java.util.WeakHashMap();
 
 const nitouiExplodeFx = new Effect(35, cons(e => {
     Draw.z(Layer.effect + 0.1);
-    
+
     let radius = e.rotation;
     let fin = e.fin();
     let fout = e.fout();
 
     Draw.blend(Blending.additive);
-    
-    let zoomProgress = Math.sin(fin * Math.PI); 
+
+    let zoomProgress = Math.sin(fin * Math.PI);
     let coreScale = 0.2 + 0.8 * zoomProgress;
     let coreRadius = (radius * 0.3) * coreScale;
 
@@ -67,7 +68,7 @@ const nitouiExplodeFx = new Effect(35, cons(e => {
         Draw.alpha(0.7 * fout);
         Fill.poly(px, py, 4, quadSize * 2.2, rot);
     }
-    
+
     Draw.blend();
 
     Draw.color(Color.white);
@@ -96,15 +97,15 @@ const nitouiExplodeFx = new Effect(35, cons(e => {
 
 const nitouiIngatherFx = new Effect(20, cons(e => {
     Draw.z(Layer.effect + 0.05);
-    
+
     let seed = e.id;
-    let startDist = 12.0 + Mathf.randomSeed(seed, 0, 6); 
+    let startDist = 12.0 + Mathf.randomSeed(seed, 0, 6);
     let dist = startDist * (1.0 - e.fin());
     let angle = Mathf.randomSeed(seed + 1, 0, 360);
-    
+
     let px = e.x + Angles.trnsx(angle, dist);
     let py = e.y + Angles.trnsy(angle, dist);
-    
+
     let size = (0.4 + Mathf.randomSeed(seed + 2, 0, 0.6)) * e.fout();
     let rot = Mathf.randomSeed(seed + 3, 0, 360) + Time.time * 4;
 
@@ -117,7 +118,7 @@ const nitouiIngatherFx = new Effect(20, cons(e => {
     Draw.color(EXPLODE_COLOR_LIGHT);
     Draw.alpha(1.0 * e.fout());
     Fill.poly(px, py, 4, size, rot);
-    
+
     Draw.reset();
 }));
 
@@ -128,10 +129,10 @@ var nitouiStatus = extend(StatusEffect, "nitoui-status", {
         this.fullIcon = StatusEffects.shocked.fullIcon;
     },
     color: EXPLODE_COLOR,
-    
+
     update(unit, time) {
         this.super$update(unit, time);
-        
+
         let data = nitouiMap.get(unit);
         if (data != null && data.count > 0) {
             for (let i = 0; i < data.count; i++) {
@@ -150,13 +151,13 @@ const maxitonerShootFx = new Effect(25, cons(e => {
     Draw.blend();
 
     Draw.color(EXPLODE_COLOR_LIGHT, EXPLODE_COLOR, e.fin());
-    Lines.stroke(1.5 * e.fout()); 
+    Lines.stroke(1.5 * e.fout());
     let size = 5 + 3 * e.fin();
     Lines.poly(e.x, e.y, 4, size, 0);
-    
+
     Draw.color(Color.white, EXPLODE_COLOR, e.fin());
     Fill.poly(e.x, e.y, 4, (size * 0.4) * e.fout(), 0);
-    
+
     Draw.reset();
 }));
 
@@ -169,13 +170,13 @@ const maxitonerShootFxSmall = new Effect(20, cons(e => {
     Draw.blend();
 
     Draw.color(EXPLODE_COLOR_LIGHT, EXPLODE_COLOR, e.fin());
-    Lines.stroke(1.0 * e.fout()); 
+    Lines.stroke(1.0 * e.fout());
     let size = 3 + 2 * e.fin();
     Lines.poly(e.x, e.y, 4, size, 0);
-    
+
     Draw.color(Color.white, EXPLODE_COLOR, e.fin());
     Fill.poly(e.x, e.y, 4, (size * 0.4) * e.fout(), 0);
-    
+
     Draw.reset();
 }));
 
@@ -187,10 +188,10 @@ const maxitonerBulletBase = extend(BasicBulletType, {
     frontColor: EXPLODE_COLOR_LIGHT,
     backColor: EXPLODE_COLOR,
     shootEffect: maxitonerShootFx,
-    
+
     draw(b) {
         Draw.z(Layer.bullet);
-        
+
         Draw.blend(Blending.additive);
         Draw.color(EXPLODE_COLOR);
         Draw.alpha(0.5);
@@ -199,10 +200,10 @@ const maxitonerBulletBase = extend(BasicBulletType, {
 
         Draw.color(this.backColor);
         Fill.poly(b.x, b.y, 4, 5.0, b.rotation());
-        
+
         Draw.color(this.frontColor);
         Fill.poly(b.x, b.y, 4, 3.0, b.rotation());
-        
+
         Draw.reset();
     },
 
@@ -532,7 +533,7 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
 
             let perkA = this.getPerkA();
             if (perkA == 0) {
-                let descA = isEnglish() ? 
+                let descA = isEnglish() ?
                     "Activate random upgrade to get 1 of 3 Perks A:\n" +
                     " • [yellow]Perk 1A (50%):[] Range +50%, Nitoui explosion DMG +150%.\n" +
                     " • [yellow]Perk 2A (30%):[] Fire rate +80%, Nitoui explosion randomly attaches 7 stacks to tankiest enemy.\n" +
@@ -551,17 +552,17 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
                 boxA.button(btnAText, packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.copper) >= reqPerkA.copper && core.items.get(Items.lead) >= reqPerkA.lead && core.items.get(Items.silicon) >= reqPerkA.silicon) {
-                        core.items.remove(Items.copper, reqPerkA.copper);
-                        core.items.remove(Items.lead, reqPerkA.lead);
-                        core.items.remove(Items.silicon, reqPerkA.silicon);
+                        NexNet.take(core, Items.copper, reqPerkA.copper);
+                        NexNet.take(core, Items.lead, reqPerkA.lead);
+                        NexNet.take(core, Items.silicon, reqPerkA.silicon);
 
                         let chance = Mathf.random(100);
                         let res = chance < 50 ? 1 : (chance < 80 ? 2 : 3);
                         this.setPerkA(res);
-                        this.configure(10 + res);
+                        this.configure(java.lang.Integer(10 + res));
 
-                        Fx.upgradeCore.at(this.x, this.y);
-                        Effect.shake(4, 4, this.x, this.y);
+                        NexNet.fx(Fx.upgradeCore, this.x, this.y);
+                        NexNet.shake(4, 4, this.x, this.y);
                         let resMsg = isEnglish() ? "[gold]YOU ROLLED:[]\n[yellow]PERK " + res + "A[]" : "[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[yellow]PHÚC LỢI " + res + "A[]";
                         Vars.ui.showInfo(resMsg);
                         dialog.hide();
@@ -594,7 +595,7 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
 
             let perkB = this.getPerkB();
             if (perkB == 0) {
-                let descB = isEnglish() ? 
+                let descB = isEnglish() ?
                     "Activate random upgrade to get 1 of 3 Perks B:\n" +
                     " • [cyan]Perk 1B (50%):[] Fire rate +120%, HP +500%, Range -20%, Targets highest HP enemy.\n" +
                     " • [cyan]Perk 2B (20%):[] Range +260%, Fire rate -50%, Hit adds +3 Nitoui stacks.\n" +
@@ -613,17 +614,17 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
                 boxB.button(btnBText, packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.titanium) >= reqPerkB.titanium && core.items.get(Items.thorium) >= reqPerkB.thorium && core.items.get(Items.silicon) >= reqPerkB.silicon) {
-                        core.items.remove(Items.titanium, reqPerkB.titanium);
-                        core.items.remove(Items.thorium, reqPerkB.thorium);
-                        core.items.remove(Items.silicon, reqPerkB.silicon);
+                        NexNet.take(core, Items.titanium, reqPerkB.titanium);
+                        NexNet.take(core, Items.thorium, reqPerkB.thorium);
+                        NexNet.take(core, Items.silicon, reqPerkB.silicon);
 
                         let chance = Mathf.random(100);
                         let res = chance < 50 ? 1 : (chance < 70 ? 2 : 3);
                         this.setPerkB(res);
-                        this.configure(20 + res);
+                        this.configure(java.lang.Integer(20 + res));
 
-                        Fx.upgradeCore.at(this.x, this.y);
-                        Effect.shake(4, 4, this.x, this.y);
+                        NexNet.fx(Fx.upgradeCore, this.x, this.y);
+                        NexNet.shake(4, 4, this.x, this.y);
                         let resMsg = isEnglish() ? "[gold]YOU ROLLED:[]\n[cyan]PERK " + res + "B[]" : "[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[cyan]PHÚC LỢI " + res + "B[]";
                         Vars.ui.showInfo(resMsg);
                         dialog.hide();
@@ -656,7 +657,7 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
 
             let perkC = this.getPerkC();
             if (perkC == 0) {
-                let descC = isEnglish() ? 
+                let descC = isEnglish() ?
                     "Activate random upgrade to get 1 of 3 Perks C:\n" +
                     " • [purple]Perk 1C (98%):[] Shoots +5 extra bullets, auto-fires 3 extra bullets every 1s.\n" +
                     " • [purple]Perk 2C (1%):[] Nitoui explosion radius +100% (200px), spreads +2 stacks to surrounding enemies.\n" +
@@ -675,17 +676,17 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
                 boxC.button(btnCText, packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.surgeAlloy) >= reqPerkC.surgeAlloy && core.items.get(Items.phaseFabric) >= reqPerkC.phaseFabric && core.items.get(Items.silicon) >= reqPerkC.silicon) {
-                        core.items.remove(Items.surgeAlloy, reqPerkC.surgeAlloy);
-                        core.items.remove(Items.phaseFabric, reqPerkC.phaseFabric);
-                        core.items.remove(Items.silicon, reqPerkC.silicon);
+                        NexNet.take(core, Items.surgeAlloy, reqPerkC.surgeAlloy);
+                        NexNet.take(core, Items.phaseFabric, reqPerkC.phaseFabric);
+                        NexNet.take(core, Items.silicon, reqPerkC.silicon);
 
                         let chance = Mathf.random(100);
                         let res = chance < 98 ? 1 : (chance < 99 ? 2 : 3);
                         this.setPerkC(res);
-                        this.configure(30 + res);
+                        this.configure(java.lang.Integer(30 + res));
 
-                        Fx.upgradeCore.at(this.x, this.y);
-                        Effect.shake(4, 4, this.x, this.y);
+                        NexNet.fx(Fx.upgradeCore, this.x, this.y);
+                        NexNet.shake(4, 4, this.x, this.y);
                         let resMsg = isEnglish() ? "[gold]YOU ROLLED:[]\n[purple]PERK " + res + "C[]" : "[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[purple]PHÚC LỢI " + res + "C[]";
                         Vars.ui.showInfo(resMsg);
                         dialog.hide();
@@ -721,7 +722,7 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
 
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
             let title = isEnglish() ? " Maxitoner Cannon Stats " : " Thông số pháo Maxitoner ";
-            
+
             let descStr = "";
             if (isEnglish()) {
                 descStr = "[gold]⚡ MAXITONER BASE STATS ⚡[]\n" +
@@ -808,4 +809,4 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
 });
 
 const smoothHpMap = new ObjectMap();
-const lastDamageTimeMap = new ObjectMap(); 
+const lastDamageTimeMap = new ObjectMap();

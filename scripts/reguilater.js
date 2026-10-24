@@ -1,14 +1,15 @@
+const NexNet = global.NexNet;
 print("REGUILATER SYSTEM CORE - ENHANCED ENERGY BALL & COMPRESSED SHOT INTEGRATED");
 
 const reguReqMK2 = { copper: 400, silicon: 750 };
 const reguReqMK3 = { thorium: 1200, titanium: 400 };
- 
-const reguAimColor = new Color(0, 1, 0.66, 0.27); 
 
-const colorNormal = Color.valueOf("#00ffaa");   
-const colorCrit = Color.valueOf("#ffaa00");     
-const colorExplode = Color.valueOf("#d35400");  
-const colorUltimate = Color.valueOf("#ff3333"); 
+const reguAimColor = new Color(0, 1, 0.66, 0.27);
+
+const colorNormal = Color.valueOf("#00ffaa");
+const colorCrit = Color.valueOf("#ffaa00");
+const colorExplode = Color.valueOf("#d35400");
+const colorUltimate = Color.valueOf("#ff3333");
 
 const reguMuzzleFX = new Effect(15, e => {
     let tColor = e.data || colorNormal;
@@ -40,8 +41,8 @@ const reguAreaExplosionFX = new Effect(25, e => {
 });
 
 const reguSplitLaser = extend(LaserBulletType, {});
-reguSplitLaser.damage = 60;          
-reguSplitLaser.length = 160; 
+reguSplitLaser.damage = 60;
+reguSplitLaser.length = 160;
 reguSplitLaser.width = 5.0;
 reguSplitLaser.lifetime = 14;
 reguSplitLaser.colors = [new Color(1, 0.2, 0.2, 0.2), colorUltimate, Color.white];
@@ -70,11 +71,11 @@ function isEnglish() {
 }
 
 function drawReguLaserRing(cx, cy, radiusX, radiusY, laserAngle, strokeWidth, color, isFill){
-    Draw.color(color); 
+    Draw.color(color);
     if(!isFill) Lines.stroke(strokeWidth);
     let steps = 24; let lastX = 0, lastY = 0;
     let cosA = Math.cos(laserAngle * Mathf.degRad); let sinA = Math.sin(laserAngle * Mathf.degRad);
-    
+
     if(isFill) {
         for(let r = radiusY; r > 0; r -= 1.5) {
             let curRadX = (r / radiusY) * radiusX;
@@ -96,20 +97,20 @@ function drawReguLaserRing(cx, cy, radiusX, radiusY, laserAngle, strokeWidth, co
         }
     }
 }
- 
+
 function makeReguBuild() {
     return {
-        reguTier: 1, 
+        reguTier: 1,
         lockTimer: 0,
         shootCooldown: 0,
-        laserActiveTimer: 0, 
+        laserActiveTimer: 0,
         laserEndX: 0,
         laserEndY: 0,
-        currentLaserColor: colorNormal, 
-        currentLaserSize: 5.0, 
+        currentLaserColor: colorNormal,
+        currentLaserSize: 5.0,
 
         continuousShotCount: 0,
-        maxContinuousBonus: 25, 
+        maxContinuousBonus: 25,
         idleResetTimer: 0,
         isBurstShooting: false,
 
@@ -128,16 +129,16 @@ function makeReguBuild() {
                 table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
                     let dialogTitle = en ? "Turret Upgrade Center" : "Trung tâm nâng cấp pháo";
                     let dialog = extend(BaseDialog, dialogTitle, {});
-                    
+
                     let reqCell = dialog.cont.label(packProv(() => {
                         let core = this.team.core();
                         if (!core) return en ? "[red]Team Core Not Found![]" : "[red]Không tìm thấy Lõi Đội![]";
-                        
+
                         let coAmt = core.items.get(Items.copper);
                         let siAmt = core.items.get(Items.silicon);
                         let thAmt = core.items.get(Items.thorium);
                         let tiAmt = core.items.get(Items.titanium);
-                        
+
                         let coColor = coAmt >= reguReqMK2.copper ? "[green]" : "[red]";
                         let siColor = siAmt >= reguReqMK2.silicon ? "[green]" : "[red]";
                         let thColor = thAmt >= reguReqMK3.thorium ? "[green]" : "[red]";
@@ -161,7 +162,7 @@ function makeReguBuild() {
                                    " • Titan: " + tiColor + tiAmt + "[] / " + reguReqMK3.titanium;
                         }
                     }));
-                    
+
                     reqCell.width(360).get().setWrap(true);
                     reqCell.get().setAlignment(Align.left);
                     dialog.cont.row(); dialog.cont.add().height(10).row();
@@ -184,10 +185,10 @@ function makeReguBuild() {
                     b1.button(en ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => {
                         let core = this.team.core();
                         if (core && core.items.get(Items.copper) >= reguReqMK2.copper && core.items.get(Items.silicon) >= reguReqMK2.silicon) {
-                            core.items.remove(Items.copper, reguReqMK2.copper);
-                            core.items.remove(Items.silicon, reguReqMK2.silicon);
+                            NexNet.take(core, Items.copper, reguReqMK2.copper);
+                            NexNet.take(core, Items.silicon, reguReqMK2.silicon);
                             this.setTier(2);
-                            Fx.upgradeCore.at(this.x, this.y); dialog.hide(); this.deselect();
+                            NexNet.fx(Fx.upgradeCore, this.x, this.y); dialog.hide(); this.deselect();
                         } else {
                             Vars.ui.showInfo(en ? "[red]Not enough resources for MK2 branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]");
                         }
@@ -209,11 +210,11 @@ function makeReguBuild() {
                     b2.button(en ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                         let core = this.team.core();
                         if (core && core.items.get(Items.thorium) >= reguReqMK3.thorium && core.items.get(Items.titanium) >= reguReqMK3.titanium) {
-                            core.items.remove(Items.thorium, reguReqMK3.thorium);
-                            core.items.remove(Items.titanium, reguReqMK3.titanium);
+                            NexNet.take(core, Items.thorium, reguReqMK3.thorium);
+                            NexNet.take(core, Items.titanium, reguReqMK3.titanium);
                             this.setTier(3);
-                            this.health = 13000;   
-                            Fx.bigShockwave.at(this.x, this.y); dialog.hide(); this.deselect();
+                            this.health = 13000;
+                            NexNet.fx(Fx.bigShockwave, this.x, this.y); dialog.hide(); this.deselect();
                         } else {
                             Vars.ui.showInfo(en ? "[red]Not enough resources for MK2B branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]");
                         }
@@ -260,7 +261,7 @@ function makeReguBuild() {
                         "• Tập trung năng lượng khóa và bắn mục tiêu hỗn hợp Không & Đất.\n" +
                         "• Tốc độ xoay nòng tăng tiến liên tục theo thời gian bám đuổi mục tiêu.\n" +
                         "• Sát thương tăng tiến tuyến tính, đạt tối đa +100% khi duy trì xả súng liên tục.";
-                } 
+                }
                 else if (currentTier == 2) {
                     title += en ? "[cyan]MK2 UPGRADE STATS[]" : "[cyan]THÔNG SỐ NÂNG CẤP MK2[]";
                     descStr = en ?
@@ -282,7 +283,7 @@ function makeReguBuild() {
                         "• Nén áp suất mật độ hạt trường điện từ giúp mở rộng cự ly bắn cực đại.\n" +
                         "• Kích hoạt tỷ lệ bắn bồi Burst-Shot siêu tốc.\n" +
                         "• Tự động tích tụ hạt chuyển màu cam, mở khóa tỷ lệ đòn bạo kích Crit gây gấp đôi sát thương.";
-                } 
+                }
                 else if (currentTier == 3) {
                     title += en ? "[purple]MK2B UPGRADE STATS[]" : "[purple]THÔNG SỐ NÂNG CẤP MK2B[]";
                     descStr = en ?
@@ -330,7 +331,7 @@ function makeReguBuild() {
 
             if (this.target == null || this.shootCooldown > 40) {
                 this.idleResetTimer += Time.delta;
-                if (this.idleResetTimer >= 150) { 
+                if (this.idleResetTimer >= 150) {
                     this.continuousShotCount = Math.max(0, this.continuousShotCount - Time.delta * 0.15);
                 }
             } else {
@@ -342,9 +343,9 @@ function makeReguBuild() {
 
                 if (currentTarget != null && !currentTarget.dead) {
                     this.target = currentTarget;
-                    
+
                     let targetAngle = Angles.angle(this.x, this.y, currentTarget.x, currentTarget.y);
-                    this.rotation = targetAngle; 
+                    this.rotation = targetAngle;
 
                     if (this.shootCooldown <= 0) {
                         this.lockTimer += Time.delta;
@@ -352,8 +353,8 @@ function makeReguBuild() {
                         let requiredLockTime = this.isBurstShooting ? 2 : ((this.getTier() == 2) ? 24 : 60);
 
                         if (this.lockTimer >= requiredLockTime) {
-                            this.lockTimer = 0; 
-                            this.laserActiveTimer = 16; 
+                            this.lockTimer = 0;
+                            this.laserActiveTimer = 16;
                             this.laserEndX = currentTarget.x;
                             this.laserEndY = currentTarget.y;
 
@@ -362,18 +363,18 @@ function makeReguBuild() {
                             if (tier == 2) {
                                 if (this.isBurstShooting) {
                                     this.shootCooldown = 32;
-                                    this.isBurstShooting = false; 
+                                    this.isBurstShooting = false;
                                 } else {
                                     if (Mathf.random(100) <= 50) {
-                                        this.shootCooldown = 4; 
-                                        this.isBurstShooting = true; 
-                                        Fx.lightningCharge.at(this.x, this.y); 
+                                        this.shootCooldown = 4;
+                                        this.isBurstShooting = true;
+                                        Fx.lightningCharge.at(this.x, this.y);
                                     } else {
-                                        this.shootCooldown = 32; 
+                                        this.shootCooldown = 32;
                                     }
                                 }
                             } else {
-                                this.shootCooldown = 80; 
+                                this.shootCooldown = 80;
                             }
 
                             if (this.continuousShotCount < this.maxContinuousBonus) {
@@ -381,31 +382,31 @@ function makeReguBuild() {
                             }
 
                             let dmgMultiplier = 1.0 + (this.continuousShotCount / this.maxContinuousBonus);
-                            let baseDmg = (tier == 3 ? 720 : (tier == 2 ? 300 : 120)) * dmgMultiplier; 
+                            let baseDmg = (tier == 3 ? 720 : (tier == 2 ? 300 : 120)) * dmgMultiplier;
 
                             let chance = Mathf.random(100);
 
-                            if (chance <= 1) { 
-                                this.currentLaserColor = colorUltimate; this.currentLaserSize = 12.0; 
+                            if (chance <= 1) {
+                                this.currentLaserColor = colorUltimate; this.currentLaserSize = 12.0;
                                 let finalDmg = (baseDmg * 5) + (currentTarget.maxHealth * 0.1);
                                 currentTarget.damage(finalDmg);
                                 reguHitFX.at(currentTarget.x, currentTarget.y, 0, colorUltimate);
                                 Effect.shake(6, 6, this.x, this.y);
-                            } else if (chance <= 34) { 
-                                this.currentLaserColor = colorNormal; this.currentLaserSize = 5.0; 
+                            } else if (chance <= 34) {
+                                this.currentLaserColor = colorNormal; this.currentLaserSize = 5.0;
                                 let finalDmg = baseDmg + (currentTarget.health * 0.01);
                                 currentTarget.damage(finalDmg);
                                 reguHitFX.at(currentTarget.x, currentTarget.y, 0, colorNormal);
                                 Effect.shake(2, 2, this.x, this.y);
-                            } else if (chance <= 67) { 
-                                this.currentLaserColor = colorCrit; this.currentLaserSize = 8.0; 
+                            } else if (chance <= 67) {
+                                this.currentLaserColor = colorCrit; this.currentLaserSize = 8.0;
                                 currentTarget.damage(baseDmg * 2);
                                 reguHitFX.at(currentTarget.x, currentTarget.y, 0, colorCrit);
                                 Effect.shake(4, 4, this.x, this.y);
-                            } else { 
-                                this.currentLaserColor = colorExplode; this.currentLaserSize = 6.5; 
+                            } else {
+                                this.currentLaserColor = colorExplode; this.currentLaserSize = 6.5;
                                 currentTarget.damage(baseDmg * 0.5);
-                                Damage.damage(this.team, currentTarget.x, currentTarget.y, 40, baseDmg, false, true); 
+                                Damage.damage(this.team, currentTarget.x, currentTarget.y, 40, baseDmg, false, true);
                                 reguAreaExplosionFX.at(currentTarget.x, currentTarget.y, 0, colorExplode);
                                 Effect.shake(3, 3, this.x, this.y);
                             }
@@ -446,13 +447,13 @@ function makeReguBuild() {
 
         resetReguStatus() {
             this.target = null;
-            this.lockTimer = Math.max(this.lockTimer - Time.delta * 2, 0); 
-            this.isBurstShooting = false; 
+            this.lockTimer = Math.max(this.lockTimer - Time.delta * 2, 0);
+            this.isBurstShooting = false;
         },
 
         draw() {
             this.super$draw();
-            let centerGunX = this.x; 
+            let centerGunX = this.x;
             let centerGunY = this.y;
 
              if (this.target != null && !this.target.dead && this.shootCooldown <= 0) {
@@ -464,7 +465,7 @@ function makeReguBuild() {
                     let maxBallRadius = 12.0;
                     let currentRadius = maxBallRadius * chargeProgress + Mathf.absin(Time.time, 1.5, 1.0);
                     let ballColor = (this.continuousShotCount > 15) ? colorCrit : colorNormal;
-                    
+
                     drawReguLaserRing(centerGunX, centerGunY, currentRadius * 0.6, currentRadius * 0.6, this.rotation + Time.time * 2, 0, ballColor, true);
                     drawReguLaserRing(centerGunX, centerGunY, currentRadius, currentRadius, this.rotation - Time.time * 3, 1.5, ballColor, false);
                     Draw.reset();
@@ -481,8 +482,8 @@ function makeReguBuild() {
 
             if (this.laserActiveTimer > 0) {
                 Draw.z(Layer.bullet + 2);
-                let progress = this.laserActiveTimer / 16; 
-                let t = 1.0 - progress; 
+                let progress = this.laserActiveTimer / 16;
+                let t = 1.0 - progress;
                 let laserZoomStroke = this.currentLaserSize * (1.0 + Mathf.absin(Time.time, 1.0, 0.2)) * progress;
 
                 Draw.color(Color.white);
@@ -494,8 +495,8 @@ function makeReguBuild() {
                 Lines.line(centerGunX, centerGunY, this.laserEndX, this.laserEndY);
 
                 let laserAngle = Angles.angle(centerGunX, centerGunY, this.laserEndX, this.laserEndY);
-                let startOffset = 10 + 40; 
-                let endOffset = 10 - 24;   
+                let startOffset = 10 + 40;
+                let endOffset = 10 - 24;
                 let currentOffset = Mathf.lerp(startOffset, endOffset, t);
 
                 let ringX = centerGunX + Angles.trnsx(laserAngle, currentOffset);
@@ -509,39 +510,39 @@ function makeReguBuild() {
                 let sphereForwardOffset = Mathf.lerp(0, 45, t);
                 let ballShotX = centerGunX + Angles.trnsx(laserAngle, sphereForwardOffset);
                 let ballShotY = centerGunY + Angles.trnsy(laserAngle, sphereForwardOffset);
-                let distortedRadiusX = 12.0 * progress * 1.9; 
-                let distortedRadiusY = 12.0 * progress * 0.2; 
+                let distortedRadiusX = 12.0 * progress * 1.9;
+                let distortedRadiusY = 12.0 * progress * 0.2;
 
                 drawReguLaserRing(ballShotX, ballShotY, distortedRadiusX, distortedRadiusY, laserAngle, 0, this.currentLaserColor, true);
                 Draw.reset();
             }
         },
 
-        write(write) { 
-            this.super$write(write); 
+        write(write) {
+            this.super$write(write);
             write.i(this.getTier());
             write.f(this.continuousShotCount);
         },
-        read(read, revision) { 
-            this.super$read(read, revision); 
+        read(read, revision) {
+            this.super$read(read, revision);
             this.setTier(read.i());
             this.continuousShotCount = read.f();
         }
     };
 }
- 
+
 const reguilater = extend(PowerTurret, "reguilater", {});
 
-reguilater.health = 13000;         
-reguilater.size = 4;                
-reguilater.range = 260;             
-reguilater.reload = 9999;           
-reguilater.shootType = reguFakeBullet; 
-reguilater.consumePower(12);        
+reguilater.health = 13000;
+reguilater.size = 4;
+reguilater.range = 260;
+reguilater.reload = 9999;
+reguilater.shootType = reguFakeBullet;
+reguilater.consumePower(12);
 
-reguilater.targetAir = true;        
-reguilater.targetGround = true;     
-reguilater.configurable = true;     
+reguilater.targetAir = true;
+reguilater.targetGround = true;
+reguilater.configurable = true;
 reguilater.canControl = false;
 
 reguilater.config(java.lang.Integer, packCons2((tile, value) => {

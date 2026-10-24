@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
@@ -25,7 +26,7 @@ const vChainLinkFx = new Effect(15, cons(e => {
     if (e.data != null) {
         let tx = e.data.x;
         let ty = e.data.y;
-        
+
         Draw.color(PerfCore.color("#ff2222"), Color.white, e.fin());
         Lines.stroke(4.0 * fout);
         Lines.line(e.x, e.y, tx, ty);
@@ -61,14 +62,14 @@ const vChargeFx = new Effect(20, cons(e => {
 
 const vSlashHitFx = new Effect(25, cons(e => {
     Draw.z(Layer.effect + 0.02);
-    
-    let fin = e.fin(); 
+
+    let fin = e.fin();
     let fout = e.fout();
     let rot = e.rotation;
 
     let startX = e.x;
     let startY = e.y;
-    
+
     let slashLength = (e.data != null && e.data.len) ? e.data.len : 1100.0;
     let wMult = (e.data != null && e.data.widthMult) ? e.data.widthMult : 1.0;
 
@@ -101,7 +102,7 @@ const energyOrbBullet = extend(BasicBulletType, {
         Draw.z(Layer.bullet);
         Draw.color(PerfCore.color("#ff3333"));
         Fill.circle(b.x, b.y, 8.0);
-        
+
         Draw.color(Color.white);
         Fill.circle(b.x, b.y, 3.0);
         Draw.reset();
@@ -127,15 +128,15 @@ const lazash = extend(PowerTurret, "lazash", {
 
 lazash.health = 17000;
 lazash.range = 105;
-lazash.reload = 120; 
+lazash.reload = 120;
 
 lazash.targetAir = false;
 lazash.targetGround = false;
 lazash.targetBuildings = true;
 
 lazash.shootType = extend(LaserBulletType, {
-    damage: 10, 
-    length: 1100, 
+    damage: 10,
+    length: 1100,
     width: 18,
     colors: [Color.valueOf("#ff4444"), Color.valueOf("#ff8866"), Color.white]
 });
@@ -172,7 +173,7 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
 
         this.targetScanTimer = 0.0;
         this.isChainFiring = false;
-        
+
         this.slaveTicks = 0;
         this.slaveTargetAngle = 0.0;
         this.slaveIsShooting = false;
@@ -188,7 +189,7 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
     getIsCharging() { return !!this.isChargingState; },
 
     setSlaveCommand(angle, isShooting) {
-        this.slaveTicks = 5; 
+        this.slaveTicks = 5;
         this.slaveTargetAngle = Number(angle);
         this.slaveIsShooting = !!isShooting;
     },
@@ -258,7 +259,7 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
         let perkB = this.getPerkB();
 
         let angle = this.rotation + angleOffset;
-        let slashLen = this.range(); 
+        let slashLen = this.range();
         let baseSlashDmg = 49.0;
 
         let dmgMult = 1.0;
@@ -267,7 +268,7 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
         if (perkB == 1) dmgMult += 0.50;
         if (perkB == 3) dmgMult += 2.00;
 
-        let widthMult = (perkB == 3) ? 2.5 : 1.0; 
+        let widthMult = (perkB == 3) ? 2.5 : 1.0;
 
         let spawnX = this.x + Angles.trnsx(angle, 13.0);
         let spawnY = this.y + Angles.trnsy(angle, 13.0);
@@ -289,13 +290,13 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
         if (this.isChainFiring) return;
         this.isChainFiring = true;
 
-        let adjacentRadius = (this.block.size * 8) + 8.0; 
+        let adjacentRadius = (this.block.size * 8) + 8.0;
 
         Units.nearbyBuildings(this.x, this.y, adjacentRadius, cons(b => {
             if (b != null && b !== this && b.block === this.block && b.team === this.team) {
                 let dstX = Math.abs(this.x - b.x);
                 let dstY = Math.abs(this.y - b.y);
-                
+
                 let isAdjacent = (dstX < 4.0 && dstY <= adjacentRadius) || (dstY < 4.0 && dstX <= adjacentRadius);
 
                 if (isAdjacent && typeof b.setSlaveCommand === "function") {
@@ -324,12 +325,12 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
             if (b != null && b !== this && b.block === this.block && b.team === this.team) {
                 let dstX = Math.abs(this.x - b.x);
                 let dstY = Math.abs(this.y - b.y);
-                
+
                 let isAdjacent = (dstX < 4.0 && dstY <= adjacentRadius) || (dstY < 4.0 && dstX <= adjacentRadius);
 
                 if (isAdjacent) {
                     Draw.z(Layer.power + 1);
-                    
+
                     Draw.color(PerfCore.color("#ff2222"));
                     Lines.stroke(2.5);
                     Lines.line(this.x, this.y, b.x, b.y);
@@ -359,8 +360,8 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
 
         let speedMult = 1.0;
         if (perkA == 3) speedMult *= 1.5;
-        if (perkB == 1) speedMult *= 1.428; 
-        if (perkB == 3) speedMult *= 0.5; 
+        if (perkB == 1) speedMult *= 1.428;
+        if (perkB == 3) speedMult *= 0.5;
 
         if (this.reloadTimer > 0) {
             this.reloadTimer -= Time.delta * speedMult;
@@ -380,7 +381,7 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
                     this.frenzyTimer = 0.0;
                     let targetAngle = this.rotation;
                     if (this.target != null) targetAngle = this.angleTo(this.target);
-                    
+
                     let spreadAngle = targetAngle + Mathf.range(8.0);
                     let orbSpawnX = this.x + Angles.trnsx(spreadAngle, 13.0);
                     let orbSpawnY = this.y + Angles.trnsy(spreadAngle, 13.0);
@@ -398,8 +399,8 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
             let u = this.unit;
             if (u != null) {
                 let aimAngle = this.angleTo(u.aimX, u.aimY);
-                this.rotation = aimAngle; 
-                
+                this.rotation = aimAngle;
+
                 this.syncChainCommand(aimAngle, this.isShooting);
             }
         } else if (isSlaveControlled) {
@@ -429,7 +430,7 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
 
         if (canShoot) {
             this.laserTimer += Time.delta;
-            if (this.laserTimer >= 12.0) { 
+            if (this.laserTimer >= 12.0) {
                 this.laserTimer = 0.0;
                 let lType = lazash.shootType;
                 lType.length = this.range();
@@ -441,19 +442,19 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
 
         if (canShoot && this.reloadTimer <= 0 && !this.isChargingState) {
             this.isChargingState = true;
-            this.chargeTimer = 25.0; 
+            this.chargeTimer = 25.0;
         }
 
         if (this.isChargingState) {
             this.chargeTimer -= Time.delta;
-            
+
             if (Mathf.chance(0.2)) {
                 vChargeFx.at(spawnX, spawnY, this.rotation, this.range());
             }
 
             if (this.chargeTimer <= 0) {
                 this.isChargingState = false;
-                this.reloadTimer = 120.0; 
+                this.reloadTimer = 120.0;
                 this.executeSlash(0.0);
             }
         }
@@ -528,9 +529,9 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
                 boxA.button(t("[yellow]QUAY PHÚC LỢI A (2K Đồng/Chì/Silicon)[]", "[yellow]ROLL PERK A (2K Cop/Lead/Sil)[]"), packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.copper) >= 2000 && core.items.get(Items.lead) >= 2000 && core.items.get(Items.silicon) >= 2000) {
-                        core.items.remove(Items.copper, 2000);
-                        core.items.remove(Items.lead, 2000);
-                        core.items.remove(Items.silicon, 2000);
+                        NexNet.take(core, Items.copper, 2000);
+                        NexNet.take(core, Items.lead, 2000);
+                        NexNet.take(core, Items.silicon, 2000);
 
                         let res = 1;
                         let options = [];
@@ -545,10 +546,10 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
                         }
 
                         this.setPerkA(res);
-                        this.configure(10 + res);
+                        this.configure(java.lang.Integer(10 + res));
 
-                        Fx.upgradeCore.at(this.x, this.y);
-                        Effect.shake(4, 4, this.x, this.y);
+                        NexNet.fx(Fx.upgradeCore, this.x, this.y);
+                        NexNet.shake(4, 4, this.x, this.y);
                         Vars.ui.showInfo(t("[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[yellow]PHÚC LỢI " + res + "A[]", "[gold]YOU ROLLED:[]\n[yellow]PERK " + res + "A[]"));
                         dialog.hide();
                         this.deselect();
@@ -595,16 +596,16 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
                 boxB.button(t("[cyan]QUAY PHÚC LỢI B (1K Titan/Thorium/Graphite)[]", "[cyan]ROLL PERK B (1K Tit/Tho/Graph)[]"), packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.titanium) >= 1000 && core.items.get(Items.thorium) >= 1000 && core.items.get(Items.graphite) >= 1000) {
-                        core.items.remove(Items.titanium, 1000);
-                        core.items.remove(Items.thorium, 1000);
-                        core.items.remove(Items.graphite, 1000);
+                        NexNet.take(core, Items.titanium, 1000);
+                        NexNet.take(core, Items.thorium, 1000);
+                        NexNet.take(core, Items.graphite, 1000);
 
                         let res = Math.floor(Mathf.random(1, 3.99));
                         this.setPerkB(res);
-                        this.configure(20 + res);
+                        this.configure(java.lang.Integer(20 + res));
 
-                        Fx.upgradeCore.at(this.x, this.y);
-                        Effect.shake(4, 4, this.x, this.y);
+                        NexNet.fx(Fx.upgradeCore, this.x, this.y);
+                        NexNet.shake(4, 4, this.x, this.y);
                         Vars.ui.showInfo(t("[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[cyan]PHÚC LỢI " + res + "B[]", "[gold]YOU ROLLED:[]\n[cyan]PERK " + res + "B[]"));
                         dialog.hide();
                         this.deselect();

@@ -1,6 +1,7 @@
 const PerfCore = global.PerfCore;
 (function() {
     const shop = require("shop");
+    const pvpFog = require("pvp-core-fog"); 
     const CURRENT_MOD_NAME = "newex";
     const TAG_KEY = "newex-selected-turrets";
     
@@ -34,16 +35,14 @@ const PerfCore = global.PerfCore;
     let hpPerWavePercentSetting = 10;
     let fpsOptPercentSetting = 0;
 
-    // Biến đếm số lần nhấn các nút
-    let countWave = 0;
+     let countWave = 0;
     let countWave10 = 0;
     let countSelfDestruct = 0;
     let countMeteor = 0;
     let countClearER = 0;
     let countDeleteOre = 0;
 
-    // Biến quản lý chuyển động camera mượt mà theo frame
-    let targetCamX = -1;
+     let targetCamX = -1;
     let targetCamY = -1;
     let panDuration = 0.4;
     let panTimer = 1.0;
@@ -268,8 +267,7 @@ const PerfCore = global.PerfCore;
         }
     }
 
-    // Nút Thiên thạch: Trượt camera tới vị trí -> sau 1s mới rơi
-    function triggerRandomMeteor(btnActor) {
+     function triggerRandomMeteor(btnActor) {
         if (Vars.state == null || !Vars.state.isGame() || Vars.world == null) return;
 
         let worldWidth = Vars.world.width() * Vars.tilesize;
@@ -333,8 +331,7 @@ const PerfCore = global.PerfCore;
         Vars.ui.showInfoToast(isEn() ? "[red]Successfully killed random " + countToKill + " (" + percent + "%) enemy units![]" : "[red]Đã tiêu diệt ngẫu nhiên " + countToKill + " (" + percent + "%) units địch![]", 2);
     }
 
-    // Nút Xóa mỏ: Trượt camera tới vị trí -> sau 1s mới xóa
-    function deleteRandomOreDeposit(btnActor) {
+     function deleteRandomOreDeposit(btnActor) {
         if (Vars.state == null || !Vars.state.isGame() || Vars.world == null) return;
 
         let oreTiles = new Seq();
@@ -448,8 +445,7 @@ const PerfCore = global.PerfCore;
         });
     }
 
-    // Nút Gọi Wave: Thực thi ngay lập tức không di chuyển camera
-    function triggerNextWave(btnActor) {
+     function triggerNextWave(btnActor) {
         let currentTime = Time.millis();
         if (currentTime - lastSkipTime >= 400) {
             lastSkipTime = currentTime;
@@ -465,8 +461,7 @@ const PerfCore = global.PerfCore;
         }
     }
 
-    // Nút x10 Gọi Wave: Thực thi ngay lập tức không di chuyển camera
-    function triggerMultipleWaves(count, btnActor) {
+     function triggerMultipleWaves(count, btnActor) {
         let currentTime = Time.millis();
         if (currentTime - lastSkipTime >= 400) {
             lastSkipTime = currentTime;
@@ -483,8 +478,7 @@ const PerfCore = global.PerfCore;
         }
     }
 
-    // Nút Tự hủy lõi: Trượt camera tới lõi -> sau 1s mới nổ
-    function selfDestructCores(btnActor) {
+     function selfDestructCores(btnActor) {
         if (Vars.state == null || !Vars.state.isGame()) return;
         let playerTeam = Vars.state.rules.defaultTeam;
         if (playerTeam != null) {
@@ -949,6 +943,11 @@ const PerfCore = global.PerfCore;
 
         content.add(tableHp).row();
 
+         let fogUI = null;
+        if (pvpFog && pvpFog.injectFogSettingsUI) {
+            fogUI = pvpFog.injectFogSettingsUI(content, isEn());
+        }
+
         content.add(isEn() ? "[accent]-- DETAILED INFORMATION --[]" : "[accent]-- THÔNG TIN CHI TIẾT --[]").padTop(10).row();
         content.button(isEn() ? "View README / Update Log" : "Xem README / Update Log", Icon.info, () => {
             showReadmeDialog();
@@ -976,6 +975,10 @@ const PerfCore = global.PerfCore;
             else if (btnHp.isChecked()) selectedStyle = "hp";
 
             Core.settings.put("newex-hp-style", selectedStyle);
+
+             if (fogUI) {
+                fogUI.save();
+            }
 
             reloadCachedSettings();
             applyTurretVisibility(null);
@@ -1052,8 +1055,7 @@ const PerfCore = global.PerfCore;
     Events.run(Trigger.update, () => {
         let inGame = Vars.state != null && Vars.state.isGame();
 
-        // Xử lý cập nhật camera trượt siêu mượt theo DeltaTime thực tế
-        if (targetCamX >= 0 && targetCamY >= 0) {
+         if (targetCamX >= 0 && targetCamY >= 0) {
             panTimer += Core.graphics.getDeltaTime();
             let alpha = Math.min(panTimer / panDuration, 1.0);
             let smoothAlpha = Interp.pow3Out.apply(alpha);
@@ -1087,8 +1089,7 @@ const PerfCore = global.PerfCore;
                 }
             }
 
-            // Chỉ cho phép Host/Singleplayer trên PC sử dụng tính năng hiển thị nút qua phím Shift + N
-            if (!Vars.mobile && !Vars.net.client()) {
+             if (!Vars.mobile && !Vars.net.client()) {
                 let shiftPressed = Core.input.keyDown(KeyCode.shiftLeft) || Core.input.keyDown(KeyCode.shiftRight);
                 if (shiftPressed && Core.input.keyTap(KeyCode.n)) {
                     showWaveBtnSetting = !showWaveBtnSetting;

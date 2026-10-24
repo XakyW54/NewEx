@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
@@ -11,13 +12,13 @@ const reqMK3 = { copper: 400, lead: 400, titanium: 200 };
 const reqMK2B1 = { copper: 400, lead: 400, titanium: 200 };
 const reqMK3B = { copper: 800, lead: 800, titanium: 400 };
 
-const CHARGE_TIME_MK1 = 60;    
-const CHARGE_TIME_MK2 = 48;    
-const CHARGE_TIME_MK2B = 72;   
+const CHARGE_TIME_MK1 = 60;
+const CHARGE_TIME_MK2 = 48;
+const CHARGE_TIME_MK2B = 72;
 
-const BERSERK_TIME_MK1 = 300;  
-const BERSERK_TIME_MK2 = 360;  
-const BERSERK_TIME_MK3 = 486;  
+const BERSERK_TIME_MK1 = 300;
+const BERSERK_TIME_MK2 = 360;
+const BERSERK_TIME_MK3 = 486;
 
 const dorNormalBullet = extend(BasicBulletType, {
     speed: 7, damage: 12, width: 7, height: 18, lifetime: 42.86,
@@ -34,9 +35,9 @@ const dorSmallSprayBullet = extend(BasicBulletType, {
 });
 
 const dormk2NormalBullet = extend(BasicBulletType, {
-    speed: 7.7, damage: 21, width: 7.7, height: 19.8, lifetime: 50.65,      
+    speed: 7.7, damage: 21, width: 7.7, height: 19.8, lifetime: 50.65,
     frontColor: Color.valueOf("#e0f7fa"), backColor: Color.valueOf("#00bcd4"),
-    trailColor: Color.valueOf("#80deea"), trailWidth: 1.65, trailLength: 6,    
+    trailColor: Color.valueOf("#80deea"), trailWidth: 1.65, trailLength: 6,
     hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor
 });
 
@@ -48,9 +49,9 @@ const dormk2SmallSprayBullet = extend(BasicBulletType, {
 });
 
 const dormk3NormalBullet = extend(BasicBulletType, {
-    speed: 8.5, damage: 28.35, width: 8.5, height: 21.5, lifetime: 61.94,      
+    speed: 8.5, damage: 28.35, width: 8.5, height: 21.5, lifetime: 61.94,
     frontColor: Color.valueOf("#fff59d"), backColor: Color.valueOf("#fbc02d"),
-    trailColor: Color.valueOf("#ffee58"), trailWidth: 1.8, trailLength: 7,    
+    trailColor: Color.valueOf("#ffee58"), trailWidth: 1.8, trailLength: 7,
     hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor
 });
 
@@ -62,8 +63,8 @@ const dormk3SmallSprayBullet = extend(BasicBulletType, {
 });
 
 const normalBulletB = extend(BasicBulletType, {
-    speed: 8, damage: 27, width: 8, height: 20, lifetime: 30, 
-    frontColor: Color.valueOf("#ff8a80"), backColor: Color.valueOf("#ff1744"), 
+    speed: 8, damage: 27, width: 8, height: 20, lifetime: 30,
+    frontColor: Color.valueOf("#ff8a80"), backColor: Color.valueOf("#ff1744"),
     trailColor: Color.valueOf("#ff5252"), trailWidth: 2, trailLength: 6,
     hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor,
     homingPower: 0.12, homingRange: 160
@@ -76,8 +77,8 @@ const laserBulletB = extend(LaserBulletType, {
 });
 
 const normalBulletB1 = extend(BasicBulletType, {
-    speed: 8.8, damage: 29.7, width: 8.8, height: 22, lifetime: 30, 
-    frontColor: Color.valueOf("#ff8a80"), backColor: Color.valueOf("#ff1744"), 
+    speed: 8.8, damage: 29.7, width: 8.8, height: 22, lifetime: 30,
+    frontColor: Color.valueOf("#ff8a80"), backColor: Color.valueOf("#ff1744"),
     trailColor: Color.valueOf("#ff5252"), trailWidth: 2.2, trailLength: 7,
     hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor,
     homingPower: 0.15, homingRange: 180
@@ -90,8 +91,8 @@ const laserBulletB1 = extend(LaserBulletType, {
 });
 
 const shotgunBulletB3 = extend(BasicBulletType, {
-    speed: 9.5, damage: 81, width: 9, height: 18, lifetime: 37.89, 
-    frontColor: Color.valueOf("#ea80fc"), backColor: Color.valueOf("#aa00ff"), 
+    speed: 9.5, damage: 81, width: 9, height: 18, lifetime: 37.89,
+    frontColor: Color.valueOf("#ea80fc"), backColor: Color.valueOf("#aa00ff"),
     trailColor: Color.valueOf("#e040fb"), trailWidth: 2.5, trailLength: 6,
     hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor,
     homingPower: 0.2, homingRange: 220
@@ -109,7 +110,7 @@ let dor = extend(ItemTurret, "dor", {
 
 dor.health = 950;
 dor.size = 3;
-dor.reload = 40; 
+dor.reload = 40;
 dor.configurable = true;
 dor.category = Category.turret;
 
@@ -137,17 +138,17 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
     paidTitanium: 0,
 
     getTier(){ return this.tierState == null ? 0 : this.tierState; },
-    setTier(val){ 
+    setTier(val){
         this.tierState = val;
         this.paidCopper = 0;
         this.paidLead = 0;
         this.paidTitanium = 0;
         if(val == 0) this.health = 950;
         if(val == 1) this.health = 1235;
-        if(val == 2) this.health = 1710;  
-        if(val == 3) this.health = 1667; 
-        if(val == 4) this.health = 1881;  
-        if(val == 5) this.health = 2565;  
+        if(val == 2) this.health = 1710;
+        if(val == 3) this.health = 1667;
+        if(val == 4) this.health = 1881;
+        if(val == 5) this.health = 2565;
         this.maxHealth = this.health;
     },
 
@@ -192,16 +193,16 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
         let takeL = Math.min(curL, Math.max(0, remL));
         let takeT = Math.min(curT, Math.max(0, remT));
 
-        if(takeC > 0) { core.items.remove(Items.copper, takeC); this.paidCopper += takeC; }
-        if(takeL > 0) { core.items.remove(Items.lead, takeL); this.paidLead += takeL; }
-        if(takeT > 0) { core.items.remove(Items.titanium, takeT); this.paidTitanium += takeT; }
+        if(takeC > 0) { NexNet.take(core, Items.copper, takeC); this.paidCopper += takeC; }
+        if(takeL > 0) { NexNet.take(core, Items.lead, takeL); this.paidLead += takeL; }
+        if(takeT > 0) { NexNet.take(core, Items.titanium, takeT); this.paidTitanium += takeT; }
 
         if(this.paidCopper >= reqC && this.paidLead >= reqL && this.paidTitanium >= reqT){
-            if(targetTier == 1 || targetTier == 3) Fx.upgradeCore.at(this.x, this.y);
-            else Fx.bigShockwave.at(this.x, this.y);
-            Fx.mineHuge.at(this.x, this.y);
-            Effect.shake(6, 6, this.x, this.y);
-            
+            if(targetTier == 1 || targetTier == 3) NexNet.fx(Fx.upgradeCore, this.x, this.y);
+            else NexNet.fx(Fx.bigShockwave, this.x, this.y);
+            NexNet.fx(Fx.mineHuge, this.x, this.y);
+            NexNet.shake(6, 6, this.x, this.y);
+
             if(Vars.net.active()){
                 Call.tileConfig(Vars.player, this, java.lang.Integer(targetTier));
             } else {
@@ -216,11 +217,11 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
 
     range(){
         let tier = this.getTier();
-        if(tier == 5) return 360;   
-        if(tier == 4) return 264;   
-        if(tier == 3) return 526.5; 
-        if(tier == 2) return 240;   
-        if(tier == 1) return 390;   
+        if(tier == 5) return 360;
+        if(tier == 4) return 264;
+        if(tier == 3) return 526.5;
+        if(tier == 2) return 240;
+        if(tier == 1) return 390;
         return 300;
     },
 
@@ -230,14 +231,14 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
 
         if(tier == 0) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-                // Quét lõi 1 lần duy nhất khi nhấn nút nâng cấp ^
+
                 let core = this.team.core();
                 let scanC = core != null ? core.items.get(Items.copper) : 0;
                 let scanL = core != null ? core.items.get(Items.lead) : 0;
                 let scanT = core != null ? core.items.get(Items.titanium) : 0;
 
                 let dialog = extend(BaseDialog, isEn() ? "Dor Turret Upgrade Center" : "Trung tâm nâng cấp pháo Dor", {});
-                
+
                 let cMK2 = Math.max(0, reqMK2.copper - this.paidCopper);
                 let lMK2 = Math.max(0, reqMK2.lead - this.paidLead);
 
@@ -251,7 +252,7 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                 let clMK2B = scanL >= lMK2B ? "[green]" : "[red]";
                 let ctMK2B = scanT >= tMK2B ? "[green]" : "[red]";
 
-                let reqText = isEn() ? 
+                let reqText = isEn() ?
                     ("[yellow]CORE / REQUIRED COST:[]\n" +
                      "[cyan]MK2 Branch:[]\n" +
                      " • Copper: " + ccMK2 + scanC + "[] / " + cMK2 + "\n" +
@@ -269,9 +270,8 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                      " • Chì: " + clMK2B + scanL + "[] / " + lMK2B + "\n" +
                      " • Titan: " + ctMK2B + scanT + "[] / " + tMK2B);
 
-                // Dùng .add() thay vì .label() để tương thích với chuỗi tĩnh
                 let reqCell = dialog.cont.add(reqText.toString());
-                
+
                 reqCell.width(360).get().setWrap(true);
                 reqCell.get().setAlignment(Align.left);
                 dialog.cont.row(); dialog.cont.add().height(10).row();
@@ -323,7 +323,7 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
             })).size(50, 40).tooltip(isEn() ? "Upgrade Dor turret" : "Nâng cấp tháp pháo Dor");
         } else if (tier == 1) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-                // Quét lõi 1 lần duy nhất khi nhấn nút nâng cấp ^
+
                 let core = this.team.core();
                 let scanC = core != null ? core.items.get(Items.copper) : 0;
                 let scanL = core != null ? core.items.get(Items.lead) : 0;
@@ -339,7 +339,7 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                 let clMK3 = scanL >= lMK3 ? "[green]" : "[red]";
                 let ctMK3 = scanT >= tMK3 ? "[green]" : "[red]";
 
-                let reqText = isEn() ? 
+                let reqText = isEn() ?
                     ("[yellow]CORE / REQUIRED MK3 COST:[]\n" +
                      " • Copper: " + ccMK3 + scanC + "[] / " + cMK3 + "\n" +
                      " • Lead: " + clMK3 + scanL + "[] / " + lMK3 + "\n" +
@@ -349,7 +349,6 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                      " • Chì: " + clMK3 + scanL + "[] / " + lMK3 + "\n" +
                      " • Titan: " + ctMK3 + scanT + "[] / " + tMK3);
 
-                // Dùng .add() thay vì .label() để tương thích với chuỗi tĩnh
                 let reqCell = dialog.cont.add(reqText.toString());
 
                 reqCell.width(360).get().setWrap(true); reqCell.get().setAlignment(Align.left);
@@ -377,7 +376,7 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
             })).size(50, 40).tooltip(isEn() ? "Upgrade turret to MK3" : "Nâng cấp pháo lên MK3");
         } else if (tier == 2) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
-                // Quét lõi 1 lần duy nhất khi nhấn nút nâng cấp ^
+
                 let core = this.team.core();
                 let scanC = core != null ? core.items.get(Items.copper) : 0;
                 let scanL = core != null ? core.items.get(Items.lead) : 0;
@@ -413,7 +412,6 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                      "[pink]Cấu Hình MK3B:[]\n" +
                      " • Đồng: " + cc3 + scanC + "[]/" + cMK3B + " | Chì: " + cl3 + scanL + "[]/" + lMK3B + " | Titan: " + ct3 + scanT + "[]/" + tMK3B);
 
-                // Dùng .add() thay vì .label() để tương thích với chuỗi tĩnh
                 let reqCell = dialog.cont.add(reqText.toString());
 
                 reqCell.width(360).get().setWrap(true); reqCell.get().setAlignment(Align.left);
@@ -477,7 +475,7 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
 
             if (currentTier == 0) {
                 title += "[yellow](MK1)[]";
-                descStr = isEn() ? 
+                descStr = isEn() ?
                           "[yellow]⚡ BASE STATS (MK1) ⚡[]\n" +
                           "[white]Turret HP: [green]950[]\n" +
                           "Range: [orange]300[] px\n" +
@@ -490,7 +488,7 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                           "[lightgray]Kỹ năng đặc biệt: Tích Sạc Tỏa Đạn — Bắn thường gây [yellow]12[] DMG. Tích sạc [orange]1.0s[] xả loạt [yellow]10[] viên đạn tỏa ([yellow]21[] DMG). Bắn đủ [yellow]3[] đợt kích hoạt Trạng Thái Điên Cường trong [orange]5[] giây (x[yellow]1.5[] tốc bắn).[]";
             } else if (currentTier == 1) {
                 title += "[cyan](MK2)[]";
-                descStr = isEn() ? 
+                descStr = isEn() ?
                           "[cyan]⚡ UPGRADE STATS (MK2) ⚡[]\n" +
                           "[white]Turret HP: [green]1,235[] ([green]+30%[])\n" +
                           "Range: [orange]390[] px ([green]+30%[])\n" +
@@ -503,7 +501,7 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                           "[lightgray]Kỹ năng đặc biệt: Tích Sạc Tăng Cường — Tích sạc [orange]0.8s[] xả loạt [yellow]20[] viên đạn tỏa ([yellow]25.5[] DMG). Bắn đủ [yellow]2[] đợt kích hoạt Điên Cường Cấp 2 trong [orange]6[] giây (x[yellow]2.6[] tốc bắn).[]";
             } else if (currentTier == 2) {
                 title += "[purple](MK2B)[]";
-                descStr = isEn() ? 
+                descStr = isEn() ?
                           "[purple]⚡ GRAVITY STATS (MK2B) ⚡[]\n" +
                           "[white]Turret HP: [green]1,710[] ([green]+80%[])\n" +
                           "Range: [orange]240[] px ([red]-20%[])\n" +
@@ -516,7 +514,7 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                           "[lightgray]Kỹ năng đặc biệt: Chế Độ Tuần Hoàn Trọng Lực — Bắn [yellow]3[] phát Laser Trọng Lực ([yellow]18[] DMG, xuyên thấu [orange]240[]px), sau đó xả [yellow]100[] viên Trọng Đạn tự dẫn đường ([yellow]27[] DMG/viên).[]";
             } else if (currentTier == 3) {
                 title += "[gold](MK3)[]";
-                descStr = isEn() ? 
+                descStr = isEn() ?
                           "[gold]⚡ EVOLUTION STATS (MK3) ⚡[]\n" +
                           "[white]Turret HP: [green]1,667[] ([green]+35%[])\n" +
                           "Range: [orange]526.5[] px ([green]+35%[])\n" +
@@ -529,7 +527,7 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                           "[lightgray]Kỹ năng đặc biệt: Bão Siêu Nộ Tối Thượng — Bão đạn tỏa [yellow]27[] viên/loạt ([yellow]34.42[] DMG). Trạng thái Cuồng Báo Tối Thượng kéo dài [orange]8.1[] giây (x[yellow]3.51[] tốc bắn).[]";
             } else if (currentTier == 4) {
                 title += "[purple](MK2B1)[]";
-                descStr = isEn() ? 
+                descStr = isEn() ?
                           "[purple]⚡ CONFIGURATION STATS (MK2B1) ⚡[]\n" +
                           "[white]Turret HP: [green]1,881[] ([green]+10%[])\n" +
                           "Range: [orange]264[] px ([green]+10%[])\n" +
@@ -542,7 +540,7 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                           "[lightgray]Kỹ năng đặc biệt: Chế Độ Đột Phá Kép — Bắn [yellow]2[] tia Laser song song ([yellow]19.8[] DMG). Xả bão đạn nhân đôi [yellow]200[] viên Trọng Đạn tự dẫn đường ([yellow]29.7[] DMG/viên).[]";
             } else if (currentTier == 5) {
                 title += "[pink](MK3B)[]";
-                descStr = isEn() ? 
+                descStr = isEn() ?
                           "[pink]⚡ ULTIMATE STATS (MK3B) ⚡[]\n" +
                           "[white]Turret HP: [green]2,565[] ([green]+50%[])\n" +
                           "Range: [orange]360[] px ([green]+50%[])\n" +
@@ -578,7 +576,7 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
             } else {
                 if (this.customReloadTimer > 0) {
                     this.customReloadTimer -= Time.delta;
-                    this.reloadCounter = 0; 
+                    this.reloadCounter = 0;
                 }
             }
         } else {
@@ -588,7 +586,7 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
             if (this.berserkTimer > 0) {
                 this.berserkTimer -= Time.delta;
                 if (this.berserkTimer < 0) this.berserkTimer = 0;
-                
+
                 if (this.isShooting && this.hasAmmo()) {
                     this.reloadCounter += Time.delta * (this.efficiency * speedBoost);
                 }
@@ -613,28 +611,28 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                     }
                     this.burstShotsFired += 20;
 
-                    if(this.burstShotsFired >= 100){ 
+                    if(this.burstShotsFired >= 100){
                         this.burstTimer = 0;
                         this.burstShotsFired = 0;
-                        this.laserCount = 0; 
-                        this.customReloadTimer = CHARGE_TIME_MK2B; 
+                        this.laserCount = 0;
+                        this.customReloadTimer = CHARGE_TIME_MK2B;
                     }
                 } else {
                     let activeBullet = (tier == 4) ? normalBulletB1 : normalBulletB;
                     let maxShots = (tier == 4) ? 200 : 100;
 
-                    this.super$shoot(activeBullet); 
-                    this.rotation += Mathf.range(45); 
+                    this.super$shoot(activeBullet);
+                    this.rotation += Mathf.range(45);
                     this.burstShotsFired++;
 
-                    if(this.burstShotsFired >= maxShots){ 
+                    if(this.burstShotsFired >= maxShots){
                         this.burstTimer = 0;
                         this.burstShotsFired = 0;
-                        this.laserCount = 0; 
-                        this.customReloadTimer = CHARGE_TIME_MK2B; 
+                        this.laserCount = 0;
+                        this.customReloadTimer = CHARGE_TIME_MK2B;
                     }
                 }
-            } 
+            }
             else {
                 if (this.customReloadTimer <= 0) {
                     if(tier == 4){
@@ -650,11 +648,11 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
 
                     Fx.lightningCharge.at(this.x, this.y);
                     this.laserCount++;
-                    this.customReloadTimer = CHARGE_TIME_MK2B; 
+                    this.customReloadTimer = CHARGE_TIME_MK2B;
 
-                    if(this.laserCount >= 3){ 
-                        this.burstTimer = 1; 
-                        this.customReloadTimer = 0; 
+                    if(this.laserCount >= 3){
+                        this.burstTimer = 1;
+                        this.customReloadTimer = 0;
                         Fx.bigShockwave.at(this.x, this.y);
                     }
                 }
@@ -664,7 +662,7 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
 
         let currentChargeMax = (tier == 1 || tier == 3) ? CHARGE_TIME_MK2 : CHARGE_TIME_MK1;
         let currentBerserkMax = (tier == 3) ? BERSERK_TIME_MK3 : ((tier == 1) ? BERSERK_TIME_MK2 : BERSERK_TIME_MK1);
-        
+
         let activeNormalBullet = dorNormalBullet;
         if (tier == 1) activeNormalBullet = dormk2NormalBullet;
         if (tier == 3) activeNormalBullet = dormk3NormalBullet;
@@ -673,31 +671,31 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
 
         if (this.chargeTimer >= currentChargeMax && this.berserkTimer <= 0) {
             Fx.lightningCharge.at(this.x, this.y);
-            
+
             if(tier == 3){
                 for(let i = 0; i < 27; i++){
-                    let angleOffset = Mathf.range(8); 
+                    let angleOffset = Mathf.range(8);
                     dormk3SmallSprayBullet.create(this, this.team, this.x, this.y, this.rotation + angleOffset);
                 }
             } else if(tier == 1){
                 for(let i = 0; i < 20; i++){
-                    let angleOffset = Mathf.range(6); 
+                    let angleOffset = Mathf.range(6);
                     dormk2SmallSprayBullet.create(this, this.team, this.x, this.y, this.rotation + angleOffset);
                 }
             } else {
                 for(let i = 0; i < 10; i++){
-                    let angleOffset = Mathf.range(4); 
+                    let angleOffset = Mathf.range(4);
                     dorSmallSprayBullet.create(this, this.team, this.x, this.y, this.rotation + angleOffset);
                 }
             }
-            
+
             this.superShotCount++;
             this.chargeTimer = 0;
 
             if (this.superShotCount >= requiredSuperShots) {
                 this.berserkTimer = currentBerserkMax;
                 this.superShotCount = 0;
-                
+
                 if(tier == 1 || tier == 3) {
                     Fx.upgradeCore.at(this.x, this.y);
                 } else {
@@ -710,15 +708,15 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
     },
 
     write(write){
-        this.super$write(write); 
-        write.b(this.getTier()); 
+        this.super$write(write);
+        write.b(this.getTier());
         write.i(this.paidCopper);
         write.i(this.paidLead);
         write.i(this.paidTitanium);
     },
     read(read, revision){
-        this.super$read(read, revision); 
-        this.setTier(read.b()); 
+        this.super$read(read, revision);
+        this.setTier(read.b());
         this.paidCopper = read.i();
         this.paidLead = read.i();
         this.paidTitanium = read.i();

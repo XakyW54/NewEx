@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packCons = (func) => new Cons({ get: func });
@@ -5,7 +6,6 @@ const packRun = (func) => new java.lang.Runnable({ run: func });
 
 const isEn = () => Core.settings.getString("locale").startsWith("en");
 
-// Đạn đánh chặn tốc độ cao vẽ bằng Sprite sonicor-bullet
 const interceptBulletType = extend(BasicBulletType, {
     speed: 24,
     damage: 0,
@@ -20,9 +20,9 @@ const interceptBulletType = extend(BasicBulletType, {
     collidesTiles: false,
     collidesAir: false,
     collidesGround: false,
-    
+
     sprite: "newex-sonicor-bullet",
-    
+
     draw(b) {
         let region = PerfCore.region("newex-sonicor-bullet", PerfCore.region("sonicor-bullet", PerfCore.region("bullet")));
         Draw.color(Pal.accent);
@@ -31,7 +31,6 @@ const interceptBulletType = extend(BasicBulletType, {
     }
 });
 
-// Hiệu ứng sóng âm dạng vòng tròn lan tỏa
 function drawSonicWave(x, y, radius, alpha) {
     if (radius <= 0 || alpha <= 0) return;
     Draw.color(Pal.accent);
@@ -41,14 +40,13 @@ function drawSonicWave(x, y, radius, alpha) {
     Draw.reset();
 }
 
-// Hàm vẽ khung hình chữ nhật kiểu chuẩn Vanilla Mindustry
 function drawVanillaRect(x, y, width, height, color, alpha) {
     if (alpha === undefined) alpha = 1.0;
     if (alpha <= 0) return;
 
     Draw.color(color);
     Draw.alpha(alpha);
-    
+
     Lines.dashLine(x, y, x + width, y, Math.floor(width / 8));
     Lines.dashLine(x + width, y, x + width, y + height, Math.floor(height / 8));
     Lines.dashLine(x + width, y + height, x, y + height, Math.floor(width / 8));
@@ -86,11 +84,11 @@ Events.on(ContentInitEvent, () => {
             dtgBuilding: null,
             savedDtgTileX: -1,
             savedDtgTileY: -1,
-            
+
             sonicTimer: 0,
             waveProgress: 0,
             isWaveActive: false,
-            
+
             shootTimer: 0,
 
             created() {
@@ -128,7 +126,7 @@ Events.on(ContentInitEvent, () => {
             },
 
             buildConfiguration(table) {
-                table.clear(); 
+                table.clear();
                 table.row();
 
                 table.button(Icon.commandRally, Styles.cleari, 40, packRun(() => {
@@ -150,14 +148,14 @@ Events.on(ContentInitEvent, () => {
                         this.linkedWithDTG = true;
                         this.savedDtgTileX = found.tileX();
                         this.savedDtgTileY = found.tileY();
-                        Fx.select.at(found.x, found.y);
+                        NexNet.fx(Fx.select, found.x, found.y);
                         Vars.ui.showInfoToast(isEn() ? "[green]Linked with DTG-Soldern! Interception Active.[]" : "[green]Đã liên kết với DTG-Soldern! Kích hoạt đạn đánh chặn.[]", 3);
                     } else {
                         this.linkedWithDTG = false;
                         this.dtgBuilding = null;
                         this.savedDtgTileX = -1;
                         this.savedDtgTileY = -1;
-                        Fx.smeltsmoke.at(this.x, this.y);
+                        NexNet.fx(Fx.smeltsmoke, this.x, this.y);
                         Vars.ui.showInfoToast(isEn() ? "[red]No DTG-Soldern found within range![]" : "[red]Không tìm thấy công trình liên kết trong phạm vi![]", 3);
                     }
                     this.deselect();
@@ -186,18 +184,18 @@ Events.on(ContentInitEvent, () => {
                     let dialog = extend(BaseDialog, title, {});
                     let infoTable = new Table();
                     let cell = infoTable.add(descStr).width(360);
-                    cell.get().setWrap(true); 
+                    cell.get().setWrap(true);
                     cell.get().setAlignment(Align.left);
                     let scroll = new ScrollPane(infoTable);
                     scroll.setScrollingDisabled(true, false);
                     dialog.cont.add(scroll).maxHeight(400);
-                    dialog.addCloseButton(); 
+                    dialog.addCloseButton();
                     dialog.show();
                 })).size(50, 40).tooltip(isEn() ? "View detailed stats" : "Xem thông số chi tiết pháo");
             },
 
-            config() { 
-                return java.lang.Integer(this.getTargetPosition()); 
+            config() {
+                return java.lang.Integer(this.getTargetPosition());
             },
 
             configured(builder, value) {
@@ -217,7 +215,6 @@ Events.on(ContentInitEvent, () => {
                 }
             },
 
-            // CỐ ĐỊNH LỖI MẤT LIÊN KẾT KHI OUT MAP: Ghi thêm tọa độ ô Tile của DTG-Soldern
             write(write) {
                 this.super$write(write);
                 write.f(this.targetX);
@@ -239,14 +236,13 @@ Events.on(ContentInitEvent, () => {
             updateTile() {
                 this.super$updateTile();
 
-                // TỰ ĐỘNG KHÔI PHỤC THỰC THỂ DTG-SOLDERN KHI VÀO LẠI MAP
                 if (this.linkedWithDTG && (this.dtgBuilding == null || !this.dtgBuilding.isValid())) {
                     if (this.savedDtgTileX >= 0 && this.savedDtgTileY >= 0) {
                         let building = Vars.world.build(this.savedDtgTileX, this.savedDtgTileY);
                         if (building != null && building.team == this.team && (building.block.name.includes("soldern") || building.block.name.includes("dtg"))) {
                             this.dtgBuilding = building;
                         } else {
-                            // Nếu pháo DTG đã bị phá hủy thì hủy liên kết
+
                             this.linkedWithDTG = false;
                             this.dtgBuilding = null;
                         }
@@ -257,7 +253,7 @@ Events.on(ContentInitEvent, () => {
                     if (Core.input.keyTap(KeyCode.mouseLeft)) {
                         let worldVec = Core.camera.unproject(Core.input.mouse());
                         let tile = Vars.world.tileWorld(worldVec.x, worldVec.y);
-                        
+
                         if (tile != null) {
                             this.configure(java.lang.Integer(Point2.pack(tile.x, tile.y)));
                         }
@@ -270,7 +266,6 @@ Events.on(ContentInitEvent, () => {
                 let rect = this.getRectBounds(this.targetX, this.targetY);
                 this.sonicTimer += Time.delta;
 
-                // --- 1. SÓNG ÂM ĐẨY LÙI MỖI 2S ---
                 if (this.sonicTimer >= 120) {
                     let hasEnemyAir = false;
 
@@ -291,7 +286,7 @@ Events.on(ContentInitEvent, () => {
                                 unit.damage(damageAmount);
 
                                 let angle = Angles.angle(this.x, this.y, unit.x, unit.y);
-                                let pushDistance = 60; 
+                                let pushDistance = 60;
                                 let pushX = Mathf.cosDeg(angle) * pushDistance;
                                 let pushY = Mathf.sinDeg(angle) * pushDistance;
 
@@ -312,7 +307,6 @@ Events.on(ContentInitEvent, () => {
                     }
                 }
 
-                // --- 2. BẮN ĐẠN ĐÁNH CHẶN ĐẠN ĐỊCH NẾU CÓ ĐÃ LIÊN KẾT ---
                 if (this.shootTimer > 0) {
                     this.shootTimer -= Time.delta;
                 }
@@ -328,7 +322,7 @@ Events.on(ContentInitEvent, () => {
 
                     if (targetBullet != null && this.shootTimer <= 0) {
                         let angle = Angles.angle(this.x, this.y, targetBullet.x, targetBullet.y);
-                        
+
                         interceptBulletType.create(this, this.team, this.x, this.y, angle, 1.0);
                         Fx.shootBig.at(this.x, this.y, angle);
 
@@ -363,7 +357,7 @@ Events.on(ContentInitEvent, () => {
                     let maxRadius = Math.max(rect.width, rect.height) / 2;
                     let currentRadius = this.waveProgress * maxRadius;
                     let alpha = 1.0 - this.waveProgress;
-                    
+
                     drawSonicWave(centerX, centerY, currentRadius, alpha);
                 }
 
@@ -395,7 +389,7 @@ Events.on(ContentInitEvent, () => {
 
                 if (this.selectingTarget) {
                     let currentRange = this.range();
-                    
+
                     Draw.z(Layer.overlayUI);
                     Drawf.dashCircle(this.x, this.y, currentRange, Pal.accent);
 
@@ -411,7 +405,7 @@ Events.on(ContentInitEvent, () => {
                     let ty = mouseTile != null ? mouseTile.drawy() : mouseWorld.y;
 
                     let previewRect = this.getRectBounds(tx, ty);
-                    
+
                     drawVanillaRect(previewRect.minX, previewRect.minY, previewRect.width, previewRect.height, targetColor, 1.0);
 
                     Draw.reset();

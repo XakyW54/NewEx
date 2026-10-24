@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const DIR_X = [1, 0, -1, 0];
 const DIR_Y = [0, 1, 0, -1];
 
@@ -29,13 +30,12 @@ Events.on(ContentInitEvent, () => {
                 resetTimer() {
                     this.spawnTimer = 0;
                     if (this.isPinfyrNearby) {
-                        this.nextSpawnTime = 120 * 60; 
+                        this.nextSpawnTime = 120 * 60;
                     } else {
                         this.nextSpawnTime = Mathf.random(120 * 60, 300 * 60);
                     }
                 },
 
-               
                 checkPinfyrNearby() {
                     let rot = this.rotation & 3;
                     let targetTile = this.getTargetTile();
@@ -44,12 +44,11 @@ Events.on(ContentInitEvent, () => {
 
                     let found = false;
 
- 
                     if (this.proximity != null) {
                         for (let i = 0; i < this.proximity.size; i++) {
                             let other = this.proximity.get(i);
                             if (other != null && other.block === pinfyr) {
-   
+
                                 let isTargetLocation = (other.tileX === targetX && other.tileY === targetY);
                                 if (!isTargetLocation) {
                                     found = true;
@@ -158,7 +157,6 @@ Events.on(ContentInitEvent, () => {
 
                     if (this.efficiency <= 0) return;
 
- 
                     this.checkTimer += Time.delta;
                     if (this.checkTimer >= 15) {
                         this.checkTimer = 0;
@@ -180,7 +178,7 @@ Events.on(ContentInitEvent, () => {
                                 let target = this.getTargetTile();
                                 if (target != null) {
                                     let spawnBlock = this.isPinfyrNearby ? emeraliftWall : redstoneWall;
-                                    target.setBlock(spawnBlock, this.team, 0);
+                                    NexNet.setBlock(target, spawnBlock, this.team, 0);
                                 }
                                 this.resetTimer();
                             }

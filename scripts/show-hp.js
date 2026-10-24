@@ -5,7 +5,7 @@ const _perfRect = new Rect();
     const smoothShieldMap = new ObjectMap();
     const lastHpMap = new ObjectMap();
     const lastDamageTimeMap = new ObjectMap();
-    const formattedTextMap = new ObjectMap(); // Bộ đệm cache chuỗi máu để giảm tải tính toán chuỗi mỗi frame
+    const formattedTextMap = new ObjectMap();
 
      function formatHP(value) {
         let val = Math.max(0, Math.floor(value));
@@ -86,7 +86,6 @@ const _perfRect = new Rect();
 
             let realHpPercent = Math.max(0, (smoothHpVal / maxHp) * 100);
 
- 
             if (currentHpStyle === "show-hp") {
                 let smoothShield = smoothShieldMap.containsKey(id) ? smoothShieldMap.get(id) : curShield;
                 if (!Vars.state.isPaused()) {
@@ -141,7 +140,6 @@ const _perfRect = new Rect();
                 font.getData().setScale(fontScale);
                 font.setColor(hpColor);
 
-                // Tối ưu hóa: Sử dụng cache chuỗi để tránh gọi formatHP và cộng chuỗi liên tục mỗi frame
                 let cachedData = formattedTextMap.get(id);
                 let fullText;
                 if (!cachedData || Math.abs(cachedData.hp - smoothHpVal) > 5) {
@@ -159,7 +157,7 @@ const _perfRect = new Rect();
                 font.getData().setScale(oldX, oldY);
                 Draw.reset();
             }
- 
+
             else if (currentHpStyle === "hp") {
                 let hpPercent = Math.floor(realHpPercent);
                 let x = u.x;

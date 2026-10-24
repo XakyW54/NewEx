@@ -1,6 +1,7 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
-const COLOR = Color.valueOf("ffff00"); 
-const COLOR_ALT = Color.valueOf("e6005c");  
+const COLOR = Color.valueOf("ffff00");
+const COLOR_ALT = Color.valueOf("e6005c");
 const WHITE = Color.valueOf("ffffff");
 
 const packCons2 = (func) => new Cons2({ get: func });
@@ -35,7 +36,7 @@ function updateEmpericalMenuVisibility() {
     if (!Vars.player || !empericalBlock) return;
 
     let playerTeam = Vars.player.team();
-    let maxAllowed = 1; 
+    let maxAllowed = 1;
     let currentCount = PerfCore.teamCount(playerTeam, empericalBlock);
 
     if (currentCount < maxAllowed) {
@@ -66,7 +67,7 @@ Events.on(BlockDestroyEvent, event => {
     let victimTeam = destroyedBuild.team;
 
     if (destroyedBuild.block instanceof CoreBlock) {
-        let maxAllowed = 1; 
+        let maxAllowed = 1;
         let teamBlocks = [];
         Groups.build.each(b => {
             if (b.block === empericalBlock && b.team === victimTeam) {
@@ -90,10 +91,10 @@ Events.on(BlockDestroyEvent, event => {
 const CircleGatherEffect = new Effect(12, e => {
     Draw.z(Layer.effect);
     Draw.color(COLOR, COLOR_ALT, e.fin());
-    
+
     for (let i = 0; i < 4; i++) {
         let angle = e.id * 90 + i * 90 + e.fin() * 180;
-        let dist = 25 * e.fout(); 
+        let dist = 25 * e.fout();
         let px = e.x + Angles.trnsx(angle, dist);
         let py = e.y + Angles.trnsy(angle, dist);
         Fill.circle(px, py, 2 * e.fin());
@@ -103,10 +104,10 @@ const CircleGatherEffect = new Effect(12, e => {
 const CircleDisperseEffect = new Effect(15, e => {
     Draw.z(Layer.effect);
     Draw.color(COLOR_ALT, COLOR, e.fin());
-    
+
     for (let i = 0; i < 6; i++) {
         let angle = e.id * 60 + i * 60;
-        let dist = 30 * e.finpow(); 
+        let dist = 30 * e.finpow();
         let px = e.x + Angles.trnsx(angle, dist);
         let py = e.y + Angles.trnsy(angle, dist);
         Fill.circle(px, py, 2.5 * e.fout());
@@ -118,11 +119,11 @@ const EmpericalExplosionCircleEffect = new Effect(30, e => {
     Draw.color(COLOR, COLOR_ALT, e.fin());
     Lines.stroke(4 * e.fout());
     Lines.circle(e.x, e.y, 15 * 8 * e.finpow());
-    
+
     Draw.color(COLOR_ALT);
     Lines.stroke(2 * e.fout());
     Lines.circle(e.x, e.y, (15 * 8 * e.finpow()) * 0.8);
-    
+
     Draw.reset();
 });
 
@@ -539,7 +540,7 @@ Events.on(ContentInitEvent, () => {
         shootCountTimer: 0,
         stopShootTimer: 0,
 
-        circleIntroTimer: 0,   
+        circleIntroTimer: 0,
         hasCreatedIntro: false,
         wasActiveLastFrame: false,
 
@@ -573,7 +574,7 @@ Events.on(ContentInitEvent, () => {
                 table.button(Icon.upOpen, Styles.cleari, 44, packRun(() => {
                     let dialogTitle = vi ? "Trung tâm nâng cấp Emperical" : "Emperical Upgrade Center";
                     let dialog = extend(BaseDialog, dialogTitle, {});
-                    
+
                     if (dialog.cont != null) {
                         let reqCell = dialog.cont.add(new Table());
                         reqCell.get().add(new Label(packProv(() => {
@@ -621,22 +622,22 @@ Events.on(ContentInitEvent, () => {
 
                         b1.button(vi ? "[green]KÍCH HOẠT MK2[]" : "[green]ACTIVATE MK2[]", packRun(() => {
                             let core = this.team != null ? this.team.core() : null;
-                            if (core != null && 
-                                core.items.get(Items.copper) >= reqEmpericalMK2.copper && 
-                                core.items.get(Items.lead) >= reqEmpericalMK2.lead && 
-                                core.items.get(Items.titanium) >= reqEmpericalMK2.titanium && 
+                            if (core != null &&
+                                core.items.get(Items.copper) >= reqEmpericalMK2.copper &&
+                                core.items.get(Items.lead) >= reqEmpericalMK2.lead &&
+                                core.items.get(Items.titanium) >= reqEmpericalMK2.titanium &&
                                 core.items.get(Items.thorium) >= reqEmpericalMK2.thorium) {
-                                
-                                core.items.remove(Items.copper, reqEmpericalMK2.copper);
-                                core.items.remove(Items.lead, reqEmpericalMK2.lead);
-                                core.items.remove(Items.titanium, reqEmpericalMK2.titanium);
-                                core.items.remove(Items.thorium, reqEmpericalMK2.thorium);
 
-                                Fx.upgradeCore.at(this.x, this.y); 
-                                Fx.mineHuge.at(this.x, this.y); 
-                                Effect.shake(5, 5, this.x, this.y);
+                                NexNet.take(core, Items.copper, reqEmpericalMK2.copper);
+                                NexNet.take(core, Items.lead, reqEmpericalMK2.lead);
+                                NexNet.take(core, Items.titanium, reqEmpericalMK2.titanium);
+                                NexNet.take(core, Items.thorium, reqEmpericalMK2.thorium);
 
-                                this.configure(java.lang.Integer(1)); 
+                                NexNet.fx(Fx.upgradeCore, this.x, this.y);
+                                NexNet.fx(Fx.mineHuge, this.x, this.y);
+                                NexNet.shake(5, 5, this.x, this.y);
+
+                                this.configure(java.lang.Integer(1));
                                 dialog.hide(); this.deselect();
                             } else {
                                 if (Vars.ui != null) Vars.ui.showInfo(vi ? "[red]Không đủ tài nguyên nâng cấp MK2![]" : "[red]Not enough resources for MK2![]");
@@ -656,22 +657,22 @@ Events.on(ContentInitEvent, () => {
 
                         b2.button(vi ? "[orange]KÍCH HOẠT MK2B[]" : "[orange]ACTIVATE MK2B[]", packRun(() => {
                             let core = this.team != null ? this.team.core() : null;
-                            if (core != null && 
-                                core.items.get(Items.copper) >= reqEmpericalMK2B.copper && 
-                                core.items.get(Items.lead) >= reqEmpericalMK2B.lead && 
-                                core.items.get(Items.titanium) >= reqEmpericalMK2B.titanium && 
+                            if (core != null &&
+                                core.items.get(Items.copper) >= reqEmpericalMK2B.copper &&
+                                core.items.get(Items.lead) >= reqEmpericalMK2B.lead &&
+                                core.items.get(Items.titanium) >= reqEmpericalMK2B.titanium &&
                                 core.items.get(Items.surgeAlloy) >= reqEmpericalMK2B.surgeAlloy) {
-                                
-                                core.items.remove(Items.copper, reqEmpericalMK2B.copper);
-                                core.items.remove(Items.lead, reqEmpericalMK2B.lead);
-                                core.items.remove(Items.titanium, reqEmpericalMK2B.titanium);
-                                core.items.remove(Items.surgeAlloy, reqEmpericalMK2B.surgeAlloy);
 
-                                Fx.bigShockwave.at(this.x, this.y); 
-                                Fx.mineHuge.at(this.x, this.y); 
-                                Effect.shake(5, 5, this.x, this.y);
+                                NexNet.take(core, Items.copper, reqEmpericalMK2B.copper);
+                                NexNet.take(core, Items.lead, reqEmpericalMK2B.lead);
+                                NexNet.take(core, Items.titanium, reqEmpericalMK2B.titanium);
+                                NexNet.take(core, Items.surgeAlloy, reqEmpericalMK2B.surgeAlloy);
 
-                                this.configure(java.lang.Integer(2)); 
+                                NexNet.fx(Fx.bigShockwave, this.x, this.y);
+                                NexNet.fx(Fx.mineHuge, this.x, this.y);
+                                NexNet.shake(5, 5, this.x, this.y);
+
+                                this.configure(java.lang.Integer(2));
                                 dialog.hide(); this.deselect();
                             } else {
                                 if (Vars.ui != null) Vars.ui.showInfo(vi ? "[red]Không đủ tài nguyên nâng cấp MK2B![]" : "[red]Not enough resources for MK2B![]");
@@ -699,7 +700,7 @@ Events.on(ContentInitEvent, () => {
             table.button(Icon.info, Styles.cleari, 44, packRun(() => {
                 let infoTitle = vi ? "Thông tin pháo Emperical" : "Emperical Turret Specs";
                 let curTierStr = tier == 0 ? "[white]Gốc (Tier 1)[]" : (tier == 1 ? "[cyan]MK2[]" : "[purple]MK2B[]");
-                
+
                 let descStr = "";
                 if (tier == 0) {
                     descStr = vi ? "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
@@ -760,7 +761,7 @@ Events.on(ContentInitEvent, () => {
                 let infoTable = new Table();
                 let cell = infoTable.add(descStr).width(360);
                 cell.get().setWrap(true); cell.get().setAlignment(Align.left);
-                
+
                 let scroll = new ScrollPane(infoTable);
                 scroll.setScrollingDisabled(true, false);
                 infoDialog.cont.add(scroll).maxHeight(400);
@@ -790,7 +791,7 @@ Events.on(ContentInitEvent, () => {
             ForceEffect.at(x, y);
             if (Sounds.explosionReactor2) Sounds.explosionReactor2.at(x, y, 0.75, 1);
             let radSq = radius * radius;
-            
+
             Groups.bullet.intersect(x - radius, y - radius, radius * 2, radius * 2, cons(b => {
                 if (b.team != this.team && Mathf.len2(b.x - x, b.y - y) <= radSq) {
                     b.remove();
@@ -802,7 +803,7 @@ Events.on(ContentInitEvent, () => {
             if (Sounds.shootSmite) Sounds.shootSmite.at(sx, sy, soundPitch, 1);
             this.shootPos(EmpericalBullet, sx, sy, Mathf.random(this.rotation - 45, this.rotation + 45));
             this.shootPos(EmpericalLightning, sx, sy, this.rotation);
-            
+
             if (Mathf.chance(0.5)) this.shootPos(EmpericalHook, sx, sy, Mathf.random(this.rotation - 45, this.rotation + 45));
             if (Mathf.chance(0.6)) this.shootPos(EmpericalMissile, sx, sy, Mathf.random(this.rotation - 45, this.rotation + 45));
             if (Mathf.chance(0.15)) {
@@ -881,7 +882,7 @@ Events.on(ContentInitEvent, () => {
 
             if (this.isShooting && this.hasAmmo()) {
                 let speedFactor = 1.0 / (1.0 + (this.shootCount * 0.3));
-                
+
                 if (this.mainReloadTimer >= this.mainReloadTime * speedFactor) {
                     this.mainReloadTimer = 0;
                     if (this.shootCount < 30) this.shootCount++;
@@ -939,7 +940,7 @@ Events.on(ContentInitEvent, () => {
                 loadWingRegions();
 
                 let prog = Interp.pow2Out.apply(this.wingProgress);
-                
+
                 let targetForward = 40 - 22;
                 let targetSide = 40;
 

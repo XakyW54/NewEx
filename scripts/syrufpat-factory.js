@@ -1,20 +1,21 @@
+const NexNet = global.NexNet;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 
 const expandCircleFx = new Effect(25, cons(e => {
-    let radius = 25 * e.fin(); 
+    let radius = 25 * e.fin();
     Draw.color(e.color);
-    Lines.stroke(2.5 * e.fout()); 
+    Lines.stroke(2.5 * e.fout());
     Lines.circle(e.x, e.y, radius);
 }));
 
 const superExplosionFx = new Effect(60, cons(e => {
-    let maxRadius = 800; 
-    let innerRadius = maxRadius * e.fin(); 
+    let maxRadius = 800;
+    let innerRadius = maxRadius * e.fin();
 
     Draw.color(Color.scarlet);
     Draw.alpha(0.35 * e.fout());
-    
+
     let fillThickness = maxRadius - innerRadius;
     if (fillThickness > 0) {
         Lines.stroke(fillThickness);
@@ -57,23 +58,23 @@ Events.on(ContentInitEvent, () => {
     syrufpatFactory.addBar("overheat_status", new Func({
         get: function(e){
             return new Bar(
-                new Prov({ 
-                    get: function(){ 
+                new Prov({
+                    get: function(){
                         let timeLeft = e.getOverheatTimeLeft();
                         if (e.overheatTimer <= 0) return isEn() ? "STATUS: SAFE" : "TRẠNG THÁI: AN TOÀN";
                         if (e.isOverItemLimit()) return isEn() ? "[scarlet]FULL STORAGE, EXPLODE IN: " + timeLeft + "s[]" : "[scarlet]KHO ĐẦY, NỔ TRONG: " + timeLeft + "s[]";
-                        return (isEn() ? "EXPLOSION WARNING: " : "CẢNH BÁO NỔ: ") + timeLeft + "s"; 
-                    } 
+                        return (isEn() ? "EXPLOSION WARNING: " : "CẢNH BÁO NỔ: ") + timeLeft + "s";
+                    }
                 }),
-                new Prov({ 
-                    get: function(){ 
-                        return Color.yellow.cpy().lerp(Color.red, e.getOverheatRatio()); 
-                    } 
+                new Prov({
+                    get: function(){
+                        return Color.yellow.cpy().lerp(Color.red, e.getOverheatRatio());
+                    }
                 }),
-                new Floatp({ 
-                    get: function(){ 
-                        return e.getOverheatRatio(); 
-                    } 
+                new Floatp({
+                    get: function(){
+                        return e.getOverheatRatio();
+                    }
                 })
             );
         }
@@ -87,10 +88,10 @@ Events.on(ContentInitEvent, () => {
         created() {
             this.super$created();
             this.craftTimer = 0;
-            this.selectedOutput = 0; 
+            this.selectedOutput = 0;
             this.overheatTimer = 0;
             this.hasStartedBefore = false;
-            
+
             this.productionStage = 0;
 
             this.dumpGraphiteLeft = 0;
@@ -161,7 +162,7 @@ Events.on(ContentInitEvent, () => {
         },
 
         triggerInstantDeathExplosion() {
-            let explosionRadius = 800; 
+            let explosionRadius = 800;
 
             superExplosionFx.at(this.x, this.y);
 
@@ -212,7 +213,7 @@ Events.on(ContentInitEvent, () => {
                         this.triggerInstantDeathExplosion();
                         return;
                     }
-                } 
+                }
                 else if (!overLimit && hasEnoughCryo) {
                     this.liquids.remove(Liquids.cryofluid, requiredCryoPerTick);
                     this.overheatTimer = Math.max(0, this.overheatTimer - Time.delta);
@@ -220,7 +221,7 @@ Events.on(ContentInitEvent, () => {
             }
 
             let currentSelection = this.getOutputSelection();
-            
+
             if (currentSelection == 0) {
                 if (this.items.get(Items.graphite) > 0) this.dump(Items.graphite);
             } else if (currentSelection == 1) {
@@ -268,7 +269,7 @@ Events.on(ContentInitEvent, () => {
                         this.craftTimer = 0;
                         expandCircleFx.at(this.x, this.y, 0, COLOR_GRAPHITE);
                         Effect.shake(2, 5, this.x, this.y);
-                        this.productionStage = 1; 
+                        this.productionStage = 1;
                     }
                 }
                 return;
@@ -284,7 +285,7 @@ Events.on(ContentInitEvent, () => {
                         this.craftTimer = 0;
                         expandCircleFx.at(this.x, this.y, 0, COLOR_SILICON);
                         Effect.shake(2, 5, this.x, this.y);
-                        this.productionStage = 2; 
+                        this.productionStage = 2;
                     }
                 }
                 return;
@@ -300,7 +301,7 @@ Events.on(ContentInitEvent, () => {
                         this.craftTimer = 0;
                         expandCircleFx.at(this.x, this.y, 0, COLOR_OIL);
                         Effect.shake(2, 5, this.x, this.y);
-                        this.productionStage = 3;  
+                        this.productionStage = 3;
                     }
                 }
                 return;
@@ -317,7 +318,7 @@ Events.on(ContentInitEvent, () => {
                         this.craftTimer = 0;
                         expandCircleFx.at(this.x, this.y, 0, COLOR_PLAST);
                         Effect.shake(2, 5, this.x, this.y);
-                        this.productionStage = 0; 
+                        this.productionStage = 0;
                     }
                 }
             }
@@ -339,7 +340,7 @@ Events.on(ContentInitEvent, () => {
                     let prefix = isCurrent ? "[lime]✓ " : "[lightgray]";
                     let btn = optTable.button(prefix + name + "[]", packRun(() => {
                         this.setOutputSelection(index);
-                        this.configure(index);
+                        this.configure(java.lang.Integer(index));
                         dialog.hide();
                     })).size(280, 42).margin(4);
                     btn.row();
@@ -360,7 +361,7 @@ Events.on(ContentInitEvent, () => {
 
             table.button(Icon.info, Styles.cleari, 40, packRun(() => {
                 let title = isEn() ? " Syrufpat Factory Specs " : " Thông số Nhà máy Syrufpat ";
-                let descStr = isEn() ? 
+                let descStr = isEn() ?
                               "[gold]⚡ SEQUENTIAL PRODUCTION PROCESS (1s/STAGE) ⚡[]\n\n" +
                               "[cyan]• Stage 1 (Graphite):[] 10 Coal + 10 Sand + 10 Titanium ➔ [green]100 Graphite[] (1s)\n" +
                               "[cyan]• Stage 2 (Silicon):[] 10 Coal + 10 Sand + 10 Titanium ➔ [green]100 Silicon[] (1s)\n" +
@@ -392,13 +393,13 @@ Events.on(ContentInitEvent, () => {
                 let dialog = extend(BaseDialog, title, {});
                 let infoTable = new Table();
                 let cell = infoTable.add(descStr).width(360);
-                cell.get().setWrap(true); 
+                cell.get().setWrap(true);
                 cell.get().setAlignment(Align.left);
 
                 let scroll = new ScrollPane(infoTable);
                 scroll.setScrollingDisabled(true, false);
                 dialog.cont.add(scroll).maxHeight(400);
-                dialog.addCloseButton(); 
+                dialog.addCloseButton();
                 dialog.show();
             })).size(50, 40);
         },

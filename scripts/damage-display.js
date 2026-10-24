@@ -86,7 +86,7 @@ function addEatsukiDamage(entity, damage, hitSize) {
 
     data.total += damage;
     data.idle = 0;
-    
+
      let formattedText = "[scarlet]" + formatNumber(data.total) + "[]";
 
     if (data.popup === null || !damagePopups.contains(data.popup)) {
@@ -206,7 +206,7 @@ Events.run(Trigger.draw, () => {
             tempColor.set(Color.white);
             tempColor.a = fadeOut * fadeOut;
             font.setColor(tempColor);
-            
+
              font.draw(popup.formattedText, curX, curY, Align.center);
         } else if (mode === "popup" && popup.type === "popup") {
             let progress = (popup.maxLife - popup.life) / popup.maxLife;

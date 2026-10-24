@@ -21,7 +21,6 @@ Events.on(ContentInitEvent, () => {
             Fill.poly(rx, ry, 3, 4 * e.fout(), angle);
         });
 
-        // Hàm hỗ trợ vẽ đường vạch gạch di chuyển mượt
         const drawMovingDashLine = (x1, y1, x2, y2, color) => {
             let len = Mathf.dst(x1, y1, x2, y2);
             let dashLen = 6;
@@ -52,7 +51,7 @@ Events.on(ContentInitEvent, () => {
             targetY: 0,
             isTeleporting: false,
             selectingTarget: false,
-            maxRange: 380, 
+            maxRange: 380,
 
             created() {
                 this.super$created();
@@ -103,7 +102,7 @@ Events.on(ContentInitEvent, () => {
                     if (Core.input.keyTap(KeyCode.mouseLeft)) {
                         let worldVec = Core.camera.unproject(Core.input.mouse());
                         let tile = Vars.world.tileWorld(worldVec.x, worldVec.y);
-                        
+
                         if (tile != null) {
                             this.configure(Point2.pack(tile.x, tile.y));
                         }
@@ -116,14 +115,14 @@ Events.on(ContentInitEvent, () => {
                 let dst = Mathf.dst(this.x, this.y, this.targetX, this.targetY);
                 if (this.items != null && this.items.total() > 0 && dst > 1 && dst <= this.maxRange) {
                     let destTile = Vars.world.tileWorld(this.targetX, this.targetY);
-                    
+
                     if (destTile != null && destTile.build != null) {
                         let targetBuild = destTile.build;
                         let itemToTransfer = this.items.first();
 
                         if (itemToTransfer != null && targetBuild.acceptItem(this, itemToTransfer)) {
                             let transferAmount = Math.min(this.items.get(itemToTransfer), Math.ceil(500 / 60));
-                            
+
                             if (transferAmount > 0) {
                                 this.items.remove(itemToTransfer, transferAmount);
                                 targetBuild.handleItem(this, itemToTransfer);
@@ -133,16 +132,16 @@ Events.on(ContentInitEvent, () => {
 
                                 if (Mathf.chance(0.4)) {
                                     teleportEffect.at(
-                                        this.x + Mathf.range(3), 
-                                        this.y + Mathf.range(3), 
+                                        this.x + Mathf.range(3),
+                                        this.y + Mathf.range(3),
                                         angleToTarget + Mathf.range(12)
                                     );
                                 }
 
                                 if (Mathf.chance(0.4)) {
                                     receiveEffect.at(
-                                        targetBuild.x, 
-                                        targetBuild.y, 
+                                        targetBuild.x,
+                                        targetBuild.y,
                                         Mathf.random(360)
                                     );
                                 }
@@ -172,7 +171,6 @@ Events.on(ContentInitEvent, () => {
                     let isWithinRange = Mathf.dst(this.x, this.y, mouseWorld.x, mouseWorld.y) <= this.maxRange;
                     let targetColor = isWithinRange ? Color.sky : Color.red;
 
-                    // Đường vạch kẻ mượt từ khối đến vị trí chuột (vì chuyển item từ khối đến vị trí chọn)
                     drawMovingDashLine(this.x, this.y, mouseWorld.x, mouseWorld.y, targetColor);
 
                     let mouseTile = Vars.world.tileWorld(mouseWorld.x, mouseWorld.y);
@@ -184,13 +182,13 @@ Events.on(ContentInitEvent, () => {
 
             drawConfigure() {
                 this.super$drawConfigure();
-                
+
                 Draw.color(Color.sky);
                 Lines.stroke(1);
                 Lines.circle(this.x, this.y, this.maxRange);
 
                 if (Mathf.dst(this.x, this.y, this.targetX, this.targetY) <= this.maxRange && (this.targetX !== this.x || this.targetY !== this.y)) {
-                    // Vẽ đường vạch chạy mượt từ Khối (This) đến Đích (Target)
+
                     drawMovingDashLine(this.x, this.y, this.targetX, this.targetY, Color.sky);
                     Drawf.square(this.targetX, this.targetY, 4, 0, Color.sky);
                 }

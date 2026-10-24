@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
 const isEn = () => Core.settings.getString("locale").startsWith("en");
 
@@ -24,16 +25,16 @@ Events.on(ContentInitEvent, () => {
         beryiDrill.buildType = () => extend(Building, {
             mineTimer: 0,
             rotation: 90,
-            
+
             radiusTiles: 25,
-            cachedTiles: [],  
+            cachedTiles: [],
             sallowyrTimer: 0,
             copesBoostTime: 0,
             copesBoostIntensity: 1.0,
 
             getTileDrop(t) {
                 if (t == null) return null;
-                
+
                 let drop = t.drop();
                 if (drop != null) return drop;
 
@@ -120,7 +121,7 @@ Events.on(ContentInitEvent, () => {
                 table.button(Icon.info, Styles.cleari, 40, () => {
                     let dialog = new Dialog(isEn() ? "[accent]Beryi Drill Manual[]" : "[accent]Hướng Dẫn Sử Dụng Khối Khoan Beryi[]");
                     dialog.cont.margin(15);
-                    
+
                     let infoText = isEn() ?
                         "[cyan]● Automatic Square Area Mining:[ ] Automatically mines random resources within a perfectly grid-aligned 25-tile square range.\n\n" +
                         "[yellow]● Yield Boost Mechanics:[ ] Base yield is 2 items per second.\n" +
@@ -137,7 +138,7 @@ Events.on(ContentInitEvent, () => {
                         "[lightgray]Lưu ý: Khi kho chứa đạt đủ 1000 item, nút chuyển đổi 'V' sẽ xuất hiện![ ]";
 
                     dialog.cont.add(infoText).width(380).wrap().get();
-                    
+
                     dialog.buttons.button(isEn() ? "Close" : "Đóng", () => {
                         dialog.hide();
                     }).size(140, 50);
@@ -158,7 +159,7 @@ Events.on(ContentInitEvent, () => {
                                     centerTile.setBlock(coreBlock, this.team, 0);
                                 }
 
-                                customExplosion.at(this.x, this.y, 0, Color.purple);
+                                NexNet.fx(customExplosion, this.x, this.y, 0, Color.purple);
                             }
                         }
                     }).size(44).pad(2);
@@ -168,10 +169,10 @@ Events.on(ContentInitEvent, () => {
             updateTile() {
                 if (!Vars.net.client()) {
                     let sallowyrItem = Vars.content.item("newex-sallowyr") || Vars.content.item("sallowyr");
-                    
+
                     if (sallowyrItem != null && this.items.has(sallowyrItem)) {
                         this.items.remove(sallowyrItem, 1);
-                        this.sallowyrTimer = 600; 
+                        this.sallowyrTimer = 600;
                         Call.effect(Fx.upgradeCore, this.x, this.y, 0, Color.sky);
                     }
 
@@ -208,7 +209,7 @@ Events.on(ContentInitEvent, () => {
 
                         if (this.mineTimer >= 60.0) {
                             this.mineTimer -= 60.0;
-                            
+
                             let randomTile = this.cachedTiles[Math.floor(Mathf.random(0, this.cachedTiles.length))];
                             let item = this.getTileDrop(randomTile);
 
@@ -240,7 +241,7 @@ Events.on(ContentInitEvent, () => {
 
                 Draw.color(Pal.accent, 0.12);
                 Fill.rect(worldLeft + boxWidth / 2, worldBottom + boxHeight / 2, boxWidth, boxHeight);
-                
+
                 Draw.color(Pal.accent);
                 Lines.stroke(1.5);
                 Lines.rect(worldLeft, worldBottom, boxWidth, boxHeight);
@@ -252,7 +253,7 @@ Events.on(ContentInitEvent, () => {
                         let t = this.cachedTiles[i];
                         if (t != null) {
                             let itemDrop = this.getTileDrop(t);
-                            // Không vẽ viền cho cát (Items.sand)
+
                             if (itemDrop === Items.sand) continue;
 
                             let wx = t.worldx();
@@ -292,7 +293,7 @@ Events.on(ContentInitEvent, () => {
 
                 Draw.color(Pal.accent, 0.12);
                 Fill.rect(worldLeft + boxWidth / 2, worldBottom + boxHeight / 2, boxWidth, boxHeight);
-                
+
                 Draw.color(Pal.accent);
                 Lines.stroke(1.5);
                 Lines.rect(worldLeft, worldBottom, boxWidth, boxHeight);

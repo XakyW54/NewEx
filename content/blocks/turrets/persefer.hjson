@@ -106,7 +106,6 @@ drawer: {
           "layer": 50.01
         },
         
-        // Nòng 1 (Trên)
         {
           "suffix": "-barrel",
           "layer": 50.1,
@@ -129,7 +128,6 @@ drawer: {
             }
           ]
         },
-        // Nòng 2 (Trên-Phải)
         {
           "suffix": "-barrel",
           "layer": 50.15,
@@ -154,7 +152,6 @@ drawer: {
             }
           ]
         },
-        // Nòng 3 (Dưới-Phải)
         {
           "suffix": "-barrel",
           "layer": 50.2,
@@ -179,7 +176,6 @@ drawer: {
             }
           ]
         },
-        // Nòng 4 (Dưới)
         {
           "suffix": "-barrel",
           "layer": 50.4,
@@ -202,7 +198,6 @@ drawer: {
             }
           ]
         },
-        // Nòng 5 (Dưới-Trái)
         {
           "suffix": "-barrel",
           "layer": 50.25,
@@ -227,7 +222,6 @@ drawer: {
             }
           ]
         },
-        // Nòng 6 (Trên-Trái)
         {
           "suffix": "-barrel",
           "layer": 50.2,

@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
@@ -27,7 +28,7 @@ function applyCritDamage(bullet, target, baseDamage, ownerBuild){
     if(target == null || ownerBuild == null) return baseDamage;
 
     let stacks = ownerBuild.killStacks || 0;
-    
+
     let critChance = 0.05 + (stacks * 0.01);
     let critMultiplier = (stacks >= 50) ? 2.0 : 1.5;
 
@@ -59,7 +60,7 @@ const ironManBeam = extend(LaserBulletType, {
         if(other != null && b != null && b.owner != null){
             let ownerBuild = b.owner;
             let currentHp = other.health;
-            
+
             let dmgBuff = 1.0 + ((ownerBuild.killStacks || 0) * 0.01);
             let calculatedDmg = this.damage * dmgBuff;
 
@@ -94,11 +95,11 @@ const closeRangeBullet = extend(BasicBulletType, {
         Draw.color(PerfCore.color("90caf9"));
         Lines.stroke(3.5);
         Lines.lineAngle(b.x, b.y, b.rotation(), 14);
-        
+
         Draw.color(PerfCore.color("e3f2fd"));
         Lines.stroke(1.5);
         Lines.lineAngle(b.x, b.y, b.rotation(), 10);
-        
+
         Draw.reset();
     },
 
@@ -113,6 +114,7 @@ const closeRangeBullet = extend(BasicBulletType, {
 });
 
 function spawnErysidusDrone(team, x, y, rotation, tier){
+    if(Vars.net.client()) return;
     let droneType = Vars.content.getByName(ContentType.unit, "newex-erysidus-drone") || Vars.content.getByName(ContentType.unit, "erysidus-drone");
 
     if(droneType != null){
@@ -120,11 +122,11 @@ function spawnErysidusDrone(team, x, y, rotation, tier){
         if(drone != null){
             drone.set(x, y);
             drone.rotation = rotation;
-            
+
             if(drone.setTier !== undefined){
                 drone.setTier(tier);
             }
-            
+
             if(tier === 1){
                 drone.maxHealth = 1650;
                 drone.health = 1650;
@@ -135,7 +137,7 @@ function spawnErysidusDrone(team, x, y, rotation, tier){
                 drone.maxHealth = 1250;
                 drone.health = 1250;
             }
-            
+
             drone.add();
             Fx.spawn.at(x, y);
         }
@@ -218,7 +220,7 @@ Events.on(ClientLoadEvent, new Cons({
                             if(this.beamChargeTimer < 300){
                                 this.beamChargeTimer += Time.delta;
                             }
-                            
+
                             if(this.beamChargeTimer >= 300 && hasTargetInBeamRange){
                                 this.beamChargeTimer = 0;
                                 this.beamDurationTimer = 42;
@@ -246,14 +248,14 @@ Events.on(ClientLoadEvent, new Cons({
                             let beamDmg = (tier === 2) ? 68 : 45;
                             let beam = ironManBeam.create(this, this.team, this.x, this.y, targetAngle, 1, 1);
                             if(beam != null) beam.damage = beamDmg;
-                            
+
                             Effect.shake(1.5, 1.5, this.x, this.y);
                         }
                     }
 
                     if(this.beamDurationTimer <= 0 && this.hasAmmo() && this.isShooting && this.target != null){
                         let dst = this.dst(this.target);
-                        
+
                         if(dst <= 270){
                             this.subGunTimer += Time.delta;
 
@@ -277,7 +279,7 @@ Events.on(ClientLoadEvent, new Cons({
                                     1,
                                     1
                                 );
-                                
+
                                 if(bullet != null){
                                     bullet.damage = bulletDmg;
                                 }
@@ -294,7 +296,7 @@ Events.on(ClientLoadEvent, new Cons({
 
                 drawSelect(){
                     this.super$drawSelect();
-                    
+
                     Draw.color(PerfCore.color("90caf9"));
                     Lines.stroke(1.0);
                     Lines.dashCircle(this.x, this.y, 280);
@@ -320,7 +322,7 @@ Events.on(ClientLoadEvent, new Cons({
                         table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
                             let dialogTitle = english ? "Erysidus Upgrade Center" : "Trung tâm nâng cấp Erysidus";
                             let dialog = extend(BaseDialog, dialogTitle, {});
-                            
+
                             let reqCell = dialog.cont.label(() => {
                                 let core = this.team.core();
                                 if(core == null) return english ? "[red]Team Core not found![]" : "[red]Không tìm thấy Lõi Đội![]";
@@ -328,7 +330,7 @@ Events.on(ClientLoadEvent, new Cons({
                                 let currentlead = core.items.get(Items.lead);
                                 let currentsilicon = core.items.get(Items.silicon);
                                 let currenttitanium = core.items.get(Items.titanium);
-                                
+
                                 let copColor1 = currentcopper >= reqMK2.copper ? "[green]" : "[red]";
                                 let leaColor1 = currentlead >= reqMK2.lead ? "[green]" : "[red]";
                                 let silColor1 = currentsilicon >= reqMK2.silicon ? "[green]" : "[red]";
@@ -337,7 +339,7 @@ Events.on(ClientLoadEvent, new Cons({
                                 let leaColor2 = currentlead >= reqMK2B.lead ? "[green]" : "[red]";
                                 let silColor2 = currentsilicon >= reqMK2B.silicon ? "[green]" : "[red]";
                                 let titColor2 = currenttitanium >= reqMK2B.titanium ? "[green]" : "[red]";
-                                
+
                                 if(english){
                                     return "[yellow]CORE STORAGE REQUIREMENTS:[]\n" +
                                            "[cyan]MK2 Config Branch (Speed):[]\n" +
@@ -362,7 +364,7 @@ Events.on(ClientLoadEvent, new Cons({
                                        " • Silicon: " + silColor2 + currentsilicon + "[] / " + reqMK2B.silicon + "\n" +
                                        " • Titan: " + titColor2 + currenttitanium + "[] / " + reqMK2B.titanium;
                             });
-                            
+
                             reqCell.width(360).get().setWrap(true);
                             reqCell.get().setAlignment(Align.left);
                             dialog.cont.row(); dialog.cont.add().height(10).row();
@@ -380,15 +382,15 @@ Events.on(ClientLoadEvent, new Cons({
                                 " [white]• Tăng lượng máu tối đa lên [green]4125 HP[].[]\n" +
                                 " [white]• Tăng [cyan]130% tốc độ pháo tên lửa[].[]\n" +
                                 " [white]• Đạn cận chiến bắn siêu tốc ([yellow]0.1s/viên[]).[]";
-                            
+
                             let b1D = b1.add(b1Text);
                             b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                             b1.button(english ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => {
                                 let core = this.team.core();
                                 if(core != null && core.items.get(Items.copper) >= reqMK2.copper && core.items.get(Items.lead) >= reqMK2.lead && core.items.get(Items.silicon) >= reqMK2.silicon){
-                                    core.items.remove(Items.copper, reqMK2.copper); core.items.remove(Items.lead, reqMK2.lead); core.items.remove(Items.silicon, reqMK2.silicon);
-                                    Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
-                                    
+                                    NexNet.take(core, Items.copper, reqMK2.copper); NexNet.take(core, Items.lead, reqMK2.lead); NexNet.take(core, Items.silicon, reqMK2.silicon);
+                                    NexNet.fx(Fx.upgradeCore, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
+
                                     this.setTier(1);
                                     this.configure(java.lang.Integer.valueOf(1));
                                     dialog.hide(); this.deselect();
@@ -410,9 +412,9 @@ Events.on(ClientLoadEvent, new Cons({
                             b2.button(english ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                                 let core = this.team.core();
                                 if(core != null && core.items.get(Items.copper) >= reqMK2B.copper && core.items.get(Items.lead) >= reqMK2B.lead && core.items.get(Items.silicon) >= reqMK2B.silicon && core.items.get(Items.titanium) >= reqMK2B.titanium){
-                                    core.items.remove(Items.copper, reqMK2B.copper); core.items.remove(Items.lead, reqMK2B.lead); core.items.remove(Items.silicon, reqMK2B.silicon); core.items.remove(Items.titanium, reqMK2B.titanium);
-                                    Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
-                                    
+                                    NexNet.take(core, Items.copper, reqMK2B.copper); NexNet.take(core, Items.lead, reqMK2B.lead); NexNet.take(core, Items.silicon, reqMK2B.silicon); NexNet.take(core, Items.titanium, reqMK2B.titanium);
+                                    NexNet.fx(Fx.bigShockwave, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
+
                                     this.setTier(2);
                                     this.configure(java.lang.Integer.valueOf(2));
                                     dialog.hide(); this.deselect();

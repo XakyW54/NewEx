@@ -1,8 +1,9 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
-const chargeTimeMax = 180;   
-const berserkTimeMax = 300;  
-const chargeTimeMaxMK2 = 140;   
-const berserkTimeMaxMK2 = 360;  
+const chargeTimeMax = 180;
+const berserkTimeMax = 300;
+const chargeTimeMaxMK2 = 140;
+const berserkTimeMaxMK2 = 360;
 
  const reqRangtatursMK2 = { copper: 560, lead: 490, silicon: 0 };
 const reqRangtatursMK2B = { copper: 840, lead: 665, silicon: 385 };
@@ -21,151 +22,151 @@ const acidCorrosionEffect = new Effect(30, cons(e => {
 
 const rangtatursNormalBlasted = extend(BasicBulletType, {
     speed: 7, damage: 1, width: 7, height: 18, lifetime: 43,
-    frontColor: Color.valueOf("#ffab40"), backColor: Color.valueOf("#ff6d00"), 
+    frontColor: Color.valueOf("#ffab40"), backColor: Color.valueOf("#ff6d00"),
     trailColor: Color.valueOf("#ff6d00"), trailWidth: 1.5, trailLength: 5,
     splashDamage: 12, splashDamageRadius: 24, knockback: 1.2, statusDuration: 140,
     hitEffect: Fx.blastExplosion, despawnEffect: Fx.blastExplosion, status: StatusEffects.blasted
 });
 const rangtatursNormalMelting = extend(BasicBulletType, {
     speed: 7, damage: 1, width: 7, height: 18, lifetime: 43,
-    frontColor: Color.valueOf("#ffa726"), backColor: Color.valueOf("#f57c00"), 
+    frontColor: Color.valueOf("#ffa726"), backColor: Color.valueOf("#f57c00"),
     trailColor: Color.valueOf("#f57c00"), trailWidth: 1.5, trailLength: 5,
     splashDamage: 12, splashDamageRadius: 24, knockback: 0.5, statusDuration: 140,
     hitEffect: Fx.melting, despawnEffect: Fx.melting, status: StatusEffects.melting
 });
 const rangtatursNormalBurning = extend(BasicBulletType, {
     speed: 7, damage: 1, width: 7, height: 18, lifetime: 43,
-    frontColor: Color.valueOf("#ff7043"), backColor: Color.valueOf("#d84315"), 
+    frontColor: Color.valueOf("#ff7043"), backColor: Color.valueOf("#d84315"),
     trailColor: Color.valueOf("#d84315"), trailWidth: 1.5, trailLength: 5,
     splashDamage: 12, splashDamageRadius: 24, knockback: 0.5, statusDuration: 140,
     hitEffect: Fx.fire, despawnEffect: Fx.fire, status: StatusEffects.burning
 });
 const rangtatursNormalFreezing = extend(BasicBulletType, {
     speed: 7, damage: 1, width: 7, height: 18, lifetime: 43,
-    frontColor: Color.valueOf("#29b6f6"), backColor: Color.valueOf("#0288d1"), 
+    frontColor: Color.valueOf("#29b6f6"), backColor: Color.valueOf("#0288d1"),
     trailColor: Color.valueOf("#0288d1"), trailWidth: 1.5, trailLength: 5,
     splashDamage: 12, splashDamageRadius: 24, knockback: 0.5, statusDuration: 140,
     hitEffect: Fx.freezing, despawnEffect: Fx.freezing, status: StatusEffects.freezing
 });
 const rangtatursNormalShocked = extend(BasicBulletType, {
     speed: 7, damage: 1, width: 7, height: 18, lifetime: 43,
-    frontColor: Color.valueOf("#e1bee7"), backColor: Color.valueOf("#ba68c8"), 
+    frontColor: Color.valueOf("#e1bee7"), backColor: Color.valueOf("#ba68c8"),
     trailColor: Color.valueOf("#ba68c8"), trailWidth: 1.5, trailLength: 5,
     splashDamage: 12, splashDamageRadius: 24, knockback: 0.5, statusDuration: 140,
     hitEffect: Fx.lightning, despawnEffect: Fx.lightning, status: StatusEffects.shocked
 });
 const rangtatursNormalWet = extend(BasicBulletType, {
     speed: 7.2, damage: 1, width: 6.5, height: 17, lifetime: 43,
-    frontColor: Color.valueOf("#60a5fa"), backColor: Color.valueOf("#2563eb"), 
+    frontColor: Color.valueOf("#60a5fa"), backColor: Color.valueOf("#2563eb"),
     trailColor: Color.valueOf("#2563eb"), trailWidth: 1.4, trailLength: 5,
     splashDamage: 10, splashDamageRadius: 24, knockback: 0.6, statusDuration: 180,
     hitEffect: Fx.freezing, despawnEffect: Fx.freezing, status: StatusEffects.wet
 });
 const rangtatursNormalCorroded = extend(BasicBulletType, {
     speed: 6.8, damage: 1, width: 7, height: 17, lifetime: 43,
-    frontColor: Color.valueOf("#bef264"), backColor: Color.valueOf("#65a30d"), 
+    frontColor: Color.valueOf("#bef264"), backColor: Color.valueOf("#65a30d"),
     trailColor: Color.valueOf("#65a30d"), trailWidth: 1.5, trailLength: 6,
     splashDamage: 14, splashDamageRadius: 26, knockback: 0.3, statusDuration: 160,
     hitEffect: acidCorrosionEffect, despawnEffect: acidCorrosionEffect, status: StatusEffects.corroded
 });
 
-const rangtatursNormalBullet = rangtatursNormalBlasted; 
+const rangtatursNormalBullet = rangtatursNormalBlasted;
 
 const rangtatursmk2NormalBlasted = extend(BasicBulletType, {
-    speed: 7.7, damage: 1, width: 7.7, height: 19.8, lifetime: 43,      
+    speed: 7.7, damage: 1, width: 7.7, height: 19.8, lifetime: 43,
     frontColor: Color.valueOf("#ffab40"), backColor: Color.valueOf("#ff6d00"),
-    trailColor: Color.valueOf("#ff6d00"), trailWidth: 1.65, trailLength: 6,    
+    trailColor: Color.valueOf("#ff6d00"), trailWidth: 1.65, trailLength: 6,
     splashDamage: 15, splashDamageRadius: 28, knockback: 1.4, statusDuration: 140,
     hitEffect: Fx.blastExplosion, despawnEffect: Fx.blastExplosion, status: StatusEffects.blasted
 });
 const rangtatursmk2NormalMelting = extend(BasicBulletType, {
-    speed: 7.7, damage: 1, width: 7.7, height: 19.8, lifetime: 43,      
+    speed: 7.7, damage: 1, width: 7.7, height: 19.8, lifetime: 43,
     frontColor: Color.valueOf("#ffa726"), backColor: Color.valueOf("#f57c00"),
-    trailColor: Color.valueOf("#f57c00"), trailWidth: 1.65, trailLength: 6,    
+    trailColor: Color.valueOf("#f57c00"), trailWidth: 1.65, trailLength: 6,
     splashDamage: 15, splashDamageRadius: 28, knockback: 0.6, statusDuration: 140,
     hitEffect: Fx.melting, despawnEffect: Fx.melting, status: StatusEffects.melting
 });
 const rangtatursmk2NormalBurning = extend(BasicBulletType, {
-    speed: 7.7, damage: 1, width: 7.7, height: 19.8, lifetime: 43,      
+    speed: 7.7, damage: 1, width: 7.7, height: 19.8, lifetime: 43,
     frontColor: Color.valueOf("#ff7043"), backColor: Color.valueOf("#d84315"),
-    trailColor: Color.valueOf("#d84315"), trailWidth: 1.65, trailLength: 6,    
+    trailColor: Color.valueOf("#d84315"), trailWidth: 1.65, trailLength: 6,
     splashDamage: 15, splashDamageRadius: 28, knockback: 0.6, statusDuration: 140,
     hitEffect: Fx.fire, despawnEffect: Fx.fire, status: StatusEffects.burning
 });
 const rangtatursmk2NormalFreezing = extend(BasicBulletType, {
-    speed: 7.7, damage: 1, width: 7.7, height: 19.8, lifetime: 43,      
+    speed: 7.7, damage: 1, width: 7.7, height: 19.8, lifetime: 43,
     frontColor: Color.valueOf("#29b6f6"), backColor: Color.valueOf("#0288d1"),
-    trailColor: Color.valueOf("#0288d1"), trailWidth: 1.65, trailLength: 6,    
+    trailColor: Color.valueOf("#0288d1"), trailWidth: 1.65, trailLength: 6,
     splashDamage: 15, splashDamageRadius: 28, knockback: 0.6, statusDuration: 140,
     hitEffect: Fx.freezing, despawnEffect: Fx.freezing, status: StatusEffects.freezing
 });
 const rangtatursmk2NormalShocked = extend(BasicBulletType, {
-    speed: 7.7, damage: 1, width: 7.7, height: 19.8, lifetime: 43,      
+    speed: 7.7, damage: 1, width: 7.7, height: 19.8, lifetime: 43,
     frontColor: Color.valueOf("#e1bee7"), backColor: Color.valueOf("#ba68c8"),
-    trailColor: Color.valueOf("#ba68c8"), trailWidth: 1.65, trailLength: 6,    
+    trailColor: Color.valueOf("#ba68c8"), trailWidth: 1.65, trailLength: 6,
     splashDamage: 15, splashDamageRadius: 28, knockback: 0.6, statusDuration: 140,
     hitEffect: Fx.lightning, despawnEffect: Fx.lightning, status: StatusEffects.shocked
 });
 const rangtatursmk2NormalWet = extend(BasicBulletType, {
-    speed: 7.9, damage: 1, width: 7.2, height: 18.5, lifetime: 43,      
+    speed: 7.9, damage: 1, width: 7.2, height: 18.5, lifetime: 43,
     frontColor: Color.valueOf("#60a5fa"), backColor: Color.valueOf("#2563eb"),
-    trailColor: Color.valueOf("#2563eb"), trailWidth: 1.55, trailLength: 6,    
+    trailColor: Color.valueOf("#2563eb"), trailWidth: 1.55, trailLength: 6,
     splashDamage: 12, splashDamageRadius: 28, knockback: 0.7, statusDuration: 180,
     hitEffect: Fx.freezing, despawnEffect: Fx.freezing, status: StatusEffects.wet
 });
 const rangtatursmk2NormalCorroded = extend(BasicBulletType, {
-    speed: 7.5, damage: 1, width: 7.7, height: 18.5, lifetime: 43,      
+    speed: 7.5, damage: 1, width: 7.7, height: 18.5, lifetime: 43,
     frontColor: Color.valueOf("#bef264"), backColor: Color.valueOf("#65a30d"),
-    trailColor: Color.valueOf("#65a30d"), trailWidth: 1.65, trailLength: 7,    
+    trailColor: Color.valueOf("#65a30d"), trailWidth: 1.65, trailLength: 7,
     splashDamage: 17, splashDamageRadius: 30, knockback: 0.4, statusDuration: 160,
     hitEffect: acidCorrosionEffect, despawnEffect: acidCorrosionEffect, status: StatusEffects.corroded
 });
 
 const normalBulletBBlasted = extend(BasicBulletType, {
     speed: 8.5, damage: 1, width: 8, height: 20, lifetime: 40,
-    frontColor: Color.valueOf("#ff5252"), backColor: Color.valueOf("#ff1744"), 
+    frontColor: Color.valueOf("#ff5252"), backColor: Color.valueOf("#ff1744"),
     trailColor: Color.valueOf("#ff1744"), trailWidth: 2, trailLength: 6,
     splashDamage: 22, splashDamageRadius: 36, knockback: 1.8, statusDuration: 180,
     hitEffect: Fx.blastExplosion, despawnEffect: Fx.blastExplosion, status: StatusEffects.blasted
 });
 const normalBulletBMelting = extend(BasicBulletType, {
     speed: 8.5, damage: 1, width: 8, height: 20, lifetime: 40,
-    frontColor: Color.valueOf("#ffa726"), backColor: Color.valueOf("#f57c00"), 
+    frontColor: Color.valueOf("#ffa726"), backColor: Color.valueOf("#f57c00"),
     trailColor: Color.valueOf("#f57c00"), trailWidth: 2, trailLength: 6,
     splashDamage: 22, splashDamageRadius: 36, knockback: 0.8, statusDuration: 180,
     hitEffect: Fx.melting, despawnEffect: Fx.melting, status: StatusEffects.melting
 });
 const normalBulletBBurning = extend(BasicBulletType, {
     speed: 8.5, damage: 1, width: 8, height: 20, lifetime: 40,
-    frontColor: Color.valueOf("#ff7043"), backColor: Color.valueOf("#d84315"), 
+    frontColor: Color.valueOf("#ff7043"), backColor: Color.valueOf("#d84315"),
     trailColor: Color.valueOf("#d84315"), trailWidth: 2, trailLength: 6,
     splashDamage: 22, splashDamageRadius: 36, knockback: 0.8, statusDuration: 180,
     hitEffect: Fx.fire, despawnEffect: Fx.fire, status: StatusEffects.burning
 });
 const normalBulletBFreezing = extend(BasicBulletType, {
     speed: 8.5, damage: 1, width: 8, height: 20, lifetime: 40,
-    frontColor: Color.valueOf("#29b6f6"), backColor: Color.valueOf("#0288d1"), 
+    frontColor: Color.valueOf("#29b6f6"), backColor: Color.valueOf("#0288d1"),
     trailColor: Color.valueOf("#0288d1"), trailWidth: 2, trailLength: 6,
     splashDamage: 22, splashDamageRadius: 36, knockback: 0.8, statusDuration: 180,
     hitEffect: Fx.freezing, despawnEffect: Fx.freezing, status: StatusEffects.freezing
 });
 const normalBulletBShocked = extend(BasicBulletType, {
     speed: 8.5, damage: 1, width: 8, height: 20, lifetime: 40,
-    frontColor: Color.valueOf("#e1bee7"), backColor: Color.valueOf("#ba68c8"), 
+    frontColor: Color.valueOf("#e1bee7"), backColor: Color.valueOf("#ba68c8"),
     trailColor: Color.valueOf("#ba68c8"), trailWidth: 2, trailLength: 6,
     splashDamage: 22, splashDamageRadius: 36, knockback: 0.8, statusDuration: 180,
     hitEffect: Fx.lightning, despawnEffect: Fx.lightning, status: StatusEffects.shocked
 });
 const normalBulletBWet = extend(BasicBulletType, {
     speed: 8.7, damage: 1, width: 7.5, height: 19, lifetime: 40,
-    frontColor: Color.valueOf("#93c5fd"), backColor: Color.valueOf("#1d4ed8"), 
+    frontColor: Color.valueOf("#93c5fd"), backColor: Color.valueOf("#1d4ed8"),
     trailColor: Color.valueOf("#1d4ed8"), trailWidth: 1.9, trailLength: 6,
     splashDamage: 18, splashDamageRadius: 36, knockback: 0.9, statusDuration: 220,
     hitEffect: Fx.freezing, despawnEffect: Fx.freezing, status: StatusEffects.wet
 });
 const normalBulletBCorroded = extend(BasicBulletType, {
     speed: 8.3, damage: 1, width: 8, height: 19, lifetime: 40,
-    frontColor: Color.valueOf("#bef264"), backColor: Color.valueOf("#4d7c0f"), 
+    frontColor: Color.valueOf("#bef264"), backColor: Color.valueOf("#4d7c0f"),
     trailColor: Color.valueOf("#4d7c0f"), trailWidth: 2, trailLength: 7,
     splashDamage: 26, splashDamageRadius: 38, knockback: 0.5, statusDuration: 200,
     hitEffect: acidCorrosionEffect, despawnEffect: acidCorrosionEffect, status: StatusEffects.corroded
@@ -213,7 +214,7 @@ const handleShotgunShoot = (build, poolType, pellets, spread, damageMultiplier, 
 
     for(let i = 0; i < pellets; i++){
         let angle = build.rotation + Mathf.range(spread);
-        let r = Math.floor(Math.random() * 7); 
+        let r = Math.floor(Math.random() * 7);
         let selectedBulletType = rangtatursNormalBlasted;
 
         if (poolType == 0) {
@@ -259,7 +260,7 @@ rangtaturs.health = 950; rangtaturs.size = 3; rangtaturs.reload = 95; rangtaturs
 rangtaturs.ammo(Items.silicon, rangtatursNormalBullet);
 
 rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
-    evolutionTier: 0, 
+    evolutionTier: 0,
     chargeTimer: 0, superShotCount: 0, berserkTimer: 0,
     laserCount: 0, burstTimer: 0, customReloadTimer: 0,
 
@@ -271,18 +272,18 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
         if(tier == 0) {
             table.button(Icon.upOpen, Styles.cleari, 40, run(() => {
                 let dialog = extend(BaseDialog, isEn ? "Rangtaturs Upgrade Center" : "Trung tâm nâng cấp pháo Rangtaturs", {});
-                
+
                 let reqCell = dialog.cont.label(prov(() => {
                     let core = this.team.core();
                     if(!core) return isEn ? "[red]Core Vault not found![]" : "[red]Không tìm thấy Kho cốt lõi![]";
-                    
+
                     let currentCopper = core.items.get(Items.copper);
                     let currentLead = core.items.get(Items.lead);
                     let currentSilicon = core.items.get(Items.silicon);
-                    
+
                     let copColor1 = currentCopper >= reqRangtatursMK2.copper ? "[green]" : "[red]";
                     let ledColor1 = currentLead >= reqRangtatursMK2.lead ? "[green]" : "[red]";
-                    
+
                     let copColor2 = currentCopper >= reqRangtatursMK2B.copper ? "[green]" : "[red]";
                     let ledColor2 = currentLead >= reqRangtatursMK2B.lead ? "[green]" : "[red]";
                     let silColor2 = currentSilicon >= reqRangtatursMK2B.silicon ? "[green]" : "[red]";
@@ -307,7 +308,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                                " • Silic: " + silColor2 + currentSilicon + "[] / " + reqRangtatursMK2B.silicon;
                     }
                 }));
-                
+
                 reqCell.width(360).get().setWrap(true);
                 reqCell.get().setAlignment(Align.left);
                 dialog.cont.row(); dialog.cont.add().height(10).row();
@@ -333,10 +334,10 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                 b1.button(isEn ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", run(() => {
                     let core = this.team.core();
                     if(core && core.items.get(Items.copper) >= reqRangtatursMK2.copper && core.items.get(Items.lead) >= reqRangtatursMK2.lead){
-                        core.items.remove(Items.copper, reqRangtatursMK2.copper);
-                        core.items.remove(Items.lead, reqRangtatursMK2.lead);
+                        NexNet.take(core, Items.copper, reqRangtatursMK2.copper);
+                        NexNet.take(core, Items.lead, reqRangtatursMK2.lead);
                         this.evolutionTier = 1;
-                        Fx.upgradeCore.at(this.x, this.y);
+                        NexNet.fx(Fx.upgradeCore, this.x, this.y);
                         dialog.hide(); this.deselect();
                     } else {
                         Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2 branch![]" : "[red]Không đủ tài nguyên nâng cấp cho nhánh MK2![]");
@@ -362,11 +363,11 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                 b2.button(isEn ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", run(() => {
                     let core = this.team.core();
                     if(core && core.items.get(Items.copper) >= reqRangtatursMK2B.copper && core.items.get(Items.lead) >= reqRangtatursMK2B.lead && core.items.get(Items.silicon) >= reqRangtatursMK2B.silicon){
-                        core.items.remove(Items.copper, reqRangtatursMK2B.copper);
-                        core.items.remove(Items.lead, reqRangtatursMK2B.lead);
-                        core.items.remove(Items.silicon, reqRangtatursMK2B.silicon);
+                        NexNet.take(core, Items.copper, reqRangtatursMK2B.copper);
+                        NexNet.take(core, Items.lead, reqRangtatursMK2B.lead);
+                        NexNet.take(core, Items.silicon, reqRangtatursMK2B.silicon);
                         this.evolutionTier = 2;
-                        Fx.bigShockwave.at(this.x, this.y);
+                        NexNet.fx(Fx.bigShockwave, this.x, this.y);
                         dialog.hide(); this.deselect();
                     } else {
                         Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2B branch![]" : "[red]Không đủ tài nguyên nâng cấp cho nhánh MK2B![]");
@@ -376,7 +377,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                 branchesTable.add(b1).width(340); branchesTable.row();
                 branchesTable.add().height(12).row();
                 branchesTable.add(b2).width(340);
-                
+
                 let scroll = new ScrollPane(branchesTable);
                 scroll.setScrollingDisabled(true, false);
                 dialog.cont.add(scroll).maxHeight(400);
@@ -473,7 +474,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
         if(this.evolutionTier == 2){
             if (this.customReloadTimer > 0) {
                 this.customReloadTimer -= Time.delta;
-                this.reloadCounter = 0; 
+                this.reloadCounter = 0;
             }
             return;
         }
@@ -498,19 +499,19 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
     shoot(type){
         this.super$shoot(type);
 
-        let rLaser = Math.floor(Math.random() * 7); 
+        let rLaser = Math.floor(Math.random() * 7);
         let muzzleX = this.x + Angles.trnsx(this.rotation, 12);
         let muzzleY = this.y + Angles.trnsy(this.rotation, 12);
 
         if(this.evolutionTier == 2){
             if (this.customReloadTimer <= 0) {
                 if (this.burstTimer == 1) {
-                    handleShotgunShoot(this, 2, 135, 35, 1.0, 1.2); 
+                    handleShotgunShoot(this, 2, 135, 35, 1.0, 1.2);
                     Fx.bigShockwave.at(this.x, this.y);
-                    
+
                     this.burstTimer = 0;
                     this.laserCount = 0;
-                    this.customReloadTimer = 180; 
+                    this.customReloadTimer = 180;
                 } else {
                     let targetLaser = laserB_Blasted;
                     if (rLaser == 0) targetLaser = laserB_Blasted;
@@ -520,20 +521,20 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                     else if (rLaser == 4) targetLaser = laserB_Shocked;
                     else if (rLaser == 5) targetLaser = laserB_Wet;
                     else targetLaser = laserB_Corroded;
-                    
+
                     let currentBullet = this.peekAmmo();
                     targetLaser.damage = (currentBullet != null ? currentBullet.damage : type.damage) * 3.1;
-                    
+
                     targetLaser.create(this, this.team, muzzleX, muzzleY, this.rotation);
                     Fx.lightningCharge.at(this.x, this.y);
-                    
-                    handleShotgunShoot(this, 2, 68, 4, 1.0, 1.1); 
-                    
+
+                    handleShotgunShoot(this, 2, 68, 4, 1.0, 1.1);
+
                     this.laserCount++;
-                    this.customReloadTimer = 70; 
+                    this.customReloadTimer = 70;
 
                     if(this.laserCount >= 6){
-                        this.burstTimer = 1; 
+                        this.burstTimer = 1;
                     }
                 }
             }
@@ -546,7 +547,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
 
         if (this.chargeTimer >= maxCharge && this.berserkTimer <= 0) {
             Fx.lightningCharge.at(this.x, this.y);
-            
+
             let targetLaserBullet = laserMK1_Blasted;
             if (this.evolutionTier == 1) {
                 if (rLaser == 0) targetLaserBullet = laserMK2_Blasted;
@@ -565,32 +566,32 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                 else if (rLaser == 5) targetLaserBullet = laserMK1_Wet;
                 else targetLaserBullet = laserMK1_Corroded;
             }
-            
+
             let currentBullet = this.peekAmmo();
             targetLaserBullet.damage = (currentBullet != null ? currentBullet.damage : type.damage) * laserDmgMultiplier;
-            
+
             targetLaserBullet.create(this, this.team, muzzleX, muzzleY, this.rotation);
 
             this.superShotCount++;
             this.chargeTimer = 0;
 
-            if (this.superShotCount >= 3) { 
-                this.berserkTimer = maxBerserk; 
-                this.superShotCount = 0; 
-                Fx.upgradeCore.at(this.x, this.y); 
+            if (this.superShotCount >= 3) {
+                this.berserkTimer = maxBerserk;
+                this.superShotCount = 0;
+                Fx.upgradeCore.at(this.x, this.y);
             }
         } else {
             let pType = this.evolutionTier;
-            let pellets = 39; 
-            let spread = 8;        
-            let dmgMul = 1.0;      
-            let spdMul = 1.0;      
+            let pellets = 39;
+            let spread = 8;
+            let dmgMul = 1.0;
+            let spdMul = 1.0;
 
-            if(this.evolutionTier == 1){ 
-                pellets = 53; 
+            if(this.evolutionTier == 1){
+                pellets = 53;
                 spread = 8;
-                dmgMul = 0.95; 
-            } 
+                dmgMul = 0.95;
+            }
 
             handleShotgunShoot(this, pType, pellets, spread, dmgMul, spdMul);
         }

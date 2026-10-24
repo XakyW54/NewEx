@@ -1,35 +1,34 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
 const packCons = (func) => new Cons({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 
-// Hàm vẽ Elip 3D xoay góc
 function draw3DRotatedEllipseWave(centerX, centerY, radiusX, radiusY, rotationDeg) {
     let points = 20;
     let rotationRad = rotationDeg * Mathf.degRad;
     let cosRot = Math.cos(rotationRad);
     let sinRot = Math.sin(rotationRad);
-    
+
     let localX = radiusX;
     let localY = 0;
     let lastX = centerX + (localX * cosRot - localY * sinRot);
     let lastY = centerY + (localX * sinRot + localY * cosRot);
-    
+
     for (let i = 1; i <= points; i++) {
         let angle = (i * 360 / points) * Mathf.degRad;
         localX = Math.cos(angle) * radiusX;
         localY = Math.sin(angle) * radiusY;
-        
+
         let nextX = centerX + (localX * cosRot - localY * sinRot);
         let nextY = centerY + (localX * sinRot + localY * cosRot);
-        
+
         Lines.line(lastX, lastY, nextX, nextY);
-        
+
         lastX = nextX;
         lastY = nextY;
     }
 }
 
-// Hiệu ứng sóng âm tự tạo
 const customShockwaveEffect = new Effect(40, packCons((e) => {
     Draw.z(Layer.effect + 4);
     let f = e.fin();
@@ -45,12 +44,11 @@ const customShockwaveEffect = new Effect(40, packCons((e) => {
     Draw.reset();
 }));
 
-// Hiệu ứng tia laser chiếu cong hướng Đông Bắc siêu dài
 const balashilonLaserBeamEffect = new Effect(50, packCons((e) => {
     Draw.z(Layer.effect + 3);
     let f = e.fin();
     let alpha = 1.0 - Interp.pow3Out.apply(f);
-    
+
     let mainColor = Color.valueOf("00f0ff");
     let coreColor = Color.white;
 
@@ -64,14 +62,13 @@ const balashilonLaserBeamEffect = new Effect(50, packCons((e) => {
 
     Lines.stroke(4 * (1.0 - f), mainColor);
     Lines.circle(e.x, e.y, 8 + (60 * f));
-    
+
     Draw.reset();
 }));
 
-// Hiệu ứng Thiên Thạch Rơi
 const meteorFallingEffect = new Effect(50, packCons((e) => {
     Draw.z(Layer.effect + 5);
-    let f = e.fin(); 
+    let f = e.fin();
 
     let portalX = e.x - 220;
     let portalY = e.y + 450;
@@ -109,7 +106,7 @@ const meteorFallingEffect = new Effect(50, packCons((e) => {
         Fill.circle(portalX, portalY, 14);
     }
 
-    let waveAngle = 33; 
+    let waveAngle = 33;
     let waveRadius = 6 + (28 * Interp.pow2Out.apply(f));
     Lines.stroke(2.0 * (1.0 - f), Color.valueOf("ffb380"));
     draw3DRotatedEllipseWave(currentX, currentY, waveRadius, waveRadius * 0.4, waveAngle);
@@ -130,7 +127,7 @@ const meteorFallingEffect = new Effect(50, packCons((e) => {
 
     if (meteorRegion.found()) {
         Draw.color(Color.white);
-        let rotation = Time.time * 15.0; 
+        let rotation = Time.time * 15.0;
         Draw.rect(meteorRegion, currentX, currentY, 24, 24, rotation);
     } else {
         Draw.color(PerfCore.color("594e48"));
@@ -140,7 +137,6 @@ const meteorFallingEffect = new Effect(50, packCons((e) => {
     Draw.reset();
 }));
 
-// ĐẠN HÌNH CHỮ NHẬT BẮN XÂY CÔNG TRÌNH
 const builderBulletType = extend(BasicBulletType, {
     speed: 8,
     damage: 0,
@@ -153,7 +149,7 @@ const builderBulletType = extend(BasicBulletType, {
 
     despawned(b) {
         this.super$despawned(b);
-        
+
         let tx = b.x;
         let ty = b.y;
         let team = b.team;
@@ -164,13 +160,11 @@ const builderBulletType = extend(BasicBulletType, {
         let centerTile = Vars.world.tileWorld(tx, ty);
         if (centerTile == null) return;
 
-        // 1. Blast Drill ở vị trí trung tâm
         let blastDrill = Blocks.blastDrill;
         if (blastDrill != null) {
             centerTile.setNet(blastDrill, team, 0);
         }
 
-        // 2. Khối PINFYR (newex-pinfyr) bên trái + NẠP ĐẦY ĐIỆN
         let leftTile = Vars.world.tile(centerTile.x - 3, centerTile.y);
         let pinfyrBlock = Vars.content.getByName(ContentType.block, "battery-large");
         if (pinfyrBlock == null) {
@@ -179,8 +173,7 @@ const builderBulletType = extend(BasicBulletType, {
 
         if (leftTile != null && pinfyrBlock != null) {
             leftTile.setNet(pinfyrBlock, team, 0);
-            
-            // Lấy entity vừa xây và làm đầy pin
+
             let pinBuild = leftTile.build;
             if (pinBuild != null) {
                 if (pinBuild.power != null) {
@@ -192,7 +185,6 @@ const builderBulletType = extend(BasicBulletType, {
             }
         }
 
-        // 3. Container ở bên phải (Offset +3 ô)
         let rightTile = Vars.world.tile(centerTile.x + 3, centerTile.y);
         let container = Blocks.container;
         if (rightTile != null && container != null) {
@@ -201,168 +193,184 @@ const builderBulletType = extend(BasicBulletType, {
     }
 });
 
-Events.on(ClientLoadEvent, () => {
-    let balashilonBlock = Vars.content.getByName(ContentType.block, "newex-balashilon");
+let balashilonBlock = null;
+let balashilonReady = false;
+const METEOR_COST = 200;
+
+NexNet.on("balashilon", (player, payload) => {
+    let b = Vars.world.build(parseInt(payload));
+    if (b == null || typeof b.queueMeteor !== "function") return;
+    if (player != null && b.team != player.team()) return;
+
+    let core = b.team.core();
+    if (core == null || !core.items.has(Items.copper, METEOR_COST)) {
+        NexNet.toastTo(player, "[red]Không đủ 200 Đồng![]", 2);
+        return;
+    }
+
+    core.items.remove(Items.copper, METEOR_COST);
+    b.queueMeteor();
+}, true, 250);
+
+function setupBalashilon() {
+    if (balashilonReady) return;
+
+    balashilonBlock = Vars.content.getByName(ContentType.block, "newex-balashilon");
     if (balashilonBlock == null) {
         balashilonBlock = Vars.content.getByName(ContentType.block, "balashilon");
     }
+    if (balashilonBlock == null) return;
 
-    if (balashilonBlock != null) {
-        balashilonBlock.configurable = true;
-        balashilonBlock.update = true;
+    balashilonReady = true;
+    balashilonBlock.configurable = true;
+    balashilonBlock.update = true;
 
-        balashilonBlock.buildType = () => extend(Building, {
-            meteorQueue: [],
-            shootQueue: [],
+    balashilonBlock.buildType = () => extend(Building, {
+        meteorQueue: [],
+        shootQueue: [],
 
-            buildConfiguration(table) {
-                table.clear();
-                table.row();
+        queueMeteor() {
+            NexNet.fx(balashilonLaserBeamEffect, this.x, this.y);
+            NexNet.fx(Fx.shieldApply, this.x, this.y, 0, Color.valueOf("00f0ff"));
 
-                table.button(Icon.ok, Styles.cleari, 40, packRun(() => {
-                    let teamCore = this.team.core();
-                    let cost = 200;
+            let delayTicks = Mathf.random(180, 360);
+            let maxRadiusPixels = 150 * Vars.tilesize;
+            let angle = Mathf.random(360);
+            let distance = Mathf.random(16, maxRadiusPixels);
 
-                    if (teamCore == null || !teamCore.items.has(Items.copper, cost)) {
-                        Call.label("[red]Không đủ 200 Đồng!", 2.0, this.x, this.y);
-                        return;
-                    }
+            this.meteorQueue.push({
+                timer: delayTicks,
+                falling: false,
+                x: this.x + Angles.trnsx(angle, distance),
+                y: this.y + Angles.trnsy(angle, distance)
+            });
+        },
 
-                    teamCore.items.remove(Items.copper, cost);
+        buildConfiguration(table) {
+            table.clear();
+            table.row();
 
-                    balashilonLaserBeamEffect.at(this.x, this.y);
-                    Fx.shieldApply.at(this.x, this.y, 0, Color.valueOf("00f0ff"));
+            table.button(Icon.ok, Styles.cleari, 40, packRun(() => {
+                let teamCore = this.team.core();
+                if (teamCore == null || !teamCore.items.has(Items.copper, METEOR_COST)) {
+                    Vars.ui.showInfoToast("[red]Không đủ 200 Đồng![]", 2);
+                    return;
+                }
 
-                    let delayTicks = Mathf.random(180, 360);
+                NexNet.send("balashilon", this.pos());
+                this.deselect();
+            })).size(50, 40).tooltip("Kích hoạt gọi Thiên thạch (Tốn 200 Đồng)");
+        },
 
-                    let maxRadiusPixels = 150 * Vars.tilesize;
-                    let angle = Mathf.random(360);
-                    let distance = Mathf.random(16, maxRadiusPixels);
+        updateTile() {
+            this.super$updateTile();
+            if (Vars.net.client()) return;
 
-                    let targetX = this.x + Angles.trnsx(angle, distance);
-                    let targetY = this.y + Angles.trnsy(angle, distance);
+            for (let i = this.meteorQueue.length - 1; i >= 0; i--) {
+                let item = this.meteorQueue[i];
+                item.timer -= Time.delta;
 
-                    this.meteorQueue.push({
-                        timer: delayTicks,
-                        falling: false,
-                        x: targetX,
-                        y: targetY
+                if (!item.falling && item.timer <= 50) {
+                    item.falling = true;
+                    NexNet.fx(meteorFallingEffect, item.x, item.y);
+                }
+
+                if (item.timer <= 0) {
+                    this.spawnRandomMeteorOre(item.x, item.y);
+
+                    this.shootQueue.push({
+                        timer: 180,
+                        x: item.x,
+                        y: item.y
                     });
 
-                    this.deselect();
-                })).size(50, 40).tooltip("Kích hoạt gọi Thiên thạch (Tốn 200 Đồng)");
-            },
-
-            updateTile() {
-                this.super$updateTile();
-
-                for (let i = this.meteorQueue.length - 1; i >= 0; i--) {
-                    let item = this.meteorQueue[i];
-                    item.timer -= Time.delta;
-
-                    if (!item.falling && item.timer <= 50) {
-                        item.falling = true;
-                        meteorFallingEffect.at(item.x, item.y);
-                    }
-
-                    if (item.timer <= 0) {
-                        this.spawnRandomMeteorOre(item.x, item.y);
-
-                        this.shootQueue.push({
-                            timer: 180,
-                            x: item.x,
-                            y: item.y
-                        });
-
-                        this.meteorQueue.splice(i, 1);
-                    }
+                    this.meteorQueue.splice(i, 1);
                 }
+            }
 
-                for (let i = this.shootQueue.length - 1; i >= 0; i--) {
-                    let s = this.shootQueue[i];
-                    s.timer -= Time.delta;
+            for (let i = this.shootQueue.length - 1; i >= 0; i--) {
+                let s = this.shootQueue[i];
+                s.timer -= Time.delta;
 
-                    if (s.timer <= 0) {
-                        let angle = Angles.angle(this.x, this.y, s.x, s.y);
-                        let dst = Mathf.dst(this.x, this.y, s.x, s.y);
-                        
-                        let bullet = builderBulletType.create(this, this.team, this.x, this.y, angle);
-                        bullet.lifetime = dst / builderBulletType.speed;
+                if (s.timer <= 0) {
+                    let angle = Angles.angle(this.x, this.y, s.x, s.y);
+                    let dst = Mathf.dst(this.x, this.y, s.x, s.y);
+                    let lifeScale = dst / (builderBulletType.speed * builderBulletType.lifetime);
 
-                        this.shootQueue.splice(i, 1);
-                    }
+                    Call.createBullet(builderBulletType, this.team, this.x, this.y, angle, 0, 1, lifeScale);
+
+                    this.shootQueue.splice(i, 1);
                 }
-            },
+            }
+        },
 
-            spawnRandomMeteorOre(tx, ty) {
-                let targetTile = Vars.world.tileWorld(tx, ty);
-                if (targetTile == null) return;
+        spawnRandomMeteorOre(tx, ty) {
+            let targetTile = Vars.world.tileWorld(tx, ty);
+            if (targetTile == null) return;
 
-                Fx.reactorExplosion.at(tx, ty);
-                Fx.dynamicExplosion.at(tx, ty);
-                Fx.smokeCloud.at(tx, ty);
-                customShockwaveEffect.at(tx, ty);
-                Effect.shake(14, 14, tx, ty);
+            NexNet.fx(Fx.reactorExplosion, tx, ty);
+            NexNet.fx(Fx.dynamicExplosion, tx, ty);
+            NexNet.fx(Fx.smokeCloud, tx, ty);
+            NexNet.fx(customShockwaveEffect, tx, ty);
+            NexNet.shake(14, 14, tx, ty);
 
-                Damage.damage(tx, ty, 30 * Vars.tilesize, 1000);
+            Damage.damage(tx, ty, 30 * Vars.tilesize, 1000);
 
-                let destroyRadius = 15;
-                let outerRadius = 30;
+            let destroyRadius = 15;
+            let outerRadius = 30;
 
-                for (let rx = -outerRadius; rx <= outerRadius; rx++) {
-                    for (let ry = -outerRadius; ry <= outerRadius; ry++) {
-                        let dist = Math.sqrt(rx * rx + ry * ry);
-                        let tileX = targetTile.x + rx;
-                        let tileY = targetTile.y + ry;
-                        let t = Vars.world.tile(tileX, tileY);
+            for (let rx = -outerRadius; rx <= outerRadius; rx++) {
+                for (let ry = -outerRadius; ry <= outerRadius; ry++) {
+                    let dist = Math.sqrt(rx * rx + ry * ry);
+                    let t = Vars.world.tile(targetTile.x + rx, targetTile.y + ry);
 
-                        if (t != null && t.build != null) {
-                            let b = t.build;
+                    if (t != null && t.build != null) {
+                        let b = t.build;
 
-                            if (dist <= destroyRadius) {
-                                b.kill();
-                            } else if (dist <= outerRadius) {
-                                b.damage(1000);
-                            }
-                        }
-                    }
-                }
-
-                let vanillaOres = [
-                    Blocks.oreCopper,
-                    Blocks.oreLead,
-                    Blocks.oreCoal,
-                    Blocks.oreTitanium,
-                    Blocks.oreThorium,
-                    Blocks.oreScrap
-                ];
-
-                if (Blocks.oreBeryllium != null) vanillaOres.push(Blocks.oreBeryllium);
-                if (Blocks.oreTungsten != null) vanillaOres.push(Blocks.oreTungsten);
-
-                let availableOres = vanillaOres.filter(o => o != null);
-                let selectedOre = availableOres[Math.floor(Mathf.random(0, availableOres.length))];
-
-                if (selectedOre == null) return;
-
-                let oreRadius = Math.floor(Mathf.random(2, 5));
-
-                for (let rx = -oreRadius; rx <= oreRadius; rx++) {
-                    for (let ry = -oreRadius; ry <= oreRadius; ry++) {
-                        let dist = Math.sqrt(rx * rx + ry * ry);
-                        
-                        if (dist <= oreRadius && Mathf.chance(1.0 - (dist / (oreRadius + 1.0)))) {
-                            let tileX = targetTile.x + rx;
-                            let tileY = targetTile.y + ry;
-                            let t = Vars.world.tile(tileX, tileY);
-
-                            if (t != null && t.floor() != null && !t.floor().isLiquid) {
-                                t.setOverlay(selectedOre);
-                            }
+                        if (dist <= destroyRadius) {
+                            b.kill();
+                        } else if (dist <= outerRadius) {
+                            b.damage(1000);
                         }
                     }
                 }
             }
-        });
-    }
-});
+
+            let vanillaOres = [
+                Blocks.oreCopper,
+                Blocks.oreLead,
+                Blocks.oreCoal,
+                Blocks.oreTitanium,
+                Blocks.oreThorium,
+                Blocks.oreScrap
+            ];
+
+            if (Blocks.oreBeryllium != null) vanillaOres.push(Blocks.oreBeryllium);
+            if (Blocks.oreTungsten != null) vanillaOres.push(Blocks.oreTungsten);
+
+            let availableOres = vanillaOres.filter(o => o != null);
+            let selectedOre = availableOres[Math.floor(Mathf.random(0, availableOres.length))];
+
+            if (selectedOre == null) return;
+
+            let oreRadius = Math.floor(Mathf.random(2, 5));
+
+            for (let rx = -oreRadius; rx <= oreRadius; rx++) {
+                for (let ry = -oreRadius; ry <= oreRadius; ry++) {
+                    let dist = Math.sqrt(rx * rx + ry * ry);
+
+                    if (dist <= oreRadius && Mathf.chance(1.0 - (dist / (oreRadius + 1.0)))) {
+                        let t = Vars.world.tile(targetTile.x + rx, targetTile.y + ry);
+
+                        if (t != null && t.floor() != null && !t.floor().isLiquid) {
+                            NexNet.setOverlay(t, selectedOre);
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+Events.on(ClientLoadEvent, setupBalashilon);
+Events.on(ServerLoadEvent, setupBalashilon);

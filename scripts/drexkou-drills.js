@@ -22,16 +22,16 @@ Events.on(ContentInitEvent, () => {
             selectedItem: null,
             mineTimer: 0,
             rotation: 90,
-            
+
             mineSpeed: 40,
             range: 200,
-            cachedTiles: [],  
+            cachedTiles: [],
             sallowyrTimer: 0,
             retargetTimer: 0,
 
             getTileDrop(t) {
                 if (t == null) return null;
-                
+
                 let drop = t.drop();
                 if (drop != null) return drop;
 
@@ -73,7 +73,7 @@ Events.on(ContentInitEvent, () => {
                 } else {
                     this.selectedItem = null;
                 }
-                
+
                 this.releaseTarget();
                 this.findTarget();
             },
@@ -150,7 +150,7 @@ Events.on(ContentInitEvent, () => {
             isValidTarget(tile) {
                 if (tile == null) return false;
                 if (this.selectedItem == null) return false;
-                
+
                 let drop = this.getTileDrop(tile);
                 if (drop == null || drop !== this.selectedItem) return false;
 
@@ -203,7 +203,7 @@ Events.on(ContentInitEvent, () => {
                 table.button(Icon.info, Styles.cleari, 40, () => {
                     let dialog = new Dialog(isEn() ? "[accent]Drill Block Manual[ ]" : "[accent]Hướng Dẫn Sử Dụng Khối Khoan[ ]");
                     dialog.cont.margin(15);
-                    
+
                     let infoText = isEn() ?
                         "[cyan]● Select Resource:[ ] Tap resource icons to select drill target. The drill will only operate after a resource is selected.\n\n" +
                         "[yellow]● Yield Boost Mechanics:[ ] Base yield is 100 items per second.\n" +
@@ -220,7 +220,7 @@ Events.on(ContentInitEvent, () => {
                         "[lightgray]Lưu ý: Kết hợp Chất lưu và Sallowyr cùng lúc để tối đa hóa lượng item thu được![ ]";
 
                     dialog.cont.add(infoText).width(380).wrap().get();
-                    
+
                     dialog.buttons.button(isEn() ? "Close" : "Đóng", () => {
                         dialog.hide();
                     }).size(140, 50);
@@ -231,7 +231,7 @@ Events.on(ContentInitEvent, () => {
                 let count = 1;
                 for (let i = 0; i < itemsInArea.size; i++) {
                     let item = itemsInArea.get(i);
-                    
+
                     let btn = table.button(new TextureRegionDrawable(item.uiIcon), Styles.clearTogglei, 40, () => {
                         let nextItem = (this.selectedItem === item) ? null : item;
                         this.configure(nextItem);
@@ -248,10 +248,10 @@ Events.on(ContentInitEvent, () => {
             updateTile() {
                 if (!Vars.net.client()) {
                     let sallowyrItem = Vars.content.item("newex-sallowyr") || Vars.content.item("sallowyr");
-                    
+
                     if (sallowyrItem != null && this.items.has(sallowyrItem)) {
                         this.items.remove(sallowyrItem, 1);
-                        this.sallowyrTimer = 600; 
+                        this.sallowyrTimer = 600;
                         Call.effect(Fx.upgradeCore, this.x, this.y, 0, Color.sky);
                     }
 
@@ -294,13 +294,12 @@ Events.on(ContentInitEvent, () => {
                             let item = this.getTileDrop(this.targetTile);
 
                             if (item != null && this.items.get(item) < this.block.itemCapacity) {
-                                // Đếm thời gian đào (60 ticks = 1 giây)
+
                                 this.mineTimer += Time.delta * this.efficiency;
 
                                 if (this.mineTimer >= 60.0) {
                                     this.mineTimer -= 60.0;
-                                    
-                                    // Mặc định 100 item/s, nhân với hệ số buff từ nước/cryo/sallowyr
+
                                     let amountToAdd = Math.floor(100 * boostMultiplier);
                                     this.items.add(item, amountToAdd);
 

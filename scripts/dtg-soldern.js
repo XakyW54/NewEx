@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
 function dashCircle(x, y, radius, color) {
     Draw.color(color);
@@ -5,7 +6,7 @@ function dashCircle(x, y, radius, color) {
     for (let i = 0; i < segments; i += 2) {
         let a1 = i / segments * 360;
         let a2 = (i + 1) / segments * 360;
-        Lines.line(x + Angles.trnsx(a1, radius), y + Angles.trnsy(a1, radius), 
+        Lines.line(x + Angles.trnsx(a1, radius), y + Angles.trnsy(a1, radius),
                    x + Angles.trnsx(a2, radius), y + Angles.trnsy(a2, radius));
     }
     Draw.reset();
@@ -15,27 +16,25 @@ const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
- 
-const shootSoundAetherod = Vars.tree.loadSound("aetherod1"); 
+const shootSoundAetherod = Vars.tree.loadSound("aetherod1");
 
- 
 const createDtgHitEffect = (life, tier, damage) => new Effect(life, e => {
-    let baseSize = 2 + damage * 0.03; 
-    let progress = e.fin(); 
+    let baseSize = 2 + damage * 0.03;
+    let progress = e.fin();
     let zoomRadius = baseSize * (2.2 - 1.9 * Interp.pow2Out.apply(progress));
     let innerRadius = baseSize * (0.3 + 0.5 * Interp.pow3Out.apply(progress));
     let alpha = e.fout();
 
     let mainColor, secColor;
-    if (tier == 0) { 
-        mainColor = Color.valueOf("ffa500"); 
-        secColor = Color.valueOf("ffff00");   
-    } else if (tier == 1) { 
-        mainColor = Color.valueOf("ffff00"); 
-        secColor = Color.valueOf("00ffff");   
-    } else { 
-        mainColor = Color.valueOf("00ffff"); 
-        secColor = Color.valueOf("ffff00");   
+    if (tier == 0) {
+        mainColor = Color.valueOf("ffa500");
+        secColor = Color.valueOf("ffff00");
+    } else if (tier == 1) {
+        mainColor = Color.valueOf("ffff00");
+        secColor = Color.valueOf("00ffff");
+    } else {
+        mainColor = Color.valueOf("00ffff");
+        secColor = Color.valueOf("ffff00");
     }
 
     Draw.color(mainColor, alpha);
@@ -64,7 +63,6 @@ const dtgHitEffectMk2b = createDtgHitEffect(26, 2, 427);
 const dtgSprayHitEffect = createDtgHitEffect(14, 0, 73.5);
 const dtgSprayHitEffectMk2 = createDtgHitEffect(14, 1, 107.1);
 const dtgSprayHitEffectMk2b = createDtgHitEffect(14, 2, 80.5);
- 
 
  const reqMK2 = {
     titanium: 400,
@@ -78,11 +76,11 @@ const reqMK2B = {
     plastanium: 420
 };
 
-const maxShieldRadius = 48;    
-const shieldAngleWidth = 120;  
-const zoomSpeed = 0.08;        
-const REGEN_COOLDOWN = 60 * 10; 
-const hexSize = 5;             
+const maxShieldRadius = 48;
+const shieldAngleWidth = 120;
+const zoomSpeed = 0.08;
+const REGEN_COOLDOWN = 60 * 10;
+const hexSize = 5;
 
 const shieldHealthMK1 = 5000;
 const shieldHealthMK2 = 6500;
@@ -105,8 +103,8 @@ function getMaxTurretHealth(tier) {
 }
 
 function getDynamicRange(tier) {
-    if (tier == 1) return 468; 
-    if (tier == 2) return 252; 
+    if (tier == 1) return 468;
+    if (tier == 2) return 252;
     return 360;
 }
 
@@ -121,7 +119,7 @@ const dtgSoldernNormalBullet = extend(BasicBulletType, {
     damage: 220.5,
     width: 9,
     height: 22,
-    lifetime: 52, 
+    lifetime: 52,
     frontColor: Color.valueOf("#e0f7fa"),
     backColor: Color.valueOf("#00bcd4"),
     trailColor: Color.valueOf("#80deea"),
@@ -152,12 +150,12 @@ const dtgSoldernmk2NormalBullet = extend(BasicBulletType, {
     damage: 196,
     width: 9.5,
     height: 24,
-    lifetime: 45,      
+    lifetime: 45,
     frontColor: Color.valueOf("#e0f7fa"),
     backColor: Color.valueOf("#00bcd4"),
     trailColor: Color.valueOf("#80deea"),
     trailWidth: 2.0,
-    trailLength: 7,    
+    trailLength: 7,
     hitEffect: dtgHitEffectMk2,
     despawnEffect: dtgHitEffectMk2
 });
@@ -168,7 +166,7 @@ const dtgSoldernmk2SmallSprayBullet = extend(BasicBulletType, {
     damage: 107.1,
     width: 3.85,
     height: 10,
-    lifetime: 12, 
+    lifetime: 12,
     frontColor: Color.valueOf("#e0f7fa"),
     backColor: Color.valueOf("#00bcd4"),
     trailColor: Color.valueOf("#80deea"),
@@ -214,7 +212,7 @@ const laserBulletB = extend(LaserBulletType, {
     length: 252,
     damage: 427,
     width: 24,
-    lifetime: 25, 
+    lifetime: 25,
     colors: [Color.valueOf("#ff1744"), Color.valueOf("#b71c1c"), Color.white],
     hitEffect: dtgHitEffectMk2b,
     smokeEffect: Fx.smoke
@@ -229,17 +227,17 @@ const dtgSoldernTurret = extend(ItemTurret, "dtg-soldern", {
         Lines.stroke(1.5);
         dashCircle(x * Vars.tilesize, y * Vars.tilesize, 100, Pal.remove);
         dashCircle(x * Vars.tilesize, y * Vars.tilesize, 145, Pal.remove);
-        Draw.reset();        
+        Draw.reset();
     }
 });
 
-dtgSoldernTurret.health = turretHealthMK1; 
+dtgSoldernTurret.health = turretHealthMK1;
 dtgSoldernTurret.size = 3;
-dtgSoldernTurret.reload = 40; 
+dtgSoldernTurret.reload = 40;
 dtgSoldernTurret.configurable = true;
 dtgSoldernTurret.category = Category.turret;
-dtgSoldernTurret.shootSound = shootSoundAetherod; 
-dtgSoldernTurret.ammo(Items.silicon, dtgSoldernNormalBullet); 
+dtgSoldernTurret.shootSound = shootSoundAetherod;
+dtgSoldernTurret.ammo(Items.silicon, dtgSoldernNormalBullet);
 
 dtgSoldernTurret.config(java.lang.Integer, packCons2((tile, value) => {
     if (tile != null && tile.setTier !== undefined) {
@@ -248,25 +246,25 @@ dtgSoldernTurret.config(java.lang.Integer, packCons2((tile, value) => {
 }));
 
 dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldernTurret, {
-    dtgSoldernInternalTier: 0, 
+    dtgSoldernInternalTier: 0,
     wasInShotgunRange: false,
-    canInstantRegenShield: true, 
+    canInstantRegenShield: true,
 
-    mainWeaponVisual: 0.0, 
-    subWeaponVisual: 0.0,  
+    mainWeaponVisual: 0.0,
+    subWeaponVisual: 0.0,
 
     sideRecoil: 0.0,
-    shotgunBarrelRecoil: 0.0, 
-    mainWeaponRecoil: 0.0,    
+    shotgunBarrelRecoil: 0.0,
+    mainWeaponRecoil: 0.0,
 
-    shotgunMagTimer: 0,       
-    firedMagazines: 0,        
-    shotgunReloadTimer: 0,    
+    shotgunMagTimer: 0,
+    firedMagazines: 0,
+    shotgunReloadTimer: 0,
 
-    shieldHealth: shieldHealthMK1, 
-    shieldHitTime: 0,              
-    shieldScale: 0,                
-    regenTimer: REGEN_COOLDOWN,    
+    shieldHealth: shieldHealthMK1,
+    shieldHitTime: 0,
+    shieldScale: 0,
+    regenTimer: REGEN_COOLDOWN,
 
     energyBallCharge: 0.0,
     particleTimer: 0.0,
@@ -276,8 +274,8 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
         return getDynamicRange(this.getTier());
     },
 
-    setTier(val) { 
-        this.dtgSoldernInternalTier = val; 
+    setTier(val) {
+        this.dtgSoldernInternalTier = val;
         this.maxHealth = getMaxTurretHealth(val);
         this.health = this.maxHealth;
     },
@@ -291,43 +289,43 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
         if(tier == 0) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
                 let dialog = extend(BaseDialog, isEn ? "DTG Soldern Upgrade Center" : "Trung tâm nâng cấp pháo DTG Soldern", {});
-                
+
                 let reqCell = dialog.cont.label(packProv(() => {
                     let core = this.team.core();
                     if(core == null) return isEn ? "[red]Team Core not found![]" : "[red]Không tìm thấy Lõi Đội![]";
-                    
+
                     let currentTitanium = core.items.get(Items.titanium);
                     let currentSilicon = core.items.get(Items.silicon);
                     let currentPlastanium = core.items.get(Items.plastanium);
-                    
+
                     let titColor1 = currentTitanium >= reqMK2.titanium ? "[green]" : "[red]";
                     let silColor1 = currentSilicon >= reqMK2.silicon ? "[green]" : "[red]";
-                    
+
                     let titColor2 = currentTitanium >= reqMK2B.titanium ? "[green]" : "[red]";
                     let silColor2 = currentSilicon >= reqMK2B.silicon ? "[green]" : "[red]";
                     let plaColor2 = currentPlastanium >= reqMK2B.plastanium ? "[green]" : "[red]";
-                    
+
                     if(isEn) {
                         return "[yellow]CORE VAULT REQUIREMENTS:[]\n" +
-                               "[cyan]MK2 Branch:[]\n" + 
+                               "[cyan]MK2 Branch:[]\n" +
                                " • Titanium: " + titColor1 + currentTitanium + "[] / " + reqMK2.titanium + "\n" +
                                " • Silicon: " + silColor1 + currentSilicon + "[] / " + reqMK2.silicon + "\n" +
-                               "[purple]MK2B Branch:[]\n" + 
+                               "[purple]MK2B Branch:[]\n" +
                                " • Titanium: " + titColor2 + currentTitanium + "[] / " + reqMK2B.titanium + "\n" +
                                " • Silicon: " + silColor2 + currentSilicon + "[] / " + reqMK2B.silicon + "\n" +
                                " • Plastanium: " + plaColor2 + currentPlastanium + "[] / " + reqMK2B.plastanium;
                     } else {
                         return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
-                               "[cyan]Nhánh MK2:[]\n" + 
+                               "[cyan]Nhánh MK2:[]\n" +
                                " • Titan: " + titColor1 + currentTitanium + "[] / " + reqMK2.titanium + "\n" +
                                " • Silicon: " + silColor1 + currentSilicon + "[] / " + reqMK2.silicon + "\n" +
-                               "[purple]Nhánh MK2B:[]\n" + 
+                               "[purple]Nhánh MK2B:[]\n" +
                                " • Titan: " + titColor2 + currentTitanium + "[] / " + reqMK2B.titanium + "\n" +
                                " • Silicon: " + silColor2 + currentSilicon + "[] / " + reqMK2B.silicon + "\n" +
                                " • Nhựa: " + plaColor2 + currentPlastanium + "[] / " + reqMK2B.plastanium;
                     }
                 }));
-                
+
                 reqCell.width(360).get().setWrap(true);
                 reqCell.get().setAlignment(Align.left);
                 dialog.cont.row(); dialog.cont.add().height(10).row();
@@ -338,14 +336,14 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                 b1.add("[cyan]===(MK2)===[]").row();
                 let b1Text = isEn ?
                     "Firepower Enhancement & Pulse Energy Upgrades:\n" +
-                    " [white]• Structure HP greatly increased to [green]7150 HP[] (+30%).[]\n" + 
+                    " [white]• Structure HP greatly increased to [green]7150 HP[] (+30%).[]\n" +
                     " [white]• Shield core expanded, boosting matrix durability to [cyan]6500[].[]\n" +
                     " [white]• Long-range targeting drastically expanded to [green]468 pixels[] (+30%).[]\n" +
                     " [white]• Ranged ammo upgraded to MK2 variant (Speed: 10.4, Damage: 196).[]\n" +
                     " [white]• Close Combat: Retains 100 range, boosts shotgun damage to [yellow]107.1[].[]\n" +
                     " [white]• Special: Instantly recharges shield when target enters close-range for the first time.[]" :
                     "Cải tiến năng lực hỏa lực và năng lượng xung kích:\n" +
-                    " [white]• Kết cấu HP pháo tăng mạnh lên [green]7150 HP[] (+30%).[]\n" + 
+                    " [white]• Kết cấu HP pháo tăng mạnh lên [green]7150 HP[] (+30%).[]\n" +
                     " [white]• Lõi khiên mở rộng, gia tăng độ bền màng chắn lên [cyan]6500[].[]\n" +
                     " [white]• Tầm bắn tầm xa mở rộng vượt trội đạt [green]468 pixel[] (+30%).[]\n" +
                     " [white]• Đạn tầm xa nâng cấp lên dạng MK2 (Vận tốc: 10.4, Sát thương: 196).[]\n" +
@@ -356,8 +354,8 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                 b1.button(isEn ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.titanium) >= reqMK2.titanium && core.items.get(Items.silicon) >= reqMK2.silicon){
-                        core.items.remove(Items.titanium, reqMK2.titanium); core.items.remove(Items.silicon, reqMK2.silicon);
-                        Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
+                        NexNet.take(core, Items.titanium, reqMK2.titanium); NexNet.take(core, Items.silicon, reqMK2.silicon);
+                        NexNet.fx(Fx.upgradeCore, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
                         this.configure(java.lang.Integer(1)); dialog.hide(); this.deselect();
                     } else { Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2 branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                 })).size(180, 38);
@@ -382,8 +380,8 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                 b2.button(isEn ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.titanium) >= reqMK2B.titanium && core.items.get(Items.silicon) >= reqMK2B.silicon && core.items.get(Items.plastanium) >= reqMK2B.plastanium){
-                        core.items.remove(Items.titanium, reqMK2B.titanium); core.items.remove(Items.silicon, reqMK2B.silicon); core.items.remove(Items.plastanium, reqMK2B.plastanium);
-                        Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
+                        NexNet.take(core, Items.titanium, reqMK2B.titanium); NexNet.take(core, Items.silicon, reqMK2B.silicon); NexNet.take(core, Items.plastanium, reqMK2B.plastanium);
+                        NexNet.fx(Fx.bigShockwave, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
                         this.configure(java.lang.Integer(2)); dialog.hide(); this.deselect();
                     } else { Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2B branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
                 })).size(180, 38);
@@ -431,7 +429,7 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                           "[sky]⚡ CƠ CHẾ ĐA DỤNG:[]\n" +
                           "• [lightgray]Màng chắn năng lượng:[] Tự động bung góc chặn 120° theo hướng nòng súng khi bắn để triệt tiêu đạn địch.\n" +
                           "• [lightgray]Chế độ Cận chiến (Shotgun):[] Kích hoạt vuốt máy khi mục tiêu lọt vào cự ly [yellow]100 pixel[]. Xả loạt 14 đạn rải (Sát thương: 73.5) liên thanh liên tục trong 10 băng đạn.";
-            } 
+            }
             else if (currentTier == 1) {
                 title += "[cyan](MK2)[]";
                 descStr = isEn ?
@@ -451,7 +449,7 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                           "[lime]⚡ CƠ CHẾ ĐA DỤNG BỔ SUNG:[]\n" +
                           "• [lightgray]Nạp khiên tức thời:[] Khiên tự động sạc đầy lại hoàn toàn khi kẻ địch lần đầu tiên bước vào vùng cận chiến.\n" +
                           "• [lightgray]Hỏa lực shotgun cải tiến:[] Tăng mạnh sát thương mỗi viên đạn rải trong loạt tỏa cận chiến lên [yellow]107.1[].";
-            } 
+            }
             else if (currentTier == 2) {
                 title += "[purple](MK2B)[]";
                 descStr = isEn ?
@@ -488,7 +486,7 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
 
     updateTile(){
         let tier = this.getTier();
-        
+
         this.super$updateTile();
 
         let currentMaxShield = getMaxShieldHealth(tier);
@@ -593,10 +591,9 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
                             if(b != null) b.vel.setLength(Mathf.random(5.0, 12.0));
                         }
                     }
-                    
+
                     Fx.shootBig.at(muzzleX, muzzleY, this.rotation);
 
- 
                     if(this.ammo.size > 0){
                         let entry = this.ammo.peek();
                         entry.amount--;
@@ -618,7 +615,7 @@ dtgSoldernTurret.buildType = () => extend(ItemTurret.ItemTurretBuild, dtgSoldern
         }
 
         if(targetInShotgunRange){
-            this.reloadCounter = 0; 
+            this.reloadCounter = 0;
         } else {
             if(tier == 2){
                 this.block.reload = 60;
@@ -677,7 +674,7 @@ shoot(type){
     if(this.target != null){
         let distance = Mathf.dst(this.x, this.y, this.target.x, this.target.y);
         if(distance < activationThreshold){
-            return; 
+            return;
         }
     }
 
@@ -697,22 +694,21 @@ shoot(type){
         activeNormalBullet.create(this, this.team, muzzleX, muzzleY, this.rotation);
     }
 
- 
     this.useAmmo();
-    
+
     if(shootSoundAetherod) shootSoundAetherod.at(this.x, this.y, Mathf.random(0.9, 1.1));
 
     Fx.shootBig.at(muzzleX, muzzleY, this.rotation);
 },
 
     write(write){
-        this.super$write(write); write.b(this.getTier()); 
+        this.super$write(write); write.b(this.getTier());
     },
     read(read, revision){
-        this.super$read(read, revision); 
-        this.setTier(read.b()); 
+        this.super$read(read, revision);
+        this.setTier(read.b());
         this.shotgunMagTimer = 0; this.firedMagazines = 0; this.shotgunReloadTimer = 0;
-        this.shieldHealth = getMaxShieldHealth(this.getTier()); 
+        this.shieldHealth = getMaxShieldHealth(this.getTier());
         this.shieldScale = 0; this.regenTimer = REGEN_COOLDOWN;
         this.wasInShotgunRange = false;
         this.canInstantRegenShield = true;
@@ -721,28 +717,28 @@ shoot(type){
         this.energyBallCharge = 0.0; this.particleTimer = 0.0; this.hadEnergyBall = false;
     },
 
-    drawSelect(){ 
-        this.super$drawSelect(); 
+    drawSelect(){
+        this.super$drawSelect();
         let currentThreshold = (this.getTier() == 2) ? 145 : 100;
-        dashCircle(this.x, this.y, currentThreshold, Pal.remove); 
+        dashCircle(this.x, this.y, currentThreshold, Pal.remove);
     },
 
     draw(){
-        let modName = this.block.name.split("-")[0]; 
+        let modName = this.block.name.split("-")[0];
 
         let baseRegion = PerfCore.region(this.block.basePrefix + "block-" + this.block.size);
         if(baseRegion.found()){
             Draw.rect(baseRegion, this.x, this.y);
         } else {
-            this.super$draw(); 
+            this.super$draw();
         }
 
         let rad = this.rotation * Mathf.degRad;
         let cos = Math.cos(rad);
         let sin = Math.sin(rad);
 
-        let maxSideRecoilDistance = -4.0;   
-        let maxBarrelRecoilDistance = -4.5; 
+        let maxSideRecoilDistance = -4.0;
+        let maxBarrelRecoilDistance = -4.5;
 
         if(this.block.region.found()){
             Draw.rect(this.block.region, this.x, this.y, this.rotation);
@@ -753,10 +749,10 @@ shoot(type){
             Draw.rect(bodyRegion, this.x, this.y, this.rotation);
         }
 
-        let spreadX = this.subWeaponVisual * 5.0; 
+        let spreadX = this.subWeaponVisual * 5.0;
         let subLeftRegion = PerfCore.region(modName + "-dtg-soldern-sub-left");
         let subRightRegion = PerfCore.region(modName + "-dtg-soldern-sub-right");
-        
+
         if (subLeftRegion.found() && subRightRegion.found()) {
             let lx = this.x - spreadX * sin;
             let ly = this.y + spreadX * cos;
@@ -770,7 +766,7 @@ shoot(type){
             if (subFallback.found()) Draw.rect(subFallback, this.x, this.y, this.rotation);
         }
 
-        let pushY = this.mainWeaponVisual * 4.5; 
+        let pushY = this.mainWeaponVisual * 4.5;
         let mainRegion = PerfCore.region(modName + "-dtg-soldern-main");
         if (mainRegion.found()) {
             let mx = this.x + pushY * cos;
@@ -795,8 +791,8 @@ shoot(type){
         }
 
         let clawRecoilOffset = this.sideRecoil * maxSideRecoilDistance;
-        let clawSideMove = this.subWeaponVisual * 2.0; 
-        
+        let clawSideMove = this.subWeaponVisual * 2.0;
+
         let clawForwardMove = 0.0;
         let t = this.subWeaponVisual;
 
@@ -804,8 +800,8 @@ shoot(type){
             if (t <= 0.5) {
                 clawForwardMove = (t / 0.5) * 4.5;
             } else {
-                let factor = (t - 0.5) / 0.5; 
-                clawForwardMove = 4.5 - (factor * 8.5); 
+                let factor = (t - 0.5) / 0.5;
+                clawForwardMove = 4.5 - (factor * 8.5);
             }
         }
 
@@ -834,59 +830,59 @@ shoot(type){
         }
 
         if (this.energyBallCharge > 0.01) {
-            Draw.z(Layer.turret + 0.05); 
+            Draw.z(Layer.turret + 0.05);
             let ballX = this.x - cos * 12;
             let ballY = this.y - sin * 12;
             let ballColor = (this.getTier() == 2) ? Color.valueOf("#ff1744") : Color.valueOf("#00bcd4");
-            
+
             let chargePulse = 0.0;
             if (this.shotgunReloadTimer > 0) {
                 chargePulse = Math.abs(Math.sin(Time.time * 0.3)) * 0.5 * (this.shotgunReloadTimer / 180.0);
             }
-            
+
             let currentBallRadius = (3.2 + chargePulse + Mathf.range(0.2)) * this.energyBallCharge;
-            
+
             Draw.color(ballColor, (0.35 + (this.shotgunReloadTimer > 0 ? 0.25 : 0.0)) * this.energyBallCharge);
             Fill.circle(ballX, ballY, currentBallRadius * 1.7);
-            
+
             Draw.color(Color.white, 0.9 * this.energyBallCharge);
             Fill.circle(ballX, ballY, currentBallRadius);
-            
+
             Draw.reset();
         }
 
         let input = (typeof Vars !== 'undefined' && Vars.control) ? Vars.control.input : null;
         if (input != null && input.selected == this) {
             let currentThreshold = (this.getTier() == 2) ? 145 : 100;
-            dashCircle(this.x, this.y, currentThreshold, Pal.remove); 
+            dashCircle(this.x, this.y, currentThreshold, Pal.remove);
         }
 
         let currentMaxShield = getMaxShieldHealth(this.getTier());
 
         if(this.shieldHealth > 0 && this.shieldScale > 0.05){
-            Draw.z(Layer.effect + 5); 
+            Draw.z(Layer.effect + 5);
             let glitchAmount = this.shieldHitTime > 0 ? Mathf.range(1.2) : Mathf.range(0.3);
             let currentRadius = (maxShieldRadius + glitchAmount) * this.shieldScale;
             let baseColor = (this.getTier() == 2) ? Color.valueOf("ff1744") : Color.valueOf("ff9d00");
             let alpha = (0.28 + (this.shieldHealth / currentMaxShield) * 0.42) * this.shieldScale;
 
             if(this.shieldHitTime > 0 && Mathf.chance(0.3)){ Draw.color(Color.white); } else { Draw.color(baseColor, alpha); }
-            Lines.stroke(1.0 * this.shieldScale); 
+            Lines.stroke(1.0 * this.shieldScale);
 
             let hSpacing = hexSize * 1.5;
             let vSpacing = hexSize * Math.sqrt(3);
-            
+
             for(let xOffset = -currentRadius; xOffset <= currentRadius; xOffset += hSpacing){
                 for(let yOffset = -currentRadius; yOffset <= currentRadius; yOffset += vSpacing){
                     let col = Math.floor((xOffset + currentRadius) / hSpacing);
                     let finalYOffset = yOffset + ((col % 2 == 0) ? 0 : vSpacing / 2);
                     let cellGlitchX = (this.shieldHitTime > 0 || Mathf.chance(0.02)) ? Mathf.range(0.4) : 0;
                     let checkX = this.x + xOffset + cellGlitchX;
-                    let checkY = this.y + finalYOffset; 
-                    
+                    let checkY = this.y + finalYOffset;
+
                     let dst = Mathf.dst(this.x, this.y, checkX, checkY);
-                    
-                    if(dst < currentRadius && dst > 14){ 
+
+                    if(dst < currentRadius && dst > 14){
                         let angle = Mathf.angle(checkX - this.x, checkY - this.y);
                         let diff = getAngleDiff(this.rotation, angle);
                         if(diff <= (shieldAngleWidth / 2)){
@@ -905,21 +901,21 @@ shoot(type){
             Draw.reset();
         }
 
-        Draw.z(Layer.effect + 1); 
-        let barY = this.y - 14; 
-        let barWidth = 24;      
-        let barHeight = 2;      
+        Draw.z(Layer.effect + 1);
+        let barY = this.y - 14;
+        let barWidth = 24;
+        let barHeight = 2;
         Draw.color(Color.black, 0.5);
         Lines.stroke(barHeight + 1);
         Lines.line(this.x - (barWidth / 2), barY, this.x + (barWidth / 2), barY);
         if (this.shieldHealth <= 0) {
-            Draw.color(Color.cyan); 
-            let regenProgress = this.regenTimer / REGEN_COOLDOWN; 
+            Draw.color(Color.cyan);
+            let regenProgress = this.regenTimer / REGEN_COOLDOWN;
             Lines.stroke(barHeight);
             Lines.line(this.x - (barWidth / 2), barY, this.x - (barWidth / 2) + (barWidth * regenProgress), barY);
         } else {
-            Draw.color((this.getTier() == 2) ? Color.valueOf("ff1744") : Pal.lightOrange); 
-            let healthProgress = this.shieldHealth / currentMaxShield; 
+            Draw.color((this.getTier() == 2) ? Color.valueOf("ff1744") : Pal.lightOrange);
+            let healthProgress = this.shieldHealth / currentMaxShield;
             Lines.stroke(barHeight);
             Lines.line(this.x - (barWidth / 2), barY, this.x - (barWidth / 2) + (barWidth * healthProgress), barY);
         }

@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
 (function() {
     const packCons = (func) => new Cons({ get: func });
@@ -6,25 +7,24 @@ const PerfCore = global.PerfCore;
     const packProv = (func) => new Prov({ get: func });
 
     const reqMK2 = { titanium: 500, silicon: 300 };
-    const reqMK2B = { titanium: 800, silicon: 400, plastanium: 200 }; 
+    const reqMK2B = { titanium: 800, silicon: 400, plastanium: 200 };
 
-    const gainPerShotMK1 = 0.10; 
-    const decaySpeedMK1 = 0.15; 
+    const gainPerShotMK1 = 0.10;
+    const decaySpeedMK1 = 0.15;
 
-    const gainPerShotMK2 = 0.20; 
-    const decaySpeedMK2 = 0.08; 
+    const gainPerShotMK2 = 0.20;
+    const decaySpeedMK2 = 0.08;
 
-    const gainPerShotMK2B = 0.15; 
-    const decaySpeedMK2B = 0.10; 
+    const gainPerShotMK2B = 0.15;
+    const decaySpeedMK2B = 0.10;
 
     const modPrefix = "newex";
     const ULT_RANGE = 750;
 
     const isEn = () => Core.settings.get("locale", "").startsWith("en");
 
-    // Hàm hỗ trợ cộng item newex-starlight vào lõi đội (Chỉ chạy trên Server/Host)
     function tryRewardStarlight(team) {
-        if (Vars.net.client) return; // Client không tự ý cộng item
+        if (Vars.net.client()) return;
         if (team == null) return;
         let core = team.core();
         if (core == null) return;
@@ -32,7 +32,7 @@ const PerfCore = global.PerfCore;
         let starlightItem = Vars.content.getByName(ContentType.item, modPrefix + "-starlight");
         if (starlightItem != null && Mathf.chance(0.09)) {
             core.items.add(starlightItem, 1);
-            Call.effect(Fx.itemTransfer, core.x, core.y, 0, Color.valueOf("ffda66"), core);
+            try { Call.effect(Fx.itemTransfer, core.x, core.y, 0, Color.valueOf("ffda66")); } catch (err) {}
         }
     }
 
@@ -60,9 +60,9 @@ const PerfCore = global.PerfCore;
         Draw.color(Color.white, PerfCore.color("66B1FF"), fin);
         Lines.stroke(5.0 * fout);
 
-        let radiusX = fin * 30;  
-        let radiusY = fin * 80;  
-        let offset = fin * 35; 
+        let radiusX = fin * 30;
+        let radiusY = fin * 80;
+        let offset = fin * 35;
 
         let cx = e.x + cosA * offset;
         let cy = e.y + sinA * offset;
@@ -71,7 +71,7 @@ const PerfCore = global.PerfCore;
 
         for(let i = 0; i <= steps; i++){
             let angle = (i * (360 / steps)) * Mathf.degRad;
-            
+
             let lx = Math.cos(angle) * radiusX;
             let ly = Math.sin(angle) * radiusY;
 
@@ -97,7 +97,7 @@ const PerfCore = global.PerfCore;
 
         for(let i = 0; i <= steps; i++){
             let angle = (i * (360 / steps)) * Mathf.degRad;
-            
+
             let lx = Math.cos(angle) * radiusX2;
             let ly = Math.sin(angle) * radiusY2;
 
@@ -165,7 +165,7 @@ const PerfCore = global.PerfCore;
         frontColor: Color.valueOf("ff8888"), backColor: Color.valueOf("dd4444"),
         sprite: modPrefix + "-starsword",
         inaccuracy: 0,
-        pierce: true, pierceCap: 999, pierceBuilding: true, knockback: 2.0, impact: true, 
+        pierce: true, pierceCap: 999, pierceBuilding: true, knockback: 2.0, impact: true,
         homingPower: 0.18, homingRange: 300,
         hitEffect: galileoHitEffect,
         despawnEffect: galileoHitEffect
@@ -178,7 +178,7 @@ const PerfCore = global.PerfCore;
         sprite: modPrefix + "-starsword",
         inaccuracy: 0,
         pierce: true, pierceCap: 999, pierceBuilding: true, knockback: 4.0, impact: true,
-        
+
         armorPiercing: 0.80,
 
         hitEffect: galileoHitEffect,
@@ -193,9 +193,8 @@ const PerfCore = global.PerfCore;
 
             if (Mathf.chance(0.50)) {
                 let extraCritDmg = b.damage * 4.0;
-                
-                // Chỉ Server/Host tự gây damage trực tiếp lên entity
-                if (!Vars.net.client) {
+
+                if (!Vars.net.client()) {
                     entity.damage(extraCritDmg);
                 }
 
@@ -243,9 +242,9 @@ const PerfCore = global.PerfCore;
 
         forstarsilum.buildType = () => extend(PowerTurret.PowerTurretBuild, forstarsilum, {
             energyState: 0.0,
-            tierState: 0, 
+            tierState: 0,
             customRecoil: 0.0,
-            
+
             chargeTimer: 0.0,
             isChargingUlt: false,
             noResetChanceMK2B: 0.80,
@@ -263,7 +262,7 @@ const PerfCore = global.PerfCore;
             },
 
             getTier(){ return this.tierState == null ? 0 : this.tierState; },
-            setTier(val){ 
+            setTier(val){
                 this.tierState = val;
                 if(val == 0) { this.health = 3000; }
                 if(val == 1) { this.health = 4500; }
@@ -272,7 +271,7 @@ const PerfCore = global.PerfCore;
             },
 
             range(){
-                return ULT_RANGE; 
+                return ULT_RANGE;
             },
 
             buildConfiguration(table){
@@ -284,7 +283,7 @@ const PerfCore = global.PerfCore;
                     table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
                         let dialogTitle = english ? "Forstarsilum Upgrade Center" : "Trung tâm nâng cấp pháo Forstarsilum";
                         let dialog = extend(BaseDialog, dialogTitle, {});
-                        
+
                         let reqCell = dialog.cont.label(packProv(() => {
                             let core = this.team.core();
                             if(core == null) return english ? "[red]Team Core not found![]" : "[red]Không tìm thấy Lõi Đội![]";
@@ -294,7 +293,7 @@ const PerfCore = global.PerfCore;
 
                             let titColor1 = currentTitanium >= reqMK2.titanium ? "[green]" : "[red]";
                             let silColor1 = currentSilicon >= reqMK2.silicon ? "[green]" : "[red]";
-                            
+
                             let titColor2 = currentTitanium >= reqMK2B.titanium ? "[green]" : "[red]";
                             let silColor2 = currentSilicon >= reqMK2B.silicon ? "[green]" : "[red]";
                             let plaColor2 = currentPlastanium >= reqMK2B.plastanium ? "[green]" : "[red]";
@@ -319,7 +318,7 @@ const PerfCore = global.PerfCore;
                                    " • Silicon: " + silColor2 + currentSilicon + "[] / " + reqMK2B.silicon + "\n" +
                                    " • Nhựa: " + plaColor2 + currentPlastanium + "[] / " + reqMK2B.plastanium;
                         }));
-                        
+
                         reqCell.width(360).get().setWrap(true);
                         reqCell.get().setAlignment(Align.left);
                         dialog.cont.row(); dialog.cont.add().height(10).row();
@@ -343,9 +342,9 @@ const PerfCore = global.PerfCore;
                         b1.button(english ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => {
                             let core = this.team.core();
                             if(core != null && core.items.get(Items.titanium) >= reqMK2.titanium && core.items.get(Items.silicon) >= reqMK2.silicon){
-                                core.items.remove(Items.titanium, reqMK2.titanium); core.items.remove(Items.silicon, reqMK2.silicon);
-                                ultShockwaveEffect.at(this.x, this.y, this.rotation); Effect.shake(4, 4, this.x, this.y);
-                                this.configure(java.lang.Integer(1)); 
+                                NexNet.take(core, Items.titanium, reqMK2.titanium); NexNet.take(core, Items.silicon, reqMK2.silicon);
+                                NexNet.fx(ultShockwaveEffect, this.x, this.y, this.rotation); NexNet.shake(4, 4, this.x, this.y);
+                                this.configure(java.lang.Integer(1));
                                 dialog.hide(); this.deselect();
                             } else { Vars.ui.showInfo(english ? "[red]Not enough resources for MK2 branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                         })).size(180, 38);
@@ -367,9 +366,9 @@ const PerfCore = global.PerfCore;
                         b2.button(english ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                             let core = this.team.core();
                             if(core != null && core.items.get(Items.titanium) >= reqMK2B.titanium && core.items.get(Items.silicon) >= reqMK2B.silicon && core.items.get(Items.plastanium) >= reqMK2B.plastanium){
-                                core.items.remove(Items.titanium, reqMK2B.titanium); core.items.remove(Items.silicon, reqMK2B.silicon); core.items.remove(Items.plastanium, reqMK2B.plastanium);
-                                ultShockwaveEffect.at(this.x, this.y, this.rotation); Effect.shake(4, 4, this.x, this.y);
-                                this.configure(java.lang.Integer(2)); 
+                                NexNet.take(core, Items.titanium, reqMK2B.titanium); NexNet.take(core, Items.silicon, reqMK2B.silicon); NexNet.take(core, Items.plastanium, reqMK2B.plastanium);
+                                NexNet.fx(ultShockwaveEffect, this.x, this.y, this.rotation); NexNet.shake(4, 4, this.x, this.y);
+                                this.configure(java.lang.Integer(2));
                                 dialog.hide(); this.deselect();
                             } else { Vars.ui.showInfo(english ? "[red]Not enough resources for MK2B branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
                         })).size(180, 38);
@@ -419,7 +418,7 @@ const PerfCore = global.PerfCore;
                             "[sky]⚡ CƠ CHẾ NĂNG LƯỢNG TÍCH LŨY (BUFF):[]\n" +
                             "• [lightgray]Tích lũy Buff:[] Mỗi phát bắn trúng/kích hoạt sẽ tăng [green]+10.0%[] buff.\n" +
                             "• [lightgray]Suy giảm:[] Tự động suy giảm dần theo thời gian khi không bắn mục tiêu.") + rewardDesc;
-                    } 
+                    }
                     else if (currentTier == 1) {
                         title += "[cyan](MK2)[]";
                         descStr = (english ?
@@ -441,7 +440,7 @@ const PerfCore = global.PerfCore;
                             "• [lightgray]Xác suất Ult:[] Có [gold]40% cơ hội[] kích hoạt tụ kiếm 1s bắn đòn dồn lực theo mỗi phát bắn thường.\n" +
                             "• [lightgray]Tốc độ tích tụ:[] Tăng [green]+20.0%[] buff mỗi phát bắn.\n" +
                             "• [lightgray]Duy trì ổn định:[] Tốc độ rớt buff khi dừng bắn giảm còn [green]0.08/s[].") + rewardDesc;
-                    } 
+                    }
                     else if (currentTier == 2) {
                         title += "[purple](MK2B)[]";
                         descStr = (english ?
@@ -473,21 +472,21 @@ const PerfCore = global.PerfCore;
                     scroll.setScrollingDisabled(true, false);
                     dialog.cont.add(scroll).maxHeight(400);
                     dialog.addCloseButton(); dialog.show();
-                })).size(50, 40).tooltip(english ? "View detailed system stats" : "Xem thông số chi tiết hệ thống");            
+                })).size(50, 40).tooltip(english ? "View detailed system stats" : "Xem thông số chi tiết hệ thống");
             },
 
             config() { return java.lang.Integer(this.getTier()); },
 
             executeUltFire(muzzleX, muzzleY) {
                 let bullet = ultBullet.create(this, this.team, muzzleX, muzzleY, this.rotation, 1.0, 1.0);
-                
+
                 if (bullet != null) {
                     let totalDmg = bullet.damage * (1 + this.energyState * 5);
-                    
-                    let trueDmgVal = totalDmg * 0.75;  
-                    let normalDmgVal = totalDmg * 0.25; 
 
-                    bullet.damage = normalDmgVal; 
+                    let trueDmgVal = totalDmg * 0.75;
+                    let normalDmgVal = totalDmg * 0.25;
+
+                    bullet.damage = normalDmgVal;
 
                     if (bullet.type != null) {
                         bullet.type.absorbable = false;
@@ -517,10 +516,10 @@ const PerfCore = global.PerfCore;
                 if(tier == 1) currentDecay = decaySpeedMK2;
                 if(tier == 2) currentDecay = decaySpeedMK2B;
 
-                if((!this.isShooting || !this.isActive()) && !this.isChargingUlt){ 
-                    if(this.energyState > 0.0){ 
-                        this.energyState = Math.max(this.energyState - (currentDecay * Time.delta / 60), 0.0); 
-                    } 
+                if((!this.isShooting || !this.isActive()) && !this.isChargingUlt){
+                    if(this.energyState > 0.0){
+                        this.energyState = Math.max(this.energyState - (currentDecay * Time.delta / 60), 0.0);
+                    }
                 }
 
                 if(this.energyState >= 0.999 && !this.isChargingUlt){
@@ -538,11 +537,11 @@ const PerfCore = global.PerfCore;
                         this.executeUltFire(muzzleX, muzzleY);
 
                         if(tier == 2 && Mathf.chance(this.noResetChanceMK2B)){
-                            this.energyState = 1.0; 
-                            this.noResetChanceMK2B = Math.max(this.noResetChanceMK2B - 0.10, 0.0); 
+                            this.energyState = 1.0;
+                            this.noResetChanceMK2B = Math.max(this.noResetChanceMK2B - 0.10, 0.0);
                         } else {
-                            this.energyState = 0.0; 
-                            this.noResetChanceMK2B = 0.80; 
+                            this.energyState = 0.0;
+                            this.noResetChanceMK2B = 0.80;
                         }
 
                         this.chargeTimer = 0.0;
@@ -552,8 +551,7 @@ const PerfCore = global.PerfCore;
 
                 this.customRecoil = Mathf.approach(this.customRecoil, 0.0, 0.12 * Time.delta);
 
-                // CHỈ SERVER/HOST MỚI XỬ LÝ TRỪ MÁU & TIÊU DIỆT CÔNG TRÌNH/UNIT TRỰC TIẾP
-                if(!Vars.net.client && this.activeUltBullets != null && this.activeUltBullets.length > 0){
+                if(!Vars.net.client() && this.activeUltBullets != null && this.activeUltBullets.length > 0){
                     for(let i = this.activeUltBullets.length - 1; i >= 0; i--){
                         let entry = this.activeUltBullets[i];
                         if(entry == null) {
@@ -603,7 +601,7 @@ const PerfCore = global.PerfCore;
             shoot(type){
                 if(this.isChargingUlt) return;
 
-                this.super$shoot(type); 
+                this.super$shoot(type);
 
                 let tier = this.getTier();
                 let currentGain = gainPerShotMK1;
@@ -614,17 +612,17 @@ const PerfCore = global.PerfCore;
                     this.startUltCharge();
                 }
 
-                this.energyState = Math.min(this.energyState + currentGain, 1.0); 
+                this.energyState = Math.min(this.energyState + currentGain, 1.0);
                 this.customRecoil = 1.0;
             },
 
-            handleBullet(bullet, x, y, angle){ 
-                if(bullet != null) bullet.damage = bullet.type.damage * (1 + this.energyState * 5); 
-                this.super$handleBullet(bullet, x, y, angle); 
+            handleBullet(bullet, x, y, angle){
+                if(bullet != null) bullet.damage = bullet.type.damage * (1 + this.energyState * 5);
+                this.super$handleBullet(bullet, x, y, angle);
             },
 
             baseReloadSpeed(){ return this.efficiency * (1 + this.energyState * 2.5); },
-            getDmgRatio(){ return this.energyState; }, 
+            getDmgRatio(){ return this.energyState; },
             getAsRatio(){ return this.energyState; },
 
             draw(){
@@ -632,16 +630,16 @@ const PerfCore = global.PerfCore;
                 if(baseRegion.found()){
                     Draw.rect(baseRegion, this.x, this.y);
                 } else {
-                    this.super$draw(); 
+                    this.super$draw();
                 }
 
                 let rad = this.rotation * Mathf.degRad;
                 let cos = Math.cos(rad);
                 let sin = Math.sin(rad);
 
-                let maxBarrelRecoilDistance = -5.0; 
-                let energyVal = this.energyState; 
-                let sideMoveDistance = energyVal * 4.0; 
+                let maxBarrelRecoilDistance = -5.0;
+                let energyVal = this.energyState;
+                let sideMoveDistance = energyVal * 4.0;
 
                 let barrel1Region = PerfCore.region(modPrefix + "-forstarsilum-barrel1");
                 if(barrel1Region.found()){
@@ -669,14 +667,14 @@ const PerfCore = global.PerfCore;
                     let swordRegion = PerfCore.region(modPrefix + "-starsword");
                     if(swordRegion.found()){
                         Draw.z(Layer.effect + 1);
-                        let progress = Math.min(this.chargeTimer / 60.0, 1.0); 
-                        
+                        let progress = Math.min(this.chargeTimer / 60.0, 1.0);
+
                         let muzzleX = this.x + cos * 16;
                         let muzzleY = this.y + sin * 16;
-                        let baseRadius = 35.0 * (1.0 - progress * 0.7); 
+                        let baseRadius = 35.0 * (1.0 - progress * 0.7);
 
                         for(let i = 0; i < 5; i++){
-                            let angleOffset = (i - 2) * 25.0 * (1.0 - progress); 
+                            let angleOffset = (i - 2) * 25.0 * (1.0 - progress);
                             let swordAngle = this.rotation + angleOffset;
                             let swordRad = swordAngle * Mathf.degRad;
 
@@ -692,17 +690,16 @@ const PerfCore = global.PerfCore;
                 }
             },
 
-            // ĐỌC/GHI DỮ LIỆU ĐƯỢC CHUẨN HÓA HOÀN TOÀN TRÁNH BỊ LỆCH BYTE SAVE
-            write(write){ 
-                this.super$write(write); 
-                write.b(this.getTier()); 
-                write.f(this.energyState != null ? this.energyState : 0.0); 
+            write(write){
+                this.super$write(write);
+                write.b(this.getTier());
+                write.f(this.energyState != null ? this.energyState : 0.0);
                 write.f(this.noResetChanceMK2B != null ? this.noResetChanceMK2B : 0.80);
             },
-            read(read, revision){ 
-                this.super$read(read, revision); 
-                this.setTier(read.b()); 
-                this.energyState = read.f(); 
+            read(read, revision){
+                this.super$read(read, revision);
+                this.setTier(read.b());
+                this.energyState = read.f();
                 this.noResetChanceMK2B = read.f();
                 this.customRecoil = 0.0;
                 this.activeUltBullets = [];

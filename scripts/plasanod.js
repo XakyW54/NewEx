@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
 let sta = null;
 try {
@@ -29,7 +30,7 @@ function trP(key, viText, enText) {
     if (key === "no_core") return currentIsEn ? "[red]Core not found![]" : "[red]Không tìm thấy Lõi Đội![]";
     if (key === "sp_title") return currentIsEn ? "[gold]★ SPECIAL UPGRADE PERKS (RANDOM) ★[]" : "[gold]★ PHÚC LỢI NÂNG CẤP ĐẶC BIỆT (NGẪU NHIÊN) ★[]";
     if (key === "sp_desc") {
-        return currentIsEn ? 
+        return currentIsEn ?
             "Activate random protocol to get 1 of 6 permanent perks:\n" +
             " • [yellow]Perk 1 (~19.6%):[] +215% Base Damage, Faster Laser charge speed.\n" +
             " • [orange]Perk 2 (~29.4%):[] +50% Effective Range, +150% Energy Beam Damage.\n" +
@@ -55,7 +56,7 @@ function trP(key, viText, enText) {
     if (key === "active_p4") return currentIsEn ? "[purple]✔ ACTIVATED: PERK 4\n• Effective Range +50%\n• Fire extra Dual Piercing Physical Bullets[]" : "[purple]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 4\n• Tầm bắn hiệu dụng +50%\n• Kích hoạt bắn thêm đạn Vật Lý Kép xuyên phá[]";
     if (key === "active_p5") return currentIsEn ? "[green]✔ ACTIVATED: PERK 5 (1% SUPER RARE)\n• Split multi-directional Lasers\n• Expand Gravity Vortex radius\n• Energy Buff for 4 nearby ally turrets[]" : "[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 5 (1% SIÊU HIẾM)\n• Chùm Laser đa hướng tự động phân tách\n• Mở rộng bán kính Xoáy Trọng Lực\n• Buff năng lượng cho 4 pháo đồng minh lân cận[]";
     if (key === "active_p6") return currentIsEn ? "[red]✔ ACTIVATED: PERK 6 (1% SUPER RARE)\n• Base Damage +500%\n• Auto continuous Demon Lightning blasts![]" : "[red]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 6 (1% SIÊU HIẾM)\n• Sát thương gốc +500%\n• Tự động xả chuỗi bộc phá Sét Ma Quỷ diện rộng liên tục![]";
-    
+
     if (key === "mk2_desc") {
         return currentIsEn ?
             "[white]• Structure HP: [gray]+0%[] (10,500 HP)\n" +
@@ -70,7 +71,7 @@ function trP(key, viText, enText) {
     }
     if (key === "mk2_btn") return currentIsEn ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]";
     if (key === "no_res_mk2") return currentIsEn ? "[red]Not enough resources for MK2 branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]";
-    
+
     if (key === "mk2b_desc") {
         return currentIsEn ?
             "[white]• Structure HP: [green]+55%[] (16,250 HP)\n" +
@@ -85,13 +86,13 @@ function trP(key, viText, enText) {
     }
     if (key === "mk2b_btn") return currentIsEn ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]";
     if (key === "no_res_mk2b") return currentIsEn ? "[red]Not enough resources for MK2B branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]";
-    
+
     if (key === "status_mk2") return currentIsEn ? "[cyan]UPGRADED TO MK2 TURRET[]" : "[cyan]ĐÃ NÂNG CẤP THÀNH PHÁO MK2[]";
     if (key === "status_mk2b") return currentIsEn ? "[purple]UPGRADED TO MK2B TURRET[]" : "[purple]ĐÃ NÂNG CẤP THÀNH PHÁO MK2B[]";
     if (key === "dialog_title") return currentIsEn ? "Plasanod Upgrade Center" : "Trung tâm nâng cấp pháo Plasanod";
     if (key === "info_title") return currentIsEn ? " Plasanod Turret Stats " : " Thông số pháo Plasanod ";
     if (key === "perk_bonus_range") return currentIsEn ? " [gold](+50% from Perk)[]" : " [gold](+50% từ Phúc Lợi)[]";
-    
+
     if (key === "info_mk1") {
         return currentIsEn ?
             "[gold]⚡ BASE STATS (MK1) ⚡[]\n" +
@@ -153,7 +154,7 @@ function trP(key, viText, enText) {
     if (key === "info_p4") return currentIsEn ? "\n[purple]• Perk 4: Range +50%, Fires extra Piercing Dual Bullets.[]" : "\n[purple]• Phúc lợi 4: Tầm bắn +50%, Bắn thêm đạn Vật Lý Kép xuyên phá.[]";
     if (key === "info_p5") return currentIsEn ? "\n[green]• Perk 5 (1%): Multi-laser, Expand Vortex, Energy Buff to 4 nearby allies.[]" : "\n[green]• Phúc lợi 5 (1%): Laser đa hướng, Mở rộng Xoáy Trọng Lực, Buff năng lượng cho 4 pháo đồng minh lân cận.[]";
     if (key === "info_p6") return currentIsEn ? "\n[red]• Perk 6 (1%): Base Damage +500%, Continuous Demon Lightning blasts![]" : "\n[red]• Phúc lợi 6 (1%): Sát thương gốc +500%, Bộc phá Sét Ma Quỷ diện rộng liên tục![]";
-    
+
     return viText;
 }
 
@@ -167,8 +168,8 @@ if (typeof global !== "undefined" && !global.ceiLastAppliedTurret) {
 
 const ringExpandFx = new Effect(35, cons(e => {
     Draw.z(Layer.effect + 0.05);
-    let fin = e.fin();    
-    let fout = e.fout();   
+    let fin = e.fin();
+    let fout = e.fout();
 
     let baseColor = e.color != null ? e.color : Color.valueOf("00ffcc");
     let maxRadius = (e.data != null ? e.data : 12.0);
@@ -232,7 +233,7 @@ const laserMK2B = createPlasanodLaser(160, "bf40bf", 600);
 let plasanod = extend(ContinuousTurret, "plasanod", {
     squareSprite: false,
     basePrefix: "reinforced-",
-    
+
     load(){
         this.super$load();
         this.customBaseRegion = PerfCore.region(this.basePrefix + "block-" + this.size);
@@ -281,11 +282,11 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
         this.super$created();
         this.tierState = 0;
         this.perkTierState = 0;
-        
+
         this.aimTimer = 0;
         this.physShootTimer = 0;
         this.ceiStackTimer = 0;
-        this.ringFxTimer = 0; 
+        this.ringFxTimer = 0;
         this.lastRotation = 0;
         return this;
     },
@@ -306,18 +307,18 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
     },
 
     getTier(){ return this.tierState == null ? 0 : this.tierState; },
-    
-    setTier(val){ 
+
+    setTier(val){
         this.tierState = val;
-        let baseH = (val == 2) ? 6500 : 4200; 
+        let baseH = (val == 2) ? 6500 : 4200;
 
         if (this.getPerkTier() == 1) baseH = Math.round(baseH * 1.50);
 
-        this.health = baseH; 
+        this.health = baseH;
         this.maxHealth = this.health;
-        
+
         let currentRange = this.range();
-        let baseBullet = (val == 2) ? createPlasanodLaser(160, "bf40bf", currentRange) : 
+        let baseBullet = (val == 2) ? createPlasanodLaser(160, "bf40bf", currentRange) :
                         ((val == 1) ? createPlasanodLaser(140, "00ffcc", currentRange) : createPlasanodLaser(210, "84e184", currentRange));
 
         if (this.getPerkTier() == 4) {
@@ -349,12 +350,12 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
     },
 
     buildConfiguration(table) {
-        table.clear(); 
+        table.clear();
         table.row();
 
         table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
             let dialog = extend(BaseDialog, trP("dialog_title"), {});
-            
+
             let reqCell = dialog.cont.label(packProv(() => {
                 let core = this.team.core();
                 if (core == null) return trP("no_core");
@@ -373,7 +374,7 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
                 let silColor1 = cSil >= reqPlasanodMK2.silicon ? "[green]" : "[red]";
                 let plaColor1 = cPla >= reqPlasanodMK2.plastanium ? "[green]" : "[red]";
                 let surColor1 = cSur >= reqPlasanodMK2.surgeAlloy ? "[green]" : "[red]";
-                
+
                 let silColor2 = cSil >= reqPlasanodMK2B.silicon ? "[green]" : "[red]";
                 let thoColor2 = cTho >= reqPlasanodMK2B.thorium ? "[green]" : "[red]";
                 let phaColor2 = cPha >= reqPlasanodMK2B.phaseFabric ? "[green]" : "[red]";
@@ -383,16 +384,16 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
                        trP("req_mk2") + silColor1 + cSil + "[]/" + reqPlasanodMK2.silicon + " | Plastanium: " + plaColor1 + cPla + "[]/" + reqPlasanodMK2.plastanium + " | Surge Alloy: " + surColor1 + cSur + "[]/" + reqPlasanodMK2.surgeAlloy + "\n" +
                        trP("req_mk2b") + silColor2 + cSil + "[]/" + reqPlasanodMK2B.silicon + " | Thorium: " + thoColor2 + cTho + "[]/" + reqPlasanodMK2B.thorium + " | Phase Fabric: " + phaColor2 + cPha + "[]/" + reqPlasanodMK2B.phaseFabric;
             }));
-            
+
             reqCell.width(380).get().setWrap(true);
             reqCell.get().setAlignment(Align.left);
-            dialog.cont.row(); 
+            dialog.cont.row();
             dialog.cont.add().height(10).row();
 
             let branchesTable = new Table();
 
-            let spBox = new Table(); 
-            spBox.background(Styles.black6); 
+            let spBox = new Table();
+            spBox.background(Styles.black6);
             spBox.margin(12);
             spBox.add(trP("sp_title")).row();
 
@@ -401,24 +402,24 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
 
             if (currentPerk == 0) {
                 let spD = spBox.add(trP("sp_desc"));
-                spD.width(360).get().setWrap(true); 
-                spD.get().setAlignment(Align.left); 
+                spD.width(360).get().setWrap(true);
+                spD.get().setAlignment(Align.left);
                 spBox.row();
 
                 spBox.button(trP("btn_roll"), packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.copper) >= 4000 && core.items.get(Items.lead) >= 4000 && core.items.get(Items.silicon) >= 4000) {
-                        core.items.remove(Items.copper, 4000); 
-                        core.items.remove(Items.lead, 4000); 
-                        core.items.remove(Items.silicon, 4000);
+                        NexNet.take(core, Items.copper, 4000);
+                        NexNet.take(core, Items.lead, 4000);
+                        NexNet.take(core, Items.silicon, 4000);
 
                         let rand = Mathf.random(100);
-                        let resultPerk = 3; 
+                        let resultPerk = 3;
 
                         if (rand < 1.0) {
-                            resultPerk = 5; 
+                            resultPerk = 5;
                         } else if (rand < 2.0) {
-                            resultPerk = 6; 
+                            resultPerk = 6;
                         } else if (rand < 2.0 + 19.6) {
                             resultPerk = 1;
                         } else if (rand < 2.0 + 19.6 + 29.4) {
@@ -430,10 +431,10 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
                         }
 
                         this.setPerkTier(resultPerk);
-                        this.configure(10 + resultPerk); 
+                        this.configure(java.lang.Integer(10 + resultPerk));
 
-                        Fx.upgradeCore.at(this.x, this.y); 
-                        Effect.shake(6, 6, this.x, this.y);
+                        NexNet.fx(Fx.upgradeCore, this.x, this.y);
+                        NexNet.shake(6, 6, this.x, this.y);
 
                         let perkName = "";
                         if (resultPerk == 1) perkName = isEn() ? "[yellow]PERK 1[]" : "[yellow]PHÚC LỢI 1[]";
@@ -445,10 +446,10 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
 
                         Vars.ui.showInfo(trP("won") + perkName);
 
-                        dialog.hide(); 
+                        dialog.hide();
                         this.deselect();
-                    } else { 
-                        Vars.ui.showInfo(trP("no_res_sp")); 
+                    } else {
+                        Vars.ui.showInfo(trP("no_res_sp"));
                     }
                 })).size(300, 40);
             } else {
@@ -461,74 +462,74 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
                 if (currentPerk == 6) perkText = trP("active_p6");
 
                 let spD = spBox.add(perkText);
-                spD.width(360).get().setWrap(true); 
+                spD.width(360).get().setWrap(true);
                 spD.get().setAlignment(Align.left);
             }
 
-            branchesTable.add(spBox).width(360); 
+            branchesTable.add(spBox).width(360);
             branchesTable.row();
             branchesTable.add().height(12).row();
 
             if (tier == 0) {
-                let b1 = new Table(); 
-                b1.background(Styles.black6); 
+                let b1 = new Table();
+                b1.background(Styles.black6);
                 b1.margin(12);
                 b1.add("[cyan]===(MK2)===[]").row();
                 let b1D = b1.add(trP("mk2_desc"));
-                b1D.width(340).get().setWrap(true); 
-                b1D.get().setAlignment(Align.left); 
+                b1D.width(340).get().setWrap(true);
+                b1D.get().setAlignment(Align.left);
                 b1.row();
                 b1.button(trP("mk2_btn"), packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.silicon) >= reqPlasanodMK2.silicon && core.items.get(Items.plastanium) >= reqPlasanodMK2.plastanium && core.items.get(Items.surgeAlloy) >= reqPlasanodMK2.surgeAlloy) {
-                        core.items.remove(Items.silicon, reqPlasanodMK2.silicon); 
-                        core.items.remove(Items.plastanium, reqPlasanodMK2.plastanium); 
-                        core.items.remove(Items.surgeAlloy, reqPlasanodMK2.surgeAlloy);
-                        
+                        NexNet.take(core, Items.silicon, reqPlasanodMK2.silicon);
+                        NexNet.take(core, Items.plastanium, reqPlasanodMK2.plastanium);
+                        NexNet.take(core, Items.surgeAlloy, reqPlasanodMK2.surgeAlloy);
+
                         this.setTier(1);
-                        this.configure(1); 
+                        this.configure(java.lang.Integer(1));
 
-                        Fx.upgradeCore.at(this.x, this.y); 
-                        Fx.impactReactorExplosion.at(this.x, this.y); 
-                        Effect.shake(8, 8, this.x, this.y);
+                        NexNet.fx(Fx.upgradeCore, this.x, this.y);
+                        NexNet.fx(Fx.impactReactorExplosion, this.x, this.y);
+                        NexNet.shake(8, 8, this.x, this.y);
 
-                        dialog.hide(); 
+                        dialog.hide();
                         this.deselect();
-                    } else { 
-                        Vars.ui.showInfo(trP("no_res_mk2")); 
+                    } else {
+                        Vars.ui.showInfo(trP("no_res_mk2"));
                     }
                 })).size(180, 38);
 
-                let b2 = new Table(); 
-                b2.background(Styles.black6); 
+                let b2 = new Table();
+                b2.background(Styles.black6);
                 b2.margin(12);
                 b2.add("[purple]===(MK2B)===[]").row();
                 let b2D = b2.add(trP("mk2b_desc"));
-                b2D.width(340).get().setWrap(true); 
-                b2D.get().setAlignment(Align.left); 
+                b2D.width(340).get().setWrap(true);
+                b2D.get().setAlignment(Align.left);
                 b2.row();
                 b2.button(trP("mk2b_btn"), packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.silicon) >= reqPlasanodMK2B.silicon && core.items.get(Items.thorium) >= reqPlasanodMK2B.thorium && core.items.get(Items.phaseFabric) >= reqPlasanodMK2B.phaseFabric) {
-                        core.items.remove(Items.silicon, reqPlasanodMK2B.silicon); 
-                        core.items.remove(Items.thorium, reqPlasanodMK2B.thorium); 
-                        core.items.remove(Items.phaseFabric, reqPlasanodMK2B.phaseFabric);
-                        
+                        NexNet.take(core, Items.silicon, reqPlasanodMK2B.silicon);
+                        NexNet.take(core, Items.thorium, reqPlasanodMK2B.thorium);
+                        NexNet.take(core, Items.phaseFabric, reqPlasanodMK2B.phaseFabric);
+
                         this.setTier(2);
-                        this.configure(2); 
+                        this.configure(java.lang.Integer(2));
 
-                        Fx.bigShockwave.at(this.x, this.y); 
-                        Fx.reactorExplosion.at(this.x, this.y); 
-                        Effect.shake(10, 10, this.x, this.y);
+                        NexNet.fx(Fx.bigShockwave, this.x, this.y);
+                        NexNet.fx(Fx.reactorExplosion, this.x, this.y);
+                        NexNet.shake(10, 10, this.x, this.y);
 
-                        dialog.hide(); 
+                        dialog.hide();
                         this.deselect();
-                    } else { 
-                        Vars.ui.showInfo(trP("no_res_mk2b")); 
+                    } else {
+                        Vars.ui.showInfo(trP("no_res_mk2b"));
                     }
                 })).size(180, 38);
 
-                branchesTable.add(b1).width(360); 
+                branchesTable.add(b1).width(360);
                 branchesTable.row();
                 branchesTable.add().height(12).row();
                 branchesTable.add(b2).width(360);
@@ -540,7 +541,7 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
             let scroll = new ScrollPane(branchesTable);
             scroll.setScrollingDisabled(true, false);
             dialog.cont.add(scroll).maxHeight(420);
-            dialog.addCloseButton(); 
+            dialog.addCloseButton();
             dialog.show();
         })).size(50, 40).tooltip(trP("dialog_title"));
 
@@ -576,13 +577,13 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
             let dialog = extend(BaseDialog, title, {});
             let infoTable = new Table();
             let cell = infoTable.add(descStr).width(360);
-            cell.get().setWrap(true); 
+            cell.get().setWrap(true);
             cell.get().setAlignment(Align.left);
 
             let scroll = new ScrollPane(infoTable);
             scroll.setScrollingDisabled(true, false);
             dialog.cont.add(scroll).maxHeight(400);
-            dialog.addCloseButton(); 
+            dialog.addCloseButton();
             dialog.show();
         })).size(50, 40).tooltip(isEn() ? "View detailed Plasanod stats" : "Xem thông số chi tiết pháo Plasanod");
     },
@@ -726,7 +727,7 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
         if(this.efficiency > 0 && this.isShooting){
             let tier = this.getTier();
             let tmpColor = (tier == 2) ? Color.valueOf("bf40bf") : ((tier == 1) ? Color.valueOf("00ffcc") : Color.valueOf("84e184"));
-            
+
             let bx = this.x, by = this.y;
             let rot = this.rotation;
 
@@ -740,7 +741,7 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
 
                 Draw.draw(Layer.bullet, packRun(() => {
                     let len = this.range();
-                    
+
                     let off1X = bx + Angles.trnsx(rot + 90, 6);
                     let off1Y = by + Angles.trnsy(rot + 90, 6);
                     let e1X = off1X + Angles.trnsx(rot, len);
@@ -797,14 +798,14 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
         }
     },
 
-    write(write){ 
-        this.super$write(write); 
-        write.b(this.getTier()); 
+    write(write){
+        this.super$write(write);
+        write.b(this.getTier());
         write.b(this.getPerkTier());
     },
-    read(read, revision){ 
-        this.super$read(read, revision); 
-        this.setTier(read.b()); 
+    read(read, revision){
+        this.super$read(read, revision);
+        this.setTier(read.b());
         if (revision >= 1) {
             this.setPerkTier(read.b());
         } else {

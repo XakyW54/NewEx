@@ -1,7 +1,5 @@
 const PerfCore = global.PerfCore;
-// ==========================================
-// 1. HELPER & UTILS
-// ==========================================
+
 const packCons2 = (func) => new Cons2({ get: func });
 const packCons = (func) => new Cons({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
@@ -92,9 +90,6 @@ const dummyBullet = extend(BasicBulletType, {
     speed: 0, lifetime: 0, damage: 0, collides: false, hitEffect: customNoneFx, despawnEffect: customNoneFx
 });
 
-// ==========================================
-// 2. ITEM STATS & PASSIVES
-// ==========================================
 const ItemStats = {
     "copper": { damage: 0.05, desc: "[stat]+5% Sát thương[]" },
     "silicon": { reload: 0.05, desc: "[stat]+5% Tốc độ bắn[]" },
@@ -132,9 +127,6 @@ function applyDamageWithStarlight(sourceBuild, targetUnit, baseDmg) {
     }
 }
 
-// ==========================================
-// 3. UNIVERSAL ITEM UI
-// ==========================================
 const UniversalItemUI = {
     buildSlotUI(table, build, itemStorage, onItemChange) {
         let slotsTable = new Table();
@@ -213,11 +205,11 @@ const UniversalItemUI = {
                 infoTable.left();
                 let count = core != null ? core.items.get(item) : 0;
                 let statusColor = hasItem ? "[#84f491]" : "[#ff795e]";
-                
+
                 let titleLabel = infoTable.add(item.localizedName + " " + statusColor + "(Lõi: " + count + ")[]").left().growX().get();
                 titleLabel.setWrap(true);
                 infoTable.row();
-                
+
                 let buffLabel = infoTable.add(statData.desc).fontScale(0.85).left().growX().get();
                 buffLabel.setWrap(true);
 
@@ -240,9 +232,6 @@ const UniversalItemUI = {
     }
 };
 
-// ==========================================
-// 4. BASE BUILD TEMPLATE
-// ==========================================
 function setupBaseTurret(turretBlock, baseMaxRange) {
     turretBlock.configurable = true;
     turretBlock.maxEquipmentSlots = 4;

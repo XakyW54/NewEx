@@ -20,7 +20,7 @@ const zojBullet = extend(BasicBulletType, {
         if (owner != null && owner.team != null && owner.isValid()) {
             let core = owner.team.core();
             if (core != null) {
-                // Lấy chính xác loại Item từ băng đạn của pháo
+
                 let ammoItem = Items.copper;
                 if (owner.ammo != null && !owner.ammo.isEmpty()) {
                     let entry = owner.ammo.peek();

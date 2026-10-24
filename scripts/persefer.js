@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
@@ -59,7 +60,7 @@ const starBullet = extend(BasicBulletType, {
     shrinkY: 0,
     ammoMultiplier: 4,
     reloadMultiplier: 1.3,
-    pierceArmor: true, 
+    pierceArmor: true,
     collidesGround: false,
     collidesAir: true,
     frontColor: ORANGE_GLOW,
@@ -110,7 +111,7 @@ const starBullet = extend(BasicBulletType, {
         if (this.hitEffect != null) {
             this.hitEffect.at(x, y, b.rotation(), this.backColor);
         }
-        
+
         let target = Units.closestEnemy(b.team, x, y, 24, packBoolf(u => true));
 
         if (target != null && target.isFlying()) {
@@ -166,7 +167,7 @@ function createPerseferBullet(baseSpeed, baseDamage, baseLifetime, extraProps) {
             if (this.hitEffect != null) {
                 this.hitEffect.at(x, y, b.rotation(), this.backColor);
             }
-            
+
             let target = Units.closestEnemy(b.team, x, y, 24, packBoolf(u => true));
 
             if (target != null && target.isFlying()) {
@@ -230,7 +231,7 @@ Events.on(ContentInitEvent, () => {
     }));
 
     perseferBlock.buildType = () => extend(ItemTurret.ItemTurretBuild, perseferBlock, {
-        tierState: 0, 
+        tierState: 0,
         continuousShootTime: 0,
         airDmgBonus: 1.5,
         haloAlpha: 0,
@@ -252,18 +253,18 @@ Events.on(ContentInitEvent, () => {
             Fx.upgradeCore.at(this.x, this.y);
         },
 
-        getCritRate(){ 
+        getCritRate(){
             let baseRate = 0.05;
             if (this.getTier() == 1) baseRate += 0.15;
             let stackBonus = (this.mk2bTimer > 0) ? (this.mk2bStacks * 0.01) : 0;
-            return Math.min(1.0, baseRate + stackBonus); 
+            return Math.min(1.0, baseRate + stackBonus);
         },
 
-        getCritDamageMultiplier(){ 
+        getCritDamageMultiplier(){
             let baseMult = 0.50;
             if (this.getTier() == 1) baseMult += 0.30;
             let stackBonus = (this.mk2bTimer > 0) ? (this.mk2bStacks * 0.02) : 0;
-            return baseMult + stackBonus; 
+            return baseMult + stackBonus;
         },
 
         triggerMk2bBuff() {
@@ -296,13 +297,13 @@ Events.on(ContentInitEvent, () => {
         },
 
         getStarConversionProgress() {
-            let delayTicks = 120; 
-            let rampUpTicks = (this.getTier() === 0) ? 1200 : 600; 
-            
+            let delayTicks = 120;
+            let rampUpTicks = (this.getTier() === 0) ? 1200 : 600;
+
             if (this.continuousShootTime <= delayTicks) {
                 return 0.0;
             }
-            
+
             let progress = (this.continuousShootTime - delayTicks) / rampUpTicks;
             return Math.min(1.0, progress);
         },
@@ -336,8 +337,8 @@ Events.on(ContentInitEvent, () => {
             let haloX = this.x + Angles.trnsx(this.rotation + 180, 8);
             let haloY = this.y + Angles.trnsy(this.rotation + 180, 8);
 
-            let radiusX = 10.0; 
-            let radiusY = 3.2;  
+            let radiusX = 10.0;
+            let radiusY = 3.2;
             let rotationDeg = this.rotation + 90;
 
             let points = 24;
@@ -438,7 +439,7 @@ Events.on(ContentInitEvent, () => {
                     if (Vars.ui == null) return;
                     let dialogTitle = isEn() ? "Persefer Turret Upgrade Center" : "Trung tâm nâng cấp pháo Persefer";
                     let dialog = extend(BaseDialog, dialogTitle, {});
-                    
+
                     if (dialog.cont != null) {
                         let reqCell = dialog.cont.add(new Table());
                         reqCell.get().add(new Label(packProv(() => {
@@ -451,7 +452,7 @@ Events.on(ContentInitEvent, () => {
 
                             let thoColor1 = currentThorium >= reqMK2.thorium ? "[green]" : "[red]";
                             let silColor1 = currentSilicon >= reqMK2.silicon ? "[green]" : "[red]";
-                            
+
                             let surColor2 = currentSurge >= reqMK2B.surgeAlloy ? "[green]" : "[red]";
                             let silColor2 = currentSilicon >= reqMK2B.silicon ? "[green]" : "[red]";
                             let phaColor2 = currentPhase >= reqMK2B.phaseFabric ? "[green]" : "[red]";
@@ -495,9 +496,9 @@ Events.on(ContentInitEvent, () => {
                         b1.button(isEn() ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => {
                             let core = this.team != null ? this.team.core() : null;
                             if(core != null && core.items.get(Items.thorium) >= reqMK2.thorium && core.items.get(Items.silicon) >= reqMK2.silicon){
-                                core.items.remove(Items.thorium, reqMK2.thorium); core.items.remove(Items.silicon, reqMK2.silicon);
-                                Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(4, 4, this.x, this.y);
-                                this.configure(java.lang.Integer(1)); 
+                                NexNet.take(core, Items.thorium, reqMK2.thorium); NexNet.take(core, Items.silicon, reqMK2.silicon);
+                                NexNet.fx(Fx.upgradeCore, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(4, 4, this.x, this.y);
+                                this.configure(java.lang.Integer(1));
                                 dialog.hide(); this.deselect();
                             } else { if(Vars.ui != null && Vars.ui.showInfo != null) Vars.ui.showInfo(isEn() ? "[red]Not enough resources for MK2![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                         })).size(180, 38);
@@ -520,9 +521,9 @@ Events.on(ContentInitEvent, () => {
                         b2.button(isEn() ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                             let core = this.team != null ? this.team.core() : null;
                             if(core != null && core.items.get(Items.surgeAlloy) >= reqMK2B.surgeAlloy && core.items.get(Items.silicon) >= reqMK2B.silicon && core.items.get(Items.phaseFabric) >= reqMK2B.phaseFabric){
-                                core.items.remove(Items.surgeAlloy, reqMK2B.surgeAlloy); core.items.remove(Items.silicon, reqMK2B.silicon); core.items.remove(Items.phaseFabric, reqMK2B.phaseFabric);
-                                Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(4, 4, this.x, this.y);
-                                this.configure(java.lang.Integer(2)); 
+                                NexNet.take(core, Items.surgeAlloy, reqMK2B.surgeAlloy); NexNet.take(core, Items.silicon, reqMK2B.silicon); NexNet.take(core, Items.phaseFabric, reqMK2B.phaseFabric);
+                                NexNet.fx(Fx.bigShockwave, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(4, 4, this.x, this.y);
+                                this.configure(java.lang.Integer(2));
                                 dialog.hide(); this.deselect();
                             } else { if(Vars.ui != null && Vars.ui.showInfo != null) Vars.ui.showInfo(isEn() ? "[red]Not enough resources for MK2B![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
                         })).size(180, 38);
@@ -594,16 +595,16 @@ Events.on(ContentInitEvent, () => {
 
         config() { return java.lang.Integer(this.getTier()); },
 
-        write(write){ 
-            this.super$write(write); 
+        write(write){
+            this.super$write(write);
             write.i(this.getTier());
             write.f(this.airDmgBonus);
             write.i(this.mk2bStacks);
             write.f(this.mk2bTimer);
             write.f(this.continuousShootTime);
         },
-        read(read, revision){ 
-            this.super$read(read, revision); 
+        read(read, revision){
+            this.super$read(read, revision);
             this.tierState = read.i();
             this.airDmgBonus = read.f();
             this.mk2bStacks = read.i();

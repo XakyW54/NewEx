@@ -1,18 +1,17 @@
 const PerfCore = global.PerfCore;
-global.deotLastHealth = {};  
-global.deotDamagedTime = {}; 
-global.doteiStacks = {};     
+global.deotLastHealth = {};
+global.deotDamagedTime = {};
+global.doteiStacks = {};
 global.bemodStacks = {};
-global.ceiStacks = {};   
-global.ceiTimers = {};    
+global.ceiStacks = {};
+global.ceiTimers = {};
 
 let isDoteiDamageActive = false;
 
-// Effect hình tứ giác méo biến dạng theo hướng va chạm khi Bất Tử
 const atraxShieldHitFx = new Effect(15, cons(e => {
     Draw.z(Layer.effect + 0.2);
     Draw.color(PerfCore.color("ff3333"), Color.white, e.fout());
-    
+
     let hitAngle = (e.data != null) ? e.data : 0;
     let size = 16 + e.fout() * 6;
     let offset = 12;
@@ -38,13 +37,12 @@ const atraxSoloAuraFx = new Effect(20, cons(e => {
     Draw.reset();
 }));
 
-// STATUS EFFECT ATRAX KHI DI CHUYỂN (+150% HP, +100% Giáp, +200% Tốc bắn, +20% Dmg, +50% Speed)
 var atraxSoloBuff = extend(StatusEffect, "atraxSoloBuff", {
-    healthMultiplier: 2.5,       // +150% Max HP
-    armorMultiplier: 2.0,        // +100% Giáp
-    reloadMultiplier: 3.0,       // +200% Tốc độ bắn
-    damageMultiplier: 1.2,       // +20% Sát thương
-    speedMultiplier: 1.5,        // +50% Tốc độ di chuyển
+    healthMultiplier: 2.5,
+    armorMultiplier: 2.0,
+    reloadMultiplier: 3.0,
+    damageMultiplier: 1.2,
+    speedMultiplier: 1.5,
     color: Color.valueOf("e56f48"),
     show: true,
     effect: atraxSoloAuraFx,
@@ -61,7 +59,6 @@ var atraxSoloBuff = extend(StatusEffect, "atraxSoloBuff", {
 });
 atraxSoloBuff.init();
 
-// STATUS EFFECT BẤT TỬ KHI DƯỚI 15% MÁU
 var atraxInvulnerableBuff = extend(StatusEffect, "atraxInvulnerableBuff", {
     color: Color.valueOf("ff3333"),
     show: true,
@@ -86,19 +83,19 @@ var daggerAuraFx = new Effect(20, cons(e => {
 }));
 
 var daggerSpeed = extend(StatusEffect, "daggerSpeed", {
-    speedMultiplier: 1.10, 
+    speedMultiplier: 1.10,
     color: Color.valueOf("84f491"),
     show: false
 });
 daggerSpeed.init();
 
 var daggerProtect = extend(StatusEffect, "daggerProtect", {
-    healthMultiplier: 100.0, 
+    healthMultiplier: 100.0,
     color: Color.valueOf("84f491"),
     show: true,
     effect: daggerAuraFx,
-    effectChance: 0.05, 
-    
+    effectChance: 0.05,
+
     draw(unit) {
         this.super$draw(unit);
         Draw.z(Layer.effect);
@@ -112,8 +109,8 @@ daggerProtect.init();
 
 const ceiSmokeIngatherFx = new Effect(30, cons(e => {
     Draw.z(Layer.effect + 0.1);
-    let startDist = 18.0 + Mathf.randomSeed(e.id, -4, 6); 
-    let dist = startDist * (1.0 - e.fin()); 
+    let startDist = 18.0 + Mathf.randomSeed(e.id, -4, 6);
+    let dist = startDist * (1.0 - e.fin());
     let angle = Mathf.randomSeed(e.id * 2, 0, 360);
     let px = e.x + Angles.trnsx(angle, dist);
     let py = e.y + Angles.trnsy(angle, dist);
@@ -124,8 +121,8 @@ const ceiSmokeIngatherFx = new Effect(30, cons(e => {
     Draw.reset();
 }));
 
-const ceiFieldFx = new Effect(1800, cons(e => { 
-    let radius = (e.data != null && typeof e.data === "number") ? e.data : 200; 
+const ceiFieldFx = new Effect(1800, cons(e => {
+    let radius = (e.data != null && typeof e.data === "number") ? e.data : 200;
     let x = e.x, y = e.y;
     Draw.z(Layer.effect + 0.5);
     Draw.color(PerfCore.color("90e0ef"));
@@ -133,20 +130,20 @@ const ceiFieldFx = new Effect(1800, cons(e => {
     Fill.circle(x, y, radius);
     Draw.color(PerfCore.color("00b4d8"));
     Draw.alpha(0.85 * e.fout());
-    Lines.stroke(1.2); 
+    Lines.stroke(1.2);
     Lines.circle(x, y, radius);
 
     const particleColors = [
-        Color.valueOf("0077b6"), 
-        Color.valueOf("00b4d8"), 
-        Color.valueOf("90e0ef"), 
-        Color.valueOf("caf0f8")  
+        Color.valueOf("0077b6"),
+        Color.valueOf("00b4d8"),
+        Color.valueOf("90e0ef"),
+        Color.valueOf("caf0f8")
     ];
 
     for (let i = 0; i < 20; i++) {
         let seed = e.id + i * 133;
         let baseDist = Mathf.randomSeed(seed, 15, Math.max(16, radius - 15));
-        let speed = Mathf.randomSeed(seed + 1, 1.8, 6.0); 
+        let speed = Mathf.randomSeed(seed + 1, 1.8, 6.0);
         let dir = (i % 2 === 0) ? 1 : -1;
         let angle = Mathf.randomSeed(seed + 2, 0, 360) + (Time.time * speed * dir);
         let distOffset = Math.sin((Time.time + seed) * 0.08) * 12;
@@ -167,7 +164,7 @@ const ceiFieldFx = new Effect(1800, cons(e => {
         let arcSpeed = Mathf.randomSeed(seed + 1, 1.2, 3.5);
         let dir = (i % 3 === 0) ? -1 : 1;
         let angle = Mathf.randomSeed(seed + 2, 0, 360) + (Time.time * arcSpeed * dir);
-        let arcLength = Mathf.randomSeed(seed + 3, 12, 28); 
+        let arcLength = Mathf.randomSeed(seed + 3, 12, 28);
         Draw.color(PerfCore.color("caf0f8"));
         Draw.alpha(0.6 * e.fout());
         Lines.arc(x, y, arcDist, arcLength / 360, angle);
@@ -180,18 +177,18 @@ let activeCeiFields = [];
 function spawnCeiField(x, y, targetUnit, sourceTurret) {
     let perkTier = (sourceTurret != null && typeof sourceTurret.getPerkTier === "function") ? sourceTurret.getPerkTier() : 0;
     let radius = 200;
-    if (perkTier == 2) radius *= 2.20;      
-    if (perkTier == 3) radius *= 0.50;      
-    if (perkTier == 5) radius *= 0.80;    
-    if (perkTier == 6) radius *= 3.00;     
+    if (perkTier == 2) radius *= 2.20;
+    if (perkTier == 3) radius *= 0.50;
+    if (perkTier == 5) radius *= 0.80;
+    if (perkTier == 6) radius *= 3.00;
 
-    ceiFieldFx.at(x, y, 0, radius); 
+    ceiFieldFx.at(x, y, 0, radius);
     let attackerTeam = (targetUnit.team == Team.sharded) ? Team.crux : Team.sharded;
 
     activeCeiFields.push({
         x: x, y: y,
-        attackerTeam: attackerTeam, 
-        victimTeam: targetUnit.team, 
+        attackerTeam: attackerTeam,
+        victimTeam: targetUnit.team,
         timer: 0, totalTime: 1800,
         radius: radius, perkTier: perkTier,
         sourceTurret: sourceTurret
@@ -204,7 +201,7 @@ Events.run(Trigger.update, () => {
         field.timer += Time.delta;
         field.totalTime -= Time.delta;
 
-        if (field.timer >= 180.0) {  
+        if (field.timer >= 180.0) {
             field.timer = 0;
             let fx = field.x, fy = field.y, vTeam = field.victimTeam, r = field.radius, perk = field.perkTier;
             let hpPercent = (perk == 5) ? 0.05 : 0.01;
@@ -212,12 +209,12 @@ Events.run(Trigger.update, () => {
             Groups.unit.each(u => {
                 if (u != null && u.isValid() && u.team == vTeam && Mathf.dst(u.x, u.y, fx, fy) <= r) {
                     let baseDmg = 330;
-                    if (perk == 1) baseDmg *= 1.50;  
+                    if (perk == 1) baseDmg *= 1.50;
                     let dmg = baseDmg + (u.maxHealth * hpPercent);
-                    if (perk == 2) dmg += 300; 
+                    if (perk == 2) dmg += 300;
                     u.damage(dmg);
-                    if (perk == 6) u.damage(200); 
-                    u.apply(StatusEffects.freezing, 300); 
+                    if (perk == 6) u.damage(200);
+                    u.apply(StatusEffects.freezing, 300);
                     u.apply(StatusEffects.wet, 300);
                     if (perk == 5) {
                         let uid = u.id;
@@ -265,8 +262,8 @@ var cei = extend(StatusEffect, "cei", {
             if (perk == 6) reqLimit = 30;
 
             if (currentStacks >= reqLimit) {
-                global.ceiStacks[id] = 0; 
-                spawnCeiField(unit.x, unit.y, unit, lastTurret); 
+                global.ceiStacks[id] = 0;
+                spawnCeiField(unit.x, unit.y, unit, lastTurret);
             }
         }
     },
@@ -276,8 +273,8 @@ var cei = extend(StatusEffect, "cei", {
         Draw.z(Layer.effect + 0.05);
         Draw.color(PerfCore.color("90e0ef"));
         Lines.stroke(1.2 / Scl.scl(1.0));
-        let arcDegree = 12;                      
-        let arcFraction = arcDegree / 360.0;     
+        let arcDegree = 12;
+        let arcFraction = arcDegree / 360.0;
 
         for (let i = 0; i < stacks; i++) {
             let seed = unit.id * 1000 + i;
@@ -304,15 +301,15 @@ cei.init();
 
 var dotei = extend(StatusEffect, "dotei", {
     color: Color.valueOf("a15bf7"),
-    damage: 0, 
+    damage: 0,
     update(unit, time) {
         this.super$update(unit, time);
         let id = unit.id;
         if (!global.doteiStacks[id]) global.doteiStacks[id] = 1;
         let damagePerTick = (1 * global.doteiStacks[id]) / 60;
         isDoteiDamageActive = true;
-        unit.damage(damagePerTick, true); 
-        isDoteiDamageActive = false; 
+        unit.damage(damagePerTick, true);
+        isDoteiDamageActive = false;
     },
     onRemoved(unit) { delete global.doteiStacks[unit.id]; }
 });
@@ -320,14 +317,14 @@ dotei.init();
 
 var deot = extend(StatusEffect, "deot", {
     color: Color.valueOf("4be391"),
-    update(unit, time) { 
-        this.super$update(unit, time); 
-        let id = unit.id; 
-        if (global.deotDamagedTime[id] === undefined) global.deotDamagedTime[id] = 0; 
+    update(unit, time) {
+        this.super$update(unit, time);
+        let id = unit.id;
+        if (global.deotDamagedTime[id] === undefined) global.deotDamagedTime[id] = 0;
     },
-    onRemoved(unit) { 
-        delete global.deotLastHealth[unit.id]; 
-        delete global.deotDamagedTime[unit.id]; 
+    onRemoved(unit) {
+        delete global.deotLastHealth[unit.id];
+        delete global.deotDamagedTime[unit.id];
     }
 });
 deot.init();
@@ -352,8 +349,8 @@ var bemod = extend(StatusEffect, "bemod", {
             let id = unit.id;
             let stacks = global.bemodStacks[id] || 1;
             for (let i = 0; i < stacks; i++) {
-                Time.run(Mathf.random(0, 30), packRun(() => { 
-                    if (unit != null && unit.isValid()) bemodLoopFx.at(unit.x, unit.y); 
+                Time.run(Mathf.random(0, 30), packRun(() => {
+                    if (unit != null && unit.isValid()) bemodLoopFx.at(unit.x, unit.y);
                 }));
             }
         }
@@ -370,7 +367,7 @@ const customAtkSpeedFx = new Effect(45, cons(e => {
     Lines.stroke(1.5);
     let randX = Mathf.randomSeed(e.id * 2, -14, 14);
     let startY = Mathf.randomSeed(e.id * 3, -12, 4);
-    let moveUpY = e.fin() * (16 + Mathf.randomSeed(e.id)); 
+    let moveUpY = e.fin() * (16 + Mathf.randomSeed(e.id));
     let topX = e.x + randX;
     let topY = e.y + startY + moveUpY;
     Lines.line(topX - 3.5, topY - 3.5, topX, topY);
@@ -378,23 +375,23 @@ const customAtkSpeedFx = new Effect(45, cons(e => {
     Draw.reset();
 }));
 
-var atkspeed = extend(StatusEffect, "atkspeed", { 
-    reloadMultiplier: 2.5, 
-    effect: customAtkSpeedFx, 
-    effectChance: 0.18, 
-    color: Color.sky 
+var atkspeed = extend(StatusEffect, "atkspeed", {
+    reloadMultiplier: 2.5,
+    effect: customAtkSpeedFx,
+    effectChance: 0.18,
+    color: Color.sky
 });
 atkspeed.init();
 
 var velaSiege = extend(StatusEffect, "velaSiege", {
-    speedMultiplier: 1.0,  
+    speedMultiplier: 1.0,
     color: Color.valueOf("ffaa59"),
     show: true,
 
     draw(unit) {
         this.super$draw(unit);
         Draw.z(Layer.effect + 0.1);
-        
+
         let radius = unit.hitSize + 6;
         let rot = Time.time * 1.2;
 
@@ -449,12 +446,12 @@ Events.on(ClientLoadEvent, () => {
     atraxInvulnerableBuff.description = "Không nhận bất kỳ sát thương nào trong 10 giây khi máu dưới 15%.";
 });
 
-module.exports = { 
-    cei: cei, 
-    deot: deot, 
-    dotei: dotei, 
-    atkspeed: atkspeed, 
-    bemod: bemod, 
+module.exports = {
+    cei: cei,
+    deot: deot,
+    dotei: dotei,
+    atkspeed: atkspeed,
+    bemod: bemod,
     daggerProtect: daggerProtect,
     daggerSpeed: daggerSpeed,
     velaSiege: velaSiege,

@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
@@ -5,8 +6,8 @@ const packProv = (func) => new Prov({ get: func });
 const reqMK2 = { copper: 4000, lead: 4000, titanium: 0 };
 const reqMK2B = { copper: 4000, lead: 4000, titanium: 2000 };
 
-const hitsPerStack = 10; 
-const maxStack = 111; // 111 tầng * 90% = ~9990% sát thương tăng thêm (Tối đa ~9999%)
+const hitsPerStack = 10;
+const maxStack = 111;
 
 const crumbleExplosionEffect = new Effect(40, cons(e => {
     let previousZ = Draw.z();
@@ -35,7 +36,7 @@ function applyMaxHpPercentDamage(b, entity) {
         if (owner.damageStack !== undefined && entity != null && entity.maxHealth !== undefined) {
             let pairs = Math.floor(owner.damageStack / 2);
             if (pairs > 0) {
-                let extraDamage = entity.maxHealth() * (pairs * 0.002); // Mỗi 2 tầng = 0.2% Max HP
+                let extraDamage = entity.maxHealth() * (pairs * 0.002);
                 entity.damage(extraDamage);
             }
         }
@@ -46,7 +47,7 @@ const tankaniNormalBullet = extend(BasicBulletType, {
     speed: 15, damage: 1115, width: 10, height: 33, lifetime: 60,
     frontColor: Color.valueOf("#e0ea87"), backColor: Color.valueOf("#e5ff00"),
     trailColor: Color.valueOf("#daea80"),
-    
+
     hitEntity(b, entity, health) {
         applyMaxHpPercentDamage(b, entity);
         this.super$hitEntity(b, entity, health);
@@ -59,7 +60,7 @@ const tankaniMK2Bullet = extend(BasicBulletType, {
     trailColor: Color.valueOf("#daea80"),
     splashDamageRadius: 50,
     splashDamage: 558,
-    hitEffect: crumbleExplosionEffect,    
+    hitEffect: crumbleExplosionEffect,
     despawnEffect: crumbleExplosionEffect,
 
     hitEntity(b, entity, health) {
@@ -74,9 +75,9 @@ const tankaniMK2BBullet = extend(BasicBulletType, {
     trailColor: Color.valueOf("#ff5252"),
     splashDamageRadius: 150,
     splashDamage: 892,
-    collidesGround: false,   
+    collidesGround: false,
     collidesAir: true,
-    hitEffect: crumbleExplosionEffect,    
+    hitEffect: crumbleExplosionEffect,
     despawnEffect: crumbleExplosionEffect,
 
     hitEntity(b, entity, health) {
@@ -101,27 +102,27 @@ Events.on(ClientLoadEvent, cons(e => {
         turretBlock.addBar("damageStack", new Func({
             get: function(e){
                 return new Bar(
-                    new Prov({ 
-                        get: function(){ 
-                            return "DMG: +" + Math.floor(e.getStackRatio() * (maxStack * 90)) + "%"; 
-                        } 
+                    new Prov({
+                        get: function(){
+                            return "DMG: +" + Math.floor(e.getStackRatio() * (maxStack * 90)) + "%";
+                        }
                     }),
-                    new Prov({ 
-                        get: function(){ 
-                            return Color.orange; 
-                        } 
+                    new Prov({
+                        get: function(){
+                            return Color.orange;
+                        }
                     }),
-                    new Floatp({ 
-                        get: function(){ 
-                            return e.getStackRatio(); 
-                        } 
+                    new Floatp({
+                        get: function(){
+                            return e.getStackRatio();
+                        }
                     }),
                 );
             }
         }));
 
         turretBlock.buildType = () => extend(ItemTurret.ItemTurretBuild, turretBlock, {
-            tierState: 0, 
+            tierState: 0,
             hitPoints: 0,
             damageStack: 0,
 
@@ -129,13 +130,13 @@ Events.on(ClientLoadEvent, cons(e => {
                 if (this.damageStack === undefined) return 0.0;
                 return this.damageStack / maxStack;
             },
-            
+
             getTier() { return this.tierState == null ? 0 : this.tierState; },
-            
-            setTier(val) { 
+
+            setTier(val) {
                 this.tierState = val;
                 if (val == 0) this.health = 1413;
-                if (val == 1) this.health = 1838; 
+                if (val == 1) this.health = 1838;
                 if (val == 2) this.health = 2375;
                 this.maxHealth = this.health;
             },
@@ -145,7 +146,7 @@ Events.on(ClientLoadEvent, cons(e => {
 
                 this.hitPoints++;
                 let newStack = Math.floor(this.hitPoints / hitsPerStack);
-                
+
                 if (newStack > this.damageStack) {
                     this.damageStack = Math.min(newStack, maxStack);
                     Fx.upgradeCore.at(this.x, this.y);
@@ -153,7 +154,7 @@ Events.on(ClientLoadEvent, cons(e => {
             },
 
             getModifiedDamage(baseDmg) {
-                let multiplier = 1.0 + (this.damageStack * 0.9); // 90% mỗi tầng
+                let multiplier = 1.0 + (this.damageStack * 0.9);
                 return Math.round(baseDmg * multiplier);
             },
 
@@ -184,21 +185,21 @@ Events.on(ClientLoadEvent, cons(e => {
                     table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
                         let dialogTitle = isEn ? "Tankani-2k Upgrade Center" : "Trung tâm nâng cấp Tankani-2k";
                         let dialog = extend(BaseDialog, dialogTitle, {});
-                        
+
                         let reqCell = dialog.cont.label(packProv(() => {
                             let core = this.team.core();
                             if (core == null) return isEn ? "[red]Team Core Not Found![]" : "[red]Không tìm thấy Lõi Đội![]";
                             let currentcopper = core.items.get(Items.copper);
                             let currentlead = core.items.get(Items.lead);
                             let currenttitanium = core.items.get(Items.titanium);
-                            
+
                             let copColor1 = currentcopper >= reqMK2.copper ? "[green]" : "[red]";
                             let leaColor1 = currentlead >= reqMK2.lead ? "[green]" : "[red]";
-                            
+
                             let copColor2 = currentcopper >= reqMK2B.copper ? "[green]" : "[red]";
                             let leaColor2 = currentlead >= reqMK2B.lead ? "[green]" : "[red]";
                             let titColor2 = currenttitanium >= reqMK2B.titanium ? "[green]" : "[red]";
-                            
+
                             if (isEn) {
                                 return "[yellow]CORE STORAGE REQUIREMENTS:[]\n" +
                                        "[cyan]MK2 Configuration Branch:[]\n" +
@@ -219,7 +220,7 @@ Events.on(ClientLoadEvent, cons(e => {
                                        " • Titan: " + titColor2 + currenttitanium + "[] / " + reqMK2B.titanium;
                             }
                         }));
-                        
+
                         reqCell.width(360).get().setWrap(true);
                         reqCell.get().setAlignment(Align.left);
                         dialog.cont.row(); dialog.cont.add().height(10).row();
@@ -245,12 +246,12 @@ Events.on(ClientLoadEvent, cons(e => {
                         b1.button(isEn ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => {
                             let core = this.team.core();
                             if (core != null && core.items.get(Items.copper) >= reqMK2.copper && core.items.get(Items.lead) >= reqMK2.lead) {
-                                core.items.remove(Items.copper, reqMK2.copper); core.items.remove(Items.lead, reqMK2.lead);
-                                Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
-                                
+                                NexNet.take(core, Items.copper, reqMK2.copper); NexNet.take(core, Items.lead, reqMK2.lead);
+                                NexNet.fx(Fx.upgradeCore, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
+
                                 this.setTier(1);
-                                this.configure(java.lang.Integer.valueOf(1)); 
-                                
+                                this.configure(java.lang.Integer.valueOf(1));
+
                                 dialog.hide(); this.deselect();
                             } else { Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                         })).size(180, 38);
@@ -276,12 +277,12 @@ Events.on(ClientLoadEvent, cons(e => {
                         b2.button(isEn ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                             let core = this.team.core();
                             if (core != null && core.items.get(Items.copper) >= reqMK2B.copper && core.items.get(Items.lead) >= reqMK2B.lead && core.items.get(Items.titanium) >= reqMK2B.titanium) {
-                                core.items.remove(Items.copper, reqMK2B.copper); core.items.remove(Items.lead, reqMK2B.lead); core.items.remove(Items.titanium, reqMK2B.titanium);
-                                Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
-                                
+                                NexNet.take(core, Items.copper, reqMK2B.copper); NexNet.take(core, Items.lead, reqMK2B.lead); NexNet.take(core, Items.titanium, reqMK2B.titanium);
+                                NexNet.fx(Fx.bigShockwave, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
+
                                 this.setTier(2);
-                                this.configure(java.lang.Integer.valueOf(2)); 
-                                
+                                this.configure(java.lang.Integer.valueOf(2));
+
                                 dialog.hide(); this.deselect();
                             } else { Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2B![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
                         })).size(180, 38);
@@ -391,17 +392,17 @@ Events.on(ClientLoadEvent, cons(e => {
             },
 
             write(write) {
-                this.super$write(write); 
-                write.b(this.getTier()); 
-                write.i(this.hitPoints);     
-                write.b(this.damageStack);   
+                this.super$write(write);
+                write.b(this.getTier());
+                write.i(this.hitPoints);
+                write.b(this.damageStack);
             },
-            
+
             read(read, revision) {
-                this.super$read(read, revision); 
-                this.setTier(read.b()); 
-                this.hitPoints = read.i();   
-                this.damageStack = read.b(); 
+                this.super$read(read, revision);
+                this.setTier(read.b());
+                this.hitPoints = read.i();
+                this.damageStack = read.b();
             }
         });
     }

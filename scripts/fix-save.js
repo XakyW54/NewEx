@@ -1,13 +1,12 @@
- 
 function getTargetUnitNames() {
     return [
-        "newex-leolyr",   
+        "newex-leolyr",
         "newex-elorix",
         "newex-suv-27",
         "newex-reykor"
     ];
 }
- 
+
 Events.on(WorldLoadEvent, () => {
      Time.run(15, () => {
         if (Vars.state.isMenu() || Groups.unit == null) return;
@@ -29,9 +28,9 @@ Events.on(WorldLoadEvent, () => {
          Groups.unit.each(u => {
             if (u != null && validTypes.includes(u.type)) {
                  if (u.isGalileoJS === undefined || u.level === undefined) {
-                    
+
                     let savedLevel = 0;
-                    
+
                      try {
                         if (u.stack != null && u.stack.item != null) {
                             if (u.stack.item.name === "spore-pod" || u.stack.item == Items.sporePod) {

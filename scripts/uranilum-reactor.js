@@ -2,14 +2,12 @@ const PerfCore = global.PerfCore;
 const lightningColor = Color.valueOf("7fd4ff");
 const decayLightningColor = Color.valueOf("a957ff");
 
-// Effect sóng âm 4 ô tại vị trí đích trên mặt đất
 const shockwaveEffect = new Effect(20, e => {
     Draw.color(e.color, Color.white, e.fin());
     Lines.stroke(2.5 * e.fout());
     Lines.circle(e.x, e.y, e.fin() * 4 * Vars.tilesize);
 });
 
-// Effect nạp điện: Vòng tròn sóng âm ZOOM TỪ NGOÀI VÀO TRONG (4 ô -> 0 ô)
 const absorbLightningEffect = new Effect(25, e => {
     Draw.color(e.color, Color.white, e.fout());
     Lines.stroke(2.0 * e.fout());
@@ -17,14 +15,13 @@ const absorbLightningEffect = new Effect(25, e => {
     Lines.circle(e.x, e.y, radius);
 });
 
-// Effect tia sét chính nối từ quả cầu tới điểm đích
 const progressiveLightningEffect = new Effect(18, e => {
     if (!e.data || !(e.data instanceof Seq)) return;
     const points = e.data;
     if (points.size <= 1) return;
 
     let thickness = e.rotation > 0 ? e.rotation : 2.8;
-    let progress = Math.min(1.0, e.fin() * 1.5); 
+    let progress = Math.min(1.0, e.fin() * 1.5);
     let maxIndex = Math.floor((points.size - 1) * progress);
 
     Draw.color(e.color, Color.white, e.fin());
@@ -56,14 +53,13 @@ function createProgressiveLightning(x1, y1, x2, y2, thickness, color) {
         points.add(new Vec2(px + Tmp.v1.x, py + Tmp.v1.y));
     }
     points.add(new Vec2(x2, y2));
-    
+
     let effColor = color || lightningColor;
     progressiveLightningEffect.at((x1 + x2) / 2, (y1 + y2) / 2, thickness, effColor, points);
 }
 
-// EFFECT THỰC THỂ ĐỘC LẬP: Quả cầu mất kiểm soát trong 60 giây (3600 frames)
 const unstableOrbEffect = new Effect(3600, e => {
-    let chargeProgress = 1.0 - e.fin(); // Giảm dần từ 100% về 0% trong 60s
+    let chargeProgress = 1.0 - e.fin();
     let mainOrbRadius = (15.0 + Math.sin(e.time / 8) * 0.8) * Math.max(0.3, chargeProgress);
 
     let cOuter = Color.valueOf("8b38fb");
@@ -88,7 +84,6 @@ const unstableOrbEffect = new Effect(3600, e => {
         Draw.color(Color.white, 0.8 * chargeProgress);
         Fill.circle(e.x, e.y, mainOrbRadius * 0.25);
 
-        // BẮN TIA ĐIỆN TÀN PHÁ TƯƠNG TÁC PHÁ HỦY TRỰC TIẾP (DESTROY INSTEAD OF DAMAGE)
         if (Mathf.chance(0.45 * chargeProgress) && !Vars.state.isPaused()) {
             let randAngle = Mathf.random(360);
             let randDist = Mathf.random(45, 105) * chargeProgress * Vars.tilesize;
@@ -104,33 +99,28 @@ const unstableOrbEffect = new Effect(3600, e => {
 
             Fx.blastExplosion.at(targetX, targetY);
 
-            // 1. Phá hủy tất cả công trình/khối trong bán kính tia sét
-            let destroyRadius = 45.0; // Bán kính tàn phá của điểm tia sét rơi xuống
+            let destroyRadius = 45.0;
             Vars.indexer.allBuildings(targetX, targetY, destroyRadius, build => {
-                build.kill(); // Phá hủy trực tiếp thay vì gây dmg
+                build.kill();
             });
 
-            // 2. Phá hủy tất cả Unit trong bán kính tia sét
             Units.nearby(targetX - destroyRadius, targetY - destroyRadius, destroyRadius * 2, destroyRadius * 2, unit => {
                 if (unit.within(targetX, targetY, destroyRadius)) {
-                    unit.kill(); // Phá hủy trực tiếp thay vì gây dmg
+                    unit.kill();
                 }
             });
         }
     }
 
-    // Kết thúc 60s thì nổ lớn diện rộng - PHÁ HỦY TOÀN BỘ KHỐI VÀ UNIT
     if (e.time >= 3590) {
         Fx.impactReactorExplosion.at(e.x, e.y);
 
         let explosionRadius = 60 * Vars.tilesize;
 
-        // Phá hủy toàn bộ công trình trong vùng nổ
         Vars.indexer.allBuildings(e.x, e.y, explosionRadius, build => {
             build.kill();
         });
 
-        // Phá hủy toàn bộ Unit trong vùng nổ
         Units.nearby(e.x - explosionRadius, e.y - explosionRadius, explosionRadius * 2, explosionRadius * 2, unit => {
             if (unit.within(e.x, e.y, explosionRadius)) {
                 unit.kill();
@@ -177,7 +167,7 @@ Events.on(ContentInitEvent, () => {
             },
 
             onDestroyed() {
-                // Tạo quả cầu năng lượng mất kiểm soát nếu đang được 4 laser chiếu vào lúc bị phá hủy
+
                 if (this.activeLasers >= 4 || this.chargeTimer > 60) {
                     unstableOrbEffect.at(this.x, this.y);
                 }
@@ -429,7 +419,7 @@ Events.on(ContentInitEvent, () => {
                     let wy = targetPositions[i][1];
 
                     let tile = Vars.world.tileWorld(wx, wy);
-                    let isPlaced = tile && tile.build && 
+                    let isPlaced = tile && tile.build &&
                                    tile.build.block.name.endsWith("laser-charger-uranilum") &&
                                    Math.abs(tile.build.x - wx) < 8 && Math.abs(tile.build.y - wy) < 8;
 

@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 let antikeiBlock;
 let mapHasAntikei = false;
 
@@ -19,7 +20,6 @@ let angleCache = {};
 let nearestCache = {};
 let unitTargetCache = {};
 
-// Tìm ô antikei gần nhất rất tốn (quét xoắn ốc bán kính 300) -> nhớ kết quả 20 frame, lệch pha theo id đơn vị.
 function findNearestAntikeiCached(unit) {
     let e = nearestCache[unit.id];
     if (e !== undefined && frameCount - e.f < 20) return e.t;
@@ -289,7 +289,7 @@ function clearOresOnAntikei() {
         let ty = parseInt(parts[1]);
         let tile = Vars.world.tile(tx, ty);
         if (tile != null && tile.overlay() != null && tile.overlay() != Blocks.air) {
-            tile.setOverlay(Blocks.air);
+            NexNet.setOverlay(tile, Blocks.air);
         }
     }
 }
@@ -329,7 +329,7 @@ Events.run(Trigger.update, () => {
         if (currentTile != null && currentTile.floor() === antikeiBlock) {
             if (lastEditorTile != null && (lastEditorTile.x !== currentTile.x || lastEditorTile.y !== currentTile.y)) {
                 let dragAngle = Angles.angle(lastEditorTile.worldx(), lastEditorTile.worldy(), currentTile.worldx(), currentTile.worldy());
-                
+
                 let lastKey = getTileKey(lastEditorTile.x, lastEditorTile.y);
                 let currentKey = getTileKey(currentTile.x, currentTile.y);
 
@@ -376,7 +376,7 @@ Events.run(Trigger.update, () => {
                 rawVal = autoFlowMap.get(key);
             }
             let currentAngleNum = rawVal != null ? Number(rawVal) : 0;
-            
+
             let nextAngle = (currentAngleNum + 90) % 360;
             flowDirectionMap.put(key, java.lang.Float.valueOf(nextAngle));
             saveFlowData();
@@ -454,7 +454,6 @@ Events.run(Trigger.draw, () => {
     let total = antikeiTilesList.size();
     if (total == 0) return;
 
-    // Parse khóa "x_y" một lần duy nhất (trước đây split/parseInt cho TỪNG ô MỖI frame)
     if (drawCacheVersion !== antikeiDrawVersion || drawCacheLen !== total) {
         drawXs = []; drawYs = []; drawKeys = [];
         for (let i = 0; i < total; i++) {

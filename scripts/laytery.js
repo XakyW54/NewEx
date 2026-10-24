@@ -1,7 +1,7 @@
 print("LAYTERY SYSTEM CORE - OPTIMIZED LASER SYSTEM LOADED");
 
-const laytAimColor = new Color(0, 1, 0.66, 0.27); 
-const colorNormal = Color.valueOf("#00ffaa");   
+const laytAimColor = new Color(0, 1, 0.66, 0.27);
+const colorNormal = Color.valueOf("#00ffaa");
 
 const laytMuzzleFX = new Effect(15, e => {
     let tColor = e.data || colorNormal;
@@ -41,11 +41,11 @@ function isEnglish() {
 }
 
 function drawLaytLaserRing(cx, cy, radiusX, radiusY, laserAngle, strokeWidth, color, isFill){
-    Draw.color(color); 
+    Draw.color(color);
     if(!isFill) Lines.stroke(strokeWidth);
     let steps = 24; let lastX = 0, lastY = 0;
     let cosA = Math.cos(laserAngle * Mathf.degRad); let sinA = Math.sin(laserAngle * Mathf.degRad);
-    
+
     if(isFill) {
         for(let r = radiusY; r > 0; r -= 1.5) {
             let curRadX = (r / radiusY) * radiusX;
@@ -67,19 +67,19 @@ function drawLaytLaserRing(cx, cy, radiusX, radiusY, laserAngle, strokeWidth, co
         }
     }
 }
- 
+
 function makeLaytBuild() {
     return {
         lockTimer: 0,
         shootCooldown: 0,
-        laserActiveTimer: 0, 
+        laserActiveTimer: 0,
         laserEndX: 0,
         laserEndY: 0,
-        currentLaserColor: colorNormal, 
-        currentLaserSize: 5.0, 
+        currentLaserColor: colorNormal,
+        currentLaserSize: 5.0,
 
         continuousShotCount: 0,
-        maxContinuousBonus: 25, 
+        maxContinuousBonus: 25,
         idleResetTimer: 0,
 
         canControl() { return false; },
@@ -129,7 +129,7 @@ function makeLaytBuild() {
 
             if (this.target == null || this.shootCooldown > 40) {
                 this.idleResetTimer += Time.delta;
-                if (this.idleResetTimer >= 150) { 
+                if (this.idleResetTimer >= 150) {
                     this.continuousShotCount = Math.max(0, this.continuousShotCount - Time.delta * 0.15);
                 }
             } else {
@@ -141,9 +141,9 @@ function makeLaytBuild() {
 
                 if (currentTarget != null && !currentTarget.dead) {
                     this.target = currentTarget;
-                    
+
                     let targetAngle = Angles.angle(this.x, this.y, currentTarget.x, currentTarget.y);
-                    this.rotation = targetAngle; 
+                    this.rotation = targetAngle;
 
                     if (this.shootCooldown <= 0) {
                         this.lockTimer += Time.delta;
@@ -151,23 +151,23 @@ function makeLaytBuild() {
                         let requiredLockTime = 60;
 
                         if (this.lockTimer >= requiredLockTime) {
-                            this.lockTimer = 0; 
-                            this.laserActiveTimer = 16; 
+                            this.lockTimer = 0;
+                            this.laserActiveTimer = 16;
                             this.laserEndX = currentTarget.x;
                             this.laserEndY = currentTarget.y;
 
-                            this.shootCooldown = 80; 
+                            this.shootCooldown = 80;
 
                             if (this.continuousShotCount < this.maxContinuousBonus) {
                                 this.continuousShotCount++;
                             }
 
                             let dmgMultiplier = 1.0 + (this.continuousShotCount / this.maxContinuousBonus);
-                            let baseDmg = 60 * dmgMultiplier; // Giảm 50% so với gốc 120
+                            let baseDmg = 60 * dmgMultiplier;
 
-                            this.currentLaserColor = colorNormal; 
-                            this.currentLaserSize = 5.0; 
-                            
+                            this.currentLaserColor = colorNormal;
+                            this.currentLaserSize = 5.0;
+
                             currentTarget.damage(baseDmg);
                             laytHitFX.at(currentTarget.x, currentTarget.y, 0, colorNormal);
                             Effect.shake(2, 2, this.x, this.y);
@@ -183,12 +183,12 @@ function makeLaytBuild() {
 
         resetLaytStatus() {
             this.target = null;
-            this.lockTimer = Math.max(this.lockTimer - Time.delta * 2, 0); 
+            this.lockTimer = Math.max(this.lockTimer - Time.delta * 2, 0);
         },
 
         draw() {
             this.super$draw();
-            let centerGunX = this.x; 
+            let centerGunX = this.x;
             let centerGunY = this.y;
 
              if (this.target != null && !this.target.dead && this.shootCooldown <= 0) {
@@ -200,7 +200,7 @@ function makeLaytBuild() {
                     let maxBallRadius = 12.0;
                     let currentRadius = maxBallRadius * chargeProgress + Mathf.absin(Time.time, 1.5, 1.0);
                     let ballColor = colorNormal;
-                    
+
                     drawLaytLaserRing(centerGunX, centerGunY, currentRadius * 0.6, currentRadius * 0.6, this.rotation + Time.time * 2, 0, ballColor, true);
                     drawLaytLaserRing(centerGunX, centerGunY, currentRadius, currentRadius, this.rotation - Time.time * 3, 1.5, ballColor, false);
                     Draw.reset();
@@ -217,8 +217,8 @@ function makeLaytBuild() {
 
             if (this.laserActiveTimer > 0) {
                 Draw.z(Layer.bullet + 2);
-                let progress = this.laserActiveTimer / 16; 
-                let t = 1.0 - progress; 
+                let progress = this.laserActiveTimer / 16;
+                let t = 1.0 - progress;
                 let laserZoomStroke = this.currentLaserSize * (1.0 + Mathf.absin(Time.time, 1.0, 0.2)) * progress;
 
                 Draw.color(Color.white);
@@ -230,8 +230,8 @@ function makeLaytBuild() {
                 Lines.line(centerGunX, centerGunY, this.laserEndX, this.laserEndY);
 
                 let laserAngle = Angles.angle(centerGunX, centerGunY, this.laserEndX, this.laserEndY);
-                let startOffset = 10 + 40; 
-                let endOffset = 10 - 24;   
+                let startOffset = 10 + 40;
+                let endOffset = 10 - 24;
                 let currentOffset = Mathf.lerp(startOffset, endOffset, t);
 
                 let ringX = centerGunX + Angles.trnsx(laserAngle, currentOffset);
@@ -245,37 +245,37 @@ function makeLaytBuild() {
                 let sphereForwardOffset = Mathf.lerp(0, 45, t);
                 let ballShotX = centerGunX + Angles.trnsx(laserAngle, sphereForwardOffset);
                 let ballShotY = centerGunY + Angles.trnsy(laserAngle, sphereForwardOffset);
-                let distortedRadiusX = 12.0 * progress * 1.9; 
-                let distortedRadiusY = 12.0 * progress * 0.2; 
+                let distortedRadiusX = 12.0 * progress * 1.9;
+                let distortedRadiusY = 12.0 * progress * 0.2;
 
                 drawLaytLaserRing(ballShotX, ballShotY, distortedRadiusX, distortedRadiusY, laserAngle, 0, this.currentLaserColor, true);
                 Draw.reset();
             }
         },
 
-        write(write) { 
-            this.super$write(write); 
+        write(write) {
+            this.super$write(write);
             write.f(this.continuousShotCount);
         },
-        read(read, revision) { 
-            this.super$read(read, revision); 
+        read(read, revision) {
+            this.super$read(read, revision);
             this.continuousShotCount = read.f();
         }
     };
 }
- 
+
 const laytery = extend(PowerTurret, "laytery", {});
 
-laytery.health = 13000;         
-laytery.size = 4;                
-laytery.range = 224;             // Giảm 20% so với gốc 280 (280 * 0.8 = 224)
-laytery.reload = 9999;           
-laytery.shootType = laytFakeBullet; 
-laytery.consumePower(12);        
+laytery.health = 13000;
+laytery.size = 4;
+laytery.range = 224;
+laytery.reload = 9999;
+laytery.shootType = laytFakeBullet;
+laytery.consumePower(12);
 
-laytery.targetAir = true;        
-laytery.targetGround = true;     
-laytery.configurable = true;     
+laytery.targetAir = true;
+laytery.targetGround = true;
+laytery.configurable = true;
 laytery.canControl = false;
 
 laytery.buildType = () => extend(PowerTurret.PowerTurretBuild, laytery, makeLaytBuild());

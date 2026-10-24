@@ -2,11 +2,11 @@ const PerfCore = global.PerfCore;
 function findSafeDashTarget(unit, startX, startY, targetX, targetY) {
     let angle = Angles.angle(startX, startY, targetX, targetY);
     let maxDist = Mathf.dst(startX, startY, targetX, targetY);
-    
-    let hitSizeRadius = (unit && unit.hitSize) ? unit.hitSize / 2 : 12;
-    let safePadding = hitSizeRadius + 10; 
 
-    let step = 4; 
+    let hitSizeRadius = (unit && unit.hitSize) ? unit.hitSize / 2 : 12;
+    let safePadding = hitSizeRadius + 10;
+
+    let step = 4;
     let traveled = 0;
 
     while (traveled < maxDist) {
@@ -54,56 +54,55 @@ const acidCorrosionEffect = new Effect(30, cons(e => {
 const elorixBullets = [
     extend(BasicBulletType, {
         speed: 8.5, damage: 15, width: 7, height: 18, lifetime: 38,
-        frontColor: Color.valueOf("#ffab40"), backColor: Color.valueOf("#ff6d00"), 
+        frontColor: Color.valueOf("#ffab40"), backColor: Color.valueOf("#ff6d00"),
         trailColor: Color.valueOf("#ff6d00"), trailWidth: 1.5, trailLength: 5,
         splashDamage: 12, splashDamageRadius: 24, knockback: 1.2, statusDuration: 140,
         hitEffect: Fx.blastExplosion, despawnEffect: Fx.blastExplosion, status: StatusEffects.blasted
     }),
     extend(BasicBulletType, {
         speed: 8.5, damage: 15, width: 7, height: 18, lifetime: 38,
-        frontColor: Color.valueOf("#ffa726"), backColor: Color.valueOf("#f57c00"), 
+        frontColor: Color.valueOf("#ffa726"), backColor: Color.valueOf("#f57c00"),
         trailColor: Color.valueOf("#f57c00"), trailWidth: 1.5, trailLength: 5,
         splashDamage: 12, splashDamageRadius: 24, knockback: 0.5, statusDuration: 140,
         hitEffect: Fx.melting, despawnEffect: Fx.melting, status: StatusEffects.melting
     }),
     extend(BasicBulletType, {
         speed: 8.5, damage: 15, width: 7, height: 18, lifetime: 38,
-        frontColor: Color.valueOf("#ff7043"), backColor: Color.valueOf("#d84315"), 
+        frontColor: Color.valueOf("#ff7043"), backColor: Color.valueOf("#d84315"),
         trailColor: Color.valueOf("#d84315"), trailWidth: 1.5, trailLength: 5,
         splashDamage: 12, splashDamageRadius: 24, knockback: 0.5, statusDuration: 140,
         hitEffect: Fx.fire, despawnEffect: Fx.fire, status: StatusEffects.burning
     }),
     extend(BasicBulletType, {
         speed: 8.5, damage: 15, width: 7, height: 18, lifetime: 38,
-        frontColor: Color.valueOf("#29b6f6"), backColor: Color.valueOf("#0288d1"), 
+        frontColor: Color.valueOf("#29b6f6"), backColor: Color.valueOf("#0288d1"),
         trailColor: Color.valueOf("#0288d1"), trailWidth: 1.5, trailLength: 5,
         splashDamage: 12, splashDamageRadius: 24, knockback: 0.5, statusDuration: 140,
         hitEffect: Fx.freezing, despawnEffect: Fx.freezing, status: StatusEffects.freezing
     }),
     extend(BasicBulletType, {
         speed: 8.5, damage: 15, width: 7, height: 18, lifetime: 38,
-        frontColor: Color.valueOf("#e1bee7"), backColor: Color.valueOf("#ba68c8"), 
+        frontColor: Color.valueOf("#e1bee7"), backColor: Color.valueOf("#ba68c8"),
         trailColor: Color.valueOf("#ba68c8"), trailWidth: 1.5, trailLength: 5,
         splashDamage: 12, splashDamageRadius: 24, knockback: 0.5, statusDuration: 140,
         hitEffect: Fx.lightning, despawnEffect: Fx.lightning, status: StatusEffects.shocked
     }),
     extend(BasicBulletType, {
         speed: 8.7, damage: 13, width: 6.5, height: 17, lifetime: 38,
-        frontColor: Color.valueOf("#60a5fa"), backColor: Color.valueOf("#2563eb"), 
+        frontColor: Color.valueOf("#60a5fa"), backColor: Color.valueOf("#2563eb"),
         trailColor: Color.valueOf("#2563eb"), trailWidth: 1.4, trailLength: 5,
         splashDamage: 10, splashDamageRadius: 24, knockback: 0.6, statusDuration: 180,
         hitEffect: Fx.freezing, despawnEffect: Fx.freezing, status: StatusEffects.wet
     }),
     extend(BasicBulletType, {
         speed: 8.3, damage: 16, width: 7, height: 17, lifetime: 38,
-        frontColor: Color.valueOf("#bef264"), backColor: Color.valueOf("#65a30d"), 
+        frontColor: Color.valueOf("#bef264"), backColor: Color.valueOf("#65a30d"),
         trailColor: Color.valueOf("#65a30d"), trailWidth: 1.5, trailLength: 6,
         splashDamage: 14, splashDamageRadius: 26, knockback: 0.3, statusDuration: 160,
         hitEffect: acidCorrosionEffect, despawnEffect: acidCorrosionEffect, status: StatusEffects.corroded
     })
 ];
 
-// Bảng lưu trữ trạng thái Custom JS cho Elorix
 const elorixDataMap = {};
 
 function getElorixData(unit) {
@@ -145,11 +144,11 @@ function fireShotgunBurst(unit, mount, customSound) {
     }
 
     for (let i = 0; i < 35; i++) {
-        let spread = (Math.random() - 0.5) * 12.0; 
+        let spread = (Math.random() - 0.5) * 12.0;
         let randomIndex = Math.floor(Math.random() * elorixBullets.length);
         let selectedBullet = elorixBullets[randomIndex];
         let fireAngle = baseAngle + spread;
-        
+
         Call.createBullet(selectedBullet, unit.team, wx, wy, fireAngle, selectedBullet.damage * statMultiplier, 1 + (Math.random() - 0.5) * 0.2, 1);
     }
 }
@@ -201,13 +200,13 @@ Events.on(ClientLoadEvent, () => {
             rotate: true,
             mirror: false,
             top: false,
-            
+
             bullet: extend(BasicBulletType, {
                 speed: 0, damage: 0, lifetime: 0, width: 0, height: 0,
                 shootEffect: Fx.none, smokeEffect: Fx.none, hitEffect: Fx.none, despawnEffect: Fx.none,
                 draw(b){}
             }),
-            
+
             draw(unit, mount){},
             drawOutline(unit, mount){}
         });
@@ -218,14 +217,14 @@ Events.on(ClientLoadEvent, () => {
         elorixUnit.constructor = () => {
             return extend(Packages.mindustry.gen.LegsUnit, {
                 update() {
-                    this.super$update(); 
+                    this.super$update();
                     let data = getElorixData(this);
                     if (!data) return;
 
                     if (!Vars.net.client()) {
-                        // 1. Tự nhắm mục tiêu nếu không phải Player trực tiếp bấm
-                        if (Vars.player == null || Vars.player.unit() != this) { 
-                            let shootRange = 8.5 * 38; 
+
+                        if (Vars.player == null || Vars.player.unit() != this) {
+                            let shootRange = 8.5 * 38;
                             let target = Units.closestTarget(this.team, this.x, this.y, shootRange, u => u.checkTarget(true, true), b => true);
 
                             if (target != null) {
@@ -237,7 +236,6 @@ Events.on(ClientLoadEvent, () => {
                             }
                         }
 
-                        // 2. Xử lý thời gian nạp đạn shotgun
                         let speedMultiplier = 1.0 + (data.level * 0.05);
                         if (data.customReloadTimer > 0) {
                             data.customReloadTimer -= speedMultiplier * Time.delta;
@@ -273,9 +271,8 @@ Events.on(ClientLoadEvent, () => {
                             data.armorRecoil = Mathf.lerpDelta(data.armorRecoil, 0, 0.15);
                         }
 
-                        // 3. Tự kích hoạt lướt (dash) khi đang di chuyển
                         if (this.vel.len() > 0.05 && data.dashCooldown <= 0 && data.dashDelayTimer <= 0) {
-                            let dashDistance = 15 * 8; 
+                            let dashDistance = 15 * 8;
                             let moveAngle = this.vel.angle();
                             let tempTargetX = this.x + Angles.trnsx(moveAngle, dashDistance);
                             let tempTargetY = this.y + Angles.trnsy(moveAngle, dashDistance);
@@ -284,21 +281,20 @@ Events.on(ClientLoadEvent, () => {
                             let actualDistance = Mathf.dst(this.x, this.y, safePos.x, safePos.y);
 
                             if (actualDistance > (this.hitSize / 2) + 6) {
-                                data.dashDelayTimer = 42;  
-                                data.dashAngleToMove = moveAngle; 
+                                data.dashDelayTimer = 42;
+                                data.dashAngleToMove = moveAngle;
                                 data.dashTargetX = safePos.x;
                                 data.dashTargetY = safePos.y;
 
                                 Call.effect(Fx.shieldApply, this.x, this.y, 0, Color.sky);
 
                                 let cooldownReduction = 1.0 - (data.level * 0.05);
-                                let baseCooldown = 360 * cooldownReduction; 
+                                let baseCooldown = 360 * cooldownReduction;
                                 data.maxCooldownRecord = baseCooldown;
                                 data.dashCooldown = baseCooldown;
                             }
                         }
 
-                        // 4. Thực thi hành động lướt sau độ trễ
                         if (data.dashDelayTimer > 0) {
                             data.dashDelayTimer -= Time.delta;
                             this.vel.set(0, 0);
@@ -322,7 +318,6 @@ Events.on(ClientLoadEvent, () => {
                             }
                         }
 
-                        // 5. Nâng cấp cấp độ bằng tài nguyên
                         let req = getElorixUpgradeRequirements(data.level);
                         if (data.level < data.maxLevel && this.stack != null) {
                             if (data.copperAbsorbed < req.copperNeeded && this.stack.item == req.copperItem && this.stack.amount > 0) {
@@ -332,8 +327,8 @@ Events.on(ClientLoadEvent, () => {
                             }
 
                             if (data.copperAbsorbed >= req.copperNeeded && data.titaniumAbsorbed >= req.titaniumNeeded) {
-                                data.copperAbsorbed = 0; data.titaniumAbsorbed = 0; 
-                                data.level++; 
+                                data.copperAbsorbed = 0; data.titaniumAbsorbed = 0;
+                                data.level++;
                                 Call.effect(Fx.upgradeCore, this.x, this.y, 0, Color.white);
                                 Call.effect(Fx.shockwave, this.x, this.y, 0, Color.white);
                             }

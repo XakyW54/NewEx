@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packCons = (func) => new Cons({ get: func });
@@ -17,8 +18,8 @@ const ItemStats = {
 };
 
 const chargedExplosionFx = new Effect(35, e => {
-    let purple = Color.valueOf("a855f7"); 
-    let lightYellow = Color.valueOf("fef08a"); 
+    let purple = Color.valueOf("a855f7");
+    let lightYellow = Color.valueOf("fef08a");
 
     Draw.color(purple, lightYellow, e.fin());
     Lines.stroke(e.fout() * 4.0);
@@ -58,7 +59,7 @@ const executeFx = new Effect(25, e => {
     Draw.color(Pal.accent, Color.white, e.fin());
     Lines.stroke(e.fout() * 3.0);
     Lines.circle(e.x, e.y, e.finpow() * 25.0);
-    
+
     Draw.color(Color.gold);
     for (let i = 0; i < 4; i++) {
         let angle = i * 90 + 45;
@@ -146,7 +147,7 @@ const UniversalItemUI = {
                 let buffText = ItemStats[cleanName] ? ItemStats[cleanName].desc : "[gray]Không có chỉ số buff[]";
                 let tooltipText = "[accent]" + currentItem.localizedName + "[]\n" + buffText;
                 let hasItemInCore = core != null && core.items.has(currentItem, 1);
-                
+
                 slotBtn.addListener(new Tooltip(cons(t => {
                     t.background(Styles.black6).margin(8);
                     t.add(tooltipText);
@@ -213,11 +214,11 @@ const UniversalItemUI = {
                 let infoTable = new Table();
                 infoTable.left();
                 let statusColor = hasItem ? "[#84f491]" : "[#ff795e]";
-                
+
                 let titleLabel = infoTable.add(item.localizedName + " " + statusColor + "(Lõi: " + count + ")[]").left().growX().get();
                 titleLabel.setWrap(true);
                 infoTable.row();
-                
+
                 let buffLabel = infoTable.add(statData.desc).fontScale(0.85).left().growX().get();
                 buffLabel.setWrap(true);
 
@@ -475,9 +476,9 @@ Events.on(ContentInitEvent, () => {
                     if (Core.input.keyTap(KeyCode.mouseLeft)) {
                         let worldVec = Core.camera.unproject(Core.input.mouse());
                         let tile = Vars.world.tileWorld(worldVec.x, worldVec.y);
-                        
+
                         if (tile != null) {
-                            this.configure(Point2.pack(tile.x, tile.y));
+                            this.configure(java.lang.Integer(Point2.pack(tile.x, tile.y)));
                         }
                         this.selectingTarget = false;
                     }
@@ -597,8 +598,8 @@ Events.on(ContentInitEvent, () => {
             draw() {
                 this.super$draw();
 
-                let turretRegion = (this.block.turretRegion && typeof this.block.turretRegion.found === "function" && this.block.turretRegion.found()) 
-                    ? this.block.turretRegion 
+                let turretRegion = (this.block.turretRegion && typeof this.block.turretRegion.found === "function" && this.block.turretRegion.found())
+                    ? this.block.turretRegion
                     : this.block.region;
 
                 Draw.rect(turretRegion, this.x, this.y, this.spinAngle);

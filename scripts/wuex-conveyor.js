@@ -22,7 +22,6 @@ Events.on(ContentInitEvent, () => {
             Fill.poly(rx, ry, 3, 4 * e.fout(), angle);
         });
 
-        // Hàm hỗ trợ vẽ đường vạch gạch di chuyển mượt
         const drawMovingDashLine = (x1, y1, x2, y2, color) => {
             let len = Mathf.dst(x1, y1, x2, y2);
             let dashLen = 6;
@@ -116,7 +115,7 @@ Events.on(ContentInitEvent, () => {
                 let dst = Mathf.dst(this.x, this.y, this.targetX, this.targetY);
                 if (dst > 1 && dst <= this.maxRange) {
                     let sourceTile = Vars.world.tileWorld(this.targetX, this.targetY);
-                    
+
                     if (sourceTile != null && sourceTile.build != null) {
                         let sourceBuild = sourceTile.build;
 
@@ -132,8 +131,8 @@ Events.on(ContentInitEvent, () => {
 
                                 if (Mathf.chance(0.3)) {
                                     teleportEffect.at(
-                                        sourceBuild.x + Mathf.range(3), 
-                                        sourceBuild.y + Mathf.range(3), 
+                                        sourceBuild.x + Mathf.range(3),
+                                        sourceBuild.y + Mathf.range(3),
                                         angleToThis + Mathf.range(12)
                                     );
                                 }
@@ -171,7 +170,6 @@ Events.on(ContentInitEvent, () => {
                     let isWithinRange = Mathf.dst(this.x, this.y, mouseWorld.x, mouseWorld.y) <= this.maxRange;
                     let targetColor = isWithinRange ? Pal.heal : Color.red;
 
-                    // Đường vạch kẻ mượt từ chuột về khối (vì rút item từ vị trí chọn về khối)
                     drawMovingDashLine(mouseWorld.x, mouseWorld.y, this.x, this.y, targetColor);
 
                     let mouseTile = Vars.world.tileWorld(mouseWorld.x, mouseWorld.y);
@@ -183,13 +181,13 @@ Events.on(ContentInitEvent, () => {
 
             drawConfigure() {
                 this.super$drawConfigure();
-                
+
                 Draw.color(Pal.heal);
                 Lines.stroke(1);
                 Lines.circle(this.x, this.y, this.maxRange);
 
                 if (Mathf.dst(this.x, this.y, this.targetX, this.targetY) <= this.maxRange && (this.targetX !== this.x || this.targetY !== this.y)) {
-                    // Vẽ đường vạch chạy mượt từ Nguồn (Target) về Khối (This)
+
                     drawMovingDashLine(this.targetX, this.targetY, this.x, this.y, Pal.heal);
                     Drawf.square(this.targetX, this.targetY, 4, 0, Pal.heal);
                 }

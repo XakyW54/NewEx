@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
@@ -42,7 +43,7 @@ var mirrorSparks = extend(RadialEffect, {
 
 const blawBlueMK1 = extend(BasicBulletType, {
     speed: 3.25, damage: 25, width: 9, height: 22, lifetime: 70,
-    sprite: "newex-diamond-shard", 
+    sprite: "newex-diamond-shard",
     hitEffect: nhCircleHitEffect, despawnEffect: nhCircleHitEffect,
     hitColor: Color.valueOf("0031FFFF"),
     frontColor: Color.valueOf("0031FFFF"), backColor: Color.white,
@@ -51,7 +52,7 @@ const blawBlueMK1 = extend(BasicBulletType, {
 
 const blawRedMK1 = extend(BasicBulletType, {
     speed: 3.25, damage: 25, width: 9, height: 22, lifetime: 70,
-    frontColor: Color.valueOf("FF0000FF"), backColor: Color.white, 
+    frontColor: Color.valueOf("FF0000FF"), backColor: Color.white,
     hitEffect: nhCircleHitEffect, despawnEffect: nhCircleHitEffect,
     hitColor: Color.valueOf("FF0000FF"),
     splashDamage: 40, splashDamageRadius: 24, status: StatusEffects.blasted, statusDuration: 80
@@ -75,7 +76,7 @@ const blawRedMK2 = extend(BasicBulletType, {
 
 const blawBlueBulletMK2B = extend(BasicBulletType, {
     speed: 15.86, damage: 550, width: 5, height: 12, lifetime: 19.51,
-    frontColor: Color.valueOf("0031FFFF"), backColor: Color.white, 
+    frontColor: Color.valueOf("0031FFFF"), backColor: Color.white,
     hitEffect: nhCircleHitEffect, despawnEffect: nhCircleHitEffect,
     hitColor: Color.valueOf("0031FFFF"),
     pierce: true, pierceCap: 2, status: StatusEffects.freezing, statusDuration: 300
@@ -83,7 +84,7 @@ const blawBlueBulletMK2B = extend(BasicBulletType, {
 
 const blawRedBulletMK2B = extend(BasicBulletType, {
     speed: 15.86, damage: 550, width: 5, height: 12, lifetime: 19.51,
-    frontColor: Color.valueOf("FF5A00FF"), backColor: Color.white, 
+    frontColor: Color.valueOf("FF5A00FF"), backColor: Color.white,
     hitEffect: nhCircleHitEffect, despawnEffect: nhCircleHitEffect,
     hitColor: Color.valueOf("FF5A00FF"),
     splashDamage: 40, splashDamageRadius: 16, status: StatusEffects.blasted, statusDuration: 80
@@ -91,8 +92,8 @@ const blawRedBulletMK2B = extend(BasicBulletType, {
 
 let blaw = extend(ItemTurret, "blaw", {
     squareSprite: false,
-    basePrefix: "reinforced-", 
-    
+    basePrefix: "reinforced-",
+
     load(){
         this.super$load();
         this.leftBarrelRegion = PerfCore.region(this.name + "-at");
@@ -103,12 +104,12 @@ let blaw = extend(ItemTurret, "blaw", {
 
 blaw.health = 950;
 blaw.size = 3;
-blaw.reload = 30; 
-blaw.deadZone = 0; 
+blaw.reload = 30;
+blaw.deadZone = 0;
 blaw.configurable = true;
 blaw.category = Category.turret;
-blaw.shootSound = shootSoundCannon; 
-blaw.ammo(Items.titanium, blawBlueMK1); 
+blaw.shootSound = shootSoundCannon;
+blaw.ammo(Items.titanium, blawBlueMK1);
 
 blaw.config(java.lang.Integer, packCons2((tile, value) => {
     if (tile != null && tile.setTier !== undefined) tile.setTier(value);
@@ -116,16 +117,16 @@ blaw.config(java.lang.Integer, packCons2((tile, value) => {
 
 blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
     tierState: 0,
-    barrelSide: false, 
-    shotgunTimer: 0, 
-    shotCount: 0,    
+    barrelSide: false,
+    shotgunTimer: 0,
+    shotCount: 0,
     recoilLeft: 0,
     recoilRight: 0,
 
     getTier(){ return this.tierState == null ? 0 : this.tierState; },
-    setTier(val){ 
+    setTier(val){
         this.tierState = val;
-        this.health = (val == 2) ? 1425 : 950; 
+        this.health = (val == 2) ? 1425 : 950;
         this.maxHealth = this.health;
         this.shotCount = 0;
     },
@@ -150,13 +151,13 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
                     let currentCopper = core.items.get(Items.copper);
                     let currentLead = core.items.get(Items.lead);
                     let currentTitanium = core.items.get(Items.titanium);
-                    
+
                     let copColor1 = currentCopper >= reqBlawMK2.copper ? "[green]" : "[red]";
                     let leaColor1 = currentLead >= reqBlawMK2.lead ? "[green]" : "[red]";
                     let copColor2 = currentCopper >= reqBlawMK2B.copper ? "[green]" : "[red]";
                     let leaColor2 = currentLead >= reqBlawMK2B.lead ? "[green]" : "[red]";
                     let titColor2 = currentTitanium >= reqBlawMK2B.titanium ? "[green]" : "[red]";
-                    
+
                     if(vi) {
                         return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
                                "[cyan]Nhánh Cấu Hình MK2[]\n • Đồng: " + copColor1 + currentCopper + "[] / " + reqBlawMK2.copper + "\n • Chì: " + leaColor1 + currentLead + "[] / " + reqBlawMK2.lead + "\n" +
@@ -167,7 +168,7 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
                                "[purple]MK2B Variant Path[]\n • Copper: " + copColor2 + currentCopper + "[] / " + reqBlawMK2B.copper + "\n • Lead: " + leaColor2 + currentLead + "[] / " + reqBlawMK2B.lead + "\n • Titanium: " + titColor2 + currentTitanium + "[] / " + reqBlawMK2B.titanium;
                     }
                 }));
-                
+
                 reqCell.width(360).get().setWrap(true);
                 reqCell.get().setAlignment(Align.left);
                 dialog.cont.row(); dialog.cont.add().height(10).row();
@@ -188,16 +189,16 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
                                    "[lightgray]Special Skill: Enhanced Frostfire — Ice barrel freezes and pierces 3 targets, Fire barrel deals 120 splash DMG. Greatly amplifies DMG based on target HP.[]";
                 let b1D = b1.add(b1Text);
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
-                
+
                 let b1BtnText = vi ? "[green]KÍCH HOẠT MK2[]" : "[green]ACTIVATE MK2[]";
                 b1.button(b1BtnText, packRun(() => {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.copper) >= reqBlawMK2.copper && core.items.get(Items.lead) >= reqBlawMK2.lead){
-                        core.items.remove(Items.copper, reqBlawMK2.copper); core.items.remove(Items.lead, reqBlawMK2.lead);
-                        Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
+                        NexNet.take(core, Items.copper, reqBlawMK2.copper); NexNet.take(core, Items.lead, reqBlawMK2.lead);
+                        NexNet.fx(Fx.upgradeCore, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
                         this.configure(java.lang.Integer(1)); dialog.hide(); this.deselect();
-                    } else { 
-                        Vars.ui.showInfo(vi ? "[red]Không đủ tài nguyên cho nhánh MK2![]" : "[red]Not enough resources for MK2 path![]"); 
+                    } else {
+                        Vars.ui.showInfo(vi ? "[red]Không đủ tài nguyên cho nhánh MK2![]" : "[red]Not enough resources for MK2 path![]");
                     }
                 })).size(180, 38);
 
@@ -215,16 +216,16 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
                                    "[lightgray]Special Skill: Shotgun Melee — Fires a spread burst of 20 ultimate Frostfire bullets, optimized for close-range Boss killing with Burst-Cooldown mechanics.[]";
                 let b2D = b2.add(b2Text);
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
-                
+
                 let b2BtnText = vi ? "[orange]KÍCH HOẠT MK2B[]" : "[orange]ACTIVATE MK2B[]";
                 b2.button(b2BtnText, packRun(() => {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.copper) >= reqBlawMK2B.copper && core.items.get(Items.lead) >= reqBlawMK2B.lead && core.items.get(Items.titanium) >= reqBlawMK2B.titanium){
-                        core.items.remove(Items.copper, reqBlawMK2B.copper); core.items.remove(Items.lead, reqBlawMK2B.lead); core.items.remove(Items.titanium, reqBlawMK2B.titanium);
-                        Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
+                        NexNet.take(core, Items.copper, reqBlawMK2B.copper); NexNet.take(core, Items.lead, reqBlawMK2B.lead); NexNet.take(core, Items.titanium, reqBlawMK2B.titanium);
+                        NexNet.fx(Fx.bigShockwave, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
                         this.configure(java.lang.Integer(2)); dialog.hide(); this.deselect();
-                    } else { 
-                        Vars.ui.showInfo(vi ? "[red]Không đủ tài nguyên cho nhánh MK2B![]" : "[red]Not enough resources for MK2B path![]"); 
+                    } else {
+                        Vars.ui.showInfo(vi ? "[red]Không đủ tài nguyên cho nhánh MK2B![]" : "[red]Not enough resources for MK2B path![]");
                     }
                 })).size(180, 38);
 
@@ -338,7 +339,7 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
     updateTile(){
         this.super$updateTile();
         let tier = this.getTier();
-        
+
         if(tier == 2 && this.shotgunTimer > 0) {
             this.shotgunTimer -= Time.delta;
         }
@@ -347,7 +348,7 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
         if(this.recoilRight > 0) this.recoilRight = Math.max(0, this.recoilRight - Time.delta * 0.1);
 
         if(this.isShooting && this.hasAmmo()){
-            let randomBoost = Mathf.random(0.0, 2.0); 
+            let randomBoost = Mathf.random(0.0, 2.0);
             this.reloadCounter += Time.delta * randomBoost * this.efficiency;
             if(tier == 1) this.reloadCounter += Time.delta * 0.2 * this.efficiency;
         }
@@ -355,7 +356,7 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
 
     shoot(type){
         let tier = this.getTier();
-        if(tier == 2 && this.shotgunTimer > 0) return; 
+        if(tier == 2 && this.shotgunTimer > 0) return;
 
         let damageMultiplier = 1.0;
         let targetEnt = this.target;
@@ -381,8 +382,8 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
         if(this.barrelSide) this.recoilLeft = 1.0;
         else this.recoilRight = 1.0;
 
-        let offsetDistance = 6; 
-        let angleRad = (this.rotation + (this.barrelSide ? 90 : -90)) * Mathf.degRad; 
+        let offsetDistance = 6;
+        let angleRad = (this.rotation + (this.barrelSide ? 90 : -90)) * Mathf.degRad;
         let spawnX = this.x + Math.cos(angleRad) * offsetDistance;
         let spawnY = this.y + Math.sin(angleRad) * offsetDistance;
 
@@ -393,21 +394,21 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
             if (shootSoundCannon) shootSoundCannon.at(this.x, this.y, Mathf.random(0.9, 1.1));
 
             for(let i = 0; i < 10; i++){
-                let randomSpeed = Mathf.random(1.5, 3.5); 
-                let randomSpread = Mathf.range(15); 
+                let randomSpeed = Mathf.random(1.5, 3.5);
+                let randomSpread = Mathf.range(15);
                 Call.createBullet(selectedShotgunBullet, this.team, spawnX, spawnY, this.rotation + randomSpread, calculatedDmg, randomSpeed, 1.0);
             }
 
             this.shotCount++;
             if(this.shotCount >= 2) {
-                this.shotgunTimer = 180; 
-                this.shotCount = 0; 
+                this.shotgunTimer = 180;
+                this.shotCount = 0;
             }
         } else {
-            let selectedBulletType = (tier == 1) 
-                ? (this.barrelSide ? blawBlueMK2 : blawRedMK2) 
+            let selectedBulletType = (tier == 1)
+                ? (this.barrelSide ? blawBlueMK2 : blawRedMK2)
                 : (this.barrelSide ? blawBlueMK1 : blawRedMK1);
-            
+
             let finalDmg = selectedBulletType.damage * damageMultiplier;
             Call.createBullet(selectedBulletType, this.team, spawnX, spawnY, this.rotation, finalDmg, selectedBulletType.speed, 1.0);
 
@@ -423,11 +424,11 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
         } else {
             Draw.rect(blaw.baseRegion, this.x, this.y);
         }
-        
+
         let angleRad = this.rotation * Mathf.degRad;
         let cos = Math.cos(angleRad);
         let sin = Math.sin(angleRad);
-        let recoilLength = 4; 
+        let recoilLength = 4;
 
         let rxLeft = this.x - cos * (this.recoilLeft * recoilLength);
         let ryLeft = this.y - sin * (this.recoilLeft * recoilLength);
@@ -446,16 +447,16 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
         }
 
         let sideAngleRad = (this.rotation + 90) * Mathf.degRad;
-        let ballSideCos = Math.cos(sideAngleRad) * 6; 
+        let ballSideCos = Math.cos(sideAngleRad) * 6;
         let ballSideSin = Math.sin(sideAngleRad) * 6;
 
         let bxLeft = (this.x - cos * (this.recoilLeft * recoilLength)) + ballSideCos - cos * 3;
         let byLeft = (this.y - sin * (this.recoilLeft * recoilLength)) + ballSideSin - sin * 3;
-        
+
         let bxRight = (this.x - cos * (this.recoilRight * recoilLength)) - ballSideCos - cos * 3;
         let byRight = (this.y - sin * (this.recoilRight * recoilLength)) - ballSideSin - sin * 3;
 
-        let baseRadius = 1.5; 
+        let baseRadius = 1.5;
 
         Draw.draw(Layer.effect + 1, packRun(() => {
             let zoomLeft = baseRadius * (1.0 + this.recoilLeft * 1.5);
@@ -469,8 +470,8 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
             Fill.circle(bxRight, byRight, zoomRight * 2.0);
             Draw.color(Color.white);
             Fill.circle(bxRight, byRight, zoomRight);
-            
-            Draw.reset(); 
+
+            Draw.reset();
         }));
     },
 

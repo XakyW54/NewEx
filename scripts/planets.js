@@ -20,7 +20,7 @@ Events.on(ClientLoadEvent, e => {
   meshList.push(new NoiseMesh(zorynex, 987654, 6, 0.64, 3, 0.5, 1.2, 0.2, Color.valueOf("#2a9d8f"), Color.valueOf("#e9c46a"), 1, 0.5, 2.0, 0.55))
   meshList.push(new NoiseMesh(zorynex, 456789, 6, 0.65, 5, 0.8, 0.5, 1.2, Color.valueOf("#1d2d44"), Color.valueOf("#748cab"), 2, 0.6, 1.5, 0.45))
   meshList.push(new NoiseMesh(zorynex, 777888, 6, 0.66, 6, 0.85, 0.35, 2.2, Color.valueOf("#e0f7fa"), Color.valueOf("#80deea"), 2, 0.7, 0.8, 0.35))
-  
+
   zorynex.mesh = new MultiMesh(meshList)
 })
 

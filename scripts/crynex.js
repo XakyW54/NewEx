@@ -4,12 +4,11 @@ const packRun = (func) => new java.lang.Runnable({ run: func });
 
 const isEn = () => Core.settings.getString("locale").startsWith("en");
 
-// --- TẠO HIỆU ỨNG LASER TỰ ĐỊNH NGHĨA HOÀN TOÀN KHÔNG DÙNG Fx ---
 const customLaserEffect = new Effect(60, new Cons({
     get(e) {
         Draw.color(Color.cyan);
         Lines.stroke(3.0 * e.fout());
-        // e.x, e.y là điểm xuất phát; e.rotation, e.color hoặc dùng Linef/Drawf.line
+
         Lines.line(e.x, e.y, e.rotation, e.data);
         Draw.reset();
     }
@@ -34,7 +33,7 @@ Events.on(ContentInitEvent, () => {
             targetY: 0,
             hasTargetSet: false,
             selectingTarget: false,
-            baseMaxRange: 204, // Phạm vi hình vuông 51x51 ô
+            baseMaxRange: 204,
             laserTimer: 0,
 
             created() {
@@ -104,7 +103,7 @@ Events.on(ContentInitEvent, () => {
                     if (Core.input.keyTap(KeyCode.mouseLeft)) {
                         let worldVec = Core.camera.unproject(Core.input.mouse());
                         let tile = Vars.world.tileWorld(worldVec.x, worldVec.y);
-                        
+
                         if (tile != null) {
                             this.configure(java.lang.Integer(Point2.pack(tile.x, tile.y)));
                         }
@@ -114,11 +113,9 @@ Events.on(ContentInitEvent, () => {
 
                 let cryoAmount = this.liquids.get(Liquids.cryofluid);
 
-                // Đếm timer hiệu ứng laser (mỗi 60 frames ~ 1 giây)
                 this.laserTimer += this.delta();
                 let shouldShowLaser = (this.laserTimer >= 60.0);
 
-                // --- KIỂM TRA ĐIỀU KIỆN KORYND Ở CẠNH BÊN ---
                 let hasKoryndAdjacent = false;
                 if (this.proximity != null) {
                     this.proximity.each(other => {
@@ -128,20 +125,19 @@ Events.on(ContentInitEvent, () => {
                     });
                 }
 
-                // Bổ sung kiểm tra hasKoryndAdjacent vào logic dịch chuyển chất lỏng
                 if (hasKoryndAdjacent && cryoAmount > 10 && this.hasTargetSet) {
-                    let targetBoxRadius = 84; // Vùng mục tiêu hình vuông 21x21 ô
+                    let targetBoxRadius = 84;
 
                     Units.nearbyBuildings(this.targetX, this.targetY, targetBoxRadius * 1.5, packCons(other => {
                         if (other != null && other.team === this.team && other.isValid() && other !== this) {
                             if (Math.abs(other.x - this.targetX) <= targetBoxRadius && Math.abs(other.y - this.targetY) <= targetBoxRadius) {
-                                
+
                                 if (other.block.hasLiquids && other.liquids != null) {
                                     let maxCap = other.block.liquidCapacity;
                                     let currentLiquid = other.liquids.get(Liquids.cryofluid);
 
                                     if (currentLiquid < maxCap) {
-                                        // Tốc độ dịch chuyển đúng 100 đơn vị / giây (100 / 60 mỗi frame)
+
                                         let transferRate = (100.0 / 60.0) * this.delta();
                                         let amountToMove = Math.min(transferRate, this.liquids.get(Liquids.cryofluid) - 10);
                                         amountToMove = Math.min(amountToMove, maxCap - currentLiquid);
@@ -150,7 +146,6 @@ Events.on(ContentInitEvent, () => {
                                             this.liquids.remove(Liquids.cryofluid, amountToMove);
                                             other.handleLiquid(this, Liquids.cryofluid, amountToMove);
 
-                                            // Gọi custom effect, truyền tọa độ đích vào rotation và data
                                             if (shouldShowLaser) {
                                                 customLaserEffect.at(this.x, this.y, other.x, other.y);
                                             }
@@ -169,7 +164,7 @@ Events.on(ContentInitEvent, () => {
 
             buildConfiguration(table) {
                 table.clear(); table.row();
-                
+
                 table.button(Icon.commandRally, Styles.cleari, 40, packRun(() => {
                     this.deselect();
                     this.selectingTarget = true;
@@ -257,14 +252,12 @@ Events.run(Trigger.draw, () => {
             let cx = tile.drawx() + build.offset;
             let cy = tile.drawy() + build.offset;
             let halfSize = 204;
-            
-            // Vẽ phạm vi vùng 51x51 bao quanh
+
             Drawf.dashLine(Color.cyan, cx - halfSize, cy - halfSize, cx + halfSize, cy - halfSize);
             Drawf.dashLine(Color.cyan, cx + halfSize, cy - halfSize, cx + halfSize, cy + halfSize);
             Drawf.dashLine(Color.cyan, cx + halfSize, cy + halfSize, cx - halfSize, cy + halfSize);
             Drawf.dashLine(Color.cyan, cx - halfSize, cy + halfSize, cx - halfSize, cy - halfSize);
 
-            // Ô nhỏ hiển thị đúng ngay tại tâm con trỏ chuột (đường nét liền trơn, không gạch đứt)
             Drawf.square(cx, cy, 4, 0, Color.cyan);
         }
     }

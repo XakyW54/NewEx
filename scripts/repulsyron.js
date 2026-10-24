@@ -40,8 +40,8 @@ function updateRepulsyronVisibility() {
     if (!Vars.player || !repulsyronBlock) return;
 
     let playerTeam = Vars.player.team();
-    let maxAllowed = playerTeam.cores().size;  
-    
+    let maxAllowed = playerTeam.cores().size;
+
     let currentCount = PerfCore.teamCount(playerTeam, repulsyronBlock);
 
     if (currentCount < maxAllowed) {
@@ -65,13 +65,13 @@ Events.on(ContentInitEvent, () => {
         fadeProgress: 0,
         chargeTimer: 0,
         cooldownTimer: 0,
-        
+
         isCharging: false,
         isFiring: false,
         isFading: false,
-        
+
         lockedTarget: null,
-        
+
         startX: 0, startY: 0,
         endX: 0, endY: 0,
         fadeStartX: 0, fadeStartY: 0,
@@ -253,9 +253,9 @@ Events.on(ContentInitEvent, () => {
         stopFiringAndStartFade(muzzleX, muzzleY) {
             if (this.isFiring || this.isCharging) {
                 if (this.isFiring) {
-                    this.cooldownTimer = 300; 
+                    this.cooldownTimer = 300;
                 }
-                
+
                 this.isFiring = false;
                 this.isCharging = false;
                 this.isFading = true;
@@ -301,7 +301,7 @@ Events.on(ContentInitEvent, () => {
                     Draw.color(PerfCore.color("#ffbb88"));
                     Draw.alpha(this.wingHeatProgress * 0.85);
                     Draw.blend(Blending.additive);
-                    
+
                     Draw.rect(wing1Region, w1X, w1Y, this.rotation);
                     Draw.rect(wing2Region, w2X, w2Y, this.rotation);
 
@@ -326,7 +326,7 @@ Events.on(ContentInitEvent, () => {
                 let secondsFired = this.firingTimer / 60;
                 let sizeScale = 1 + Math.min(1.8, secondsFired * 0.12);
 
-                let colorFactor = Mathf.clamp((secondsFired - 2) / 8); 
+                let colorFactor = Mathf.clamp((secondsFired - 2) / 8);
                 let cOuter = Color.valueOf("#0077ff").cpy().lerp(Color.valueOf("#ff0055"), colorFactor);
                 let cMid   = Color.valueOf("#00e1ff").cpy().lerp(Color.valueOf("#ff66aa"), colorFactor);
                 let cInner = Color.white;
@@ -344,7 +344,7 @@ Events.on(ContentInitEvent, () => {
                 Fill.circle(this.startX, this.startY, outerWidth * 0.5);
                 Fill.circle(this.endX, this.endY, outerWidth * 0.5);
 
-                let effectProgress = Mathf.clamp(secondsFired / 3.0); 
+                let effectProgress = Mathf.clamp(secondsFired / 3.0);
 
                 if (effectProgress > 0 && this.isFiring) {
                     let len = Mathf.len(this.endX - this.startX, this.endY - this.startY);
@@ -381,7 +381,7 @@ Events.on(ContentInitEvent, () => {
                         let px = Mathf.lerp(this.startX, this.endX, pTime);
                         let py = Mathf.lerp(this.startY, this.endY, pTime);
                         let offset = Mathf.sinDeg(Time.time * 20 + p * 50) * (5 * sizeScale);
-                        
+
                         let fx = px + Angles.trnsx(angle + 90, offset);
                         let fy = py + Angles.trnsy(angle + 90, offset);
 

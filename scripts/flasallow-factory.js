@@ -1,20 +1,21 @@
+const NexNet = global.NexNet;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 
 const expandCircleFx = new Effect(25, cons(e => {
-    let radius = 25 * e.fin(); 
+    let radius = 25 * e.fin();
     Draw.color(e.color);
-    Lines.stroke(2.5 * e.fout()); 
+    Lines.stroke(2.5 * e.fout());
     Lines.circle(e.x, e.y, radius);
 }));
 
 const doubleSuperExplosionFx = new Effect(80, cons(e => {
-    let maxRadius = 1600; 
-    let innerRadius = maxRadius * e.fin(); 
+    let maxRadius = 1600;
+    let innerRadius = maxRadius * e.fin();
 
     Draw.color(Color.scarlet);
     Draw.alpha(0.4 * e.fout());
-    
+
     let fillThickness = maxRadius - innerRadius;
     if (fillThickness > 0) {
         Lines.stroke(fillThickness);
@@ -36,7 +37,7 @@ const COLOR_SURGE  = Color.valueOf("f3e979");
 const COLOR_EMERALIFT = Color.valueOf("38e250");
 const COLOR_REDSTONE  = Color.valueOf("ff3b3b");
 
-const BASE_CRAFT_TIME = 185; 
+const BASE_CRAFT_TIME = 185;
 
 const isEn = () => Core.settings.getString("locale").startsWith("en");
 
@@ -83,13 +84,13 @@ Events.on(ContentInitEvent, () => {
         created() {
             this.super$created();
             this.craftTimer = 0;
-            this.obsTimer = 0; 
+            this.obsTimer = 0;
             this.sallowyrCounter = 0;
 
             this._buffEnabled = true;
             this.hasEmeraliftNearby = false;
             this.hasRedstoneNearby = false;
-            
+
             this.lastEmeraliftCount = 0;
             this.lastRedstoneCount = 0;
 
@@ -125,7 +126,7 @@ Events.on(ContentInitEvent, () => {
         },
 
         acceptLiquid(source, liquid) {
-            return (liquid == Liquids.cryofluid || liquid == Liquids.oil) && 
+            return (liquid == Liquids.cryofluid || liquid == Liquids.oil) &&
                    this.liquids != null && this.liquids.get(liquid) < flasallowFactory.liquidCapacity;
         },
 
@@ -174,7 +175,7 @@ Events.on(ContentInitEvent, () => {
         },
 
         triggerDoubleSuperExplosion() {
-            let explosionRadius = 1600; 
+            let explosionRadius = 1600;
 
             doubleSuperExplosionFx.at(this.x, this.y);
 
@@ -231,7 +232,7 @@ Events.on(ContentInitEvent, () => {
                         Draw.alpha(0.6 + 0.4 * Mathf.absin(Time.time, 6.0, 1.0));
                         Lines.stroke(2.5);
                         Lines.circle(this.x, this.y, detectRadius);
-                        
+
                         Draw.alpha(0.15);
                         Fill.circle(this.x, this.y, detectRadius);
                     }
@@ -241,7 +242,7 @@ Events.on(ContentInitEvent, () => {
                         Draw.alpha(0.6 + 0.4 * Mathf.absin(Time.time, 6.0, 1.0));
                         Lines.stroke(2.5);
                         Lines.square(this.x, this.y, detectRadius);
-                        
+
                         Draw.alpha(0.15);
                         Fill.square(this.x, this.y, detectRadius);
                     }
@@ -256,7 +257,7 @@ Events.on(ContentInitEvent, () => {
             if (this._buffEnabled) {
                 Draw.draw(Layer.overlayUI, packRun(() => {
                     let detectRadius = (flasallowFactory.size / 2 + 1) * Vars.tilesize;
-                    
+
                     Draw.color(COLOR_EMERALIFT);
                     Lines.stroke(2.0);
                     Lines.circle(this.x, this.y, detectRadius);
@@ -278,15 +279,15 @@ Events.on(ContentInitEvent, () => {
 
             if (itemNewexObs != null && this.items.get(itemNewexObs) > 0) {
                 if (this.obsTimer <= 0) {
-                    this.obsTimer = 5 * 60 * 60; 
+                    this.obsTimer = 5 * 60 * 60;
                 }
 
                 this.sallowyrCounter += Time.delta;
                 if (this.sallowyrCounter >= 60.0) {
                     this.sallowyrCounter -= 60.0;
-                    
+
                     this.items.remove(itemNewexObs, 1);
-                    
+
                     if (itemNewexSallowyr != null) {
                         this.items.add(itemNewexSallowyr, 1);
                     }
@@ -357,7 +358,7 @@ Events.on(ContentInitEvent, () => {
             table.button(Icon.settings, Styles.cleari, 40, packRun(() => {
                 let newState = !this._buffEnabled;
                 this.setBuffEnabled(newState);
-                this.configure(newState ? 1 : 0);
+                this.configure(java.lang.Integer(newState ? 1 : 0));
             })).update(btn => {
                 btn.getStyle().imageUpColor = this._buffEnabled ? Color.lime : Color.gray;
             }).size(50, 40);
@@ -398,13 +399,13 @@ Events.on(ContentInitEvent, () => {
                 let dialog = extend(BaseDialog, title, {});
                 let infoTable = new Table();
                 let cell = infoTable.add(descStr).width(360);
-                cell.get().setWrap(true); 
+                cell.get().setWrap(true);
                 cell.get().setAlignment(Align.left);
 
                 let scroll = new ScrollPane(infoTable);
                 scroll.setScrollingDisabled(true, false);
                 dialog.cont.add(scroll).maxHeight(400);
-                dialog.addCloseButton(); 
+                dialog.addCloseButton();
                 dialog.show();
             })).size(50, 40);
         },

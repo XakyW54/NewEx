@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
@@ -105,12 +106,12 @@ const armorShredStatus = extend(StatusEffect, "pinfyr-armor-shred", {
         this.speedMultiplier = 0.85;
         this.healthMultiplier = 0.95;
     },
-    
+
     update(unit, time) {
         this.super$update(unit, time);
-        if (unit != null) { 
+        if (unit != null) {
             unit.armor = 0;
-            
+
             if (unit.dead || unit.health <= 0) {
                 pinfyrStackMap.remove(unit.id);
             }
@@ -137,7 +138,7 @@ function createPinfyrDynamicLaser(targetDst) {
         lifetime: 20,
         armorPiercing: true,
         colors: [Color.valueOf("#f43f5e"), Color.valueOf("#fb7185"), Color.white],
-        
+
         hitEntity(b, entity, health) {
             this.super$hitEntity(b, entity, health);
             if (entity != null && typeof entity.apply === "function") {
@@ -156,7 +157,7 @@ function createPinfyrDynamicLaser(targetDst) {
 const lyvervon3LayerLightningFx = new Effect(14, e => {
     if (Vars.state.isPaused()) return;
     if (!(e.data instanceof Seq)) return;
-    
+
     const points = e.data;
     let baseWidth = e.rotation > 0 ? e.rotation : 3.5;
     let fout = e.fout();
@@ -195,8 +196,8 @@ function create3LayerLightningStandard(x1, y1, x2, y2, thickness) {
         let t = i / segs;
         let px = Mathf.lerp(x1, x2, t);
         let py = Mathf.lerp(y1, y2, t);
-        let maxCurve = 18; 
-        let jitter = 13;   
+        let maxCurve = 18;
+        let jitter = 13;
         let arc = Mathf.sin(t * Math.PI) * maxCurve;
         let noise = Mathf.range(jitter) * (1 - t);
 
@@ -210,8 +211,8 @@ function create3LayerLightningStandard(x1, y1, x2, y2, thickness) {
 const vGalaxChargeFx = new Effect(120, cons(e => {
     if (Vars.state.isPaused()) return;
     Draw.z(Layer.effect + 0.1);
-    
-    let fin = e.fin(); 
+
+    let fin = e.fin();
     let fout = e.fout();
 
     const rings = [
@@ -295,7 +296,7 @@ const vGalaxCollapseFx = new Effect(45, cons(e => {
     let fout = e.fout();
     let maxRadius = 960.0;
     let currentRadius = maxRadius * fout;
-    
+
     let colors = e.data || [Color.valueOf("#c084fc"), Color.valueOf("#e879f9")];
 
     Draw.color(colors[0], colors[1], e.fin());
@@ -314,22 +315,22 @@ function draw3DRotatedEllipseWave(centerX, centerY, radiusX, radiusY, rotationDe
     let rotationRad = rotationDeg * Mathf.degRad;
     let cosRot = Math.cos(rotationRad);
     let sinRot = Math.sin(rotationRad);
-    
+
     let localX = radiusX;
     let localY = 0;
     let lastX = centerX + (localX * cosRot - localY * sinRot);
     let lastY = centerY + (localX * sinRot + localY * cosRot);
-    
+
     for (let i = 1; i <= points; i++) {
         let angle = (i * 360 / points) * Mathf.degRad;
         localX = Math.cos(angle) * radiusX;
         localY = Math.sin(angle) * radiusY;
-        
+
         let nextX = centerX + (localX * cosRot - localY * sinRot);
         let nextY = centerY + (localX * sinRot + localY * cosRot);
-        
+
         Lines.line(lastX, lastY, nextX, nextY);
-        
+
         lastX = nextX;
         lastY = nextY;
     }
@@ -338,10 +339,10 @@ function draw3DRotatedEllipseWave(centerX, centerY, radiusX, radiusY, rotationDe
 const vGalaxSkyStrikeFx = new Effect(50, cons(e => {
     if (Vars.state.isPaused()) return;
     Draw.z(Layer.effect + 3);
-    
+
     let f = e.fin();
     let alpha = 1.0 - Interp.pow3Out.apply(f);
-    
+
     let colors = e.data || [Color.valueOf("#c084fc"), Color.valueOf("#e879f9")];
     let primaryColor = colors[0];
     let secondaryColor = colors[1];
@@ -369,20 +370,20 @@ const vGalaxSkyStrikeFx = new Effect(50, cons(e => {
     let moveX = (startX - e.x) * 0.2 * Interp.pow2Out.apply(f);
     let moveY = (startY - e.y) * 0.2 * Interp.pow2Out.apply(f);
 
-    let wave1X = e.x + moveX; 
-    let wave1Y = e.y + moveY; 
-    let radius1 = 10 + (120 * Interp.pow3Out.apply(f));   
-    
+    let wave1X = e.x + moveX;
+    let wave1Y = e.y + moveY;
+    let radius1 = 10 + (120 * Interp.pow3Out.apply(f));
+
     Lines.stroke(3.5 * (1.0 - f), primaryColor);
     draw3DRotatedEllipseWave(wave1X, wave1Y, radius1, radius1 * 0.45, laserAngle);
 
-    let wave2X = e.x + (moveX * 0.7); 
-    let wave2Y = e.y + (moveY * 0.7); 
-    let radius2 = radius1 * 0.66; 
-    
-    Lines.stroke(2.0 * (1.0 - f), secondaryColor); 
-    draw3DRotatedEllipseWave(wave2X, wave2Y, radius2, radius2 * 0.45, laserAngle); 
-    
+    let wave2X = e.x + (moveX * 0.7);
+    let wave2Y = e.y + (moveY * 0.7);
+    let radius2 = radius1 * 0.66;
+
+    Lines.stroke(2.0 * (1.0 - f), secondaryColor);
+    draw3DRotatedEllipseWave(wave2X, wave2Y, radius2, radius2 * 0.45, laserAngle);
+
     Draw.reset();
 }));
 
@@ -391,7 +392,7 @@ const vTargetWarningFx = new Effect(240, cons(e => {
     Draw.z(Layer.effect + 0.01);
     let fout = e.fout();
     let fin = e.fin();
-    
+
     let color = e.data || Color.valueOf("#c084fc");
 
     Draw.color(color);
@@ -428,7 +429,7 @@ const vTargetWarningFx = new Effect(240, cons(e => {
 const vSkyLaunchFx = new Effect(35, cons(e => {
     if (Vars.state.isPaused()) return;
     Draw.z(Layer.effect + 2);
-    
+
     let fin = e.fin();
     let fout = e.fout();
     let colors = e.data || [Color.valueOf("#c084fc"), Color.valueOf("#e879f9")];
@@ -465,7 +466,7 @@ const vChainLinkFx = new Effect(15, cons(e => {
     if (e.data != null) {
         let tx = e.data.x;
         let ty = e.data.y;
-        
+
         Draw.color(PerfCore.color("#c084fc"), Color.white, e.fin());
         Lines.stroke(2.0 * fout);
         Lines.line(e.x, e.y, tx, ty);
@@ -495,7 +496,7 @@ const galaxvorram = extend(PowerTurret, "galaxvorram", {
 });
 
 galaxvorram.health = 17000;
-galaxvorram.range = 1; 
+galaxvorram.range = 1;
 galaxvorram.reload = 240;
 
 galaxvorram.hasItems = true;
@@ -511,9 +512,9 @@ galaxvorram.consumePower(20.0);
 
 galaxvorram.acceptItem = func((building, item) => {
     let targetObs = itemObs || findContent(ContentType.item, "newex-obs");
-    return item === Items.thorium || 
-           item === Items.silicon || 
-           item === Items.surgeAlloy || 
+    return item === Items.thorium ||
+           item === Items.silicon ||
+           item === Items.surgeAlloy ||
            item === Items.phaseFabric ||
            (targetObs != null && item === targetObs);
 });
@@ -527,11 +528,11 @@ galaxvorram.config(java.lang.Integer, packCons2((tile, value) => {
 galaxvorram.buildType = () => extend(PowerTurret.PowerTurretBuild, galaxvorram, {
     created() {
         this.super$created();
-        this._ammoTypeIndex = 0; 
+        this._ammoTypeIndex = 0;
 
         this.reloadTimer = 0.0;
         this.targetScanTimer = 0.0;
-        
+
         this.pinfyrTimer = 0.0;
         this.pinfyrNextInterval = Mathf.random(30.0, 120.0);
 
@@ -550,7 +551,7 @@ galaxvorram.buildType = () => extend(PowerTurret.PowerTurretBuild, galaxvorram, 
     getCornerBuildings(targetTypeStr, minPowerRequired) {
         let foundList = new Seq();
         let validNames = (targetTypeStr === "redstone") ? REDSTONE_NAMES : PINFYR_NAMES;
-        
+
         let searchRadius = (targetTypeStr === "pinfyr") ? (21 * 8) : ((this.block.size * 8) + 16);
 
         Units.nearbyBuildings(this.x, this.y, searchRadius, cons(building => {
@@ -592,9 +593,9 @@ galaxvorram.buildType = () => extend(PowerTurret.PowerTurretBuild, galaxvorram, 
 
     getMaximumAccepted(item) {
         let targetObs = itemObs || findContent(ContentType.item, "newex-obs");
-        if (item === Items.thorium || 
-            item === Items.silicon || 
-            item === Items.surgeAlloy || 
+        if (item === Items.thorium ||
+            item === Items.silicon ||
+            item === Items.surgeAlloy ||
             item === Items.phaseFabric ||
             (targetObs != null && item === targetObs)) {
             return galaxvorram.itemCapacity;
@@ -604,22 +605,22 @@ galaxvorram.buildType = () => extend(PowerTurret.PowerTurretBuild, galaxvorram, 
 
     acceptItem(source, item) {
         let targetObs = itemObs || findContent(ContentType.item, "newex-obs");
-        let isValidItem = (item === Items.thorium || 
-                           item === Items.silicon || 
-                           item === Items.surgeAlloy || 
+        let isValidItem = (item === Items.thorium ||
+                           item === Items.silicon ||
+                           item === Items.surgeAlloy ||
                            item === Items.phaseFabric ||
                            (targetObs != null && item === targetObs));
-        
+
         if (!isValidItem || this.items == null) return false;
         return this.items.get(item) < this.getMaximumAccepted(item);
     },
 
-    getAmmoTypeIndex() { 
-        return this._ammoTypeIndex !== undefined ? this._ammoTypeIndex : 0; 
+    getAmmoTypeIndex() {
+        return this._ammoTypeIndex !== undefined ? this._ammoTypeIndex : 0;
     },
-    
-    setAmmoTypeIndex(val) { 
-        this._ammoTypeIndex = Number(val); 
+
+    setAmmoTypeIndex(val) {
+        this._ammoTypeIndex = Number(val);
     },
 
     setSlaveCommand(angle, isShooting, aimX, aimY) {
@@ -634,13 +635,13 @@ galaxvorram.buildType = () => extend(PowerTurret.PowerTurretBuild, galaxvorram, 
         if (this.isChainFiring) return;
         this.isChainFiring = true;
 
-        let adjacentRadius = (this.block.size * 8) + 8.0; 
+        let adjacentRadius = (this.block.size * 8) + 8.0;
 
         Units.nearbyBuildings(this.x, this.y, adjacentRadius, cons(b => {
             if (b != null && b !== this && b.block === this.block && b.team === this.team) {
                 let dstX = Math.abs(this.x - b.x);
                 let dstY = Math.abs(this.y - b.y);
-                
+
                 let isAdjacent = (dstX < 4.0 && dstY <= adjacentRadius) || (dstY < 4.0 && dstX <= adjacentRadius);
 
                 if (isAdjacent && typeof b.setSlaveCommand === "function" && !b.isChainFiring) {
@@ -728,9 +729,9 @@ galaxvorram.buildType = () => extend(PowerTurret.PowerTurretBuild, galaxvorram, 
 
         let ammo = AMMO_DATA[this.getAmmoTypeIndex()];
         let targetObs = itemObs || findContent(ContentType.item, "newex-obs");
-        
+
         if (this.items.get(Items.thorium) < ammo.reqThorium) return false;
-        
+
         let requiredItem = (ammo.val === 4) ? targetObs : ammo.reqItem;
         if (requiredItem != null && requiredItem !== Items.thorium) {
             if (this.items.get(requiredItem) < ammo.reqAmount) return false;
@@ -780,7 +781,7 @@ galaxvorram.buildType = () => extend(PowerTurret.PowerTurretBuild, galaxvorram, 
 
                 let laserDmg = baseDmg * 0.5;
                 let laserCount = 12;
-                
+
                 for (let i = 0; i < laserCount; i++) {
                     let randomAngle = (i * (360 / laserCount)) + Mathf.range(15.0);
                     burstLaserType.create(this, team, targetX, targetY, randomAngle, laserDmg, 1.0);
@@ -790,7 +791,7 @@ galaxvorram.buildType = () => extend(PowerTurret.PowerTurretBuild, galaxvorram, 
 
                 if (ammoIndex === 4) {
                     let subExplosionCount = Mathf.random(5, 14);
-                    let subDmg = 5600.0 * 0.5; 
+                    let subDmg = 5600.0 * 0.5;
                     let currentDelay = 0;
 
                     for (let i = 0; i < subExplosionCount; i++) {
@@ -822,7 +823,7 @@ galaxvorram.buildType = () => extend(PowerTurret.PowerTurretBuild, galaxvorram, 
         if (this.reloadTimer > 0) this.reloadTimer -= Time.delta;
         if (this.lockRotationTimer > 0) this.lockRotationTimer -= Time.delta;
 
-        let pinfyrActiveBuildings = this.getCornerBuildings("pinfyr", 1000); 
+        let pinfyrActiveBuildings = this.getCornerBuildings("pinfyr", 1000);
         if (pinfyrActiveBuildings.size > 0) {
             this.pinfyrTimer += Time.delta;
 
@@ -840,11 +841,11 @@ galaxvorram.buildType = () => extend(PowerTurret.PowerTurretBuild, galaxvorram, 
                             pBuilding.power.status = Math.max(0, newPower / pCap);
 
                             let enemyTarget = Units.closestTarget(
-                                this.team, 
-                                this.x, 
-                                this.y, 
-                                4000.0, 
-                                u => u.checkTarget(true, true), 
+                                this.team,
+                                this.x,
+                                this.y,
+                                4000.0,
+                                u => u.checkTarget(true, true),
                                 b => !(b.block instanceof CoreBlock)
                             );
 
@@ -875,18 +876,18 @@ galaxvorram.buildType = () => extend(PowerTurret.PowerTurretBuild, galaxvorram, 
             if (u != null) {
                 targetX = u.aimX;
                 targetY = u.aimY;
-                
+
                 if (!isLocked) {
                     let targetAngle = this.angleTo(targetX, targetY);
                     this.rotation = Angles.moveToward(this.rotation, targetAngle, galaxvorram.rotateSpeed * Time.delta);
                 }
-                
+
                 this.syncChainCommand(this.rotation, this.isShooting, targetX, targetY);
             }
         } else if (isSlaveControlled) {
             targetX = this.slaveAimX;
             targetY = this.slaveAimY;
-            
+
             if (!isLocked) {
                 this.rotation = Angles.moveToward(this.rotation, this.slaveTargetAngle, galaxvorram.rotateSpeed * Time.delta);
             }
@@ -952,7 +953,7 @@ galaxvorram.buildType = () => extend(PowerTurret.PowerTurretBuild, galaxvorram, 
                 mainTable.button(btnText, packRun(() => {
                     this.setAmmoTypeIndex(ammo.val);
                     this.configure(java.lang.Integer.valueOf(ammo.val));
-                    Fx.upgradeCore.at(this.x, this.y);
+                    NexNet.fx(Fx.upgradeCore, this.x, this.y);
                     let infoText = isEnglish() ? "[gold]Ammo type installed:[]\n" : "[gold]Đã cài đặt loại đạn:[]\n";
                     Vars.ui.showInfo(infoText + ammoName);
                     dialog.hide();

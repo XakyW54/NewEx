@@ -1,22 +1,17 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
-// Cấu hình tài nguyên nâng cấp tuần tự MK2 & MK3
 const reqTyterYiMK2 = { silicon: 150, titanium: 100, thorium: 80 };
 const reqTyterYiMK3 = { silicon: 250, titanium: 180, thorium: 120, plastanium: 60 };
 
-// =========================================================================
-// ==================== TÔNG MÀU VÀNG HOÀNG GIA & TRẮC PHA LÊ (ABETA) ======
-// =========================================================================
+const SWORD_LIGHT = "#ffffff";
+const SWORD_MAIN = "#ffe066";
+const SWORD_DARK = "#ffd700";
+const SWORD_DEEP = "#ff8800";
 
-const SWORD_LIGHT = "#ffffff"; 
-const SWORD_MAIN = "#ffe066";  
-const SWORD_DARK = "#ffd700";  
-const SWORD_DEEP = "#ff8800";  
-
-// Tông màu trắng pha lê cho trạng thái Abeta
 const CRYSTAL_LIGHT = "#ffffff";
 const CRYSTAL_MAIN  = "#e0f7ff";
 const CRYSTAL_DARK  = "#80deea";
@@ -47,7 +42,7 @@ const swordHitFx = new Effect(20, cons(e => {
     Draw.color(Color.valueOf(SWORD_LIGHT), Color.valueOf(SWORD_MAIN), e.fin());
     Lines.stroke(1.5 * e.fout());
     Lines.circle(e.x, e.y, 10.0 * e.finpow());
-    
+
     Angles.randLenVectors(e.id, 5, 14.0 * e.finpow(), (x, y) => {
         Draw.color(Color.valueOf(SWORD_MAIN));
         Fill.circle(e.x + x, e.y + y, 1.4 * e.fout());
@@ -71,7 +66,6 @@ const swordExplosionFx = new Effect(25, cons(e => {
     Draw.reset();
 }));
 
-// Hiệu ứng tia laser chiếu từ trên trời xuống
 const skyLaserFx = new Effect(40, cons(e => {
     Draw.color(Color.white, Color.valueOf(CRYSTAL_LIGHT), e.fin());
     Lines.stroke(8.0 * e.fout());
@@ -81,12 +75,10 @@ const skyLaserFx = new Effect(40, cons(e => {
     Lines.line(e.x, e.y + 400.0, e.x, e.y);
 }));
 
-// Hiệu ứng mảnh ghép từ 2 bên (Trái & Phải) bay vào tâm ghép hình
 const jigsawAssembleFx = new Effect(45, cons(e => {
     Draw.color(Color.valueOf(CRYSTAL_LIGHT), Color.valueOf(SWORD_MAIN), e.fin());
-    let progress = e.fin(); // từ 0 đến 1
+    let progress = e.fin();
 
-    // Các mảnh ghép từ bên Trái bay vào
     for(let i = 0; i < 10; i++) {
         let seed = e.id + i * 13;
         let yOffset = Mathf.randomSeed(seed, -45, 45);
@@ -96,7 +88,6 @@ const jigsawAssembleFx = new Effect(45, cons(e => {
         Drawf.tri(currentX, currentY, 5.0 * e.fout(), 10.0 * e.fout(), 45);
     }
 
-    // Các mảnh ghép từ bên Phải bay vào
     for(let i = 0; i < 10; i++) {
         let seed = e.id + i * 17 + 200;
         let yOffset = Mathf.randomSeed(seed, -45, 45);
@@ -107,7 +98,6 @@ const jigsawAssembleFx = new Effect(45, cons(e => {
     }
 }));
 
-// Hiệu ứng ngôi sao chiếu sáng cực lớn khi chuyển đổi trạng thái
 const starFlashFx = new Effect(45, cons(e => {
     Draw.color(Color.white, Color.valueOf(CRYSTAL_LIGHT), e.fin());
     let size = e.finpow() * 130.0;
@@ -120,11 +110,10 @@ const starFlashFx = new Effect(45, cons(e => {
     Fill.circle(e.x, e.y, e.fout() * 40.0);
 }));
 
-// Hàm phun khói lan tỏa mù mịt ra rất xa từ 16 góc xung quanh tháp
 function spawn16Smoke(build) {
     for (let i = 0; i < 16; i++) {
-        let angle = i * 22.5; 
-        // Phun khói trải dài từ bán kính gần (16px) ra đến rất xa (72px)
+        let angle = i * 22.5;
+
         for (let d = 16; d <= 72; d += 18) {
             let sx = build.x + Angles.trnsx(angle, d);
             let sy = build.y + Angles.trnsy(angle, d);
@@ -134,7 +123,6 @@ function spawn16Smoke(build) {
     }
 }
 
-// 🗡️ HÀM VẼ KIẾM (ĐÃ THU NHỎ 30%, KHÔNG CÓ HÀO QUANG) 🗡️
 function drawSwordShape(x, y, rot, baseSize, progress, isCrystal) {
     let sz = baseSize * Mathf.curve(progress, 0.0, 1.0);
     if (sz <= 0.1) return;
@@ -145,17 +133,14 @@ function drawSwordShape(x, y, rot, baseSize, progress, isCrystal) {
     let mainColor = isCrystal ? CRYSTAL_MAIN : SWORD_MAIN;
     let lightColor = isCrystal ? CRYSTAL_LIGHT : SWORD_LIGHT;
 
-    // Vỏ ngoài sâu
     Draw.color(Color.valueOf(deepColor));
     Draw.alpha(0.7 * alphaFactor);
-    Drawf.tri(x, y, sz * 0.4, sz * 2.7, rot);       
+    Drawf.tri(x, y, sz * 0.4, sz * 2.7, rot);
 
-    // 3 góc ngắn
-    Drawf.tri(x, y, sz * 0.3, sz * 0.7, rot + 90);    
-    Drawf.tri(x, y, sz * 0.3, sz * 0.7, rot + 270);   
-    Drawf.tri(x, y, sz * 0.22, sz * 0.5, rot + 180);  
+    Drawf.tri(x, y, sz * 0.3, sz * 0.7, rot + 90);
+    Drawf.tri(x, y, sz * 0.3, sz * 0.7, rot + 270);
+    Drawf.tri(x, y, sz * 0.22, sz * 0.5, rot + 180);
 
-    // Thân chính sắc nét
     Draw.color(Color.valueOf(mainColor));
     Draw.alpha(0.95 * alphaFactor);
     Drawf.tri(x, y, sz * 0.26, sz * 2.2, rot);
@@ -163,7 +148,6 @@ function drawSwordShape(x, y, rot, baseSize, progress, isCrystal) {
     Drawf.tri(x, y, sz * 0.2, sz * 0.55, rot + 270);
     Drawf.tri(x, y, sz * 0.15, sz * 0.35, rot + 180);
 
-    // Tâm sáng phản chiếu
     Draw.color(Color.valueOf(lightColor));
     Draw.alpha(1.0 * alphaFactor);
     Drawf.tri(x, y, sz * 0.09, sz * 1.2, rot);
@@ -171,10 +155,6 @@ function drawSwordShape(x, y, rot, baseSize, progress, isCrystal) {
     Fill.circle(x, y, 1.8 * alphaFactor);
     Draw.reset();
 }
-
-// =========================================================================
-// ===================== ĐẠN PHỤ & KIẾM LI TI QUỸ ĐẠO ZICK-ZACK ============
-// =========================================================================
 
 const MicroSwordBullet1 = extend(BasicBulletType, {
     speed: 15.4, damage: 140, width: 2.0, height: 7, shrinkX: 0, shrinkY: 0,
@@ -285,11 +265,11 @@ const FallingRainCrystal = extend(BasicBulletType, {
 function triggerSwordRain(b, entity) {
     if (entity == null || b.owner == null) return;
     let tier = (b.owner.getTier !== undefined) ? b.owner.getTier() : 0;
-    if (tier < 1) return; // Chỉ MK2/MK3 mới có mưa kiếm
+    if (tier < 1) return;
 
     let isAbeta = (b.owner.isAbeta === true);
     let chance = isAbeta ? 0.3 : 0.1;
-    
+
     if (Mathf.chance(chance)) {
         let count = 6;
         for (let i = 0; i < count; i++) {
@@ -311,23 +291,19 @@ function triggerSwordRain(b, entity) {
     }
 }
 
-// =========================================================================
-// ===================== ĐẠN CHÍNH & CÁC BIẾN THỂ ABETA ====================
-// =========================================================================
-
 const SwordBulletMK1 = extend(BasicBulletType, {
     speed: 7.7, damage: 210, width: 3.2, height: 12, shrinkX: 0, shrinkY: 0,
     homingPower: 0.05, homingRange: 150,
     pierce: true, pierceBuilding: true, pierceCap: 20,
     frontColor: Color.valueOf(SWORD_LIGHT), backColor: Color.valueOf(SWORD_MAIN),
     splashDamage: 40, splashDamageRadius: 35,
-    shootEffect: swordMuzzleFx, hitEffect: swordHitFx, despawnEffect: swordExplosionFx, 
+    shootEffect: swordMuzzleFx, hitEffect: swordHitFx, despawnEffect: swordExplosionFx,
     status: StatusEffects.melting, statusDuration: 90,
-    
-    hitEntity(b, entity, health) { 
-        this.super$hitEntity(b, entity, health); 
+
+    hitEntity(b, entity, health) {
+        this.super$hitEntity(b, entity, health);
         if (b.owner != null && b.owner.addCharge !== undefined) {
-            b.owner.addCharge(2.0); 
+            b.owner.addCharge(2.0);
         }
         if (entity != null && entity.maxHealth) {
             let maxHp = entity.maxHealth;
@@ -335,7 +311,7 @@ const SwordBulletMK1 = extend(BasicBulletType, {
             entity.damage(maxHp * 0.03 + extraDmg);
         }
         if (entity instanceof Unit && ((entity.type != null && entity.type.name === "akenewm-inventer") || entity.isGalileoJS)) {
-            entity.damage(b.damage * 3.0); 
+            entity.damage(b.damage * 3.0);
             Fx.itemTransfer.at(entity.x, entity.y, 10, Color.valueOf(SWORD_MAIN));
         }
         triggerSwordRain(b, entity);
@@ -352,13 +328,13 @@ const SwordBulletMK2 = extend(BasicBulletType, {
     pierce: true, pierceBuilding: true, pierceCap: 30,
     frontColor: Color.valueOf(SWORD_LIGHT), backColor: Color.valueOf(SWORD_DARK),
     splashDamage: 60, splashDamageRadius: 45,
-    shootEffect: swordMuzzleFx, hitEffect: swordHitFx, despawnEffect: swordExplosionFx, 
+    shootEffect: swordMuzzleFx, hitEffect: swordHitFx, despawnEffect: swordExplosionFx,
     status: StatusEffects.melting, statusDuration: 130,
-    
-    hitEntity(b, entity, health) { 
-        this.super$hitEntity(b, entity, health); 
+
+    hitEntity(b, entity, health) {
+        this.super$hitEntity(b, entity, health);
         if (b.owner != null && b.owner.addCharge !== undefined) {
-            b.owner.addCharge(2.0); 
+            b.owner.addCharge(2.0);
         }
         if (entity != null && entity.maxHealth) {
             let maxHp = entity.maxHealth;
@@ -366,7 +342,7 @@ const SwordBulletMK2 = extend(BasicBulletType, {
             entity.damage(maxHp * 0.03 + extraDmg);
         }
         if (entity instanceof Unit && ((entity.type != null && entity.type.name === "akenewm-inventer") || entity.isGalileoJS)) {
-            entity.damage(b.damage * 3.0); 
+            entity.damage(b.damage * 3.0);
             Fx.itemTransfer.at(entity.x, entity.y, 10, Color.valueOf(SWORD_MAIN));
         }
         triggerSwordRain(b, entity);
@@ -383,13 +359,13 @@ const SwordBulletMK3 = extend(BasicBulletType, {
     pierce: true, pierceBuilding: true, pierceCap: 40,
     frontColor: Color.valueOf(SWORD_LIGHT), backColor: Color.valueOf(SWORD_DARK),
     splashDamage: 80, splashDamageRadius: 55,
-    shootEffect: swordMuzzleFx, hitEffect: swordHitFx, despawnEffect: swordExplosionFx, 
+    shootEffect: swordMuzzleFx, hitEffect: swordHitFx, despawnEffect: swordExplosionFx,
     status: StatusEffects.melting, statusDuration: 160,
-    
-    hitEntity(b, entity, health) { 
-        this.super$hitEntity(b, entity, health); 
+
+    hitEntity(b, entity, health) {
+        this.super$hitEntity(b, entity, health);
         if (b.owner != null && b.owner.addCharge !== undefined) {
-            b.owner.addCharge(2.0); 
+            b.owner.addCharge(2.0);
         }
         if (entity != null && entity.maxHealth) {
             let maxHp = entity.maxHealth;
@@ -399,7 +375,7 @@ const SwordBulletMK3 = extend(BasicBulletType, {
             entity.damage(baseHpDmg + extraDmg);
         }
         if (entity instanceof Unit && ((entity.type != null && entity.type.name === "akenewm-inventer") || entity.isGalileoJS)) {
-            entity.damage(b.damage * 3.0); 
+            entity.damage(b.damage * 3.0);
             Fx.itemTransfer.at(entity.x, entity.y, 10, Color.valueOf(SWORD_MAIN));
         }
         triggerSwordRain(b, entity);
@@ -416,13 +392,13 @@ const SwordBulletCrystalMK1 = extend(BasicBulletType, {
     pierce: true, pierceBuilding: true, pierceCap: 35,
     frontColor: Color.valueOf(CRYSTAL_LIGHT), backColor: Color.valueOf(CRYSTAL_MAIN),
     splashDamage: 80, splashDamageRadius: 50,
-    shootEffect: crystalMuzzleFx, hitEffect: swordHitFx, despawnEffect: swordExplosionFx, 
+    shootEffect: crystalMuzzleFx, hitEffect: swordHitFx, despawnEffect: swordExplosionFx,
     status: StatusEffects.freezing, statusDuration: 150,
-    
-    hitEntity(b, entity, health) { 
-        this.super$hitEntity(b, entity, health); 
+
+    hitEntity(b, entity, health) {
+        this.super$hitEntity(b, entity, health);
         if (b.owner != null && b.owner.addCharge !== undefined) {
-            b.owner.addCharge(2.0); 
+            b.owner.addCharge(2.0);
         }
         if (entity != null && entity.maxHealth) {
             let maxHp = entity.maxHealth;
@@ -430,7 +406,7 @@ const SwordBulletCrystalMK1 = extend(BasicBulletType, {
             entity.damage(maxHp * 0.08 + extraDmg);
         }
         if (entity instanceof Unit && ((entity.type != null && entity.type.name === "akenewm-inventer") || entity.isGalileoJS)) {
-            entity.damage(b.damage * 3.0); 
+            entity.damage(b.damage * 3.0);
             Fx.itemTransfer.at(entity.x, entity.y, 10, Color.valueOf(CRYSTAL_MAIN));
         }
 
@@ -446,7 +422,7 @@ const SwordBulletCrystalMK1 = extend(BasicBulletType, {
                 let miniB = MiniSwordBullet.create(b.owner, b.team, sx, sy, shootAngle);
                 if (miniB != null) {
                     miniB.damage = miniDmg;
-                    miniB.lifetime = 45.0; 
+                    miniB.lifetime = 45.0;
                 }
             }
         }
@@ -464,13 +440,13 @@ const SwordBulletCrystalMK2 = extend(BasicBulletType, {
     pierce: true, pierceBuilding: true, pierceCap: 38,
     frontColor: Color.valueOf(CRYSTAL_LIGHT), backColor: Color.valueOf(CRYSTAL_MAIN),
     splashDamage: 90, splashDamageRadius: 52,
-    shootEffect: crystalMuzzleFx, hitEffect: swordHitFx, despawnEffect: swordExplosionFx, 
+    shootEffect: crystalMuzzleFx, hitEffect: swordHitFx, despawnEffect: swordExplosionFx,
     status: StatusEffects.freezing, statusDuration: 160,
-    
-    hitEntity(b, entity, health) { 
-        this.super$hitEntity(b, entity, health); 
+
+    hitEntity(b, entity, health) {
+        this.super$hitEntity(b, entity, health);
         if (b.owner != null && b.owner.addCharge !== undefined) {
-            b.owner.addCharge(2.0); 
+            b.owner.addCharge(2.0);
         }
         if (entity != null && entity.maxHealth) {
             let maxHp = entity.maxHealth;
@@ -478,7 +454,7 @@ const SwordBulletCrystalMK2 = extend(BasicBulletType, {
             entity.damage(maxHp * 0.08 + extraDmg);
         }
         if (entity instanceof Unit && ((entity.type != null && entity.type.name === "akenewm-inventer") || entity.isGalileoJS)) {
-            entity.damage(b.damage * 3.0); 
+            entity.damage(b.damage * 3.0);
             Fx.itemTransfer.at(entity.x, entity.y, 10, Color.valueOf(CRYSTAL_MAIN));
         }
 
@@ -494,7 +470,7 @@ const SwordBulletCrystalMK2 = extend(BasicBulletType, {
                 let miniB = MiniSwordBullet.create(b.owner, b.team, sx, sy, shootAngle);
                 if (miniB != null) {
                     miniB.damage = miniDmg;
-                    miniB.lifetime = 45.0; 
+                    miniB.lifetime = 45.0;
                 }
             }
         }
@@ -512,13 +488,13 @@ const SwordBulletCrystalMK3 = extend(BasicBulletType, {
     pierce: true, pierceBuilding: true, pierceCap: 45,
     frontColor: Color.valueOf(CRYSTAL_LIGHT), backColor: Color.valueOf(CRYSTAL_MAIN),
     splashDamage: 110, splashDamageRadius: 60,
-    shootEffect: crystalMuzzleFx, hitEffect: swordHitFx, despawnEffect: swordExplosionFx, 
+    shootEffect: crystalMuzzleFx, hitEffect: swordHitFx, despawnEffect: swordExplosionFx,
     status: StatusEffects.freezing, statusDuration: 180,
-    
-    hitEntity(b, entity, health) { 
-        this.super$hitEntity(b, entity, health); 
+
+    hitEntity(b, entity, health) {
+        this.super$hitEntity(b, entity, health);
         if (b.owner != null && b.owner.addCharge !== undefined) {
-            b.owner.addCharge(2.0); 
+            b.owner.addCharge(2.0);
         }
         if (entity != null && entity.maxHealth) {
             let maxHp = entity.maxHealth;
@@ -526,7 +502,7 @@ const SwordBulletCrystalMK3 = extend(BasicBulletType, {
             entity.damage(maxHp * 0.08 + extraDmg);
         }
         if (entity instanceof Unit && ((entity.type != null && entity.type.name === "akenewm-inventer") || entity.isGalileoJS)) {
-            entity.damage(b.damage * 3.0); 
+            entity.damage(b.damage * 3.0);
             Fx.itemTransfer.at(entity.x, entity.y, 10, Color.valueOf(CRYSTAL_MAIN));
         }
 
@@ -542,7 +518,7 @@ const SwordBulletCrystalMK3 = extend(BasicBulletType, {
                 let miniB = MiniSwordBullet.create(b.owner, b.team, sx, sy, shootAngle);
                 if (miniB != null) {
                     miniB.damage = miniDmg;
-                    miniB.lifetime = 45.0; 
+                    miniB.lifetime = 45.0;
                 }
             }
         }
@@ -554,22 +530,18 @@ const SwordBulletCrystalMK3 = extend(BasicBulletType, {
     }
 });
 
-// =========================================================================
-// ===================== KHỞI TẠO THÁP PHÁO TYTERYI ====================
-// =========================================================================
-
 let TyterYi = extend(ItemTurret, "tyteryi", { squareSprite: false });
 
 TyterYi.shootSound = Sounds.none;
 TyterYi.requirements = ItemStack.with(Items.copper, 400, Items.lead, 280, Items.silicon, 200, Items.titanium, 150);
 TyterYi.buildVisibility = BuildVisibility.shown;
 
-TyterYi.health = 3000; 
+TyterYi.health = 3000;
 TyterYi.size = 3;
-TyterYi.reload = 34.0;          
-TyterYi.inaccuracy = 1.0;      
+TyterYi.reload = 34.0;
+TyterYi.inaccuracy = 1.0;
 TyterYi.range = 320.0;
-TyterYi.configurable = true; 
+TyterYi.configurable = true;
 TyterYi.category = Category.turret;
 
 TyterYi.ammoTypes.put(Items.silicon, SwordBulletMK1);
@@ -580,27 +552,27 @@ TyterYi.config(java.lang.Integer, packCons2((tile, value) => {
 
 TyterYi.buildType = () => extend(ItemTurret.ItemTurretBuild, TyterYi, {
     tierState: 0, limitCheck: 0,
-    swords: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0], 
-    isReloading: false,          
-    lastShotTick: -999,          
-    internalCharge: 0.0,         
-    isAbeta: false,              
-    isTransforming: false,       
-    transitionTimer: 0.0,        
+    swords: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+    isReloading: false,
+    lastShotTick: -999,
+    internalCharge: 0.0,
+    isAbeta: false,
+    isTransforming: false,
+    transitionTimer: 0.0,
 
     getTier(){ return this.tierState == null ? 0 : this.tierState; },
-    setTier(val){ 
+    setTier(val){
         this.tierState = val;
-        if(val == 0) this.health = 3000;   
-        if(val == 1) this.health = 5400; // MK2: +80% HP
-        if(val == 2) this.health = 6600; // MK3: +120% HP
+        if(val == 0) this.health = 3000;
+        if(val == 1) this.health = 5400;
+        if(val == 2) this.health = 6600;
         this.maxHealth = this.health;
     },
 
     range(){
         let tier = this.getTier();
         if(tier == 1) return 426.7;
-        if(tier == 2) return 704.0; // MK3: +120% tầm bắn
+        if(tier == 2) return 704.0;
         return 320.0;
     },
 
@@ -618,8 +590,8 @@ TyterYi.buildType = () => extend(ItemTurret.ItemTurretBuild, TyterYi, {
             if(this.internalCharge >= 100.0) {
                 this.internalCharge = 100.0;
                 this.isTransforming = true;
-                this.transitionTimer = 120.0; // 2 giây chuẩn bị
-                spawn16Smoke(this);            
+                this.transitionTimer = 120.0;
+                spawn16Smoke(this);
                 skyLaserFx.at(this.x, this.y);
                 jigsawAssembleFx.at(this.x, this.y);
             }
@@ -700,20 +672,19 @@ TyterYi.buildType = () => extend(ItemTurret.ItemTurretBuild, TyterYi, {
             if(count > 10 && this !== firstBuild){ Call.sendMessage("[red]CẢNH BÁO QUÁ TẢI MẠNG LƯỚI: Giới hạn tối đa 10 đơn vị TyterYi trên cùng hệ thống![]"); this.kill(); return; }
         }
 
-        // Xử lý chuyển đổi trạng thái Abeta
         if(this.isTransforming) {
             this.transitionTimer -= Time.delta;
             if(Mathf.chance(0.5)) {
-                spawn16Smoke(this); 
+                spawn16Smoke(this);
             }
 
             if(this.transitionTimer <= 0) {
                 this.isTransforming = false;
                 this.isAbeta = true;
-                spawn16Smoke(this);         
+                spawn16Smoke(this);
                 skyLaserFx.at(this.x, this.y);
                 jigsawAssembleFx.at(this.x, this.y);
-                starFlashFx.at(this.x, this.y); 
+                starFlashFx.at(this.x, this.y);
             }
         }
 
@@ -724,10 +695,10 @@ TyterYi.buildType = () => extend(ItemTurret.ItemTurretBuild, TyterYi, {
             if(this.internalCharge <= 0.0) {
                 this.internalCharge = 0.0;
                 this.isAbeta = false;
-                spawn16Smoke(this);         
+                spawn16Smoke(this);
                 skyLaserFx.at(this.x, this.y);
                 jigsawAssembleFx.at(this.x, this.y);
-                starFlashFx.at(this.x, this.y); 
+                starFlashFx.at(this.x, this.y);
             }
         }
 
@@ -755,7 +726,7 @@ TyterYi.buildType = () => extend(ItemTurret.ItemTurretBuild, TyterYi, {
             if(targetIdx != -1) {
                 let baseRecharge = (this.getTier() == 2) ? (Time.delta / 22.0) : ((this.getTier() == 1) ? (Time.delta / 35.0) : (Time.delta / 45.0));
                 let rechargeSpeed = this.isAbeta ? (baseRecharge * 1.5) : baseRecharge;
-                
+
                 this.swords[targetIdx] += rechargeSpeed;
                 if(this.swords[targetIdx] >= 1.0) {
                     this.swords[targetIdx] = 1.0;
@@ -767,27 +738,27 @@ TyterYi.buildType = () => extend(ItemTurret.ItemTurretBuild, TyterYi, {
 
         let tier = this.getTier();
         if (tier == 2) {
-            this.block.reload = 14.0; 
+            this.block.reload = 14.0;
             this.inaccuracy = 1.5;
         } else if (tier == 1) {
-            this.block.reload = 34.0; 
+            this.block.reload = 34.0;
             this.inaccuracy = 0.8;
         } else {
-            this.block.reload = 34.0; 
+            this.block.reload = 34.0;
             this.inaccuracy = 1.0;
         }
 
-        this.super$updateTile(); 
+        this.super$updateTile();
     },
 
     shoot(type){
-        if(this.isTransforming) return; 
+        if(this.isTransforming) return;
 
         let currentTick = Time.time;
         let tier = this.getTier();
         let requiredCooldown = this.isAbeta ? 14 : (tier == 2 ? 17 : 26);
         if (currentTick - this.lastShotTick < requiredCooldown) {
-            return; 
+            return;
         }
 
         if(this.isReloading) {
@@ -804,7 +775,7 @@ TyterYi.buildType = () => extend(ItemTurret.ItemTurretBuild, TyterYi, {
         }
 
         if(firedIndex == -1) {
-            return; 
+            return;
         }
 
         this.lastShotTick = currentTick;
@@ -820,12 +791,12 @@ TyterYi.buildType = () => extend(ItemTurret.ItemTurretBuild, TyterYi, {
             else if(tier == 1) bulletType = SwordBulletMK2;
             else bulletType = SwordBulletMK1;
         }
-        
+
         let exactLifetime = this.range() / bulletType.speed;
-        
+
         let backAngle = this.rotation + 180.0;
         let leftAngle = this.rotation + 90.0;
-        // Vị trí bắn đạn lệch sang trái 9.0 đơn vị
+
         let spawnX = this.x + Angles.trnsx(backAngle, 12.0) + Angles.trnsx(leftAngle, 9.0);
         let spawnY = this.y + Angles.trnsy(backAngle, 12.0) + Angles.trnsy(leftAngle, 9.0);
 
@@ -833,14 +804,12 @@ TyterYi.buildType = () => extend(ItemTurret.ItemTurretBuild, TyterYi, {
         if (b != null) {
             b.lifetime = exactLifetime;
 
-            // Tỷ lệ 50% nhận 50% tốc bay (giảm vận tốc đi một nửa)
             if (Mathf.chance(0.5)) {
                 b.vel.scl(0.5);
             }
 
             swordLaunchFx.at(spawnX, spawnY, this.rotation);
 
-            // Cơ chế MK3: 4 thanh kiếm nhỏ zick-zack với quỹ đạo đa dạng phía sau
             if (tier == 2) {
                 let count = 4;
                 for (let k = 1; k <= count; k++) {
@@ -876,12 +845,12 @@ TyterYi.buildType = () => extend(ItemTurret.ItemTurretBuild, TyterYi, {
                 let nextTier = tier + 1;
                 let dialog = extend(BaseDialog, nextTier == 1 ? "TRUNG TÂM NÂNG CẤP MK2" : "TRUNG TÂM NÂNG CẤP MK3", {});
                 dialog.cont.add(nextTier == 1 ? "[#ffe066]=== NÂNG CẤP LÊN PROTOCOL MK2 ===[]" : "[#ffaa00]=== NÂNG CẤP LÊN PROTOCOL MK3 ===[]").row();
-                
+
                 dialog.cont.label(packProv(() => {
                     let core = this.team.core(); if(core == null) return "[red]CRITICAL ERROR: Mất tín hiệu với Kho Lõi Trung Tâm![]";
                     let getVal = (item) => core.items.get(Vars.content.item(item));
                     let req = nextTier == 1 ? reqTyterYiMK2 : reqTyterYiMK3;
-                    
+
                     let sil = getVal("silicon"), tit = getVal("titanium"), tho = getVal("thorium"), pla = getVal("plastanium");
                     let cSil = sil >= req.silicon ? "[#00ff88]" : "[red]";
                     let cTit = tit >= req.titanium ? "[#00ff88]" : "[red]";
@@ -902,7 +871,7 @@ TyterYi.buildType = () => extend(ItemTurret.ItemTurretBuild, TyterYi, {
                 dialog.cont.button(btnText, packRun(() => {
                     let core = this.team.core();
                     let req = nextTier == 1 ? reqTyterYiMK2 : reqTyterYiMK3;
-                    let hasMats = core != null && 
+                    let hasMats = core != null &&
                                   core.items.get(Vars.content.item("silicon")) >= req.silicon &&
                                   core.items.get(Vars.content.item("titanium")) >= req.titanium &&
                                   core.items.get(Vars.content.item("thorium")) >= req.thorium;
@@ -911,13 +880,13 @@ TyterYi.buildType = () => extend(ItemTurret.ItemTurretBuild, TyterYi, {
                     }
 
                     if(hasMats) {
-                        core.items.remove(Vars.content.item("silicon"), req.silicon);
-                        core.items.remove(Vars.content.item("titanium"), req.titanium);
-                        core.items.remove(Vars.content.item("thorium"), req.thorium);
+                        NexNet.take(core, Vars.content.item("silicon"), req.silicon);
+                        NexNet.take(core, Vars.content.item("titanium"), req.titanium);
+                        NexNet.take(core, Vars.content.item("thorium"), req.thorium);
                         if(nextTier == 2) {
-                            core.items.remove(Vars.content.item("plastanium"), req.plastanium);
+                            NexNet.take(core, Vars.content.item("plastanium"), req.plastanium);
                         }
-                        Fx.upgradeCore.at(this.x, this.y); Fx.explosion.at(this.x, this.y);
+                        NexNet.fx(Fx.upgradeCore, this.x, this.y); NexNet.fx(Fx.explosion, this.x, this.y);
                         this.configure(java.lang.Integer(nextTier)); dialog.hide(); this.deselect();
                     } else { Vars.ui.showInfo("[red]ERROR: Vật tư nguyên liệu không đủ![]"); }
                 })).size(200, 42);

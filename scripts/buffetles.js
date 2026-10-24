@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
@@ -16,10 +17,10 @@ const critEffect = new Effect(20, e => {
         let angle = i * 90 + 45;
         let len = 3 + e.fin() * 10;
         Drawf.tri(
-            e.x + Mathf.cosDeg(angle) * (len * 0.2), 
-            e.y + Mathf.sinDeg(angle) * (len * 0.2), 
-            3 * e.fout(), 
-            len, 
+            e.x + Mathf.cosDeg(angle) * (len * 0.2),
+            e.y + Mathf.sinDeg(angle) * (len * 0.2),
+            3 * e.fout(),
+            len,
             angle
         );
     }
@@ -76,9 +77,9 @@ Events.on(ContentInitEvent, () => {
     buffetlesBlock.buildType = () => extend(ItemTurret.ItemTurretBuild, buffetlesBlock, {
         critStacks: 0,
         extraCritDamage: 0.0,
-        tierState: 0, 
+        tierState: 0,
         speedBuffTimer: 0,
-        activeBullets: [], 
+        activeBullets: [],
 
         getTier(){ return this.tierState == null ? 0 : this.tierState; },
 
@@ -228,7 +229,7 @@ Events.on(ContentInitEvent, () => {
                     if (Vars.ui == null) return;
                     let dialogTitle = isEnglish() ? "Buffetles Upgrade Center" : "Trung tâm nâng cấp pháo Buffetles";
                     let dialog = extend(BaseDialog, dialogTitle, {});
-                    
+
                     if (dialog.cont != null) {
                         let reqCell = dialog.cont.add(new Table());
                         reqCell.get().add(new Label(packProv(() => {
@@ -241,7 +242,7 @@ Events.on(ContentInitEvent, () => {
 
                             let thoColor1 = currentThorium >= reqMK2.thorium ? "[green]" : "[red]";
                             let silColor1 = currentSilicon >= reqMK2.silicon ? "[green]" : "[red]";
-                            
+
                             let surColor2 = currentSurge >= reqMK2B.surgeAlloy ? "[green]" : "[red]";
                             let silColor2 = currentSilicon >= reqMK2B.silicon ? "[green]" : "[red]";
                             let phaColor2 = currentPhase >= reqMK2B.phaseFabric ? "[green]" : "[red]";
@@ -273,7 +274,7 @@ Events.on(ContentInitEvent, () => {
 
                         let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                         b1.add(isEnglish() ? "[cyan]===(MK2 - SUPER SPEED CRIT)===[]" : "[cyan]===(MK2 - BẠO KÍCH SIÊU TỐC)===[]").row();
-                        let b1Text = isEnglish() ? 
+                        let b1Text = isEnglish() ?
                             "[white]• Crit chance gain/stack: [green]+0.5%[] (base 0.1%)\n• TRUE DAMAGE: [scarlet]50% True Damage (Bypasses armor, shield, Vela mechanism)[]\n\n[lightgray]Special Ability: Accelerates crit chance stacking speed by 5x. On shoot, 20% chance to permanently gain +1% crit damage. 2% chance to gain 500% fire rate for 1s.[]" :
                             "[white]• Tăng tỉ lệ bạo kích/stack: [green]+0.5%[] (gốc 0.1%)\n• SÁT THƯƠNG CHUẨN: [scarlet]50% True Damage (Xuyên giáp, khiên, cơ chế Vela)[]\n\n[lightgray]Kỹ năng đặc biệt: Tăng tốc tích lũy tỉ lệ bạo kích gấp 5 lần. Khi bắn đạn có 20% tỉ lệ tăng vĩnh viễn +1% sát thương bạo kích. Khi bắn có 2% tỉ lệ tăng 500% tốc bắn trong 1s.[]";
                         let b1D = b1.add(b1Text);
@@ -281,16 +282,16 @@ Events.on(ContentInitEvent, () => {
                         b1.button(isEnglish() ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => {
                             let core = this.team != null ? this.team.core() : null;
                             if(core != null && core.items.get(Items.thorium) >= reqMK2.thorium && core.items.get(Items.silicon) >= reqMK2.silicon){
-                                core.items.remove(Items.thorium, reqMK2.thorium); core.items.remove(Items.silicon, reqMK2.silicon);
-                                Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(4, 4, this.x, this.y);
-                                this.configure(java.lang.Integer(1)); 
+                                NexNet.take(core, Items.thorium, reqMK2.thorium); NexNet.take(core, Items.silicon, reqMK2.silicon);
+                                NexNet.fx(Fx.upgradeCore, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(4, 4, this.x, this.y);
+                                this.configure(java.lang.Integer(1));
                                 dialog.hide(); this.deselect();
                             } else { if(Vars.ui != null) Vars.ui.showInfo(isEnglish() ? "[red]Not enough resources for MK2![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                         })).size(180, 38);
 
                         let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                         b2.add(isEnglish() ? "[purple]===(MK2B - DAMAGE MULTIPLIER)===[]" : "[purple]===(MK2B - BỘI PHÁT SÁT THƯƠNG)===[]").row();
-                        let b2Text = isEnglish() ? 
+                        let b2Text = isEnglish() ?
                             "[white]• Base bullet damage: [green]+50.0%[]\n• TRUE DAMAGE: [scarlet]50% True Damage (Bypasses armor, shield, Vela mechanism)[]\n\n[lightgray]Special Ability: Maintains maximum crit mechanism and 2% chance to gain 500% fire rate for 1s on shot.[]" :
                             "[white]• Sát thương gốc của đạn: [green]+50.0%[]\n• SÁT THƯƠNG CHUẨN: [scarlet]50% True Damage (Xuyên giáp, khiên, cơ chế Vela)[]\n\n[lightgray]Kỹ năng đặc biệt: Duy trì cơ chế bạo kích cực đại và khi bắn có 2% cơ hội tăng 500% tốc bắn trong 1s.[]";
                         let b2D = b2.add(b2Text);
@@ -298,9 +299,9 @@ Events.on(ContentInitEvent, () => {
                         b2.button(isEnglish() ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                             let core = this.team != null ? this.team.core() : null;
                             if(core != null && core.items.get(Items.surgeAlloy) >= reqMK2B.surgeAlloy && core.items.get(Items.silicon) >= reqMK2B.silicon && core.items.get(Items.phaseFabric) >= reqMK2B.phaseFabric){
-                                core.items.remove(Items.surgeAlloy, reqMK2B.surgeAlloy); core.items.remove(Items.silicon, reqMK2B.silicon); core.items.remove(Items.phaseFabric, reqMK2B.phaseFabric);
-                                Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(4, 4, this.x, this.y);
-                                this.configure(java.lang.Integer(2)); 
+                                NexNet.take(core, Items.surgeAlloy, reqMK2B.surgeAlloy); NexNet.take(core, Items.silicon, reqMK2B.silicon); NexNet.take(core, Items.phaseFabric, reqMK2B.phaseFabric);
+                                NexNet.fx(Fx.bigShockwave, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(4, 4, this.x, this.y);
+                                this.configure(java.lang.Integer(2));
                                 dialog.hide(); this.deselect();
                             } else { if(Vars.ui != null) Vars.ui.showInfo(isEnglish() ? "[red]Not enough resources for MK2B![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
                         })).size(180, 38);
@@ -328,7 +329,7 @@ Events.on(ContentInitEvent, () => {
 
                 if (currentTier == 0) {
                     title += "[yellow](MK1)[]";
-                    descStr = isEnglish() ? 
+                    descStr = isEnglish() ?
                               "[gold]⚡ BASE STATS (MK1) ⚡[]\n" +
                               "[lightgray]Starting Crit Chance:[] [orange]5.0%[]\n" +
                               "[lightgray]Stack Gain:[] [white]+0.1% / stack[]\n" +
@@ -345,10 +346,10 @@ Events.on(ContentInitEvent, () => {
                               "• Mỗi lần bắn sẽ tăng stack bạo kích.\n" +
                               "• Khi phát bắn diễn ra: 2% cơ hội tăng +500% tốc bắn trong 1 giây.\n" +
                               "• Khi tỉ lệ bạo kích đạt 100%, reset stack và cộng thêm 15% sát thương bạo kích vĩnh viễn.";
-                } 
+                }
                 else if (currentTier == 1) {
                     title += "[cyan](MK2)[]";
-                    descStr = isEnglish() ? 
+                    descStr = isEnglish() ?
                               "[cyan]⚡ BASE STATS (MK2) ⚡[]\n" +
                               "[lightgray]Damage Type:[] [scarlet]50% True Damage (Pierces Shield, Armor, Vela)[]\n" +
                               "[lightgray]Crit Stack Rate:[] [lime]+0.5% / stack (5x speed)[]\n" +
@@ -363,10 +364,10 @@ Events.on(ContentInitEvent, () => {
                               "[lime]⚡ CƠ CHẾ ĐẶC BIỆT MK2:[]\n" +
                               "• Khi bắn có [yellow]20% tỉ lệ[] tăng thêm [green]+1% sát thương bạo kích[] vĩnh viễn.\n" +
                               "• Khi phát bắn diễn ra: [gold]2% cơ hội[] kích hoạt [orange]+500% tốc bắn[] trong 1 giây.";
-                } 
+                }
                 else if (currentTier == 2) {
                     title += "[purple](MK2B)[]";
-                    descStr = isEnglish() ? 
+                    descStr = isEnglish() ?
                               "[purple]⚡ BASE STATS (MK2B) ⚡[]\n" +
                               "[lightgray]Damage Type:[] [scarlet]50% True Damage (Pierces Shield, Armor, Vela)[]\n" +
                               "[lightgray]Base Bullet DMG:[] [lime]+50.0% DMG[]\n\n" +
@@ -393,14 +394,14 @@ Events.on(ContentInitEvent, () => {
 
         config() { return java.lang.Integer(this.getTier()); },
 
-        write(write){ 
-            this.super$write(write); 
+        write(write){
+            this.super$write(write);
             write.i(this.critStacks);
             write.f(this.extraCritDamage);
             write.i(this.getTier());
         },
-        read(read, revision){ 
-            this.super$read(read, revision); 
+        read(read, revision){
+            this.super$read(read, revision);
             this.critStacks = read.i();
             this.extraCritDamage = read.f();
             this.tierState = read.i();

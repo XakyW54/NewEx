@@ -91,15 +91,11 @@ const UniversalItemUI = {
                 }
             }), Styles.defaultb, () => {
                 if (currentItem != null) {
-                    let currentCore = build.team.core();
-                    if (currentCore != null && (Vars.net.server() || !Vars.net.active())) {
-                        currentCore.items.add(currentItem, 1);
-                    }
-                    build.equipSlots[slotIndex] = 0;
+                    build.configure(java.lang.Integer(this.buildMask(build, slotIndex, 0)));
                     if (onConfigChange) onConfigChange();
                 } else {
                     this.showItemSelectionDialog(build, (selectedType) => {
-                        build.equipSlots[slotIndex] = selectedType;
+                        build.configure(java.lang.Integer(this.buildMask(build, slotIndex, selectedType)));
                         if (onConfigChange) onConfigChange();
                     });
                 }
@@ -110,7 +106,7 @@ const UniversalItemUI = {
                 let buffText = ItemStats[cleanName] ? ItemStats[cleanName].desc : "[gray]Không có chỉ số buff[]";
                 let tooltipText = "[accent]" + currentItem.localizedName + "[]\n" + buffText;
                 let hasItemInCore = core != null && core.items.has(currentItem, 1);
-                
+
                 slotBtn.addListener(new Tooltip(cons(t => {
                     t.background(Styles.black6).margin(8);
                     t.add(tooltipText);
@@ -125,6 +121,12 @@ const UniversalItemUI = {
             }
         }
         table.add(slotsTable);
+    },
+
+    buildMask(build, slotIndex, newType) {
+        let next = [build.equipSlots[0], build.equipSlots[1], build.equipSlots[2], build.equipSlots[3]];
+        next[slotIndex] = newType;
+        return (next[0] & 7) | ((next[1] & 7) << 3) | ((next[2] & 7) << 6) | ((next[3] & 7) << 9) | (1 << 15);
     },
 
     getItemBySlotType(type) {
@@ -177,11 +179,11 @@ const UniversalItemUI = {
                 let infoTable = new Table();
                 infoTable.left();
                 let statusColor = hasItem ? "[#84f491]" : "[#ff795e]";
-                
+
                 let titleLabel = infoTable.add(item.localizedName + " " + statusColor + "(Lõi: " + count + ")[]").left().growX().get();
                 titleLabel.setWrap(true);
                 infoTable.row();
-                
+
                 let buffLabel = infoTable.add(statData.desc).fontScale(0.85).left().growX().get();
                 buffLabel.setWrap(true);
 
@@ -190,9 +192,6 @@ const UniversalItemUI = {
 
                 btn.clicked(() => {
                     if (hasItem) {
-                        if (core != null && (Vars.net.server() || !Vars.net.active())) {
-                            core.items.remove(item, 1);
-                        }
                         onSelect(this.getSlotTypeByItem(item));
                         dialog.hide();
                     } else {
@@ -226,7 +225,7 @@ const mergeEnergyFx = new Effect(35, cons(e => {
     Lines.stroke(4 * e.fout());
     Lines.circle(e.x, e.y, 32 * e.fin());
     Fill.circle(e.x, e.y, 12 * e.fout());
-    
+
     for(let i = 0; i < 6; i++){
         let ang = i * 60 + Mathf.randomSeed(e.id + i, 360);
         let len = 20 * e.fin();
@@ -285,9 +284,9 @@ const state3ShockwaveFx = new Effect(30, cons(e => {
     Draw.color(Color.white, Color.cyan, fin);
     Lines.stroke(3.0 * fout);
 
-    let radiusX = fin * 30; 
-    let radiusY = fin * 70; 
-    let offset = (1.0 - fin) * 60;  
+    let radiusX = fin * 30;
+    let radiusY = fin * 70;
+    let offset = (1.0 - fin) * 60;
 
     let cx = e.x + cosA * offset;
     let cy = e.y + sinA * offset;
@@ -327,10 +326,10 @@ const chargeHitFx = new Effect(45, cons(e => {
     Draw.color(Color.cyan, Color.white, e.fout());
     Lines.stroke(5 * e.fout());
     Lines.circle(e.x, e.y, 60 * e.fin());
-    
+
     Lines.stroke(2 * e.fout());
     Lines.circle(e.x, e.y, 35 * e.fin());
-    
+
     for(let i = 0; i < 16; i++){
         let ang = i * 22.5 + Mathf.randomSeed(e.id + i, 360);
         let len = 48 * e.fin();
@@ -571,8 +570,8 @@ Events.on(ContentInitEvent, () => {
         }
 
         aetherSpiral.config(java.lang.Integer, packCons2((tile, value) => {
-            if (tile != null && tile.setSlotConfig !== undefined) {
-                tile.setSlotConfig(value);
+            if (tile != null && tile.applyEquipConfig !== undefined) {
+                tile.applyEquipConfig(value);
             }
         }));
 
@@ -611,6 +610,35 @@ Events.on(ContentInitEvent, () => {
                     if (Number(this.equipSlots[i]) === Number(type)) count++;
                 }
                 return count;
+            },
+
+            applyEquipConfig(val) {
+                let mask = Number(val);
+                if ((mask & (1 << 15)) === 0) {
+                    this.setSlotConfig(mask);
+                    return;
+                }
+                let core = this.team.core();
+                for (let i = 0; i < 4; i++) {
+                    let newType = (mask >> (i * 3)) & 7;
+                    let oldType = Number(this.equipSlots[i]);
+                    if (oldType === newType) continue;
+                    if (oldType !== 0 && core != null) {
+                        let oldItem = UniversalItemUI.getItemBySlotType(oldType);
+                        if (oldItem != null) core.items.add(oldItem, 1);
+                    }
+                    if (newType !== 0 && core != null) {
+                        let newItem = UniversalItemUI.getItemBySlotType(newType);
+                        if (newItem != null && core.items.has(newItem, 1)) {
+                            core.items.remove(newItem, 1);
+                            this.equipSlots[i] = newType;
+                        } else {
+                            this.equipSlots[i] = 0;
+                        }
+                    } else {
+                        this.equipSlots[i] = 0;
+                    }
+                }
             },
 
             setSlotConfig(val) {
@@ -707,7 +735,6 @@ Events.on(ContentInitEvent, () => {
                 table.add(topRowTable).center().padBottom(3).row();
 
                 UniversalItemUI.buildSlotUI(table, this, () => {
-                    this.configure(java.lang.Integer(this.getSlotConfig()));
                     this.deselect();
                 });
             },
@@ -910,10 +937,10 @@ Events.on(ContentInitEvent, () => {
                 let extraCount = this.getExtraBullets();
                 for(let k = 0; k < extraCount; k++){
                     let spreadAngle = (k + 1) * 8.0;
-                    
+
                     let randLeft = Mathf.chance(0.10) ? aetherDarkVoidBullet : aetherNormalBulletPool[Math.floor(Math.random() * aetherNormalBulletPool.length)];
                     let randRight = Mathf.chance(0.10) ? aetherDarkVoidBullet : aetherNormalBulletPool[Math.floor(Math.random() * aetherNormalBulletPool.length)];
-                    
+
                     this.spawnCustomBullet(randLeft, this.x, this.y, this.rotation + spreadAngle);
                     this.spawnCustomBullet(randRight, this.x, this.y, this.rotation - spreadAngle);
                 }
@@ -967,7 +994,7 @@ Events.on(ContentInitEvent, () => {
 
                 if(this.orbVisualRadius > 0.2){
                     Draw.z(Layer.bullet + 0.9);
-                    
+
                     Draw.color(Color.cyan);
                     Draw.alpha(0.6 + 0.2 * Mathf.sin(Time.time * 0.1));
                     Fill.circle(orbX, orbY, this.orbVisualRadius * 1.25);

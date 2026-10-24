@@ -6,16 +6,12 @@ const packProv = (func) => new Prov({ get: func });
 const isEn = () => Core.settings.getString("locale").startsWith("en");
 
 const reqMK2 = { titanium: 500, silicon: 300, plastanium: 0 };
-const reqMK2B = { titanium: 800, silicon: 400, plastanium: 200 }; 
+const reqMK2B = { titanium: 800, silicon: 400, plastanium: 200 };
 
-// =========================================================================
-// ==================== HIỆU ỨNG TÔNG MÀU VÀNG HOÀNG GIA ===================
-// =========================================================================
-
-const GOLD_LIGHT = "#ffffff"; 
-const GOLD_MAIN = "#ffe066";  
-const GOLD_DARK = "#ffd700";  
-const GOLD_DEEP = "#ffaa00";  
+const GOLD_LIGHT = "#ffffff";
+const GOLD_MAIN = "#ffe066";
+const GOLD_DARK = "#ffd700";
+const GOLD_DEEP = "#ffaa00";
 
 const royalMuzzleFx = new Effect(15, cons(e => {
     Draw.color(Color.valueOf(GOLD_MAIN), Color.valueOf(GOLD_DARK), e.fin());
@@ -27,7 +23,7 @@ const royalHitFx = new Effect(20, cons(e => {
     Draw.color(Color.valueOf(GOLD_LIGHT), Color.valueOf(GOLD_MAIN), e.fin());
     Lines.stroke(1.8 * e.fout());
     Lines.circle(e.x, e.y, 14.0 * e.finpow());
-    
+
     Angles.randLenVectors(e.id, 6, 20.0 * e.finpow(), (x, y) => {
         Draw.color(Color.valueOf(GOLD_MAIN));
         Fill.circle(e.x + x, e.y + y, 1.8 * e.fout());
@@ -72,11 +68,10 @@ const royalCritHitFx = new Effect(18, cons(e => {
     });
 }));
 
-// Hiệu ứng đuôi khói đứng yên hoàn toàn khi Pause game
 const royalSparkTrailFx = new Effect(25, cons(e => {
     Draw.color(Color.valueOf(GOLD_MAIN), Color.valueOf(GOLD_DEEP), e.fin());
     Draw.alpha(0.85 * e.fout());
-    
+
     let spin = e.rotation + (e.fin() * 120.0);
     let rx = e.x;
     let ry = e.y;
@@ -92,7 +87,6 @@ const royalSparkTrailFx = new Effect(25, cons(e => {
     }
 }));
 
-// 🌟 HÀM VẼ ĐẠN NGÔI SAO 4 CÁNH (Đứng yên khi Pause) 🌟
 function createRoyalStar4DrawFunction(coreColorHex, outerColorHex, starSize) {
     let coreColor = Color.valueOf(coreColorHex || GOLD_LIGHT);
     let outerColor = Color.valueOf(outerColorHex || GOLD_MAIN);
@@ -132,7 +126,6 @@ function createRoyalStar4DrawFunction(coreColorHex, outerColorHex, starSize) {
     };
 }
 
-// 🎯 HÀM TÍNH SÁT THƯƠNG PHÂN CHIA 3 VÙNG TẦM BẮN 🎯
 function applyDistanceDamageMultiplier(b, entity) {
     if (entity == null || b.owner == null) return;
 
@@ -143,33 +136,29 @@ function applyDistanceDamageMultiplier(b, entity) {
     if (dist >= maxRange * 0.4 && dist < maxRange * 0.6) {
         entity.damage(b.damage * 5.55);
         royalCritHitFx.at(entity.x, entity.y);
-    } 
+    }
     else if (dist >= maxRange * 0.6) {
         entity.damage(b.damage * 9.0);
         royalCritHitFx.at(entity.x, entity.y);
     }
 
     if (entity instanceof Unit && ((entity.type != null && entity.type.name === "akenewm-inventer") || entity.isGalileoJS)) {
-        entity.damage(b.damage * 5.0); 
+        entity.damage(b.damage * 5.0);
         Fx.itemTransfer.at(entity.x, entity.y, 10, Color.valueOf(GOLD_MAIN));
     }
 }
-
-// =========================================================================
-// ===================== ĐẠN NGÔI SAO HOÀNG GIA (MK1, MK2, MK2B) ===========
-// =========================================================================
 
 const ravendesBulletMK1 = extend(BasicBulletType, {
     speed: 20.8, damage: 75, width: 4.0, height: 16, shrinkX: 0, shrinkY: 0,
     homingPower: 0,
     frontColor: Color.valueOf(GOLD_LIGHT), backColor: Color.valueOf(GOLD_MAIN),
     splashDamage: 12, splashDamageRadius: 20,
-    shootEffect: royalMuzzleFx, hitEffect: royalHitFx, despawnEffect: royalStarExplosionFx, 
+    shootEffect: royalMuzzleFx, hitEffect: royalHitFx, despawnEffect: royalStarExplosionFx,
     status: StatusEffects.melting, statusDuration: 80,
     trailEffect: royalSparkTrailFx, trailInterval: 2, trailParam: 1.5,
-    hitEntity(b, entity, health) { 
-        this.super$hitEntity(b, entity, health); 
-        applyDistanceDamageMultiplier(b, entity); 
+    hitEntity(b, entity, health) {
+        this.super$hitEntity(b, entity, health);
+        applyDistanceDamageMultiplier(b, entity);
     },
     draw: createRoyalStar4DrawFunction(GOLD_LIGHT, GOLD_MAIN, 16.0)
 });
@@ -179,12 +168,12 @@ const ravendesBulletMK2 = extend(BasicBulletType, {
     homingPower: 0,
     frontColor: Color.valueOf(GOLD_LIGHT), backColor: Color.valueOf(GOLD_DARK),
     splashDamage: 20, splashDamageRadius: 28,
-    shootEffect: royalMuzzleFx, hitEffect: royalHitFx, despawnEffect: royalStarExplosionFx, 
+    shootEffect: royalMuzzleFx, hitEffect: royalHitFx, despawnEffect: royalStarExplosionFx,
     status: StatusEffects.melting, statusDuration: 120,
     trailEffect: royalSparkTrailFx, trailInterval: 1.5, trailParam: 2.0,
-    hitEntity(b, entity, health) { 
-        this.super$hitEntity(b, entity, health); 
-        applyDistanceDamageMultiplier(b, entity); 
+    hitEntity(b, entity, health) {
+        this.super$hitEntity(b, entity, health);
+        applyDistanceDamageMultiplier(b, entity);
     },
     draw: createRoyalStar4DrawFunction(GOLD_LIGHT, GOLD_DARK, 18.0)
 });
@@ -194,19 +183,15 @@ const ravendesBulletMK2B = extend(BasicBulletType, {
     homingPower: 0.2, homingRange: 300,
     frontColor: Color.valueOf(GOLD_LIGHT), backColor: Color.valueOf("#ff2525"),
     splashDamage: 30, splashDamageRadius: 35,
-    shootEffect: royalMuzzleFx, hitEffect: royalHitFx, despawnEffect: royalStarExplosionFx, 
+    shootEffect: royalMuzzleFx, hitEffect: royalHitFx, despawnEffect: royalStarExplosionFx,
     status: StatusEffects.melting, statusDuration: 150,
     trailEffect: royalSparkTrailFx, trailInterval: 1.0, trailParam: 2.5,
-    hitEntity(b, entity, health) { 
-        this.super$hitEntity(b, entity, health); 
-        applyDistanceDamageMultiplier(b, entity); 
+    hitEntity(b, entity, health) {
+        this.super$hitEntity(b, entity, health);
+        applyDistanceDamageMultiplier(b, entity);
     },
     draw: createRoyalStar4DrawFunction(GOLD_LIGHT, "#ff2525", 20.0)
 });
-
-// =========================================================================
-// ===================== KHỞI TẠO THÁP PHÁO RAVENDES =======================
-// =========================================================================
 
 let customShootSound = Sounds.none;
 Events.on(ClientLoadEvent, () => {
@@ -222,11 +207,10 @@ Events.on(ContentInitEvent, () => {
 
     Ravendes.shootSound = Sounds.none;
     Ravendes.configurable = true;
-    Ravendes.reload = 6.0;        // Tốc độ bắn 10 viên/giây (60 ticks / 10 = 6 ticks)
-    Ravendes.targetAir = true;    // Tự động tìm mục tiêu trên không
-    Ravendes.targetGround = true; // Tự động tìm mục tiêu dưới đất
+    Ravendes.reload = 6.0;
+    Ravendes.targetAir = true;
+    Ravendes.targetGround = true;
 
-    // Đăng ký đạn tương ứng cho các cấp độ tháp
     Ravendes.ammo(
         Items.silicon, ravendesBulletMK1,
         Items.titanium, ravendesBulletMK2,
@@ -244,11 +228,10 @@ Events.on(ContentInitEvent, () => {
         }
     }));
 
-    // Thanh Bar hiển thị hệ số sát thương theo khoảng cách
     Ravendes.addBar("dmg_bonus", new Func({
         get: function(e){
             return new Bar(
-                new Prov({ get: function(){ 
+                new Prov({ get: function(){
                     if(e.target == null) return "DMG Multiplier: 100% (Base)";
                     let maxR = e.range();
                     let dist = Mathf.dst(e.x, e.y, e.target.x, e.target.y);
@@ -259,7 +242,7 @@ Events.on(ContentInitEvent, () => {
                     return "DMG Multiplier: " + pct + "%";
                 } }),
                 new Prov({ get: function(){ return Color.orange; } }),
-                new Floatp({ get: function(){ 
+                new Floatp({ get: function(){
                     if(e.target == null) return 0.2;
                     let maxR = e.range();
                     let dist = Mathf.dst(e.x, e.y, e.target.x, e.target.y);
@@ -271,11 +254,10 @@ Events.on(ContentInitEvent, () => {
         }
     }));
 
-    // Thanh Bar hiển thị băng đạn 100 viên & trạng thái nạp đạn 3 giây
     Ravendes.addBar("ammo_count", new Func({
         get: function(e){
             return new Bar(
-                new Prov({ get: function(){ 
+                new Prov({ get: function(){
                     if(e.isReloading){
                         let secLeft = (e.reloadTimer / 60.0).toFixed(1);
                         return "Đang nạp đạn: " + secLeft + "s";
@@ -283,7 +265,7 @@ Events.on(ContentInitEvent, () => {
                     return "Băng đạn: " + e.currentAmmoCount + " / " + e.ammoCapacityCount;
                 } }),
                 new Prov({ get: function(){ return e.isReloading ? Color.scarlet : Color.gold; } }),
-                new Floatp({ get: function(){ 
+                new Floatp({ get: function(){
                     if(e.isReloading){
                         return 1.0 - (e.reloadTimer / 180.0);
                     }
@@ -294,10 +276,9 @@ Events.on(ContentInitEvent, () => {
     }));
 
     Ravendes.buildType = () => extend(ItemTurret.ItemTurretBuild, Ravendes, {
-        tierState: 0, 
+        tierState: 0,
         limitCheck: 0,
-        
-        // Cấu hình Băng đạn tự có 100 viên & Nạp đạn 3s (180 ticks)
+
         ammoCapacityCount: 100,
         currentAmmoCount: 100,
         reloadTimer: 0.0,
@@ -315,7 +296,7 @@ Events.on(ContentInitEvent, () => {
         },
 
         getTier(){ return this.tierState == null ? 0 : this.tierState; },
-        setTier(val){ 
+        setTier(val){
             this.tierState = val;
             this.paidTitanium = 0;
             this.paidSilicon = 0;
@@ -387,7 +368,7 @@ Events.on(ContentInitEvent, () => {
             Draw.color(PerfCore.color("#ff3300"));
             Lines.stroke(2.0);
             Lines.dashCircle(this.x, this.y, maxR);
-            
+
             Draw.color(PerfCore.color("#ffaa00"));
             Draw.alpha(0.08);
             Fill.circle(this.x, this.y, maxR);
@@ -402,7 +383,6 @@ Events.on(ContentInitEvent, () => {
                 if(count > 10 && this !== firstBuild){ Call.sendMessage("[red]CẢNH BÁO QUÁ TẢI MẠNG LƯỚI: Giới hạn tối đa 10 đơn vị Ravendes trên cùng hệ thống![]"); this.kill(); return; }
             }
 
-            // Tự động bơm item nội bộ tương ứng với cấp độ để ItemTurret luôn thỏa mãn điều kiện hoạt động mà không cần băng chuyền
             if(this.items != null){
                 let fillItem = Items.silicon;
                 let t = this.getTier();
@@ -414,12 +394,11 @@ Events.on(ContentInitEvent, () => {
                 }
             }
 
-            // Logic đếm ngược 3 giây (180 ticks) để tự động nạp lại băng đạn 100 viên
             if(this.isReloading){
                 this.reloadTimer -= Time.delta;
                 if(this.reloadTimer <= 0){
                     this.isReloading = false;
-                    this.currentAmmoCount = this.ammoCapacityCount; // Hồi đầy 100 viên
+                    this.currentAmmoCount = this.ammoCapacityCount;
                 }
             }
 
@@ -438,20 +417,19 @@ Events.on(ContentInitEvent, () => {
 
             let bulletType = this.peekAmmo();
             let exactLifetime = this.range() / bulletType.speed;
-            
+
             let b = bulletType.create(this, this.team, this.x, this.y, this.rotation);
             if (b != null) {
                 b.lifetime = exactLifetime;
             }
 
-            // Trừ đạn trong băng mỗi khi bắn
             if(this.currentAmmoCount > 0){
                 this.currentAmmoCount--;
             }
-            // Hết 100 viên -> Kích hoạt trạng thái nạp đạn 3 giây
+
             if(this.currentAmmoCount <= 0 && !this.isReloading){
                 this.isReloading = true;
-                this.reloadTimer = 180.0; // 3 giây = 180 ticks
+                this.reloadTimer = 180.0;
             }
         },
 
@@ -467,7 +445,7 @@ Events.on(ContentInitEvent, () => {
                     let availP = core ? core.items.get(Items.plastanium) : 0;
 
                     let dialog = extend(BaseDialog, isEn() ? "Ravendes Upgrade Center" : "Trung tâm nâng cấp pháo Ravendes", {});
-                    
+
                     let textT_MK2 = (availT >= reqMK2.titanium ? "[green]" : "[scarlet]") + availT + "[] / " + reqMK2.titanium;
                     let textS_MK2 = (availS >= reqMK2.silicon ? "[green]" : "[scarlet]") + availS + "[] / " + reqMK2.silicon;
 
@@ -564,9 +542,9 @@ Events.on(ContentInitEvent, () => {
 
         config() { return java.lang.Integer(this.getTier()); },
 
-        write(write){ 
-            this.super$write(write); 
-            write.b(this.getTier()); 
+        write(write){
+            this.super$write(write);
+            write.b(this.getTier());
             write.i(this.paidTitanium);
             write.i(this.paidSilicon);
             write.i(this.paidPlastanium);
@@ -574,9 +552,9 @@ Events.on(ContentInitEvent, () => {
             write.f(this.reloadTimer);
             write.bool(this.isReloading);
         },
-        read(read, revision){ 
-            this.super$read(read, revision); 
-            this.setTier(read.b()); 
+        read(read, revision){
+            this.super$read(read, revision);
+            this.setTier(read.b());
             this.paidTitanium = read.i();
             this.paidSilicon = read.i();
             this.paidPlastanium = read.i();

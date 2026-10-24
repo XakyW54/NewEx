@@ -5,7 +5,7 @@ const packRun = (func) => new java.lang.Runnable({ run: func });
 const isEn = () => Core.settings.getString("locale").startsWith("en");
 
 const reqMK2 = { titanium: 500, silicon: 300, plastanium: 0 };
-const reqMK2B = { titanium: 800, silicon: 400, plastanium: 200 }; 
+const reqMK2B = { titanium: 800, silicon: 400, plastanium: 200 };
 
 const fxtenytisyrExplosion = new Effect(50, cons(e => {
     Draw.z(Layer.effect + 0.1);
@@ -23,9 +23,9 @@ const fxtenytisyrExplosion = new Effect(50, cons(e => {
     Lines.circle(e.x, e.y, maxRadius);
 
     const ringColors = [
-        Color.valueOf("#ffffff"), 
-        Color.valueOf("#ffcc00"), 
-        col 
+        Color.valueOf("#ffffff"),
+        Color.valueOf("#ffcc00"),
+        col
     ];
 
     for (let i = 0; i < 3; i++) {
@@ -50,7 +50,7 @@ function createtenytisyrBullet(baseProperties) {
     let bullet = extend(BasicBulletType, {
         hitEntity(b, other, initialHealth) {
             this.super$hitEntity(b, other, initialHealth);
-            
+
             if (other != null && b != null && b.owner != null) {
                 let turret = b.owner;
                 let tier = turret.getTier ? turret.getTier() : 0;
@@ -83,7 +83,7 @@ function createtenytisyrBullet(baseProperties) {
 }
 
 const tenytisyrBullet = createtenytisyrBullet({
-    speed: 8, damage: 67.5, lifetime: 48, width: 6, height: 20, 
+    speed: 8, damage: 67.5, lifetime: 48, width: 6, height: 20,
     frontColor: Color.white, backColor: Color.valueOf("#0ee05f"),
     pierce: true, pierceCap: 3, pierceBuilding: true, knockback: 1, impact: true,
     hitEffect: Fx.disperseTrail, despawnEffect: Fx.disperseTrail,
@@ -91,7 +91,7 @@ const tenytisyrBullet = createtenytisyrBullet({
 });
 
 const tenytisyrMK2Bullet = createtenytisyrBullet({
-    speed: 10, damage: 97.5, lifetime: 45, width: 6, height: 20, 
+    speed: 10, damage: 97.5, lifetime: 45, width: 6, height: 20,
     frontColor: Color.white, backColor: Color.valueOf("#0ee05f"),
     pierce: true, pierceCap: 5, pierceBuilding: true, knockback: 1.4, impact: true,
     hitEffect: Fx.disperseTrail, despawnEffect: Fx.disperseTrail,
@@ -99,17 +99,17 @@ const tenytisyrMK2Bullet = createtenytisyrBullet({
 });
 
 const tenytisyrMK2BBullet = createtenytisyrBullet({
-    speed: 9, damage: 183.75, lifetime: 50, width: 6, height: 20, 
+    speed: 9, damage: 183.75, lifetime: 50, width: 6, height: 20,
     frontColor: Color.white, backColor: Color.valueOf("#0ee05f"),
-    trailEffect: Fx.disperseTrail, trailChance: 0.40, 
+    trailEffect: Fx.disperseTrail, trailChance: 0.40,
     trailColor: Color.valueOf("#80e0a5"),
-    pierce: false, pierceBuilding: false, knockback: 2.8, impact: true, 
+    pierce: false, pierceBuilding: false, knockback: 2.8, impact: true,
     homingPower: 0.15, homingRange: 200,
     hitEffect: Fx.disperseTrail, despawnEffect: Fx.disperseTrail
 });
 
 const tenytisyrCopperBullet = createtenytisyrBullet({
-    speed: 8, damage: 33.75, lifetime: 48, width: 6, height: 20, 
+    speed: 8, damage: 33.75, lifetime: 48, width: 6, height: 20,
     frontColor: Color.white, backColor: Color.valueOf("#0ee05f"),
     pierce: true, pierceCap: 3, pierceBuilding: true, knockback: 1, impact: true,
     hitEffect: Fx.disperseTrail, despawnEffect: Fx.disperseTrail,
@@ -117,7 +117,7 @@ const tenytisyrCopperBullet = createtenytisyrBullet({
 });
 
 const tenytisyrCopperMK2Bullet = createtenytisyrBullet({
-    speed: 10, damage: 48.75, lifetime: 45, width: 6, height: 20, 
+    speed: 10, damage: 48.75, lifetime: 45, width: 6, height: 20,
     frontColor: Color.white, backColor: Color.valueOf("#0ee05f"),
     pierce: true, pierceCap: 5, pierceBuilding: true, knockback: 1.4, impact: true,
     hitEffect: Fx.disperseTrail, despawnEffect: Fx.disperseTrail,
@@ -125,11 +125,11 @@ const tenytisyrCopperMK2Bullet = createtenytisyrBullet({
 });
 
 const tenytisyrCopperMK2BBullet = createtenytisyrBullet({
-    speed: 9, damage: 91.875, lifetime: 50, width: 6, height: 20, 
+    speed: 9, damage: 91.875, lifetime: 50, width: 6, height: 20,
     frontColor: Color.white, backColor: Color.valueOf("#0ee05f"),
-    trailEffect: Fx.disperseTrail, trailChance: 0.40, 
+    trailEffect: Fx.disperseTrail, trailChance: 0.40,
     trailColor: Color.valueOf("#80e0a5"),
-    pierce: false, pierceBuilding: false, knockback: 2.8, impact: true, 
+    pierce: false, pierceBuilding: false, knockback: 2.8, impact: true,
     homingPower: 0.15, homingRange: 200,
     hitEffect: Fx.disperseTrail, despawnEffect: Fx.disperseTrail
 });
@@ -152,13 +152,13 @@ Events.on(ContentInitEvent, cons(e => {
     );
 
     vendicum.setBars();
-    
+
     vendicum.addBar("dmg_bonus", new Func({
         get: function(e){
             return new Bar(
-                new Prov({ get: function(){ 
+                new Prov({ get: function(){
                     let totalBonus = Math.floor((e.getDmgRatio() * 5 + (e.stackDmgBonus || 0)) * 100);
-                    return "DMG: +" + totalBonus + "%"; 
+                    return "DMG: +" + totalBonus + "%";
                 } }),
                 new Prov({ get: function(){ return Color.orange; } }),
                 new Floatp({ get: function(){ return Math.min(1.0, (e.getDmgRatio() * 5 + (e.stackDmgBonus || 0)) / 14.99); } })
@@ -188,10 +188,10 @@ Events.on(ContentInitEvent, cons(e => {
     }));
 
     vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
-        energyState: 1.0, 
-        tierState: 0, 
+        energyState: 1.0,
+        tierState: 0,
         customRecoil: 0.0,
-        stackDmgBonus: 0.0, 
+        stackDmgBonus: 0.0,
 
         paidTitanium: 0,
         paidSilicon: 0,
@@ -217,7 +217,7 @@ Events.on(ContentInitEvent, cons(e => {
         },
 
         getTier(){ return this.tierState == null ? 0 : this.tierState; },
-        setTier(val){ 
+        setTier(val){
             this.tierState = val;
             this.paidTitanium = 0;
             this.paidSilicon = 0;
@@ -267,9 +267,9 @@ Events.on(ContentInitEvent, cons(e => {
 
         range(){
             let tier = this.getTier();
-            if(tier == 1) return 420; 
-            if(tier == 2) return 360; 
-            return 320;               
+            if(tier == 1) return 420;
+            if(tier == 2) return 360;
+            return 320;
         },
 
         buildConfiguration(table){
@@ -284,7 +284,7 @@ Events.on(ContentInitEvent, cons(e => {
                     let availP = core ? core.items.get(Items.plastanium) : 0;
 
                     let dialog = extend(BaseDialog, isEn() ? "tenytisyr Upgrade Center" : "Trung tâm nâng cấp pháo tenytisyr", {});
-                    
+
                     let textT_MK2 = (availT >= reqMK2.titanium ? "[green]" : "[scarlet]") + availT + "[] / " + reqMK2.titanium;
                     let textS_MK2 = (availS >= reqMK2.silicon ? "[green]" : "[scarlet]") + availS + "[] / " + reqMK2.silicon;
 
@@ -319,7 +319,7 @@ Events.on(ContentInitEvent, cons(e => {
 
                     let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                     b1.add("[cyan]===(MK2 - PENETRATION)===[]").row();
-                    let b1D = b1.add(isEn() ? 
+                    let b1D = b1.add(isEn() ?
                                     "[white]• Health: [green]+50%[] (4,500 HP)\n" +
                                     "• Range: [green]+31.25%[] (420 px)\n" +
                                     "• Base Damage: [green]+44.4%[] (97.5 DMG)\n\n" +
@@ -341,7 +341,7 @@ Events.on(ContentInitEvent, cons(e => {
 
                     let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                     b2.add("[purple]===(MK2B - HOMING)===[]").row();
-                    let b2D = b2.add(isEn() ? 
+                    let b2D = b2.add(isEn() ?
                                     "[white]• Health: [green]+33.3%[] (4,000 HP)\n" +
                                     "• Range: [green]+12.5%[] (360 px)\n" +
                                     "• Base Damage: [green]+172.2%[] (183.75 DMG)\n\n" +
@@ -383,7 +383,7 @@ Events.on(ContentInitEvent, cons(e => {
 
                 if (currentTier == 0) {
                     title += "[yellow](MK1)[]";
-                    descStr = isEn() ? 
+                    descStr = isEn() ?
                               "[gold]⚡ BASE STATS (MK1) ⚡[]\n" +
                               "[lightgray]Turret HP:[] [green]3,000[]\n" +
                               "[lightgray]Effective Range:[] [orange]320 px[]\n" +
@@ -402,10 +402,10 @@ Events.on(ContentInitEvent, cons(e => {
                               "[sky]⚡ CƠ CHẾ BẮN VÀ TÍCH LŨY:[]\n" +
                               "• Tốc độ bắn ban đầu là 500%, giảm dần 5%/giây khi liên tục bắn.\n" +
                               "• Sát thương tăng dần 50%/giây khi bắn, tối đa cộng thêm +5000% DMG.";
-                } 
+                }
                 else if (currentTier == 1) {
                     title += "[cyan](MK2)[]";
-                    descStr = isEn() ? 
+                    descStr = isEn() ?
                               "[cyan]⚡ BASE STATS (MK2) ⚡[]\n" +
                               "[lightgray]Turret HP:[] [green]4,500 [lime](+50%)[]\n" +
                               "[lightgray]Effective Range:[] [orange]420 px [lime](+31.2%)[]\n" +
@@ -422,10 +422,10 @@ Events.on(ContentInitEvent, cons(e => {
                               "[lightgray]Khả năng xuyên thấu:[] [yellow]5 mục tiêu[]\n\n" +
                               "[lime]⚡ HIỆU ỨNG ĐẶC BIỆT:[]\n" +
                               "• Khi đạt đủ mốc giới hạn tích lũy, đạn bắn ra gây thêm [green]1% Max HP[] của mục tiêu.";
-                } 
+                }
                 else if (currentTier == 2) {
                     title += "[purple](MK2B)[]";
-                    descStr = isEn() ? 
+                    descStr = isEn() ?
                               "[purple]⚡ BASE STATS (MK2B) ⚡[]\n" +
                               "[lightgray]Turret HP:[] [green]4,000 [lime](+33.3%)[]\n" +
                               "[lightgray]Effective Range:[] [orange]360 px [lime](+12.5%)[]\n" +
@@ -462,8 +462,8 @@ Events.on(ContentInitEvent, cons(e => {
                 this.energyState = Math.max(0.0, this.energyState - (0.05 * Time.delta / 60));
                 this.stackDmgBonus = Math.min(50.0, (this.stackDmgBonus || 0) + (0.50 * Time.delta / 60));
             } else {
-                if(this.energyState < 1.0){ 
-                    this.energyState = Math.min(1.0, this.energyState + (0.20 * Time.delta / 60)); 
+                if(this.energyState < 1.0){
+                    this.energyState = Math.min(1.0, this.energyState + (0.20 * Time.delta / 60));
                 }
                 if(this.stackDmgBonus > 0.0){
                     this.stackDmgBonus = Math.max(0.0, this.stackDmgBonus - (0.50 * Time.delta / 60));
@@ -474,38 +474,38 @@ Events.on(ContentInitEvent, cons(e => {
         },
 
         shoot(type){
-            this.super$shoot(type); 
+            this.super$shoot(type);
             this.customRecoil = 1.0;
         },
 
-        handleBullet(bullet, x, y, angle){ 
+        handleBullet(bullet, x, y, angle){
             if(bullet != null) {
-                bullet.damage = bullet.type.damage * (1.0 + (this.stackDmgBonus || 0)); 
+                bullet.damage = bullet.type.damage * (1.0 + (this.stackDmgBonus || 0));
                 bullet.owner = this;
             }
-            this.super$handleBullet(bullet, x, y, angle); 
+            this.super$handleBullet(bullet, x, y, angle);
         },
 
-        baseReloadSpeed(){ 
+        baseReloadSpeed(){
             let speedMult = 1.0 + ((this.energyState || 0) * 4.0);
-            return this.efficiency * speedMult; 
+            return this.efficiency * speedMult;
         },
 
         draw(){
-            let modName = this.block.name.split("-")[0]; 
+            let modName = this.block.name.split("-")[0];
             let baseRegion = PerfCore.region(this.block.basePrefix + "" + this.block.size);
             if(baseRegion.found()){
                 Draw.rect(baseRegion, this.x, this.y);
             } else {
-                this.super$draw(); 
+                this.super$draw();
             }
 
             let rad = this.rotation * Mathf.degRad;
             let cos = Math.cos(rad);
             let sin = Math.sin(rad);
 
-            let maxBarrelRecoilDistance = -5.0; 
-            let sideMoveDistance = (this.energyState || 0) * 4.0; 
+            let maxBarrelRecoilDistance = -5.0;
+            let sideMoveDistance = (this.energyState || 0) * 4.0;
 
             let barrel1Region = PerfCore.region(modName + "-tenytisyr-barrel1");
             if(barrel1Region.found()){
@@ -530,22 +530,22 @@ Events.on(ContentInitEvent, cons(e => {
             }
         },
 
-        write(write){ 
-            this.super$write(write); 
-            write.b(this.getTier()); 
+        write(write){
+            this.super$write(write);
+            write.b(this.getTier());
             write.i(this.paidTitanium);
             write.i(this.paidSilicon);
             write.i(this.paidPlastanium);
-            write.f(this.energyState != null ? this.energyState : 1.0); 
+            write.f(this.energyState != null ? this.energyState : 1.0);
             write.f(this.stackDmgBonus != null ? this.stackDmgBonus : 0.0);
         },
-        read(read, revision){ 
-            this.super$read(read, revision); 
-            this.setTier(read.b()); 
+        read(read, revision){
+            this.super$read(read, revision);
+            this.setTier(read.b());
             this.paidTitanium = read.i();
             this.paidSilicon = read.i();
             this.paidPlastanium = read.i();
-            if(revision >= 1) this.energyState = read.f(); 
+            if(revision >= 1) this.energyState = read.f();
             if(revision >= 2) this.stackDmgBonus = read.f(); else this.stackDmgBonus = 0.0;
             this.customRecoil = 0.0;
         }

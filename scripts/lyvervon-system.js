@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
 print("LYVERVON SYSTEM CORE - BREATHING HALO ENERGY UPDATE");
 
@@ -30,7 +31,7 @@ const sonicShockwaveEffect = new Effect(45, e => {
 const mk3ExplosionFX = new Effect(30, e => {
     Draw.color(lyvervonColor, Color.white, e.fin());
     Lines.stroke(3 * e.fout());
-    Lines.circle(e.x, e.y, e.fin() * 45); 
+    Lines.circle(e.x, e.y, e.fin() * 45);
     Angles.randLenVectors(e.id, 20, 45 * e.fin(), (x, y) => {
         Fill.circle(e.x + x, y + y, 3.5 * e.fout());
     });
@@ -48,7 +49,7 @@ function isEnglish() {
 
 function dashCircle(x, y, radius, color){
     Draw.color(color);
-    let segments = 24; 
+    let segments = 24;
     for(let i = 0; i < segments; i += 2){
         let a1 = i / segments * 360;
         let a2 = (i + 1) / segments * 360;
@@ -73,7 +74,6 @@ const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
-// Yêu cầu tài nguyên nâng cấp
 const reqMK2 = { copper: 120, silicon: 250 };
 const reqMK3 = { copper: 200, lead: 290 };
 
@@ -88,8 +88,8 @@ function creategreenStandard(x1, y1, x2, y2, thickness){
         let t = i / segs;
         let px = Mathf.lerp(x1, x2, t);
         let py = Mathf.lerp(y1, y2, t);
-        let maxCurve = 18; 
-        let jitter = 13;   
+        let maxCurve = 18;
+        let jitter = 13;
         let arc = Mathf.sin(t * Math.PI) * maxCurve;
         let noise = Mathf.range(jitter) * (1 - t);
 
@@ -102,7 +102,7 @@ function creategreenStandard(x1, y1, x2, y2, thickness){
 
 function creategreenChaos(x1, y1, x2, y2, thickness){
     let dst = Mathf.dst(x1, y1, x2, y2);
-    let segs = Math.max(5, Math.floor(dst / 5)); 
+    let segs = Math.max(5, Math.floor(dst / 5));
     let points = new Seq();
     points.add(new Vec2(x1, y1));
     let angle = Angles.angle(x1, y1, x2, y2);
@@ -111,11 +111,11 @@ function creategreenChaos(x1, y1, x2, y2, thickness){
         let t = i / segs;
         let px = Mathf.lerp(x1, x2, t);
         let py = Mathf.lerp(y1, y2, t);
-        
-        let maxCurve = 22 + Math.random() * 12; 
-        let jitter = 16 + Math.random() * 10;   
+
+        let maxCurve = 22 + Math.random() * 12;
+        let jitter = 16 + Math.random() * 10;
         let arc = Mathf.sin(t * Math.PI) * (Math.random() > 0.5 ? maxCurve : -maxCurve);
-        let noise = Mathf.range(jitter); 
+        let noise = Mathf.range(jitter);
 
         Tmp.v1.trns(angle + 90, arc + noise);
         points.add(new Vec2(px + Tmp.v1.x, py + Tmp.v1.y));
@@ -142,7 +142,7 @@ function findHighHpTargetsForMK2(x, y, range, excludeSeq, team, maxCount){
         }
     });
     jsList.sort((a, b) => b.health - a.health);
-    
+
     let result = new Seq();
     for(let i = 0; i < Math.min(maxCount, jsList.length); i++){
         result.add(jsList[i]);
@@ -168,16 +168,16 @@ const lyvervon = extend(PowerTurret, "lyvervon", {
         this.super$drawPlace(x, y, rotation, valid);
         Draw.color(Pal.remove); Lines.stroke(2);
         dashCircle(x * Vars.tilesize, y * Vars.tilesize, deadZone, Pal.remove);
-        Draw.reset();        
+        Draw.reset();
     }
 });
 
 lyvervon.health = 2475; lyvervon.size = 4; lyvervon.targetAir = false; lyvervon.targetGround = true;
-lyvervon.range = 260; lyvervon.reload = 6; 
+lyvervon.range = 260; lyvervon.reload = 6;
 lyvervon.shootType = lyvervonBulletSystem;
 
-lyvervon.powerCapacity = 5000;         
-lyvervon.consumePower(100 / 60);       
+lyvervon.powerCapacity = 5000;
+lyvervon.consumePower(100 / 60);
 lyvervon.configurable = true;
 
 lyvervon.config(java.lang.Integer, packCons2((tile, value) => {
@@ -186,14 +186,14 @@ lyvervon.config(java.lang.Integer, packCons2((tile, value) => {
 
 lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
     lyvervonTier: 1,
-    damageBonus: 0,      
-    mk3ChargePoints: 0,  
+    damageBonus: 0,
+    mk3ChargePoints: 0,
     mk3Timer: 0,
-    zoomAnimation: 0, 
+    zoomAnimation: 0,
 
     downxOffset: 0,
     wingsOffset: 0,
-    
+
     placed(){
         this.super$placed();
         this.setTier(this.getTier());
@@ -207,13 +207,13 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
         this.lyvervonTier = val;
         if(val == 1){
             this.health = 2475; this.block.reload = 6; this.block.range = 260;
-            this.block.consPower.usage = 100 / 60;   
+            this.block.consPower.usage = 100 / 60;
         } else if(val == 2){
             this.health = 4295; this.block.reload = 6; this.block.range = 303.3;
-            this.block.consPower.usage = 1200 / 60;  
+            this.block.consPower.usage = 1200 / 60;
         } else if(val == 3){
             this.health = 5241; this.block.reload = 6; this.block.range = 329.3;
-            this.block.consPower.usage = 850 / 60;   
+            this.block.consPower.usage = 850 / 60;
         }
     },
     getTier() { return this.lyvervonTier !== undefined ? this.lyvervonTier : 1; },
@@ -237,11 +237,11 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
             creategreenStandard(this.x, this.y, endX, endY, 2.8);
             Fx.hitLancer.at(endX, endY, greenColor);
             Effect.shake(2, 2, endX, endY);
-        } 
+        }
         else if(tier == 2){
             let baseDamage = 408;
             let finalDamage = baseDamage * (1 + this.damageBonus / 100);
-            
+
             let thicknessProgress = this.damageBonus / 1499;
             let greenThickness = 2.8 * (1 + (thicknessProgress * 0.5));
             let rangeSub = 180;
@@ -252,7 +252,7 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
             if(target && !target.dead){
                 let turretId = this.id;
                 let currentSubBonus = turretChargeMap.containsKey(turretId) ? turretChargeMap.get(turretId) : 0;
-                let subDamage = finalDamage * 0.7; 
+                let subDamage = finalDamage * 0.7;
                 let subThickness = 2.5 + (currentSubBonus / 200);
 
                 let excludeList = new Seq();
@@ -273,17 +273,17 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                 if(targetB != null){
                     excludeList.add(targetB); applySubCharge(targetB);
                     creategreenStandard(target.x, target.y, targetB.x, targetB.y, subThickness);
-                    
+
                     let targetC = findSubTarget(targetB.x, targetB.y, rangeSub, excludeList, this.team);
                     if(targetC != null){
                         excludeList.add(targetC); applySubCharge(targetC);
                         creategreenStandard(targetB.x, targetB.y, targetC.x, targetC.y, subThickness);
-                        
+
                         let targetD = findSubTarget(targetC.x, targetC.y, rangeSub, excludeList, this.team);
                         if(targetD != null){
                             excludeList.add(targetD); applySubCharge(targetD);
                             creategreenStandard(targetC.x, targetC.y, targetD.x, targetD.y, subThickness);
-                            
+
                             let targetE = findSubTarget(targetD.x, targetD.y, rangeSub, excludeList, this.team);
                             if(targetE != null){
                                 excludeList.add(targetE); applySubCharge(targetE);
@@ -304,7 +304,7 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
             Fx.hitLancer.at(endX, endY, greenColor);
             let shakeIntensity = 2 + (finalDamage / 500);
             Effect.shake(shakeIntensity, shakeIntensity, endX, endY);
-        } 
+        }
         else if(tier == 3){
             let thicknessProgressMK3 = this.damageBonus / 1499;
             let greenThicknessMK3 = 3.5 * (1 + (thicknessProgressMK3 * 0.5));
@@ -325,20 +325,20 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
                 let dialogTitle = en ? "Lyvervon Upgrade Center" : "Trung tâm nâng cấp pháo Lyvervon";
                 let dialog = extend(BaseDialog, dialogTitle, {});
-                
+
                 let reqCell = dialog.cont.label(packProv(() => {
                     let core = this.team.core();
                     if(core == null) return en ? "[red]Team Core Not Found![]" : "[red]Không tìm thấy Lõi Đội![]";
                     let currentCopper = core.items.get(Items.copper);
                     let currentSilicon = core.items.get(Items.silicon);
                     let currentLead = core.items.get(Items.lead);
-                    
+
                     let copColor1 = currentCopper >= reqMK2.copper ? "[green]" : "[red]";
                     let silColor1 = currentSilicon >= reqMK2.silicon ? "[green]" : "[red]";
-                    
-                    let copColor2 = currentCopper >= reqMK3.copper ? "[green]" : "[red]"; 
+
+                    let copColor2 = currentCopper >= reqMK3.copper ? "[green]" : "[red]";
                     let leaColor2 = currentLead >= reqMK3.lead ? "[green]" : "[red]";
-                    
+
                     if (en) {
                         return "[yellow]CORE RESOURCE REQUIREMENTS:[]\n" +
                                "[cyan]MK2 Branch:[]\n" +
@@ -357,7 +357,7 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                                " • Chì: " + leaColor2 + currentLead + "[] / " + reqMK3.lead;
                     }
                 }));
-                
+
                 reqCell.width(360).get().setWrap(true);
                 reqCell.get().setAlignment(Align.left);
                 dialog.cont.row(); dialog.cont.add().height(10).row();
@@ -380,9 +380,9 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                 b1.button(en ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.copper) >= reqMK2.copper && core.items.get(Items.silicon) >= reqMK2.silicon){
-                        core.items.remove(Items.copper, reqMK2.copper); core.items.remove(Items.silicon, reqMK2.silicon);
-                        Fx.upgradeCore.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
-                        this.configure(java.lang.Integer(2)); 
+                        NexNet.take(core, Items.copper, reqMK2.copper); NexNet.take(core, Items.silicon, reqMK2.silicon);
+                        NexNet.fx(Fx.upgradeCore, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
+                        this.configure(java.lang.Integer(2));
                         dialog.hide(); this.deselect();
                     } else { Vars.ui.showInfo(en ? "[red]Not enough resources for MK2![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                 })).size(180, 38);
@@ -403,9 +403,9 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                 b2.button(en ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.copper) >= reqMK3.copper && core.items.get(Items.lead) >= reqMK3.lead){
-                        core.items.remove(Items.copper, reqMK3.copper); core.items.remove(Items.lead, reqMK3.lead);
-                        Fx.bigShockwave.at(this.x, this.y); Effect.shake(6, 6, this.x, this.y);
-                        this.configure(java.lang.Integer(3)); 
+                        NexNet.take(core, Items.copper, reqMK3.copper); NexNet.take(core, Items.lead, reqMK3.lead);
+                        NexNet.fx(Fx.bigShockwave, this.x, this.y); NexNet.shake(6, 6, this.x, this.y);
+                        this.configure(java.lang.Integer(3));
                         dialog.hide(); this.deselect();
                     } else { Vars.ui.showInfo(en ? "[red]Not enough resources for MK2B![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
                 })).size(180, 38);
@@ -455,7 +455,7 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                           "[sky]⚡ CƠ CHẾ HOẠT ĐỘNG:[]\n" +
                           "• [lightgray]Khóa mục tiêu:[] Chỉ tấn công kẻ địch [lightgray]Mặt Đất[] nằm ngoài vùng mù.\n" +
                           "• [lightgray]Lõi năng lượng:[] Trữ lượng pin nội bộ tối đa 5,000 đơn vị.";
-            } 
+            }
             else if (currentTier == 2) {
                 title += en ? "[cyan]STANDARD CONFIG (MK2)[]" : "[cyan]CẤU HÌNH TIÊU CHUẨN (MK2)[]";
                 descStr = en ?
@@ -481,7 +481,7 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                           "• [lightgray]Tăng tiến hỏa lực:[] Duy trì bắn liên tục tăng hỏa lực lên đến [yellow]+1499%[] và phình to tia sét [orange]+150%[].\n" +
                           "• [lightgray]Nảy chuỗi:[] Tự động nối mạch qua 5 mục tiêu liên tiếp trong bán kính [lightgray]180 pixel[].\n" +
                           "• [lightgray]Xung Sonic:[] Tia phụ gây 70% DMG. Đạt 100 điểm kích nổ sóng chấn phóng thêm 5 tia phụ ghim vào kẻ địch máu cao.";
-            } 
+            }
             else if (currentTier == 3) {
                 title += en ? "[purple]CHAOS EXPLOSION VARIANT (MK2B)[]" : "[purple]BIẾN THỂ KÍCH NỔ CHAOS (MK2B)[]";
                 descStr = en ?
@@ -547,7 +547,7 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
 
         if(this.isShooting && this.target != null && !this.target.dead){
             this.zoomAnimation = Math.min(1, this.zoomAnimation + Time.delta / 10);
-            
+
             if(tier == 2 || tier == 3){
                 this.damageBonus += Time.delta / 60 * 60;
                 if(this.damageBonus >= 1499){
@@ -572,10 +572,10 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                 this.mk3Timer = 0;
 
                 if(this.mk3ChargePoints >= 5){
-                    this.mk3ChargePoints = 0; 
+                    this.mk3ChargePoints = 0;
                     let mainDamageMK3 = 612;
                     let explosionDamage = mainDamageMK3 * 2.5;
-                    
+
                     let targetX = this.target.x; let targetY = this.target.y;
                     let turretX = this.x; let turretY = this.y;
 
@@ -583,16 +583,16 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                     mk3ExplosionFX.at(targetX, targetY);
                     Effect.shake(5, 5, targetX, targetY);
 
-                    let lits = 13; 
+                    let lits = 13;
                     for(let i = 0; i < lits; i++){
                         let randAngle = Math.random() * 360;
-                        let randDist = 15 + Math.random() * 75; 
+                        let randDist = 15 + Math.random() * 75;
                         let extX = targetX + Angles.trnsx(randAngle, randDist);
                         let extY = targetY + Angles.trnsy(randAngle, randDist);
 
                         let subEnemy = Units.closestTarget(this.team, extX, extY, 45, u => !u.dead && !u.type.flying, b => !b.dead);
                         if(subEnemy != null){
-                            subEnemy.damage(explosionDamage * 0.4); 
+                            subEnemy.damage(explosionDamage * 0.4);
                             creategreenChaos(targetX, targetY, subEnemy.x, subEnemy.y, 2.5);
                             Fx.hitLancer.at(subEnemy.x, subEnemy.y, lyvervonColor);
                         } else {
@@ -606,13 +606,13 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
 
                     for(let i = 0; i < lits; i++){
                         let randAngle = Math.random() * 360;
-                        let randDist = 15 + Math.random() * 75; 
+                        let randDist = 15 + Math.random() * 75;
                         let extX = turretX + Angles.trnsx(randAngle, randDist);
                         let extY = turretY + Angles.trnsy(randAngle, randDist);
 
                         let subEnemy = Units.closestTarget(this.team, extX, extY, 45, u => !u.dead && !u.type.flying && Mathf.dst(this.x, this.y, u.x, u.y) >= deadZone, b => !b.dead);
                         if(subEnemy != null){
-                            subEnemy.damage(explosionDamage * 0.4); 
+                            subEnemy.damage(explosionDamage * 0.4);
                             creategreenChaos(turretX, turretY, subEnemy.x, subEnemy.y, 2.5);
                             Fx.hitLancer.at(subEnemy.x, subEnemy.y, lyvervonColor);
                         } else {
@@ -627,9 +627,9 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
     draw(){
         let baseRegion = PerfCore.region(this.block.name + "-base");
         if(!baseRegion.found) baseRegion = PerfCore.region("lyvervon-base");
-        if(!baseRegion.found) baseRegion = PerfCore.region("block-" + this.block.size); 
+        if(!baseRegion.found) baseRegion = PerfCore.region("block-" + this.block.size);
 
-        Draw.z(Layer.turret - 1); 
+        Draw.z(Layer.turret - 1);
         if(baseRegion.found){
             Draw.rect(baseRegion, this.x, this.y);
         }
@@ -638,13 +638,13 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
         let tier = this.getTier();
 
         if(this.zoomAnimation > 0){
-            Draw.z(Layer.turret + 1); 
+            Draw.z(Layer.turret + 1);
 
             if(this.isShooting && this.target != null && !this.target.dead){
-                if(Mathf.chance(0.12)){ 
+                if(Mathf.chance(0.12)){
                     Fx.smoke.at(this.x + Mathf.range(2), this.y + Mathf.range(2));
                 }
-                
+
                 let fxColor = (tier == 3) ? lyvervonColor : greenColor;
                 let currentZoom = Interp.pow3Out.apply(0, 1, this.zoomAnimation);
                 let pulse = Vars.state.isPaused() ? 0 : Mathf.absin(Time.time, 4, 3.5);
@@ -669,10 +669,10 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
 
             let ballColor = (tier == 3) ? lyvervonColor : greenColor;
             let currentBallSize = Interp.pow3Out.apply(0, 1, this.zoomAnimation);
-            
-            let baseRadius = 2.0 * currentBallSize; 
+
+            let baseRadius = 2.0 * currentBallSize;
             if(this.isShooting && this.zoomAnimation >= 0.9 && !Vars.state.isPaused()){
-                baseRadius += Mathf.absin(Time.time, 3, 0.4); 
+                baseRadius += Mathf.absin(Time.time, 3, 0.4);
             }
 
             Draw.color(ballColor);
@@ -684,12 +684,12 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
 
         if((tier == 2 || tier == 3) && this.zoomAnimation > 0){
             let hexColor = (tier == 2) ? Color.valueOf("#ffd84d") : lyvervonColor;
-            
+
             let currentZoomSize = Interp.pow3Out.apply(0, 1, this.zoomAnimation);
             let radius = (12 + Mathf.absin(Time.time, 4, 1.5)) * currentZoomSize;
             let stroke = 1.6 * currentZoomSize;
-            let rotationAngle = Vars.state.isPaused() ? this.id * 15 : Time.time * 2.2; 
-            
+            let rotationAngle = Vars.state.isPaused() ? this.id * 15 : Time.time * 2.2;
+
             Draw.z(Layer.effect + 5);
             drawPolyHex(this.x, this.y, radius, stroke, rotationAngle, hexColor);
             Draw.reset();

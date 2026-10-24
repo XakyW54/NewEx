@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
 print("FLAZERD - MK2B MILESTONE SUB-LASER SYSTEM LOADED");
 
@@ -7,20 +8,20 @@ function isVietnamese() {
     return loc != null && loc.toString().toLowerCase().startsWith("vi");
 }
 
-const deadZone = 40; 
-const laserColor = Color.valueOf("bf7fff"); 
-const particleColor = Color.valueOf("e8bfff"); 
-const greenLaserColor = Color.valueOf("33ff55"); 
+const deadZone = 40;
+const laserColor = Color.valueOf("bf7fff");
+const particleColor = Color.valueOf("e8bfff");
+const greenLaserColor = Color.valueOf("33ff55");
 
 const reqMK2 = { copper: 400, graphite: 400 };
 const reqMK3 = { lead: 450, silicon: 570 };
 
-const turretTierMap = new ObjectMap();         
-const turretChargeMap = new ObjectMap();       
-const turretMilestoneMap = new ObjectMap();    
+const turretTierMap = new ObjectMap();
+const turretChargeMap = new ObjectMap();
+const turretMilestoneMap = new ObjectMap();
 const turretCountdownMap = new ObjectMap();
 
-const subTargetsMap = new ObjectMap(); 
+const subTargetsMap = new ObjectMap();
 
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
@@ -52,7 +53,7 @@ function drawLaserRing(cx, cy, radiusX, radiusY, laserAngle, strokeWidth, color)
 
 function drawCurvedSubLaser(startX, startY, endX, endY, laserAngle, thickness, sideSign) {
     let dist = Mathf.dst(startX, startY, endX, endY);
-    let steps = Math.floor(dist / 8); 
+    let steps = Math.floor(dist / 8);
     if(steps < 2) return;
 
     let lastX = startX;
@@ -91,7 +92,7 @@ const flazerdLaserBullet = extend(BulletType, {
 
     update(b){
         if(!b || !b.owner) return;
-        
+
         let turretId = b.owner.id;
         let range = 260;
         let centerX = b.owner.x;
@@ -109,10 +110,10 @@ const flazerdLaserBullet = extend(BulletType, {
         let subTargetsList = subTargetsMap.get(turretId);
 
         let baseDamage = 33;
-        if(tier == 2) baseDamage = 33 * 3.5; 
-        else if(tier == 3) baseDamage = 33 * 6.0; 
+        if(tier == 2) baseDamage = 33 * 3.5;
+        else if(tier == 3) baseDamage = 33 * 6.0;
 
-        let damageBonusPercent = currentPoints * 0.02; 
+        let damageBonusPercent = currentPoints * 0.02;
         let currentTickDamage = baseDamage * (1 + damageBonusPercent);
 
         let mainTarget = null;
@@ -137,7 +138,7 @@ const flazerdLaserBullet = extend(BulletType, {
 
             if(currentPoints >= 200){
                 if(countdown == -1){
-                    turretCountdownMap.put(turretId, 300); 
+                    turretCountdownMap.put(turretId, 300);
                 } else if(countdown > 0){
                     countdown--;
                     turretCountdownMap.put(turretId, countdown);
@@ -149,19 +150,19 @@ const flazerdLaserBullet = extend(BulletType, {
                     subTargetsList.clear();
                 }
             } else {
-                let chargeSpeedMultiplier = (1 + Math.pow(currentPoints / 100, 2)) * 1.0; 
-                let speedBonus = (tier == 2) ? 1.5 : 1.0; 
-                
+                let chargeSpeedMultiplier = (1 + Math.pow(currentPoints / 100, 2)) * 1.0;
+                let speedBonus = (tier == 2) ? 1.5 : 1.0;
+
                 currentPoints += (1 / 60) * chargeSpeedMultiplier * speedBonus;
                 if(currentPoints >= 200) {
                     currentPoints = 200;
-                    turretCountdownMap.put(turretId, 300); 
+                    turretCountdownMap.put(turretId, 300);
                 }
                 turretChargeMap.put(turretId, currentPoints);
             }
 
             if(tier == 3) {
-                subTargetsList.clear();  
+                subTargetsList.clear();
 
                 let activeMilestones = 0;
                 let milestoneLimits = [20, 40, 60, 80, 100, 120, 140, 160, 180, 200];
@@ -215,7 +216,7 @@ const flazerdLaserBullet = extend(BulletType, {
 
             turretCountdownMap.put(turretId, -1);
             if(currentPoints > 0){
-                currentPoints -= (3 / 60); 
+                currentPoints -= (3 / 60);
                 if(currentPoints < 0) currentPoints = 0;
                 turretChargeMap.put(turretId, currentPoints);
                 if(currentPoints == 0) turretMilestoneMap.put(turretId, 0);
@@ -228,7 +229,7 @@ const flazerdLaserBullet = extend(BulletType, {
 
         let turretId = b.owner.id;
         let tier = turretTierMap.containsKey(turretId) ? turretTierMap.get(turretId) : 1;
-        let startX = b.owner.x; 
+        let startX = b.owner.x;
         let startY = b.owner.y;
         let endX = b.data.lastX; let endY = b.data.lastY;
         let dist = Mathf.dst(startX, startY, endX, endY);
@@ -237,8 +238,8 @@ const flazerdLaserBullet = extend(BulletType, {
         let currentPoints = turretChargeMap.containsKey(turretId) ? turretChargeMap.get(turretId) : 0;
         let countdown = turretCountdownMap.containsKey(turretId) ? turretCountdownMap.get(turretId) : -1;
 
-        let damageBonusPercent = currentPoints * 0.02; 
-        let thicknessScale = 1.0 + (damageBonusPercent * 0.5); 
+        let damageBonusPercent = currentPoints * 0.02;
+        let thicknessScale = 1.0 + (damageBonusPercent * 0.5);
 
         Draw.color(laserColor); Lines.stroke(3.6 * thicknessScale); Lines.line(startX, startY, endX, endY);
         Draw.color(Color.white); Lines.stroke(1.2 * thicknessScale); Lines.line(startX, startY, endX, endY);
@@ -246,8 +247,8 @@ const flazerdLaserBullet = extend(BulletType, {
         if (tier == 2 && currentPoints > 2) {
             Draw.color(particleColor);
             let subThickness = 0.8 * thicknessScale;
-            drawCurvedSubLaser(startX, startY, endX, endY, laserAngle, subThickness, 1.0);  
-            drawCurvedSubLaser(startX, startY, endX, endY, laserAngle, subThickness, -1.0); 
+            drawCurvedSubLaser(startX, startY, endX, endY, laserAngle, subThickness, 1.0);
+            drawCurvedSubLaser(startX, startY, endX, endY, laserAngle, subThickness, -1.0);
         }
 
         if (tier == 3) {
@@ -255,11 +256,11 @@ const flazerdLaserBullet = extend(BulletType, {
             if(subTargetsList && subTargetsList.size() > 0){
                 for(let m = 0; m < subTargetsList.size(); m++){
                     let node = subTargetsList.get(m);
-                    
+
                     Draw.color(greenLaserColor);
                     Lines.stroke(1.8 * thicknessScale);
                     Lines.line(endX, endY, node.x, node.y);
-                    
+
                     Draw.color(Color.white);
                     Lines.stroke(0.5 * thicknessScale);
                     Lines.line(endX, endY, node.x, node.y);
@@ -269,14 +270,14 @@ const flazerdLaserBullet = extend(BulletType, {
 
         if(currentPoints > 2) {
             let scaleFactor = 1 + (currentPoints / 240);
-            let distortionFactor = Math.max(0.05, 1.0 - (currentPoints / 200.0)); 
-            
+            let distortionFactor = Math.max(0.05, 1.0 - (currentPoints / 200.0));
+
             let ringCount = 3;
             for(let r = 0; r < ringCount; r++){
                 let ringProgress = ((Time.time * 0.8) + (r * (dist / ringCount))) % dist;
                 let rt = ringProgress / dist;
                 let rx = Mathf.lerp(startX, endX, rt); let ry = Mathf.lerp(startY, endY, rt);
-                
+
                 let rxSize = 1.5 * scaleFactor;
                 let rySize = 4.0 * scaleFactor * distortionFactor;
                 let strokeWidth = 0.4 * Mathf.sin(rt * Math.PI) * thicknessScale;
@@ -286,13 +287,13 @@ const flazerdLaserBullet = extend(BulletType, {
         }
 
         if(currentPoints > 0) {
-            Draw.z(Layer.effect + 10); 
-            Draw.color(Color.white); 
-            
+            Draw.z(Layer.effect + 10);
+            Draw.color(Color.white);
+
             let font = Fonts.outline;
-            font.getData().setScale(0.12); 
-            let displayString = Math.floor(currentPoints) + "%"; 
-            
+            font.getData().setScale(0.12);
+            let displayString = Math.floor(currentPoints) + "%";
+
             if(countdown > 0) {
                 if (Math.floor(Time.time / 6) % 2 == 0) {
                     displayString = "[scarlet]" + Math.ceil(countdown / 60) + "s[]";
@@ -300,17 +301,17 @@ const flazerdLaserBullet = extend(BulletType, {
                     displayString = "[white]" + Math.ceil(countdown / 60) + "s[]";
                 }
             }
-            
+
             font.draw(displayString, b.owner.x, b.owner.y, Align.center);
-            font.getData().setScale(1.0); 
+            font.getData().setScale(1.0);
         }
         Draw.reset();
     }
 });
 
 flazerdLaserBullet.speed = 0;
-flazerdLaserBullet.damage = 33; 
-flazerdLaserBullet.lifetime = 12; 
+flazerdLaserBullet.damage = 33;
+flazerdLaserBullet.lifetime = 12;
 flazerdLaserBullet.collides = false;
 
 const flazerd = extend(PowerTurret, "flazerd", {
@@ -326,7 +327,7 @@ const flazerd = extend(PowerTurret, "flazerd", {
         this.super$drawPlace(x, y, rotation, valid);
         Draw.color(Pal.remove); Lines.stroke(2);
         dashCircle(x * Vars.tilesize, y * Vars.tilesize, deadZone, Pal.remove);
-        Draw.reset();        
+        Draw.reset();
     }
 });
 
@@ -335,9 +336,9 @@ flazerd.size = 4;
 flazerd.targetAir = false;
 flazerd.targetGround = true;
 flazerd.range = 260;
-flazerd.reload = 10; 
+flazerd.reload = 10;
 flazerd.shootType = flazerdLaserBullet;
-flazerd.recoil = 0; 
+flazerd.recoil = 0;
 flazerd.consumePower(22);
 flazerd.configurable = true;
 flazerd.canControl = false;
@@ -346,7 +347,7 @@ flazerd.config(java.lang.Integer, packCons2((tile, value) => {
     if(tile != null && value != null) {
         let turretId = tile.id;
         let valInt = (typeof value.intValue === "function") ? value.intValue() : Number(value);
-        
+
         turretTierMap.put(turretId, valInt);
         if(valInt == 1) tile.health = 3750;
         else if(valInt == 2) tile.health = 5707;
@@ -355,7 +356,7 @@ flazerd.config(java.lang.Integer, packCons2((tile, value) => {
 }));
 
 flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
-    wingsOffset: 0, 
+    wingsOffset: 0,
 
     canControl() { return false; },
 
@@ -406,7 +407,7 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
             Draw.rect(flazerd.downxRegion, this.x, this.y, this.rotation);
         }
 
-        let wingBackOffset = -4.0 * this.wingsOffset; 
+        let wingBackOffset = -4.0 * this.wingsOffset;
         let combatSideMove = 4.0 * this.wingsOffset;
 
         if (flazerd.a1Region && flazerd.a1Region.found()) {
@@ -435,7 +436,7 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
                 let dialogTitle = vi ? "Trung tâm nâng cấp pháo Flazerd" : "Flazerd Turret Upgrade Center";
                 let dialog = extend(BaseDialog, dialogTitle, {});
-                
+
                 let reqCell = dialog.cont.label(packProv(() => {
                     let core = this.team.core();
                     if(core == null) return vi ? "[red]Không tìm thấy Lõi Đội![]" : "[red]Team Core not found![]";
@@ -443,13 +444,13 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
                     let currentgraphite = core.items.get(Items.graphite);
                     let currentlead = core.items.get(Items.lead);
                     let currentsilicon = core.items.get(Items.silicon);
-                    
+
                     let copColor = currentcopper >= reqMK2.copper ? "[green]" : "[red]";
                     let graColor = currentgraphite >= reqMK2.graphite ? "[green]" : "[red]";
-                    
+
                     let leaColor = currentlead >= reqMK3.lead ? "[green]" : "[red]";
                     let silColor = currentsilicon >= reqMK3.silicon ? "[green]" : "[red]";
-                    
+
                     if(vi) {
                         return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
                                "[cyan]Nhánh MK2:[]\n" +
@@ -468,7 +469,7 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
                                " • Silicon: " + silColor + currentsilicon + "[] / " + reqMK3.silicon;
                     }
                 }));
-                
+
                 reqCell.width(360).get().setWrap(true);
                 reqCell.get().setAlignment(Align.left);
                 dialog.cont.row(); dialog.cont.add().height(10).row();
@@ -489,16 +490,16 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
                                    " [white]• Activates dual curved sine-wave sub-lasers along the main axis.";
                 let b1D = b1.add(b1Text);
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
-                
+
                 let b1BtnText = vi ? "[green]KÍCH HOẠT MK2[]" : "[green]ACTIVATE MK2[]";
                 b1.button(b1BtnText, packRun(() => {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.copper) >= reqMK2.copper && core.items.get(Items.graphite) >= reqMK2.graphite){
-                        core.items.remove(Items.copper, reqMK2.copper); core.items.remove(Items.graphite, reqMK2.graphite);
-                        Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
+                        NexNet.take(core, Items.copper, reqMK2.copper); NexNet.take(core, Items.graphite, reqMK2.graphite);
+                        NexNet.fx(Fx.upgradeCore, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
                         this.configure(new java.lang.Integer(2)); dialog.hide(); this.deselect();
-                    } else { 
-                        Vars.ui.showInfoToast(vi ? "[red]Không đủ tài nguyên cho nhánh MK2![]" : "[red]Not enough resources for MK2 path![]", 2); 
+                    } else {
+                        Vars.ui.showInfoToast(vi ? "[red]Không đủ tài nguyên cho nhánh MK2![]" : "[red]Not enough resources for MK2 path![]", 2);
                     }
                 })).size(180, 38);
 
@@ -516,16 +517,16 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
                                    " [white]• Each sub-laser deals [red]exactly 50%[] DMG of the main laser.";
                 let b2D = b2.add(b2Text);
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
-                
+
                 let b2BtnText = vi ? "[orange]KÍCH HOẠT MK2B[]" : "[orange]ACTIVATE MK2B[]";
                 b2.button(b2BtnText, packRun(() => {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.lead) >= reqMK3.lead && core.items.get(Items.silicon) >= reqMK3.silicon){
-                        core.items.remove(Items.lead, reqMK3.lead); core.items.remove(Items.silicon, reqMK3.silicon);
-                        Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
+                        NexNet.take(core, Items.lead, reqMK3.lead); NexNet.take(core, Items.silicon, reqMK3.silicon);
+                        NexNet.fx(Fx.bigShockwave, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
                         this.configure(new java.lang.Integer(3)); dialog.hide(); this.deselect();
-                    } else { 
-                        Vars.ui.showInfoToast(vi ? "[red]Không đủ tài nguyên cho nhánh MK2B![]" : "[red]Not enough resources for MK2B path![]", 2); 
+                    } else {
+                        Vars.ui.showInfoToast(vi ? "[red]Không đủ tài nguyên cho nhánh MK2B![]" : "[red]Not enough resources for MK2B path![]", 2);
                     }
                 })).size(180, 38);
 
@@ -567,7 +568,7 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
                                "• [lightgray]Target Emission:[] Fires a continuous single laser beam locking onto ground targets.\n" +
                                "• [lightgray]Holyder Display:[] Digital UI displaying real-time core charge %.\n" +
                                "• [lightgray]Energy Accumulation:[] Charge limit expanded up to [yellow]200%[] to continuously scale total damage.";
-            } 
+            }
             else if (currentTier == 2) {
                 title += "[cyan](MK2)[]";
                 descStr = vi ? "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
@@ -588,7 +589,7 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
                                "• [lightgray]Firepower Impulse:[] Adds [red]+2% total damage[] directly per 1% stored charge.\n" +
                                "• [lightgray]Laser Helix:[] Activates 2 sub-wave lasers curving symmetrically along the main axis.\n" +
                                "• [lightgray]Safe Overload Discharge:[] Automatically counts down and resets charge to 0 after holding max energy.";
-            } 
+            }
             else if (currentTier == 3) {
                 title += "[purple](MK2B)[]";
                 descStr = vi ? "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +

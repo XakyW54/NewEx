@@ -1,7 +1,8 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
-const laserAimColor = Color.valueOf("#ff8888"); 
-const secondaryLaserAimColor = Color.valueOf("#ffaa00"); 
-const bulletColor = Color.valueOf("#00ffff");   
+const laserAimColor = Color.valueOf("#ff8888");
+const secondaryLaserAimColor = Color.valueOf("#ffaa00");
+const bulletColor = Color.valueOf("#00ffff");
 
 const mainBulletHitFX = new Effect(18, e => {
     Draw.color(bulletColor, Color.white, e.fin());
@@ -23,11 +24,10 @@ const muzzleFlashFX = new Effect(12, e => {
 const shieldHitFX = new Effect(10, e => {
     Draw.color(bulletColor, Color.white, e.fin());
     Lines.stroke(1.5 * e.fout());
-    Lines.circle(e.x, e.y, e.fin() * e.rotation); 
+    Lines.circle(e.x, e.y, e.fin() * e.rotation);
     Draw.reset();
 });
 
- 
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
@@ -48,10 +48,10 @@ function drawExpandingBarrels(build) {
     if (build.animRecoil === undefined) build.animRecoil = 0;
     build.animRecoil = Mathf.lerpDelta(build.animRecoil, 0, 0.08);
 
-    let openOffset = build.animRecoil * 12; 
+    let openOffset = build.animRecoil * 12;
     let baseAngle = build.rotation;
 
-    Draw.z(Layer.turret + 0.1); 
+    Draw.z(Layer.turret + 0.1);
     let spriteNames = ["holyderwing2", "holyderwing1", "holyderwing3", "holyderwing4"];
 
     for (let i = 0; i < 4; i++) {
@@ -59,9 +59,9 @@ function drawExpandingBarrels(build) {
         let finalAngle = baseAngle + angleOffset;
         let drawX = build.x + Angles.trnsx(finalAngle, openOffset);
         let drawY = build.y + Angles.trnsy(finalAngle, openOffset);
-        
+
         let region = PerfCore.region("newex-" + spriteNames[i]);
-        if (!region.found) region = PerfCore.region(spriteNames[i]); 
+        if (!region.found) region = PerfCore.region(spriteNames[i]);
         if (region.found) Draw.rect(region, drawX, drawY, baseAngle);
     }
     Draw.reset();
@@ -73,17 +73,17 @@ function drawGatlingRotation(build) {
 
     Draw.z(Layer.bullet + 1);
     Draw.color(Color.white);
-    
+
     let gunX = build.x + Angles.trnsx(build.rotation, 11);
     let gunY = build.y + Angles.trnsy(build.rotation, 11);
-    Fill.circle(gunX, gunY, 2.5); 
+    Fill.circle(gunX, gunY, 2.5);
 
     Draw.color(bulletColor);
     for (let i = 0; i < 4; i++) {
         let orbitAngle = currentRotation + (i * 90);
         let muzzleX = gunX + Angles.trnsx(orbitAngle, 4.0);
         let muzzleY = gunY + Angles.trnsy(orbitAngle, 4.0);
-        Fill.circle(muzzleX, muzzleY, 1.2); 
+        Fill.circle(muzzleX, muzzleY, 1.2);
     }
     Draw.reset();
 }
@@ -93,55 +93,54 @@ function drawHexagonAperture(build) {
     if (build.lockTimer == 0 && build.target != null) scale = 1.6;
 
     let apertureRadius = (7 * scale) * build.shieldVisualScale;
-    let spinAngle = -Time.time * 1.5; 
+    let spinAngle = -Time.time * 1.5;
 
     Draw.z(Layer.bullet + 1);
     Draw.color(bulletColor, 0.55);
     Lines.stroke(1.0);
-    
+
     let gunX = build.x + Angles.trnsx(build.rotation, 13);
     let gunY = build.y + Angles.trnsy(build.rotation, 13);
     Lines.poly(gunX, gunY, 6, apertureRadius, spinAngle);
     Draw.reset();
 }
 
- 
 const holyderMainBullet = extend(BasicBulletType, {});
-holyderMainBullet.speed = 35;             
-holyderMainBullet.lifetime = 15;          
-holyderMainBullet.width = 12;             
-holyderMainBullet.height = 16;            
-holyderMainBullet.frontColor = Color.white; 
-holyderMainBullet.backColor = bulletColor;  
+holyderMainBullet.speed = 35;
+holyderMainBullet.lifetime = 15;
+holyderMainBullet.width = 12;
+holyderMainBullet.height = 16;
+holyderMainBullet.frontColor = Color.white;
+holyderMainBullet.backColor = bulletColor;
 holyderMainBullet.hitEffect = mainBulletHitFX;
 holyderMainBullet.despawnEffect = Fx.none;
 holyderMainBullet.collides = true;
 holyderMainBullet.collidesTiles = true;
-holyderMainBullet.shrinkX = 0;            
+holyderMainBullet.shrinkX = 0;
 holyderMainBullet.shrinkY = 0;
 
 const holyderMainBulletMK2B = extend(BasicBulletType, {});
-holyderMainBulletMK2B.speed = 35;             
-holyderMainBulletMK2B.lifetime = 15;          
-holyderMainBulletMK2B.width = 12;             
-holyderMainBulletMK2B.height = 16;            
-holyderMainBulletMK2B.frontColor = Color.white; 
-holyderMainBulletMK2B.backColor = bulletColor;  
+holyderMainBulletMK2B.speed = 35;
+holyderMainBulletMK2B.lifetime = 15;
+holyderMainBulletMK2B.width = 12;
+holyderMainBulletMK2B.height = 16;
+holyderMainBulletMK2B.frontColor = Color.white;
+holyderMainBulletMK2B.backColor = bulletColor;
 holyderMainBulletMK2B.hitEffect = mainBulletHitFX;
 holyderMainBulletMK2B.despawnEffect = Fx.none;
 holyderMainBulletMK2B.collides = true;
 holyderMainBulletMK2B.collidesTiles = true;
-holyderMainBulletMK2B.shrinkX = 0;            
+holyderMainBulletMK2B.shrinkX = 0;
 holyderMainBulletMK2B.shrinkY = 0;
-holyderMainBulletMK2B.pierce = false;         
+holyderMainBulletMK2B.pierce = false;
 
 const holyderSecondaryBullet = extend(BasicBulletType, {});
-holyderSecondaryBullet.speed = 35;             
-holyderSecondaryBullet.lifetime = 18;          
-holyderSecondaryBullet.width = 8;             
-holyderSecondaryBullet.height = 11;            
-holyderSecondaryBullet.frontColor = Color.white; 
-holyderSecondaryBullet.backColor = Color.valueOf("#ffaa00");  
+holyderSecondaryBullet.speed = 35;
+holyderSecondaryBullet.lifetime = 18;
+holyderSecondaryBullet.width = 8;
+holyderSecondaryBullet.height = 11;
+holyderSecondaryBullet.frontColor = Color.white;
+holyderSecondaryBullet.backColor = Color.valueOf("#ffaa00");
 holyderSecondaryBullet.hitEffect = Fx.hitBulletSmall;
 holyderSecondaryBullet.despawnEffect = Fx.none;
 
@@ -152,27 +151,26 @@ const holyderlaser = extend(BulletType, {
 holyderlaser.speed = 0;
 holyderlaser.lifetime = 1;
 
- 
 function makeBuildSetup(initialTier) {
     return {
         holyderInternalTier: initialTier,
         laserCharge: 0,
-        lockTimer: 0,     
-        shootCooldown: 0,       
-        isNewTargetLocking: false, 
-        secondaryTarget: null, 
+        lockTimer: 0,
+        shootCooldown: 0,
+        isNewTargetLocking: false,
+        secondaryTarget: null,
 
-        shieldHealth: 0,      
-        maxShield: (initialTier == 3) ? 1000 : 9000,       
-        shieldRadius: 32,     
-        shieldActive: false,  
-        shieldVisualScale: 0, 
-        shieldHitTime: 0,     
-        hexSize: 5,           
-        
+        shieldHealth: 0,
+        maxShield: (initialTier == 3) ? 1000 : 9000,
+        shieldRadius: 32,
+        shieldActive: false,
+        shieldVisualScale: 0,
+        shieldHitTime: 0,
+        hexSize: 5,
+
         regenTimer: 0,
-        maxRegenCooldown: (initialTier == 3) ? 720 : 600, 
-        isShieldBroken: false, 
+        maxRegenCooldown: (initialTier == 3) ? 720 : 600,
+        isShieldBroken: false,
 
         canControl() {
             return false;
@@ -180,7 +178,7 @@ function makeBuildSetup(initialTier) {
 
         placed() {
             this.super$placed();
-        
+
         },
 
         setTier(val) {
@@ -192,7 +190,7 @@ function makeBuildSetup(initialTier) {
                 this.maxShield = 9000;
                 this.health = 704;
             } else if (val == 3) {
-                this.maxShield = 1000; 
+                this.maxShield = 1000;
                 this.health = 880;
             }
             this.shieldHealth = this.maxShield;
@@ -212,21 +210,21 @@ function makeBuildSetup(initialTier) {
                 table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
                     let dialogTitle = en ? "Holyder Turret Upgrade Center" : "Trung tâm nâng cấp tháp pháo Holyder";
                     let dialog = extend(BaseDialog, dialogTitle, {});
-                    
+
                     let reqCell = dialog.cont.label(packProv(() => {
                         let core = this.team.core();
                         if(core == null) return en ? "[red]Team Core Not Found![]" : "[red]Không tìm thấy Lõi Đội![]";
                         let currenttitanium = core.items.get(Items.titanium);
                         let currentsilicon = core.items.get(Items.silicon);
                         let currentplastanium = core.items.get(Items.plastanium);
-                        
+
                         let titColor1 = currenttitanium >= reqMK2.titanium ? "[green]" : "[red]";
                         let silColor1 = currentsilicon >= reqMK2.silicon ? "[green]" : "[red]";
-                        
+
                         let titColor2 = currenttitanium >= reqMK2B.titanium ? "[green]" : "[red]";
                         let silColor2 = currentsilicon >= reqMK2B.silicon ? "[green]" : "[red]";
                         let plaColor2 = currentplastanium >= reqMK2B.plastanium ? "[green]" : "[red]";
-                        
+
                         if (en) {
                             return "[yellow]CORE STORAGE REQUIREMENTS:[]\n" +
                                    "[cyan]MK2 Branch:[]\n" +
@@ -247,7 +245,7 @@ function makeBuildSetup(initialTier) {
                                    " • Nhựa: " + plaColor2 + currentplastanium + "[] / " + reqMK2B.plastanium;
                         }
                     }));
-                    
+
                     reqCell.width(360).get().setWrap(true);
                     reqCell.get().setAlignment(Align.left);
                     dialog.cont.row(); dialog.cont.add().height(10).row();
@@ -270,9 +268,9 @@ function makeBuildSetup(initialTier) {
                     b1.button(en ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => {
                         let core = this.team.core();
                         if(core != null && core.items.get(Items.titanium) >= reqMK2.titanium && core.items.get(Items.silicon) >= reqMK2.silicon){
-                            core.items.remove(Items.titanium, reqMK2.titanium); core.items.remove(Items.silicon, reqMK2.silicon);
-                            Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
-                            this.configure(java.lang.Integer(2)); 
+                            NexNet.take(core, Items.titanium, reqMK2.titanium); NexNet.take(core, Items.silicon, reqMK2.silicon);
+                            NexNet.fx(Fx.upgradeCore, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
+                            this.configure(java.lang.Integer(2));
                             dialog.hide(); this.deselect();
                         } else { Vars.ui.showInfo(en ? "[red]Not enough resources for MK2 branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                     })).size(180, 38);
@@ -293,9 +291,9 @@ function makeBuildSetup(initialTier) {
                     b2.button(en ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                         let core = this.team.core();
                         if(core != null && core.items.get(Items.titanium) >= reqMK2B.titanium && core.items.get(Items.silicon) >= reqMK2B.silicon && core.items.get(Items.plastanium) >= reqMK2B.plastanium){
-                            core.items.remove(Items.titanium, reqMK2B.titanium); core.items.remove(Items.silicon, reqMK2B.silicon); core.items.remove(Items.plastanium, reqMK2B.plastanium);
-                            Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
-                            this.configure(java.lang.Integer(3)); 
+                            NexNet.take(core, Items.titanium, reqMK2B.titanium); NexNet.take(core, Items.silicon, reqMK2B.silicon); NexNet.take(core, Items.plastanium, reqMK2B.plastanium);
+                            NexNet.fx(Fx.bigShockwave, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
+                            this.configure(java.lang.Integer(3));
                             dialog.hide(); this.deselect();
                         } else { Vars.ui.showInfo(en ? "[red]Not enough resources for MK2B branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
                     })).size(180, 38);
@@ -337,7 +335,7 @@ function makeBuildSetup(initialTier) {
                         "[sky]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH & KHIÊN:[]\n" +
                         "• [lightgray]Định vị mục tiêu:[] Sử dụng tia laser đỏ để khóa cứng vị trí trước khi tích sạc.\n" +
                         "• [lightgray]Trường khiên năng lượng:[] Tự động kích hoạt khiên hấp thụ [teal]9,000 HP[]. Khi vỡ cần [yellow]10.0 giây[] để tái khởi động lõi khiên.";
-                } 
+                }
                 else if (currentTier == 2) {
                     title += "[cyan](MK2)[]";
                     descStr = en ?
@@ -357,7 +355,7 @@ function makeBuildSetup(initialTier) {
                         "• [lightgray]Xung kích cực đại:[] Giới hạn tích lũy điểm xung sạc nâng cao chạm mốc [yellow]200%[].\n" +
                         "• [lightgray]Đa mục tiêu:[] Kích hoạt thêm nòng phụ gia tốc, tự động xả đạn hỗ trợ vào 1 mục tiêu phụ lân cận.\n" +
                         "• [lightgray]Trường khiên năng lượng:[] Duy trì hệ thống lõi khiên bảo vệ vững chắc [teal]9,000 HP[].";
-                } 
+                }
                 else if (currentTier == 3) {
                     title += "[purple](MK2B)[]";
                     descStr = en ?
@@ -392,13 +390,13 @@ function makeBuildSetup(initialTier) {
             if (!this.enabled) return;
 
             let tier = this.getTier();
-            this.maxShield = (tier == 3) ? 1000 : 9000; 
+            this.maxShield = (tier == 3) ? 1000 : 9000;
 
             if (this.shieldHitTime > 0) this.shieldHitTime -= Time.delta;
-            
+
             if (this.shootCooldown > 0) {
                 if (tier == 3 && this.isShieldBroken) {
-                    this.shootCooldown -= Time.delta * 5.0; 
+                    this.shootCooldown -= Time.delta * 5.0;
                 } else {
                     this.shootCooldown -= Time.delta;
                 }
@@ -409,7 +407,7 @@ function makeBuildSetup(initialTier) {
                 if (this.regenTimer >= this.maxRegenCooldown) {
                     this.isShieldBroken = false;
                     this.shieldActive = true;
-                    this.shieldHealth = (tier == 3) ? 200 : 1000; 
+                    this.shieldHealth = (tier == 3) ? 200 : 1000;
                     this.regenTimer = 0;
                 }
             }
@@ -426,8 +424,8 @@ function makeBuildSetup(initialTier) {
                     this.turnToTarget(currentTarget);
 
                     if (tier == 2) {
-                        this.secondaryTarget = Units.closestTarget(this.team, this.x, this.y, this.block.range, 
-                            u => u && !u.dead && u !== currentTarget && !u.isFlying(), 
+                        this.secondaryTarget = Units.closestTarget(this.team, this.x, this.y, this.block.range,
+                            u => u && !u.dead && u !== currentTarget && !u.isFlying(),
                             b => b && !b.dead && b !== currentTarget
                         );
                     } else {
@@ -445,46 +443,46 @@ function makeBuildSetup(initialTier) {
                         this.shieldVisualScale = Math.max(this.shieldVisualScale - Time.delta * 0.08, 0);
                     }
 
-                    let maxCharge = (tier == 2) ? 200 : ((tier == 3) ? 50 : 100); 
-                    
+                    let maxCharge = (tier == 2) ? 200 : ((tier == 3) ? 50 : 100);
+
                     let chargeSpeed = (tier == 3 && this.isShieldBroken) ? 5.0 : 1.0;
                     this.laserCharge = Math.min(this.laserCharge + (Time.delta / 60) * 10 * chargeSpeed, maxCharge);
-                    
+
                     if (Mathf.chance(0.12)) {
                         Fx.lightningCharge.at(this.x + Mathf.range(6), this.y + Mathf.range(6), bulletColor);
                     }
 
                     if (this.shootCooldown <= 0) {
                         this.isNewTargetLocking = false;
-                        
+
                         if (tier == 3 && this.isShieldBroken) {
-                            this.lockTimer += Time.delta * 5.0; 
+                            this.lockTimer += Time.delta * 5.0;
                         } else {
                             this.lockTimer += Time.delta;
                         }
 
-                        let requiredLockTime = 60; 
+                        let requiredLockTime = 60;
 
-                        if (this.lockTimer >= requiredLockTime) { 
-                            this.lockTimer = 0; 
-                            this.shootCooldown = 60; 
+                        if (this.lockTimer >= requiredLockTime) {
+                            this.lockTimer = 0;
+                            this.shootCooldown = 60;
 
-                            this.animRecoil = 1.0; 
-                            this.recoil = 1.0; 
+                            this.animRecoil = 1.0;
+                            this.recoil = 1.0;
 
                             let angle = Angles.angle(this.x, this.y, currentTarget.x, currentTarget.y);
-                            let baseDamage = 380; 
-                            let damageMultiplier = 1 + (this.laserCharge / 100); 
+                            let baseDamage = 380;
+                            let damageMultiplier = 1 + (this.laserCharge / 100);
                             let finalDamage = baseDamage * damageMultiplier;
 
                             let bulletType = (tier == 3) ? holyderMainBulletMK2B : holyderMainBullet;
                             let bullet = bulletType.create(this, this.team, this.x, this.y, angle);
-                            if (bullet != null) bullet.damage = finalDamage; 
+                            if (bullet != null) bullet.damage = finalDamage;
 
                             if (tier == 2 && this.secondaryTarget != null) {
                                 let subAngle = Angles.angle(this.x, this.y, this.secondaryTarget.x, this.secondaryTarget.y);
                                 let subBullet = holyderSecondaryBullet.create(this, this.team, this.x, this.y, subAngle);
-                                if (subBullet != null) subBullet.damage = finalDamage * 0.5; 
+                                if (subBullet != null) subBullet.damage = finalDamage * 0.5;
                             }
 
                             if (this.shieldActive && !this.isShieldBroken && this.shieldHealth > 0) {
@@ -510,14 +508,14 @@ function makeBuildSetup(initialTier) {
                     get: b => {
                         if (b.team != this.team && b.type != null && Mathf.dst(this.x, this.y, b.x, b.y) <= currentRadius) {
                             this.shieldHealth -= b.damage;
-                            this.shieldHitTime = 6; 
+                            this.shieldHitTime = 6;
                             shieldHitFX.at(b.x, b.y, currentRadius);
                             b.remove();
 
                             if (this.shieldHealth <= 0) {
                                 this.shieldHealth = 0;
                                 this.shieldActive = false;
-                                this.isShieldBroken = true; 
+                                this.isShieldBroken = true;
                                 this.regenTimer = 0;
                                 Fx.shieldBreak.at(this.x, this.y, currentRadius, bulletColor);
                             }
@@ -530,7 +528,7 @@ function makeBuildSetup(initialTier) {
         resetTargetsAndCharge() {
             this.target = null;
             this.secondaryTarget = null;
-            this.isNewTargetLocking = false; 
+            this.isNewTargetLocking = false;
             this.laserCharge = Math.max(this.laserCharge - (Time.delta / 60) * 15, 0);
             this.lockTimer = 0;
             this.shieldActive = false;
@@ -541,7 +539,7 @@ function makeBuildSetup(initialTier) {
             this.super$draw();
             let tier = this.getTier();
             let en = isEnglish();
-            
+
             if (this.target != null && !this.target.dead && this.laserCharge > 0 && !this.isNewTargetLocking) {
                 let currentTarget = this.target;
                 Draw.z(Layer.bullet + 1);
@@ -553,19 +551,18 @@ function makeBuildSetup(initialTier) {
 
                 if (tier == 2 && this.secondaryTarget != null && !this.secondaryTarget.dead) {
                     Draw.color(secondaryLaserAimColor);
-                    Lines.stroke(finalThinStroke * 0.8); 
+                    Lines.stroke(finalThinStroke * 0.8);
                     Lines.line(this.x, this.y, this.secondaryTarget.x, this.secondaryTarget.y);
                 }
                 Draw.reset();
             }
 
-       
             if (this.shieldVisualScale > 0 && this.shieldHealth > 0 && !this.isShieldBroken) {
-                Draw.z(Layer.bullet + 2); 
+                Draw.z(Layer.bullet + 2);
                 let currentRadius = this.shieldRadius * this.shieldVisualScale;
                 Draw.color(bulletColor, 0.12 + Mathf.absin(Time.time, 3.0, 0.04));
                 Fill.circle(this.x, this.y, currentRadius);
-                
+
                 Draw.color(this.shieldHitTime > 0 ? Color.white : bulletColor, 0.7);
                 Lines.stroke(1.2);
                 Lines.circle(this.x, this.y, currentRadius);
@@ -573,9 +570,9 @@ function makeBuildSetup(initialTier) {
             }
 
             if (this.laserCharge > 0) {
-                drawExpandingBarrels(this);  
-                drawGatlingRotation(this);   
-                drawHexagonAperture(this);   
+                drawExpandingBarrels(this);
+                drawGatlingRotation(this);
+                drawHexagonAperture(this);
             }
 
             if (this.laserCharge > 0) {
@@ -583,23 +580,23 @@ function makeBuildSetup(initialTier) {
                 Draw.color(Color.white);
                 let font = Fonts.outline;
                 font.getData().setScale(0.12);
-                
+
                 let textCharge = Math.floor(this.laserCharge) + "%";
                 font.draw(textCharge, this.x, this.y, Align.center);
-                
+
                 let barWidth = 28;
 
                 if (this.isShieldBroken) {
                     let timeLeft = Math.ceil((this.maxRegenCooldown - this.regenTimer) / 60);
                     let textShield = en ? "[scarlet]OVERLOADED (5x ATK):[] " + timeLeft + "s" : "[scarlet]OVERLOADED (5x ATK):[] " + timeLeft + "s";
                     font.draw(textShield, this.x, this.y - 20, Align.center);
-                    
+
                     let progress = this.regenTimer / this.maxRegenCooldown;
                     Draw.color(Color.black, 0.5); Lines.stroke(3);
                     Lines.line(this.x - barWidth/2, this.y - 28, this.x + barWidth/2, this.y - 28);
                     Draw.color(Color.cyan, 0.7); Lines.stroke(2);
                     Lines.line(this.x - barWidth/2, this.y - 28, this.x - barWidth/2 + (barWidth * progress), this.y - 28);
-                } 
+                }
                 else if (this.shieldHealth > 0) {
                     let progress = this.shieldHealth / this.maxShield;
                     Draw.color(Color.black, 0.5); Lines.stroke(3);
@@ -622,7 +619,6 @@ function makeBuildSetup(initialTier) {
     };
 }
 
- 
 const holyder = extend(PowerTurret, "holyder", {
     init() { this.super$init(); },
     setBars() { this.super$setBars(); }
@@ -631,12 +627,12 @@ const holyder = extend(PowerTurret, "holyder", {
 holyder.health = 550;
 holyder.size = 3;
 holyder.range = 410;
-holyder.reload = 9999;           
+holyder.reload = 9999;
 holyder.shootType = holyderlaser;
 holyder.consumePower(15);
-holyder.targetAir = false;       
+holyder.targetAir = false;
 holyder.targetGround = true;
-holyder.configurable = true; 
+holyder.configurable = true;
 
 holyder.canControl = false;
 

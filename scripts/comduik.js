@@ -23,8 +23,8 @@ const lyvervonLightningEffectOld = new Effect(10, e => {
 const comduikTransferFxOld = new Effect(30, cons(e => {
     Draw.z(Layer.effect + 0.05);
     let targetSize = (e.data != null && typeof e.data === "number") ? e.data : 16;
-    let baseRadius = (targetSize * (2 / 3)) / 2; 
-    let pulse = Math.sin(e.fin() * Math.PI * 2) * (baseRadius * 0.25); 
+    let baseRadius = (targetSize * (2 / 3)) / 2;
+    let pulse = Math.sin(e.fin() * Math.PI * 2) * (baseRadius * 0.25);
     let currentRadius = Math.max(2, baseRadius + pulse);
     let alpha = 0.8 * (1.0 - e.fin());
 
@@ -78,7 +78,7 @@ function createLyvervonLightningReverseOld(wallX, wallY, comduikX, comduikY, thi
     let dst = Mathf.dst(wallX, wallY, comduikX, comduikY);
     let segs = Math.max(4, Math.floor(dst / 6));
     let points = new Seq();
-    
+
     points.add(new Vec2(wallX, wallY));
     let angle = Angles.angle(wallX, wallY, comduikX, comduikY);
 
@@ -86,13 +86,13 @@ function createLyvervonLightningReverseOld(wallX, wallY, comduikX, comduikY, thi
         let t = i / segs;
         let px = Mathf.lerp(wallX, comduikX, t);
         let py = Mathf.lerp(wallY, comduikY, t);
-        
+
         let noise = Mathf.range(8);
         Tmp.v1.trns(angle + 90, noise);
         points.add(new Vec2(px + Tmp.v1.x, py + Tmp.v1.y));
     }
     points.add(new Vec2(comduikX, comduikY));
-    
+
     lyvervonLightningEffectOld.at((wallX + comduikX) / 2, (wallY + comduikY) / 2, thickness, points);
 }
 
@@ -100,7 +100,7 @@ const lyvervonLightningEffectNew = new Effect(8, e => {
     if (!(e.data instanceof FloatSeq)) return;
     const points = e.data;
     if (points.size < 4) return;
-    
+
     Draw.color(lyvervonLightningColor, Color.white, e.fin());
     Lines.stroke((e.rotation > 0 ? e.rotation : 2) * e.fout());
     for (let i = 0; i < points.size - 2; i += 2) {
@@ -112,7 +112,7 @@ const lyvervonLightningEffectNew = new Effect(8, e => {
 const comduikTransferFxNew = new Effect(15, e => {
     Draw.z(Layer.effect + 0.05);
     let targetSize = (typeof e.data === "number") ? e.data : 16;
-    let baseRadius = targetSize * 0.33; 
+    let baseRadius = targetSize * 0.33;
 
     Draw.color(transferColor);
     Draw.alpha(0.5 * e.fout());
@@ -124,7 +124,7 @@ const comduikTransferFxNew = new Effect(15, e => {
 function createLyvervonLightningReverseNew(wallX, wallY, comduikX, comduikY, thickness) {
     let dst = Mathf.dst(wallX, wallY, comduikX, comduikY);
     let segs = Math.max(2, Math.floor(dst / 10));
-    
+
     lightningPointsFloat.clear();
     lightningPointsFloat.add(wallX, wallY);
     let angle = Angles.angle(wallX, wallY, comduikX, comduikY);
@@ -133,13 +133,13 @@ function createLyvervonLightningReverseNew(wallX, wallY, comduikX, comduikY, thi
         let t = i / segs;
         let px = Mathf.lerp(wallX, comduikX, t);
         let py = Mathf.lerp(wallY, comduikY, t);
-        
+
         let noise = Mathf.range(5);
         Tmp.v1.trns(angle + 90, noise);
         lightningPointsFloat.add(px + Tmp.v1.x, py + Tmp.v1.y);
     }
     lightningPointsFloat.add(comduikX, comduikY);
-    
+
     lyvervonLightningEffectNew.at((wallX + comduikX) / 2, (wallY + comduikY) / 2, thickness, lightningPointsFloat);
 }
 
@@ -252,7 +252,7 @@ Events.on(ContentInitEvent, () => {
                                 let dir = sideDirections[i];
                                 let checkTileX = Math.floor(this.tileX() + DIR_X[dir] * (this.block.size));
                                 let checkTileY = Math.floor(this.tileY() + DIR_Y[dir] * (this.block.size));
-                                
+
                                 let target = Vars.world.build(checkTileX, checkTileY);
                                 if (target != null && target !== this && target.team === this.team && target.power != null && target.block.consPower != null) {
                                     let targetCap = target.block.consPower.capacity;
@@ -280,9 +280,9 @@ Events.on(ContentInitEvent, () => {
                         this.activeTargets = [];
 
                         Units.nearbyBuildings(
-                            (bounds.minX + bounds.maxX) / 2, 
-                            (bounds.minY + bounds.maxY) / 2, 
-                            48, 
+                            (bounds.minX + bounds.maxX) / 2,
+                            (bounds.minY + bounds.maxY) / 2,
+                            48,
                             cons(b => {
                                 if (b != null && b.block === redstoneWall) {
                                     if (b.x >= bounds.minX && b.x <= bounds.maxX && b.y >= bounds.minY && b.y <= bounds.maxY) {
@@ -334,7 +334,7 @@ Events.on(ContentInitEvent, () => {
                                     let dir = sideDirections[i];
                                     let checkX = this.x + DIR_X[dir] * (this.block.size * 4 + 4);
                                     let checkY = this.y + DIR_Y[dir] * (this.block.size * 4 + 4);
-                                    
+
                                     if (target.dst(checkX, checkY) <= (target.block.size * 8)) {
                                         isSideTarget = true;
                                         break;
@@ -344,7 +344,7 @@ Events.on(ContentInitEvent, () => {
                                 if (isSideTarget && target.power != null && target.block.consPower != null) {
                                     processedTargets[target.id] = true;
                                     let targetCap = target.block.consPower.capacity;
-                                    
+
                                     if (targetCap > 0) {
                                         let targetCurrent = target.power.status * targetCap;
                                         let needed = targetCap - targetCurrent;
@@ -352,7 +352,7 @@ Events.on(ContentInitEvent, () => {
                                         if (needed > 0 && currentStored > 0) {
                                             let transfer = Math.min(currentStored, Math.min(needed, 800 / 60));
                                             currentStored -= transfer;
-                                            
+
                                             target.power.status = Math.min(1.0, (targetCurrent + transfer) / targetCap);
 
                                             if (canPlayFx) {

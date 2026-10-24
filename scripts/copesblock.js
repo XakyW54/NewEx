@@ -1,27 +1,25 @@
 const PerfCore = global.PerfCore;
 const copesBuffCircleEffect = new Effect(35, e => {
     let rand = new Rand(e.id);
-    let zoomSpeed = rand.random(6.0, 14.0); 
-    let zoomAmplitude = rand.random(1.5, 3.5); 
+    let zoomSpeed = rand.random(6.0, 14.0);
+    let zoomAmplitude = rand.random(1.5, 3.5);
     let currentRadius = 5.0 + Mathf.absin(Time.time, zoomSpeed, zoomAmplitude);
-    
+
     Lines.stroke(1.5 * e.fout());
     Draw.color(Color.purple);
     Lines.circle(e.x, e.y, currentRadius);
     Draw.reset();
 });
 
- 
 function updateMenuVisibility() {
     const wallBuff = Vars.content.block("newex-copesblock") || Vars.content.block("copesblock");
     if (!Vars.player || !wallBuff) return;
 
     let playerTeam = Vars.player.team();
-    let maxAllowed = playerTeam.cores().size;  
-    
+    let maxAllowed = playerTeam.cores().size;
+
     let currentCount = PerfCore.teamCount(playerTeam, wallBuff);
 
- 
     if (currentCount < maxAllowed) {
         wallBuff.buildVisibility = BuildVisibility.shown;
     } else {
@@ -37,8 +35,8 @@ Events.on(ContentInitEvent, () => {
         const rangeSize = 96;
 
         wallBuff.buildType = () => extend(Wall.WallBuild, wallBuff, {
-            range: rangeSize,         
-            boostTimer: 0,     
+            range: rangeSize,
+            boostTimer: 0,
 
             updateTile() {
                 this.super$updateTile();
@@ -54,7 +52,7 @@ Events.on(ContentInitEvent, () => {
                 Groups.build.each(building => {
                     if (building === this) return;
 
-                    let inSquare = Math.abs(building.x - this.x) <= this.range && 
+                    let inSquare = Math.abs(building.x - this.x) <= this.range &&
                                    Math.abs(building.y - this.y) <= this.range;
 
                     if (inSquare) {
@@ -64,7 +62,7 @@ Events.on(ContentInitEvent, () => {
 
                             if (isDrill || isBeryiDrill) {
                                 if (typeof building.applyBoost === "function") {
-                                    building.applyBoost(1.5, 35); 
+                                    building.applyBoost(1.5, 35);
                                 }
                                 if (Math.random() < 0.45) {
                                     copesBuffCircleEffect.at(building.x, building.y);
@@ -83,19 +81,16 @@ Events.on(ContentInitEvent, () => {
     }
 });
 
- 
 Events.on(WorldLoadEvent, event => {
     Time.run(10, () => {
         updateMenuVisibility();
     });
 });
 
- 
 Events.on(BlockBuildEndEvent, event => {
     updateMenuVisibility();
 });
 
- 
 Events.on(BlockDestroyEvent, event => {
     const wallBuff = Vars.content.block("newex-copesblock") || Vars.content.block("copesblock");
     if (!wallBuff) return;
@@ -105,7 +100,7 @@ Events.on(BlockDestroyEvent, event => {
 
     let destroyedBuild = destroyedTile.build;
     let victimTeam = destroyedBuild.team;
- 
+
     if (destroyedBuild.block instanceof CoreBlock) {
         let teamData = victimTeam.data();
         let maxAllowed = teamData.cores.size - 1;
@@ -131,12 +126,11 @@ Events.on(BlockDestroyEvent, event => {
     updateMenuVisibility();
 });
 
- 
 Events.run(Trigger.draw, () => {
     let build = Vars.control.input.block;
     if (build != null && (build.name == "newex-copesblock" || build.name == "copesblock")) {
         let tile = Vars.world.tileWorld(Core.input.mouseWorldX(), Core.input.mouseWorldY());
-        
+
         if (tile != null) {
             let centerX = tile.drawx() + build.offset;
             let centerY = tile.drawy() + build.offset;

@@ -65,7 +65,7 @@ function unlockAllTurrets(turretList) {
 function setupXakyKeylistener(dialog, turretList, updateCallback) {
     let keySequence = [KeyCode.x, KeyCode.a, KeyCode.k, KeyCode.y];
     let fullKeySequence = [KeyCode.x, KeyCode.a, KeyCode.k, KeyCode.y, KeyCode.f, KeyCode.u, KeyCode.l, KeyCode.l];
-    
+
     let keyIndex = 0;
     let fullKeyIndex = 0;
     let lastKeyTime = 0;
@@ -139,7 +139,7 @@ function showShopDialog(turretList, loadTurretsFromFolderFunc) {
     mainTable.top().margin(8);
 
     mainTable.add(isEn() ? "[accent]-- TURRET SHOP --[]" : "[accent]-- CỬA HÀNG THÁP PHÁO --[]").pad(6).fontScale(isMobile ? 1.0 : 1.2).row();
-    
+
     let subTitle = mainTable.add(isEn() ? "Purchase turrets directly with points or try your luck with Gacha!" : "Mua trực tiếp tháp pháo bằng điểm hoặc thử vận may với Gacha!").padBottom(6).fontScale(isMobile ? 0.75 : 0.9).get();
     subTitle.setWrap(true);
     subTitle.setAlignment(Align.center);
@@ -246,8 +246,8 @@ function showShopDialog(turretList, loadTurretsFromFolderFunc) {
             let iconRegion = block.uiIcon;
             if (iconRegion != null) {
                 try {
-                    let drawable = (iconRegion instanceof TextureRegion || (iconRegion.getClass && iconRegion.getClass().getName().indexOf("TextureRegion") >= 0)) 
-                        ? new TextureRegionDrawable(iconRegion) 
+                    let drawable = (iconRegion instanceof TextureRegion || (iconRegion.getClass && iconRegion.getClass().getName().indexOf("TextureRegion") >= 0))
+                        ? new TextureRegionDrawable(iconRegion)
                         : iconRegion;
                     leftSide.image(drawable).size(isMobile ? 20 : 24).padRight(6);
                 } catch(e) {}
@@ -367,8 +367,8 @@ function showGachaDialog(turretList, loadTurretsFromFolderFunc) {
             let iconRegion = block.uiIcon;
             if (iconRegion != null) {
                 try {
-                    let drawable = (iconRegion instanceof TextureRegion || (iconRegion.getClass && iconRegion.getClass().getName().indexOf("TextureRegion") >= 0)) 
-                        ? new TextureRegionDrawable(iconRegion) 
+                    let drawable = (iconRegion instanceof TextureRegion || (iconRegion.getClass && iconRegion.getClass().getName().indexOf("TextureRegion") >= 0))
+                        ? new TextureRegionDrawable(iconRegion)
                         : iconRegion;
                     inner.image(drawable).size(isMobile ? 26 : 32).padRight(8);
                 } catch(e) {}

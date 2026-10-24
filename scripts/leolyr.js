@@ -11,10 +11,9 @@ function getLeolyrUpgradeRequirements(currentLevel) {
 const leolyrLeftBullet = extend(BasicBulletType, { speed: 9.0, damage: 15, width: 6, height: 11, lifetime: 35 });
 const leolyrRightBullet = extend(BasicBulletType, { speed: 9.0, damage: 65, width: 6, height: 11, lifetime: 35 });
 
-const leolyrDoubleTapInterval = 250; 
+const leolyrDoubleTapInterval = 250;
 let leolyrStarSpeedsMap = new ObjectMap();
 
-// Bảng lưu trạng thái Custom JS cho Leolyr
 const leolyrDataMap = {};
 
 function getLeolyrData(unit) {
@@ -46,7 +45,7 @@ function getLeolyrData(unit) {
 function getSafeDashTarget(startX, startY, targetX, targetY) {
     let distance = Mathf.dst(startX, startY, targetX, targetY);
     let angle = Angles.angle(startX, startY, targetX, targetY);
-    
+
     let endTile = Vars.world.tileWorld(targetX, targetY);
     let isEndTileTerrain = endTile != null && endTile.solid() && endTile.build == null;
 
@@ -54,7 +53,7 @@ function getSafeDashTarget(startX, startY, targetX, targetY) {
         return { x: targetX, y: targetY };
     }
 
-    let step = 4.0; 
+    let step = 4.0;
     let currentDist = 0;
 
     while (currentDist < distance) {
@@ -117,8 +116,8 @@ function executeLeolyrDash(unit, targetX, targetY) {
 
     let atkSpeedStatus = Vars.content.getByName(ContentType.status, "newex-atkspeed") || Vars.content.getByName(ContentType.status, "atkspeed");
 
-    let currentMaxShield = 100 + (data.level * 250); 
-    let currentShieldRadius = (7 * 8) * (1.0 + (data.level * 0.10)); 
+    let currentMaxShield = 100 + (data.level * 250);
+    let currentShieldRadius = (7 * 8) * (1.0 + (data.level * 0.10));
     let cooldownReduction = 1.0 - (data.level * 0.05);
     let maxDashCooldown = 300 * cooldownReduction;
 
@@ -200,7 +199,7 @@ Events.on(ClientLoadEvent, () => {
                     let currentShieldRadius = (7 * 8) * (1.0 + (data.level * 0.10));
 
                     if (!Vars.net.client()) {
-                        // 1. Xử lý lá chắn di động
+
                         if (data.shieldHealth > 0) {
                             let self = this;
                             Groups.bullet.intersect(this.x - currentShieldRadius - 16, this.y - currentShieldRadius - 16, (currentShieldRadius + 16) * 2, (currentShieldRadius + 16) * 2, cons(b => {
@@ -228,7 +227,6 @@ Events.on(ClientLoadEvent, () => {
                         }
                         data.ignoreNextDamage = false;
 
-                        // 2. Xử lý các lá chắn tĩnh sau khi lướt
                         if (data.myStaticShields != null && data.myStaticShields.length > 0) {
                             let self = this;
                             for (let i = data.myStaticShields.length - 1; i >= 0; i--) {
@@ -259,7 +257,6 @@ Events.on(ClientLoadEvent, () => {
                             }
                         }
 
-                        // 3. Xử lý nâng cấp tài nguyên
                         let req = getLeolyrUpgradeRequirements(data.level);
                         if (data.level < data.maxLevel && this.stack != null) {
                             if (data.copperAbsorbed < req.copperNeeded && this.stack.item == req.copperItem && this.stack.amount > 0) {
@@ -276,7 +273,6 @@ Events.on(ClientLoadEvent, () => {
                             }
                         }
 
-                        // Bot tự động lướt
                         if (Vars.player == null || Vars.player.unit() != this) {
                             if (this.vel.len() > 0.1 && data.dashCooldown <= 0 && Mathf.chance(0.02)) {
                                 let dashDistance = 80 + (data.level * 40);
@@ -288,7 +284,6 @@ Events.on(ClientLoadEvent, () => {
                         }
                     }
 
-                    // 4. Nhận Input điều khiển từ Player local
                     if (Vars.player != null && Vars.player.unit() == this) {
                         let isTouchedNow = Core.input.isTouched();
                         if (isTouchedNow && !data.wasTouchedPrev) {

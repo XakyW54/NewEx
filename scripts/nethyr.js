@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packCons = (func) => new Cons({ get: func });
@@ -117,7 +118,7 @@ const UniversalItemUI = {
                 let buffText = ItemStats[cleanName] ? ItemStats[cleanName].desc : "[gray]Không có chỉ số buff[]";
                 let tooltipText = "[accent]" + currentItem.localizedName + "[]\n" + buffText;
                 let hasItemInCore = core != null && core.items.has(currentItem, 1);
-                
+
                 slotBtn.addListener(new Tooltip(cons(t => {
                     t.background(Styles.black6).margin(8);
                     t.add(tooltipText);
@@ -184,11 +185,11 @@ const UniversalItemUI = {
                 let infoTable = new Table();
                 infoTable.left();
                 let statusColor = hasItem ? "[#84f491]" : "[#ff795e]";
-                
+
                 let titleLabel = infoTable.add(item.localizedName + " " + statusColor + "(Lõi: " + count + ")[]").left().growX().get();
                 titleLabel.setWrap(true);
                 infoTable.row();
-                
+
                 let buffLabel = infoTable.add(statData.desc).fontScale(0.85).left().growX().get();
                 buffLabel.setWrap(true);
 
@@ -456,7 +457,7 @@ Events.on(ContentInitEvent, () => {
 
                         let tile = Vars.world.tileWorld(finalX, finalY);
                         if (tile != null) {
-                            this.configure(Point2.pack(tile.x, tile.y));
+                            this.configure(java.lang.Integer(Point2.pack(tile.x, tile.y)));
                         }
                         this.selectingTarget = false;
                     }
@@ -633,8 +634,8 @@ Events.on(ContentInitEvent, () => {
             draw() {
                 this.super$draw();
 
-                let turretRegion = (this.block.turretRegion && typeof this.block.turretRegion.found === "function" && this.block.turretRegion.found()) 
-                    ? this.block.turretRegion 
+                let turretRegion = (this.block.turretRegion && typeof this.block.turretRegion.found === "function" && this.block.turretRegion.found())
+                    ? this.block.turretRegion
                     : this.block.region;
 
                 Draw.rect(turretRegion, this.x, this.y, this.spinAngle);

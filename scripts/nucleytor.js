@@ -1,5 +1,6 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
-const packCons = (func) => new Cons({ get: func }); 
+const packCons = (func) => new Cons({ get: func });
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
@@ -10,21 +11,21 @@ function isVN() {
 }
 
 const reqMK2 = { titanium: 500, silicon: 300 };
-const reqMK2B = { titanium: 800, silicon: 400, plastanium: 200 }; 
+const reqMK2B = { titanium: 800, silicon: 400, plastanium: 200 };
 
-const gainPerShotMK1 = 0.015; 
-const coolSpeedMK1 = 0.15;   
+const gainPerShotMK1 = 0.015;
+const coolSpeedMK1 = 0.15;
 
-const gainPerShotMK2 = 0.02; 
-const coolSpeedMK2 = 0.12;   
+const gainPerShotMK2 = 0.02;
+const coolSpeedMK2 = 0.12;
 
-const gainPerShotMK2B = 0.03; 
-const coolSpeedMK2B = 0.08;  
+const gainPerShotMK2B = 0.03;
+const coolSpeedMK2B = 0.08;
 
 const wingParticleEffect = new Effect(35, e => {
     Draw.color(Color.lightGray, Color.gray, e.fin());
     let size = 1.8 * e.fout();
-    let speed = 1.4; 
+    let speed = 1.4;
     let rad = e.rotation * Mathf.degRad;
     let px = e.x + Math.cos(rad) * speed * e.time;
     let py = e.y + Math.sin(rad) * speed * e.time;
@@ -35,7 +36,7 @@ const wingParticleEffect = new Effect(35, e => {
 const mk1TrailEffect = new Effect(22, e => {
     Draw.color(Color.white, PerfCore.color("#fff6c8"), e.fin());
     Lines.stroke(1.5 * e.fout());
-    let len = 14.0 * e.fout(); 
+    let len = 14.0 * e.fout();
     let rad = e.rotation * Mathf.degRad;
     Lines.line(e.x, e.y, e.x - Math.cos(rad) * len, e.y - Math.sin(rad) * len);
     Draw.reset();
@@ -44,7 +45,7 @@ const mk1TrailEffect = new Effect(22, e => {
 const mk2TrailEffect = new Effect(22, e => {
     Draw.color(Color.white, PerfCore.color("#b4baff"), e.fin());
     Lines.stroke(1.5 * e.fout());
-    let len = 14.0 * e.fout(); 
+    let len = 14.0 * e.fout();
     let rad = e.rotation * Mathf.degRad;
     Lines.line(e.x, e.y, e.x - Math.cos(rad) * len, e.y - Math.sin(rad) * len);
     Draw.reset();
@@ -53,7 +54,7 @@ const mk2TrailEffect = new Effect(22, e => {
 const mk2bTrailEffect = new Effect(22, e => {
     Draw.color(Color.white, PerfCore.color("#ff2525"), e.fin());
     Lines.stroke(1.5 * e.fout());
-    let len = 14.0 * e.fout(); 
+    let len = 14.0 * e.fout();
     let rad = e.rotation * Mathf.degRad;
     Lines.line(e.x, e.y, e.x - Math.cos(rad) * len, e.y - Math.sin(rad) * len);
     Draw.reset();
@@ -74,12 +75,12 @@ const mk3HitElectricEffect = new Effect(15, e => {
 });
 
 const nucleytorBuffEffect = new Effect(40, e => {
-    let size = e.rotation > 0 ? e.rotation : 16; 
+    let size = e.rotation > 0 ? e.rotation : 16;
     let halfSize = size / 2;
     let rand = new Rand(e.id);
     for(let i = 0; i < 3; i++){
         let rx = rand.random(-halfSize, halfSize);
-        let pLife = rand.random(0.5, 1.0); 
+        let pLife = rand.random(0.5, 1.0);
         let progress = Math.min(e.fin() / pLife, 1.0);
         if (progress < 1.0) {
             let fout = 1.0 - progress;
@@ -90,7 +91,7 @@ const nucleytorBuffEffect = new Effect(40, e => {
             let currentColor = startColor.cpy().lerp(endColor, progress);
             Draw.color(currentColor);
             let lineLength = 8.0 * fout;
-            Lines.stroke(1.0 * fout); 
+            Lines.stroke(1.0 * fout);
             Lines.line(e.x + rx, e.y + ry - lineLength / 2, e.x + rx, e.y + ry + lineLength / 2);
         }
     }
@@ -98,7 +99,7 @@ const nucleytorBuffEffect = new Effect(40, e => {
 });
 
 function drawNucleytorWindRing(cx, cy, radiusX, radiusY, angle, strokeWidth, color){
-    Draw.color(color); 
+    Draw.color(color);
     Lines.stroke(strokeWidth);
     let steps = 16; let lastX = 0, lastY = 0;
     let cosA = Math.cos(angle * Mathf.degRad); let sinA = Math.sin(angle * Mathf.degRad);
@@ -113,12 +114,12 @@ function drawNucleytorWindRing(cx, cy, radiusX, radiusY, angle, strokeWidth, col
 }
 
 const applyGradiusAcceleration = (b, baseSpeed) => {
-    let t = b.time; 
-    let slowSpeed = baseSpeed * 0.15; 
+    let t = b.time;
+    let slowSpeed = baseSpeed * 0.15;
     if (t < 30) {
         b.vel.setLength(slowSpeed);
     } else {
-        let fastSpeed = slowSpeed * 9.0; 
+        let fastSpeed = slowSpeed * 9.0;
         let timePassed = t - 30;
         let progress = Math.min(timePassed / 10.0, 1.0);
         let currentSpeed = Mathf.lerp(slowSpeed, fastSpeed, progress);
@@ -138,13 +139,13 @@ const nucleytorBullet = extend(BasicBulletType, {
     },
     draw(b) {
         this.super$draw(b);
-        if (b.time >= 26) { 
+        if (b.time >= 26) {
             let bAngle = b.rotation();
             let effectTime = b.time - 24;
             if (effectTime <= 12) {
                 let progress = effectTime / 20.0;
                 let fout = 1.0 - progress;
-                let offset = 42.0 - (progress * 90.0); 
+                let offset = 42.0 - (progress * 90.0);
                 let rx = b.x + Angles.trnsx(bAngle, offset);
                 let ry = b.y + Angles.trnsy(bAngle, offset);
                 let zoomRadiusX = 1.0 + (progress * 9.0);
@@ -157,7 +158,7 @@ const nucleytorBullet = extend(BasicBulletType, {
 });
 
 const nucleytorMK2Bullet = extend(BasicBulletType, {
-    speed: 10, damage: 9, lifetime: 78, width: 13, height: 20, 
+    speed: 10, damage: 9, lifetime: 78, width: 13, height: 20,
     frontColor: Color.valueOf("#ffeb3a"), backColor: Color.valueOf("#50dbc4"),
     maxRange: 643.1, circleCheck: true, workspace: true, pierce: true, pierceCap: 5, pierceBuilding: true, knockback: 1.4, impact: true,
     hitEffect: Fx.smoke, despawnEffect: Fx.smoke,
@@ -168,13 +169,13 @@ const nucleytorMK2Bullet = extend(BasicBulletType, {
     },
     draw(b) {
         this.super$draw(b);
-        if (b.time >= 26) { 
+        if (b.time >= 26) {
             let bAngle = b.rotation();
             let effectTime = b.time - 24;
             if (effectTime <= 12) {
                 let progress = effectTime / 20.0;
                 let fout = 1.0 - progress;
-                let offset = 42.0 - (progress * 90.0); 
+                let offset = 42.0 - (progress * 90.0);
                 let rx = b.x + Angles.trnsx(bAngle, offset);
                 let ry = b.y + Angles.trnsy(bAngle, offset);
                 let zoomRadiusX = 1.0 + (progress * 9.0);
@@ -190,8 +191,8 @@ const nucleytorMK2BBullet = extend(BasicBulletType, {
     speed: 9, damage: 9, lifetime: 75, width: 5, height: 64,
     frontColor: Color.white, backColor: Color.valueOf("#831006"),
     trailChance: 2.0, trailColor: Color.valueOf("#ff2525"),
-    workspace: true, pierce: false, pierceBuilding: false, knockback: 2.8, impact: true, 
-    hitEffect: mk3HitElectricEffect, despawnEffect: mk3HitElectricEffect,   
+    workspace: true, pierce: false, pierceBuilding: false, knockback: 2.8, impact: true,
+    hitEffect: mk3HitElectricEffect, despawnEffect: mk3HitElectricEffect,
     update(b) {
         this.super$update(b);
         applyGradiusAcceleration(b, this.speed);
@@ -199,13 +200,13 @@ const nucleytorMK2BBullet = extend(BasicBulletType, {
     },
     draw(b) {
         this.super$draw(b);
-        if (b.time >= 26) { 
+        if (b.time >= 26) {
             let bAngle = b.rotation();
             let effectTime = b.time - 24;
             if (effectTime <= 12) {
                 let progress = effectTime / 20.0;
                 let fout = 1.0 - progress;
-                let offset = 42.0 - (progress * 90.0); 
+                let offset = 42.0 - (progress * 90.0);
                 let rx = b.x + Angles.trnsx(bAngle, offset);
                 let ry = b.y + Angles.trnsy(bAngle, offset);
                 let zoomRadiusX = 1.0 + (progress * 9.0);
@@ -219,7 +220,7 @@ const nucleytorMK2BBullet = extend(BasicBulletType, {
 
 const nucleytor = extend(ItemTurret, "nucleytor", {
     configurable: true,
-    recoil: 0.0 
+    recoil: 0.0
 });
 
 nucleytor.addBar("dmg_bonus", new Func({
@@ -251,19 +252,19 @@ nucleytor.config(java.lang.Integer, packCons2((tile, value) => {
 }));
 
 nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
-    energyState: 0.0, 
-    tierState: 0, 
+    energyState: 0.0,
+    tierState: 0,
     limitCheck: 0,
     customRecoil: 0.0,
-    combatProgress: 0.0, 
-    coreOpen: 0.0, 
+    combatProgress: 0.0,
+    coreOpen: 0.0,
     amplifierTimer: 0.0,
     isAmplified: false,
-    maxAmplifierDuration: 30.0 * 60.0, 
-    activeBullets: [],  
+    maxAmplifierDuration: 30.0 * 60.0,
+    activeBullets: [],
 
     getTier(){ return this.tierState == null ? 0 : this.tierState; },
-    setTier(val){ 
+    setTier(val){
         this.tierState = val;
         if(val == 0) { this.health = 5500; }
         if(val == 1) { this.health = 8250; }
@@ -273,9 +274,9 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
 
     range(){
         let tier = this.getTier();
-        if(tier == 1) return 643.1; 
-        if(tier == 2) return 551.2; 
-        return 490;               
+        if(tier == 1) return 643.1;
+        if(tier == 2) return 551.2;
+        return 490;
     },
 
     armor() {
@@ -290,7 +291,7 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
                 let dialogTitle = isVN() ? "Trung tâm nâng cấp pháo Nucleytor" : "Nucleytor Upgrade Center";
                 let dialog = extend(BaseDialog, dialogTitle, {});
-                
+
                 let reqCell = dialog.cont.label(packProv(() => {
                     let core = this.team.core();
                     if(core == null) return isVN() ? "[red]Không tìm thấy Lõi Đội![]" : "[red]No Team Core Found![]";
@@ -300,7 +301,7 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
 
                     let titColor1 = currentTitanium >= reqMK2.titanium ? "[green]" : "[red]";
                     let silColor1 = currentSilicon >= reqMK2.silicon ? "[green]" : "[red]";
-                    
+
                     let titColor2 = currentTitanium >= reqMK2.titanium ? "[green]" : "[red]";
                     let silColor2 = currentSilicon >= reqMK2.silicon ? "[green]" : "[red]";
                     let plaColor2 = currentPlastanium >= reqMK2B.plastanium ? "[green]" : "[red]";
@@ -325,7 +326,7 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
                                " • Plastanium: " + plaColor2 + currentPlastanium + "[] / " + reqMK2B.plastanium;
                     }
                 }));
-                
+
                 reqCell.width(360).get().setWrap(true);
                 reqCell.get().setAlignment(Align.left);
                 dialog.cont.row(); dialog.cont.add().height(10).row();
@@ -358,9 +359,9 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
                 b1.button(b1BtnText, packRun(() => {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.titanium) >= reqMK2.titanium && core.items.get(Items.silicon) >= reqMK2.silicon){
-                        core.items.remove(Items.titanium, reqMK2.titanium); core.items.remove(Items.silicon, reqMK2.silicon);
-                        Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(4, 4, this.x, this.y);
-                        this.configure(java.lang.Integer(1)); 
+                        NexNet.take(core, Items.titanium, reqMK2.titanium); NexNet.take(core, Items.silicon, reqMK2.silicon);
+                        NexNet.fx(Fx.upgradeCore, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(4, 4, this.x, this.y);
+                        this.configure(java.lang.Integer(1));
                         dialog.hide(); this.deselect();
                     } else { Vars.ui.showInfo(isVN() ? "[red]Không đủ tài nguyên cho nhánh MK2![]" : "[red]Not enough resources for MK2![]"); }
                 })).size(180, 38);
@@ -389,9 +390,9 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
                 b2.button(b2BtnText, packRun(() => {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.titanium) >= reqMK2B.titanium && core.items.get(Items.silicon) >= reqMK2B.silicon && core.items.get(Items.plastanium) >= reqMK2B.plastanium){
-                        core.items.remove(Items.titanium, reqMK2B.titanium); core.items.remove(Items.silicon, reqMK2B.silicon); core.items.remove(Items.plastanium, reqMK2B.plastanium);
-                        Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(4, 4, this.x, this.y);
-                        this.configure(java.lang.Integer(2)); 
+                        NexNet.take(core, Items.titanium, reqMK2B.titanium); NexNet.take(core, Items.silicon, reqMK2B.silicon); NexNet.take(core, Items.plastanium, reqMK2B.plastanium);
+                        NexNet.fx(Fx.bigShockwave, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(4, 4, this.x, this.y);
+                        this.configure(java.lang.Integer(2));
                         dialog.hide(); this.deselect();
                     } else { Vars.ui.showInfo(isVN() ? "[red]Không đủ tài nguyên cho nhánh MK2B![]" : "[red]Not enough resources for MK2B![]"); }
                 })).size(180, 38);
@@ -442,7 +443,7 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
                     "• [lightgray]Peak Effect:[] Damage increases up to [orange]+1200%[] and fire rate up to [cyan]+50%[].\n" +
                     "• [orange]Nuclear Amplifier State:[] At 100% energy, enters [yellow]Nuclear Amplifier for 30s[]. Gains [green]+20 Armor[] and grants [cyan]+50% Attack Speed[] to nearby allied turrets in 100px radius.\n" +
                     "• [lightgray]Bullet Effect:[] Travels slowly for [yellow]first 0.5s[] to charge energy, then emits a magnetic ring and accelerates with pale yellow trails.";
-            } 
+            }
             else if (currentTier == 1) {
                 title += "[cyan](MK2)[]";
                 descStr = isVN() ?
@@ -471,7 +472,7 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
                     "• [lightgray]Peak Effect:[] Damage increases up to [orange]+1200%[] and fire rate up to [cyan]+50%[].\n" +
                     "• [orange]Nuclear Amplifier State:[] At 100% energy, enters [yellow]Nuclear Amplifier for 60s[]. Gains [green]+20 Armor[] and grants [cyan]+50% Attack Speed[] to nearby allied turrets in 100px radius.\n" +
                     "• [lightgray]Thermal Retainer:[] Cools down slower when idle, sustaining peak power longer.";
-            } 
+            }
             else if (currentTier == 2) {
                 title += "[purple](MK2B)[]";
                 descStr = isVN() ?
@@ -513,14 +514,14 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
 
     config() { return java.lang.Integer(this.getTier()); },
 
-    handleBullet(bullet, x, y, angle){ 
-        this.super$handleBullet(bullet, x, y, angle); 
+    handleBullet(bullet, x, y, angle){
+        this.super$handleBullet(bullet, x, y, angle);
 
         if(bullet != null){
             let calculatedDmg = bullet.type.damage * (1 + this.energyState * 12);
 
-             let trueDamageVal = calculatedDmg; 
-            bullet.damage = 0; 
+             let trueDamageVal = calculatedDmg;
+            bullet.damage = 0;
 
             if(bullet.type != null){
                 bullet.type.absorbable = false;
@@ -538,10 +539,10 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
         this.limitCheck += Time.delta;
         if(this.limitCheck >= 15){
             this.limitCheck = 0; let _lim = PerfCore.teamBlocks(this.team, nucleytor); let count = _lim != null ? _lim.size : 0; let firstBuild = (_lim != null && count > 0) ? _lim.first() : null;
-            if(count > 10 && this !== firstBuild){ 
-                Call.sendMessage(isVN() ? "[red]Giới hạn: Chỉ được đặt tối đa 10 pháo Nucleytor!" : "[red]Limit: Maximum 10 Nucleytor turrets allowed!"); 
-                this.kill(); 
-                return; 
+            if(count > 10 && this !== firstBuild){
+                Call.sendMessage(isVN() ? "[red]Giới hạn: Chỉ được đặt tối đa 10 pháo Nucleytor!" : "[red]Limit: Maximum 10 Nucleytor turrets allowed!");
+                this.kill();
+                return;
             }
         }
 
@@ -559,12 +560,12 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
             let rad = this.rotation * Mathf.degRad;
             let cos = Math.cos(rad);
             let sin = Math.sin(rad);
- 
-            let sideDist = 5.0; 
+
+            let sideDist = 5.0;
 
             let wingLeftX = this.x + (sideDist * -sin);
             let wingLeftY = this.y + (sideDist * cos);
-            
+
             let wingRightX = this.x + (-sideDist * -sin);
             let wingRightY = this.y + (-sideDist * cos);
 
@@ -580,25 +581,25 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
             let durationSeconds = (tier == 1) ? 60.0 : 30.0;
             this.maxAmplifierDuration = durationSeconds * 60.0;
             this.amplifierTimer = this.maxAmplifierDuration;
-            
-            Fx.shockwave.at(this.x, this.y); 
+
+            Fx.shockwave.at(this.x, this.y);
             Effect.shake(6, 6, this.x, this.y);
         }
 
         if (this.isAmplified) {
-            this.energyState = 1.0; 
+            this.energyState = 1.0;
             this.amplifierTimer -= Time.delta;
 
             Units.nearbyBuildings(
                 this.x,
                 this.y,
-                100, 
+                100,
                 packCons(other => {
                     if (other == null || other == this) return;
                     try {
                         if (other.team == this.team && other instanceof Turret.TurretBuild) {
                             if (other.reloadCounter !== undefined && other.hasAmmo()) {
-                                let speedMultiplier = 0.5; 
+                                let speedMultiplier = 0.5;
                                 other.reloadCounter += Time.delta * Math.max(other.efficiency, 0.1) * speedMultiplier;
                             }
                             if (Math.random() < 0.08) {
@@ -611,8 +612,8 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
 
             if (this.amplifierTimer <= 0) {
                 this.isAmplified = false;
-                this.energyState = 0.0; 
-                Fx.blastExplosion.at(this.x, this.y); 
+                this.energyState = 0.0;
+                Fx.blastExplosion.at(this.x, this.y);
                 Effect.shake(1.5, 1.5, this.x, this.y);
             }
         }
@@ -621,10 +622,10 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
         if(tier == 1) currentCoolSpeed = coolSpeedMK2;
         if(tier == 2) currentCoolSpeed = coolSpeedMK2B;
 
-        if(!this.isShooting || !this.hasAmmo() || !this.isActive()){ 
-            if(this.energyState > 0.0 && !this.isAmplified){ 
-                this.energyState = Math.max(this.energyState - (currentCoolSpeed * Time.delta / 60), 0.0); 
-            } 
+        if(!this.isShooting || !this.hasAmmo() || !this.isActive()){
+            if(this.energyState > 0.0 && !this.isAmplified){
+                this.energyState = Math.max(this.energyState - (currentCoolSpeed * Time.delta / 60), 0.0);
+            }
         }
 
         this.coreOpen = Mathf.approach(this.coreOpen, this.isAmplified ? 1.0 : 0.0, 0.08 * Time.delta);
@@ -686,27 +687,27 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
             currentGain = gainPerShotMK2B;
         }
 
-        this.super$shoot(bulletToShoot); 
-        
+        this.super$shoot(bulletToShoot);
+
         if (!this.isAmplified) {
-            this.energyState = Math.min(this.energyState + currentGain, 1.0); 
+            this.energyState = Math.min(this.energyState + currentGain, 1.0);
         }
-        
+
         this.customRecoil = 1.0;
     },
 
     baseReloadSpeed(){ return this.efficiency * (1 + this.energyState * 0.5); },
-    getDmgRatio(){ return this.energyState; }, 
+    getDmgRatio(){ return this.energyState; },
     getAsRatio(){ return this.energyState; },
 
     draw(){
-        let modName = this.block.name.split("-")[0]; 
+        let modName = this.block.name.split("-")[0];
 
         let baseRegion = PerfCore.region(this.block.basePrefix + "" + this.block.size);
         if(baseRegion.found()){
             Draw.rect(baseRegion, this.x, this.y);
         } else {
-            this.super$draw(); 
+            this.super$draw();
         }
 
         let rad = this.rotation * Mathf.degRad;
@@ -724,7 +725,7 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
         let cored2Reg = PerfCore.region(modName + "-nucleytor-cored2");
 
         if(wing1Reg.found() && wing2Reg.found()){
-            let wSide = this.combatProgress * 1.414;   
+            let wSide = this.combatProgress * 1.414;
             let wBack = this.combatProgress * -1.414;
 
             let w1x = this.x + (wSide * -sin) + (wBack * cos);
@@ -737,8 +738,8 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
         }
 
         if(por1Reg.found() && por2Reg.found()){
-            let pSide = this.combatProgress * 1.0; 
-            let pBack = this.customRecoil * -8.0; 
+            let pSide = this.combatProgress * 1.0;
+            let pBack = this.customRecoil * -8.0;
 
             let p1x = this.x + (pSide * -sin) + (pBack * cos);
             let p1y = this.y + (pSide * cos) + (pBack * sin);
@@ -754,7 +755,7 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
         }
 
         if(arr1Reg.found() && arr2Reg.found()){
-            let aForward = this.combatProgress * 2.0; 
+            let aForward = this.combatProgress * 2.0;
 
             let a1x = this.x + (aForward * cos);
             let a1y = this.y + (aForward * sin);
@@ -766,25 +767,25 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
         }
 
         if(this.coreOpen > 0.01){
-            Draw.blend(Blending.additive); 
-            
-            let coreColor = Color.valueOf("#39e75f"); 
-            if(this.getTier() == 1) coreColor = Color.sky; 
-            if(this.getTier() == 2) coreColor = Color.valueOf("#ff2525"); 
+            Draw.blend(Blending.additive);
 
-            let coreOffsetY = -5.0; 
+            let coreColor = Color.valueOf("#39e75f");
+            if(this.getTier() == 1) coreColor = Color.sky;
+            if(this.getTier() == 2) coreColor = Color.valueOf("#ff2525");
+
+            let coreOffsetY = -5.0;
             let coreX = this.x + (coreOffsetY * cos);
             let coreY = this.y + (coreOffsetY * sin);
 
-            let baseSize = 7.0; 
-            let pulse = Mathf.absin(Time.time, 5.0, 0.8); 
+            let baseSize = 7.0;
+            let pulse = Mathf.absin(Time.time, 5.0, 0.8);
             let hexRadius = (baseSize + pulse) * this.coreOpen;
 
-            let hexRotation = Time.time * 0.8; 
+            let hexRotation = Time.time * 0.8;
 
             Draw.color(coreColor);
             Lines.stroke(1.5 * this.coreOpen);
-            
+
             Lines.poly(coreX, coreY, 6, hexRadius, hexRotation);
             Fill.poly(coreX, coreY, 6, hexRadius * 0.5, -hexRotation);
 
@@ -793,7 +794,7 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
         }
 
         if(cored1Reg.found() && cored2Reg.found()){
-            let cSide = this.coreOpen * 3.0; 
+            let cSide = this.coreOpen * 3.0;
 
             let c1x = this.x + (cSide * -sin);
             let c1y = this.y + (cSide * cos);
@@ -808,33 +809,33 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
             let maxRadius = 100.0;
             let radius = maxRadius;
             let elapsed = this.maxAmplifierDuration - this.amplifierTimer;
-            let animDuration = 45.0; 
+            let animDuration = 45.0;
 
             if (elapsed < animDuration) {
                 let progress = elapsed / animDuration;
-                radius = maxRadius * Mathf.pow(progress, 0.5); 
+                radius = maxRadius * Mathf.pow(progress, 0.5);
             } else if (this.amplifierTimer < animDuration) {
                 let progress = this.amplifierTimer / animDuration;
-                radius = maxRadius * Mathf.pow(progress, 0.5); 
+                radius = maxRadius * Mathf.pow(progress, 0.5);
             }
 
             if (radius > 0.1) {
-                let greenColor = Color.valueOf("39e75f"); 
-                let yellowBorder = Color.valueOf("ffeb82"); 
+                let greenColor = Color.valueOf("39e75f");
+                let yellowBorder = Color.valueOf("ffeb82");
                 let strokeWidth = 1.2 + Mathf.absin(Time.time, 8, 0.5);
 
-                let segments = 60; 
+                let segments = 60;
                 let step = 360 / segments;
-                
+
                 Draw.color(yellowBorder);
                 Lines.stroke(strokeWidth + 1.2);
                 for(let i = 0; i < segments; i += 2) {
                     let angle1 = i * step * Mathf.degRad;
                     let angle2 = (i + 1) * step * Mathf.degRad;
                     Lines.line(
-                        this.x + Math.cos(angle1) * radius, 
-                        this.y + Math.sin(angle1) * radius, 
-                        this.x + Math.cos(angle2) * radius, 
+                        this.x + Math.cos(angle1) * radius,
+                        this.y + Math.sin(angle1) * radius,
+                        this.x + Math.cos(angle2) * radius,
                         this.y + Math.sin(angle2) * radius
                     );
                 }
@@ -845,9 +846,9 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
                     let angle1 = i * step * Mathf.degRad;
                     let angle2 = (i + 1) * step * Mathf.degRad;
                     Lines.line(
-                        this.x + Math.cos(angle1) * radius, 
-                        this.y + Math.sin(angle1) * radius, 
-                        this.x + Math.cos(angle2) * radius, 
+                        this.x + Math.cos(angle1) * radius,
+                        this.y + Math.sin(angle1) * radius,
+                        this.x + Math.cos(angle2) * radius,
                         this.y + Math.sin(angle2) * radius
                     );
                 }

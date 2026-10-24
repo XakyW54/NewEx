@@ -8,11 +8,11 @@ function getSuv27UpgradeRequirements(currentLevel) {
     };
 }
 
-const TRANSFORM_DELAY = 60;    
-const TRANSFORM_COOLDOWN = 180; 
-const CONE_SHOT_COOLDOWN = 180; 
-const HYBRID_SKILL_COOLDOWN = 60; 
-const DOUBLE_TAP_COOLDOWN = 60; 
+const TRANSFORM_DELAY = 60;
+const TRANSFORM_COOLDOWN = 180;
+const CONE_SHOT_COOLDOWN = 180;
+const HYBRID_SKILL_COOLDOWN = 60;
+const DOUBLE_TAP_COOLDOWN = 60;
 
 let suvShotgunBulletType = null;
 let pulseBulletType = null;
@@ -23,7 +23,6 @@ let healEffect = null;
 let moveX = 0;
 let moveY = 0;
 
-// Bảng lưu trữ trạng thái Custom JS cho từng Unit ID
 const unitDataMap = {};
 
 function getUnitData(unit) {
@@ -81,24 +80,20 @@ function transformToUnit(oldUnit, targetUnitName, remainingCooldown) {
     let oldTeam = oldUnit.team;
     let healthPercent = oldUnit.maxHealth > 0 ? (oldUnit.health / oldUnit.maxHealth) : 1.0;
 
-    // 1. Khởi tạo Unit mới tại vị trí cũ
     let newUnit = targetType.create(oldTeam);
     newUnit.set(oldX, oldY);
     newUnit.rotation = oldRot;
     newUnit.health = newUnit.maxHealth * healthPercent;
     newUnit.add();
 
-    // 2. Chuyển quyền điều khiển của Player sang Unit mới
     if (controllingPlayer != null) {
         controllingPlayer.unit(newUnit);
     }
 
-    // 3. Gọi lệnh hủy Unit cũ đồng bộ qua mạng gửi tới tất cả Client
     delete unitDataMap[oldUnit.id];
     Call.unitDestroy(oldUnit.id);
     if (oldUnit.added) oldUnit.remove();
 
-    // 4. Gán dữ liệu Custom JS cho Unit mới
     let newData = getUnitData(newUnit);
     if (newData) {
         newData.level = savedLevel;
@@ -111,7 +106,7 @@ function transformToUnit(oldUnit, targetUnitName, remainingCooldown) {
 function fireSUVShotgun(unit) {
     if (suvShotgunBulletType == null) return;
 
-    let bulletCount = Mathf.random(12, 16); 
+    let bulletCount = Mathf.random(12, 16);
     for (let i = 0; i < bulletCount; i++) {
         let spreadAngle = unit.rotation + Mathf.range(10);
         Call.createBullet(suvShotgunBulletType, unit.team, unit.x, unit.y, spreadAngle, suvShotgunBulletType.damage, 1, 1);
@@ -140,7 +135,7 @@ function executeUnitAction(unit, action) {
 
             if (pulseBulletType != null) {
                 let bulletCount = 20;
-                let spread = 12.0; 
+                let spread = 12.0;
                 let baseAngle = unit.rotation;
                 for (let i = 0; i < bulletCount; i++) {
                     let fireAngle = baseAngle + Mathf.range(spread / 2.0);
@@ -256,7 +251,7 @@ function applyTransformLogic(unitEntity, uType, targetUnitName, isSUV) {
                     if (isSUV) {
                         data.autoPulseTimer += Time.delta;
                         if (data.gunMode === 0) {
-                            if (data.autoPulseTimer >= 30) { 
+                            if (data.autoPulseTimer >= 30) {
                                 data.autoPulseTimer = 0;
                                 if (pulseBulletType != null) {
                                     Call.createBullet(pulseBulletType, this.team, this.x, this.y, targetAngle, pulseBulletType.damage, 1, 1);
@@ -300,8 +295,8 @@ function applyTransformLogic(unitEntity, uType, targetUnitName, isSUV) {
                     if (this.isShooting) {
                         if (data.overdriveTimer <= 0) {
                             data.firingDuration += Time.delta;
-                            if (data.firingDuration >= 120) { 
-                                data.overdriveTimer = 60;    
+                            if (data.firingDuration >= 120) {
+                                data.overdriveTimer = 60;
                                 data.firingDuration = 0;
                             }
                         }
@@ -438,7 +433,7 @@ Events.on(ClientLoadEvent, function() {
 
     pulseBulletType = new BasicBulletType(3.5, 25);
     pulseBulletType.sprite = "circle";
-    pulseBulletType.lifetime = 115; 
+    pulseBulletType.lifetime = 115;
     pulseBulletType.drag = -0.01;
     pulseBulletType.width = 9;
     pulseBulletType.height = 9;
@@ -453,7 +448,7 @@ Events.on(ClientLoadEvent, function() {
     pulseBulletType.load();
 
     rapid8mmBulletType = new BasicBulletType(12.0, 45);
-    rapid8mmBulletType.lifetime = 50; 
+    rapid8mmBulletType.lifetime = 50;
     rapid8mmBulletType.width = 4;
     rapid8mmBulletType.height = 14;
     rapid8mmBulletType.frontColor = Color.white;
@@ -597,7 +592,7 @@ Events.on(ClientLoadEvent, function() {
     var skillContainer = new Table();
     skillContainer.setFillParent(true);
     skillContainer.bottom().left();
-    skillContainer.margin(0, 150, 15, 0); 
+    skillContainer.margin(0, 150, 15, 0);
 
     var btn1 = skillContainer.button("[1] TRANSFORM", Icon.refresh, Styles.defaultt, run(function() {
         sendSkillCommand("transform");

@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
@@ -40,9 +41,9 @@ function t(viText, enText) {
  function damageArc(team, x, y, rotation, radius, arcAngle, damageAmount) {
     let originX = x - Angles.trnsx(rotation, radius);
     let originY = y - Angles.trnsy(rotation, radius);
-    
+
     let startAngle = rotation - arcAngle / 2;
-    let steps = 18; 
+    let steps = 18;
     let angleStep = arcAngle / steps;
     let hitRadius = 50.0;
 
@@ -64,8 +65,8 @@ function t(viText, enText) {
 
  const vSlashHitFx = new Effect(24, cons(e => {
     Draw.z(Layer.effect + 0.01);
-    
-    let fin = e.fin(); 
+
+    let fin = e.fin();
     let rot = e.rotation;
     let turretX = e.x;
     let turretY = e.y;
@@ -75,18 +76,18 @@ function t(viText, enText) {
 
     let radius = 240.0;
     let arcAngle = 90.0;
-    
+
     let originX = fxX - Angles.trnsx(rot, radius);
     let originY = fxY - Angles.trnsy(rot, radius);
-    
+
     let startAngle = rot - arcAngle / 2;
     let endAngle = rot + arcAngle / 2;
-    
+
     let currentAngle = startAngle + (endAngle - startAngle) * fin;
     let swordX = originX + Angles.trnsx(currentAngle, radius - 33.0);
     let swordY = originY + Angles.trnsy(currentAngle, radius - 33.0);
-    
-    let swordRot = currentAngle; 
+
+    let swordRot = currentAngle;
     let scale = Math.max(0.0, 1.0 - fin) * 3.0;
 
     let alpha = 1.0 - fin;
@@ -105,10 +106,10 @@ function t(viText, enText) {
         Lines.arc(originX, originY, radius - 24.0, currentSweep / 360, startAngle);
     }
 
-    let smokeCount = 20; 
+    let smokeCount = 20;
     for (let i = 0; i <= smokeCount; i++) {
-        let spawnProgress = i / smokeCount; 
-        
+        let spawnProgress = i / smokeCount;
+
         if (fin >= spawnProgress) {
             let stepAngle = startAngle + (endAngle - startAngle) * spawnProgress;
             let px = originX + Angles.trnsx(stepAngle, radius);
@@ -116,13 +117,13 @@ function t(viText, enText) {
 
             let smokeSeed = e.id * 100 + i;
             let particleLife = (fin - spawnProgress) / (1.0 - spawnProgress + 0.0001);
-            
-            let baseAngle = stepAngle + 25.0; 
+
+            let baseAngle = stepAngle + 25.0;
             let smAng = baseAngle + Mathf.randomSeed(smokeSeed, -30, 30);
-            
+
             let flySpeed = 20.0 + Mathf.randomSeed(smokeSeed + 1, 0, 25);
             let flyDist = flySpeed * particleLife;
-            
+
             let smX = px + Angles.trnsx(smAng, flyDist);
             let smY = py + Angles.trnsy(smAng, flyDist);
 
@@ -150,7 +151,7 @@ function t(viText, enText) {
 
     Draw.color(PerfCore.color("#aee5ff"), Color.white, Mathf.randomSeed(e.id + 99, 0, 1));
     Lines.stroke(2.5 * alpha);
-    
+
     let beamLines = 3;
     for (let j = 0; j < beamLines; j++) {
         let beamSeed = e.id * 50 + j + Math.floor(fin * 20);
@@ -172,12 +173,12 @@ function t(viText, enText) {
 
 function triggerSlashArea(b) {
     if (b == null) return;
-    
+
     let dataObj = b.data;
     if (dataObj != null && typeof dataObj === "object") {
         if (dataObj.slashed === true) return;
         dataObj.slashed = true;
-        
+
         let mult = dataObj.mult !== undefined ? dataObj.mult : 1.0;
         let slashDmg = mult * 19.0;
         damageArc(b.team, b.x, b.y, b.rotation(), 240.0, 90.0, slashDmg);
@@ -205,7 +206,7 @@ function triggerSlashArea(b) {
 
     collided(b, other) {
         let result = this.super$collided(b, other);
-        
+
         if (other != null && other.team != b.team && other.health !== undefined) {
             checkExecute(other, b.team);
         }
@@ -293,7 +294,7 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
                 this.findTarget();
 
                 let isControlled = this.isControlled() || this.logicControlled();
-                
+
                 if (this.target != null) {
                     this.wasShooting = true;
                     this.turnToTarget(this.angleTo(this.target));
@@ -316,7 +317,7 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
 
         if (swordRegion.found()) {
             Draw.z(Layer.turret + 0.01);
-            
+
             let offset = -this.customRecoil * swordoder.recoil;
             let rx = this.x + Angles.trnsx(this.rotation, offset);
             let ry = this.y + Angles.trnsy(this.rotation, offset);
@@ -373,7 +374,7 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
             let rndSpeed = Mathf.random(4.0, 10.0);
             let calculatedLifetime = targetDist / rndSpeed;
             let angle = this.rotation + Mathf.range(spreadDeg);
-            
+
             let b = swordoderBulletBase.create(this, this.team, this.x, this.y, angle);
             if (b != null) {
                 b.data = { slashed: false, mult: slashMultiplier };
@@ -575,16 +576,16 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
                 boxA.button(t("[yellow]QUAY PHÚC LỢI A (2K Đồng/Chì/Silicon)[]", "[yellow]ROLL PERK A (2K Cop/Lead/Sil)[]"), packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.copper) >= 2000 && core.items.get(Items.lead) >= 2000 && core.items.get(Items.silicon) >= 2000) {
-                        core.items.remove(Items.copper, 2000);
-                        core.items.remove(Items.lead, 2000);
-                        core.items.remove(Items.silicon, 2000);
+                        NexNet.take(core, Items.copper, 2000);
+                        NexNet.take(core, Items.lead, 2000);
+                        NexNet.take(core, Items.silicon, 2000);
 
                         let res = Math.floor(Mathf.random(1, 3.99));
                         this.setPerkA(res);
-                        this.configure(10 + res);
+                        this.configure(java.lang.Integer(10 + res));
 
-                        Fx.upgradeCore.at(this.x, this.y);
-                        Effect.shake(4, 4, this.x, this.y);
+                        NexNet.fx(Fx.upgradeCore, this.x, this.y);
+                        NexNet.shake(4, 4, this.x, this.y);
                         Vars.ui.showInfo(t("[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[yellow]PHÚC LỢI " + res + "A[]", "[gold]YOU ROLLED:[]\n[yellow]PERK " + res + "A[]"));
                         dialog.hide();
                         this.deselect();
@@ -631,16 +632,16 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
                 boxB.button(t("[cyan]QUAY PHÚC LỢI B (1K Titan/Thorium/Graphite)[]", "[cyan]ROLL PERK B (1K Tit/Tho/Graph)[]"), packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.titanium) >= 1000 && core.items.get(Items.thorium) >= 1000 && core.items.get(Items.graphite) >= 1000) {
-                        core.items.remove(Items.titanium, 1000);
-                        core.items.remove(Items.thorium, 1000);
-                        core.items.remove(Items.graphite, 1000);
+                        NexNet.take(core, Items.titanium, 1000);
+                        NexNet.take(core, Items.thorium, 1000);
+                        NexNet.take(core, Items.graphite, 1000);
 
                         let res = Math.floor(Mathf.random(1, 3.99));
                         this.setPerkB(res);
-                        this.configure(20 + res);
+                        this.configure(java.lang.Integer(20 + res));
 
-                        Fx.upgradeCore.at(this.x, this.y);
-                        Effect.shake(4, 4, this.x, this.y);
+                        NexNet.fx(Fx.upgradeCore, this.x, this.y);
+                        NexNet.shake(4, 4, this.x, this.y);
                         Vars.ui.showInfo(t("[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[cyan]PHÚC LỢI " + res + "B[]", "[gold]YOU ROLLED:[]\n[cyan]PERK " + res + "B[]"));
                         dialog.hide();
                         this.deselect();
@@ -670,7 +671,7 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
 
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
             let title = t(" Thông số pháo Swordoder Mk1 ", " Swordoder Mk1 Stats ");
-            
+
             let descStr = t(
                 "[gold]⚡ THÔNG SỐ CƠ BẢN PHÁO SWORDODER (MK1) ⚡[]\n" +
                 "• Máu: 17,000 | Tầm bắn: 105px (13.1 ô) | Sát thương gốc: 30.0 + 19 (Chém)\n" +

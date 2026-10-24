@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
@@ -39,7 +40,7 @@ function trI(key) {
     if (key === "btn_roll") return currentIsEn ? "[gold]ROLL PERK (4K Copper/Lead/Silicon)[]" : "[gold]QUAY PHÚC LỢI (4K Đồng/Chì/Silicon)[]";
     if (key === "won") return currentIsEn ? "[gold]YOU WON:[]\n" : "[gold]BẠN ĐÃ TRÚNG:[]\n";
     if (key === "no_res_sp") return currentIsEn ? "[red]Not enough resources for Special Perks![]" : "[red]Không đủ tài nguyên cho Phúc Lợi Đặc Biệt![]";
-    
+
     if (key === "active_p1") return currentIsEn ? "[yellow]✔ ACTIVATED: PERK 1\n• Damage +215%\n• Explosion adds 10 sub Bemod stacks\n• Explosion threshold reduced to 7 stacks[]" : "[yellow]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1\n• Sát thương +215%\n• Nổ gán 10 tầng Bemod phụ\n• Mốc nổ giảm còn 7 tầng[]";
     if (key === "active_p2") return currentIsEn ? "[orange]✔ ACTIVATED: PERK 2\n• Explosion adds 5 sub Bemod stacks around\n• Explosion Damage +150%[]" : "[orange]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2\n• Nổ gán 5 tầng Bemod phụ xung quanh\n• Sát thương nổ +150%[]";
     if (key === "active_p3") return currentIsEn ? "[cyan]✔ ACTIVATED: PERK 3\n• +50% All turret stats & explosion effects[]" : "[cyan]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3\n• Tăng 50% Mọi chỉ số pháo & hiệu ứng nổ[]";
@@ -85,12 +86,12 @@ function trI(key) {
 
     if (key === "status_mk2") return currentIsEn ? "[cyan]UPGRADED TO MK2 TURRET[]" : "[cyan]ĐÃ NÂNG CẤP THÀNH PHÁO MK2[]";
     if (key === "status_mk2b") return currentIsEn ? "[purple]UPGRADED TO MK2B TURRET[]" : "[purple]ĐÃ NÂNG CẤP THÀNH PHÁO MK2B[]";
-    
+
     if (key === "info_title") return currentIsEn ? " Indeniter Turret Stats " : " Thông số pháo Indeniter ";
     if (key === "info_mk1") return currentIsEn ? "[gold]⚡ BASE STATS (MK1) ⚡[]\n• Health: 5,500 | Range: 410px | Bullet Damage: 9.0\n• Bemod Chance: 30%" : "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n• Máu: 5,500 | Tầm bắn: 410px | Sát thương đạn: 9.0\n• Tỉ lệ gán Bemod: 30%";
     if (key === "info_mk2") return currentIsEn ? "[cyan]⚡ BASE STATS (MK2) ⚡[]\n• Health: 8,250 | Range: 574px | Bullet Damage: 12.15\n• Bemod Chance: 45% | Bemod Explosion: 500 + 3% Max HP" : "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n• Máu: 8,250 | Tầm bắn: 574px | Sát thương đạn: 12.15\n• Tỉ lệ gán Bemod: 45% | Nổ Bemod: 500 + 3% Max HP";
     if (key === "info_mk2b") return currentIsEn ? "[purple]⚡ BASE STATS (MK2B) ⚡[]\n• Health: 7,333 | Range: 1230px | Bullet Damage: 9.0\n• Mode: 10-shot Burst | Bemod Chance: 100%" : "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n• Máu: 7,333 | Tầm bắn: 1230px | Sát thương đạn: 9.0\n• Chế độ: Bắn loạt 10 viên | Tỉ lệ gán Bemod: 100%";
-    
+
     if (key === "info_perk_header") return currentIsEn ? "\n\n[gold]★ SPECIAL PERKS ACTIVATED ★[]" : "\n\n[gold]★ ĐÃ KÍCH HOẠT PHÚC LỢI ĐẶC BIỆT ★[]";
     if (key === "info_p1") return currentIsEn ? "\n[yellow]• Perk 1: Damage +215%, Explosion adds 10 sub stacks, Threshold: 7 stacks.[]" : "\n[yellow]• Phúc lợi 1: Sát thương +215%, Nổ gán 10 tầng Bemod phụ, Giới hạn nổ: 7 tầng.[]";
     if (key === "info_p2") return currentIsEn ? "\n[orange]• Perk 2: Explosion adds 5 sub stacks around, Explosion Dmg +150%.[]" : "\n[orange]• Phúc lợi 2: Nổ gán 5 tầng Bemod phụ xung quanh, Sát thương nổ +150%.[]";
@@ -113,15 +114,15 @@ function getBemodStatus() {
 }
 
 const reqMK2 = { titanium: 500, silicon: 300 };
-const reqMK2B = { titanium: 800, silicon: 400, plastanium: 200 }; 
+const reqMK2B = { titanium: 800, silicon: 400, plastanium: 200 };
 const reqSpecial = { copper: 4000, lead: 4000, silicon: 4000 };
 
 const bulletCircleTrailFx = new Effect(12, cons(e => {
     Draw.z(Layer.bullet - 0.01);
 
     let col = Color.valueOf("#ffcc00");
-    let randomMaxRadius = Mathf.randomSeed(e.id, 10, 20); 
-    let currentRadius = randomMaxRadius * Interp.pow2Out.apply(e.fin()); 
+    let randomMaxRadius = Mathf.randomSeed(e.id, 10, 20);
+    let currentRadius = randomMaxRadius * Interp.pow2Out.apply(e.fin());
     let alpha = 0.6 * (1.0 - e.fin());
 
     Draw.color(col);
@@ -129,7 +130,7 @@ const bulletCircleTrailFx = new Effect(12, cons(e => {
     Fill.circle(e.x, e.y, currentRadius);
 
     Draw.color(col);
-    Draw.alpha(alpha); 
+    Draw.alpha(alpha);
     Lines.stroke(3.0 * (1.0 - e.fin()));
     Lines.circle(e.x, e.y, currentRadius);
 
@@ -141,9 +142,9 @@ const buffTurretPulseFx = new Effect(40, cons(e => {
 
     let col = Color.valueOf("#00ffcc");
     let targetSize = (e.data != null && typeof e.data === "number") ? e.data : 16;
-    let baseRadius = (targetSize * (2 / 3)) / 2; 
+    let baseRadius = (targetSize * (2 / 3)) / 2;
 
-    let pulse = Math.sin(e.fin() * Math.PI * 2) * (baseRadius * 0.25); 
+    let pulse = Math.sin(e.fin() * Math.PI * 2) * (baseRadius * 0.25);
     let currentRadius = Math.max(2, baseRadius + pulse);
     let alpha = 0.8 * (1.0 - e.fin());
 
@@ -189,7 +190,7 @@ const hel = new Effect(35, cons(e => {
         }
 
         Lines.line(lastX, lastY, nx, ny);
-        
+
         let chanceRand = Mathf.randomSeed(e.id * 300 + i);
         if (chanceRand < 0.3) {
             Fill.circle(nx, ny, 1.0 * alpha);
@@ -219,9 +220,9 @@ function createExplosionEffect(radius, colorHex) {
         Lines.circle(e.x, e.y, maxRadius);
 
         const ringColors = [
-            Color.valueOf("#ffffff"), 
-            Color.valueOf("#ffcc00"), 
-            col 
+            Color.valueOf("#ffffff"),
+            Color.valueOf("#ffcc00"),
+            col
         ];
 
         for (let i = 0; i < 3; i++) {
@@ -272,9 +273,9 @@ function triggerBemodExplosion(building, targetUnit, perkTier, isMK2, isSubExplo
 
     let baseRadius = 150;
     let explosionRadius = baseRadius;
-    if (isCornerTurret) explosionRadius = 50; 
-    else if (perkTier == 3) explosionRadius = baseRadius * 1.50; 
-    else if (perkTier == 4) explosionRadius = baseRadius * 0.50; 
+    if (isCornerTurret) explosionRadius = 50;
+    else if (perkTier == 3) explosionRadius = baseRadius * 1.50;
+    else if (perkTier == 4) explosionRadius = baseRadius * 0.50;
 
     if (isCornerTurret) {
         fxCornerTurret.at(explosionX, explosionY);
@@ -323,8 +324,8 @@ function triggerBemodExplosion(building, targetUnit, perkTier, isMK2, isSubExplo
         let basePercentDmg = isMK2 ? 0.03 : 0.01;
 
         let dmgMult = 1.0;
-        if (perkTier == 2) dmgMult = 2.5; 
-        if (perkTier == 3) dmgMult = 1.5; 
+        if (perkTier == 2) dmgMult = 2.5;
+        if (perkTier == 3) dmgMult = 1.5;
 
         let finalFlatDmg = baseFlatDmg * dmgMult;
         let finalPercentDmg = basePercentDmg * dmgMult;
@@ -333,14 +334,14 @@ function triggerBemodExplosion(building, targetUnit, perkTier, isMK2, isSubExplo
 
         Groups.unit.intersect(explosionX - explosionRadius, explosionY - explosionRadius, explosionRadius * 2, explosionRadius * 2, cons(nearUnit => {
             if (nearUnit != null && nearUnit.isValid() && nearUnit.within(explosionX, explosionY, explosionRadius) && nearUnit.team != building.team) {
-                
+
                 let totalDamage = finalFlatDmg + (nearUnit.maxHealth * finalPercentDmg);
                 nearUnit.damage(totalDamage);
 
                 if (!isSubExplosion && bemodStatus != null) {
                     let addStacks = 0;
-                    if (perkTier == 1) addStacks = 10; 
-                    if (perkTier == 2) addStacks = 5;  
+                    if (perkTier == 1) addStacks = 10;
+                    if (perkTier == 2) addStacks = 5;
                     if (perkTier == 6) addStacks = 10;
 
                     if (addStacks > 0) {
@@ -370,7 +371,7 @@ function triggerBemodExplosion(building, targetUnit, perkTier, isMK2, isSubExplo
                 if (targetUnit != null) {
                     fxPerk5.at(explosionX, explosionY);
                     Effect.shake(3, 3, explosionX, explosionY);
-                    
+
                     Groups.unit.intersect(explosionX - explosionRadius, explosionY - explosionRadius, explosionRadius * 2, explosionRadius * 2, cons(nearUnit => {
                         if (nearUnit != null && nearUnit.isValid() && nearUnit.within(explosionX, explosionY, explosionRadius) && nearUnit.team != building.team) {
                             nearUnit.damage(nearUnit.maxHealth * 0.10);
@@ -419,7 +420,7 @@ function createCustomBulletType(baseProperties) {
 }
 
 const indeniterBullet = createCustomBulletType({
-    speed: 8, damage: 9, lifetime: 35, width: 16, height: 16, 
+    speed: 8, damage: 9, lifetime: 35, width: 16, height: 16,
     frontColor: Color.white, backColor: Color.valueOf("#ff6b35"),
     pierce: false, hitEffect: Fx.disperseTrail, despawnEffect: Fx.disperseTrail,
     trailEffect: bulletCircleTrailFx,
@@ -427,15 +428,15 @@ const indeniterBullet = createCustomBulletType({
 });
 
 const indeniterMK2Bullet = createCustomBulletType({
-    speed: 9.5, damage: 12.15, lifetime: 40, width: 20, height: 20, 
-    frontColor: Color.valueOf("#ffcc00"), backColor: Color.valueOf("#ff3300"),  
+    speed: 9.5, damage: 12.15, lifetime: 40, width: 20, height: 20,
+    frontColor: Color.valueOf("#ffcc00"), backColor: Color.valueOf("#ff3300"),
     pierce: false, hitEffect: Fx.disperseTrail, despawnEffect: Fx.disperseTrail,
     trailEffect: bulletCircleTrailFx,
     trailInterval: 2.5
 });
 
 const indeniterMK2BBullet = createCustomBulletType({
-    speed: 8.5, damage: 9, lifetime: 90, width: 20, height: 20, 
+    speed: 8.5, damage: 9, lifetime: 90, width: 20, height: 20,
     frontColor: Color.white, backColor: Color.valueOf("#d63031"),
     pierce: false, homingPower: 0.25, homingRange: 574,
     hitEffect: Fx.disperseTrail, despawnEffect: Fx.disperseTrail,
@@ -468,9 +469,9 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
         this.customRecoil = 0.0;
         this.nonRecoil = 0.0;
         this.shootingVisual = 0.0;
-        this.energyCharge = 0.0;  
+        this.energyCharge = 0.0;
         this.isBursting = false;
-        this.subBulletTimer = 0.0; 
+        this.subBulletTimer = 0.0;
         return this;
     },
 
@@ -490,27 +491,27 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
         return indeniterBullet;
     },
 
-    getTier(){ 
-        return (this.tierState == null) ? 0 : this.tierState; 
+    getTier(){
+        return (this.tierState == null) ? 0 : this.tierState;
     },
 
-    setTier(val){ 
+    setTier(val){
         this.tierState = Number(val);
         this.isBursting = false;
 
         let perk = this.getPerkTier();
         let pMult = (perk == 3) ? 1.50 : 1.0;
 
-        if(this.tierState == 0) { 
-            this.health = Math.round(5500 * pMult); 
+        if(this.tierState == 0) {
+            this.health = Math.round(5500 * pMult);
             this.reload = (60 / pMult);
         }
-        if(this.tierState == 1) { 
-            this.health = Math.round(8250 * pMult); 
-            this.reload = (52 / pMult); 
+        if(this.tierState == 1) {
+            this.health = Math.round(8250 * pMult);
+            this.reload = (52 / pMult);
         }
-        if(this.tierState == 2) { 
-            this.health = Math.round(7333 * pMult); 
+        if(this.tierState == 2) {
+            this.health = Math.round(7333 * pMult);
             this.reload = (180 / pMult);
         }
         this.maxHealth = this.health;
@@ -519,8 +520,8 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
     range(){
         let tier = this.getTier();
         let baseR = 410;
-        if(tier == 1) baseR = 574; 
-        if(tier == 2) baseR = 1230; 
+        if(tier == 1) baseR = 574;
+        if(tier == 2) baseR = 1230;
 
         return (this.getPerkTier() == 3) ? baseR * 1.50 : baseR;
     },
@@ -532,8 +533,8 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
         let perkTier = this.getPerkTier();
         let baseDmg = b.type.damage;
         let dmgMult = 1.0;
-        if (perkTier == 1) dmgMult += 2.15; 
-        if (perkTier == 3) dmgMult += 0.50; 
+        if (perkTier == 1) dmgMult += 2.15;
+        if (perkTier == 3) dmgMult += 0.50;
         if (perkTier == 6) dmgMult += 5.00;
 
         let finalDmg = baseDmg * dmgMult;
@@ -586,7 +587,7 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
         if (tier == 2) {
             if (this.isBursting) return;
             this.isBursting = true;
-            
+
             for (let i = 0; i < 10; i++) {
                 Time.run(i * 5, packRun(() => {
                     if (this.isValid() && this.hasAmmo()) {
@@ -600,7 +601,7 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
             Time.run(45, packRun(() => { if (this.isValid()) this.reloadCounter = 0; }));
             Time.run(225, packRun(() => { if (this.isValid()) this.isBursting = false; }));
         } else {
-            this.super$shoot(type); 
+            this.super$shoot(type);
             this.customRecoil = 1.0;
             this.nonRecoil = 1.0;
         }
@@ -643,20 +644,20 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
             this.subBulletTimer = 0;
         }
 
-        if (perk == 5 && this.timer.get(0, 300)) { 
+        if (perk == 5 && this.timer.get(0, 300)) {
             let candidates = [];
-            let processedIds = {}; 
+            let processedIds = {};
 
             let tileX = this.tileX();
             let tileY = this.tileY();
-            let radiusTiles = 4; 
+            let radiusTiles = 4;
 
             for (let dx = -radiusTiles; dx <= radiusTiles; dx++) {
                 for (let dy = -radiusTiles; dy <= radiusTiles; dy++) {
                     let otherBuild = Vars.world.build(tileX + dx, tileY + dy);
 
                     if (otherBuild != null && !processedIds[otherBuild.id]) {
-                        processedIds[otherBuild.id] = true; 
+                        processedIds[otherBuild.id] = true;
 
                         if (otherBuild != this && otherBuild.team == this.team && otherBuild instanceof ItemTurret.ItemTurretBuild) {
                             let d = this.dst(otherBuild);
@@ -686,12 +687,12 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
     },
 
     buildConfiguration(table) {
-        table.clear(); 
+        table.clear();
         table.row();
 
         table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
             let dialog = extend(BaseDialog, trI("dialog_title"), {});
-            
+
             let reqCell = dialog.cont.label(packProv(() => {
                 let core = this.team.core();
                 if (core == null) return trI("no_core");
@@ -707,7 +708,7 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
 
                 let titColor1 = cTit >= reqMK2.titanium ? "[green]" : "[red]";
                 let silColor1 = cSil >= reqMK2.silicon ? "[green]" : "[red]";
-                
+
                 let titColor2 = cTit >= reqMK2B.titanium ? "[green]" : "[red]";
                 let silColor2 = cSil >= reqMK2B.silicon ? "[green]" : "[red]";
                 let plaColor2 = cPla >= reqMK2B.plastanium ? "[green]" : "[red]";
@@ -717,16 +718,16 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
                        trI("req_mk2") + titColor1 + cTit + "[]/" + reqMK2.titanium + " | Silicon: " + silColor1 + cSil + "[]/" + reqMK2.silicon + "\n" +
                        trI("req_mk2b") + titColor2 + cTit + "[]/" + reqMK2B.titanium + " | Silicon: " + silColor2 + cSil + "[]/" + reqMK2B.silicon + trI("req_plast") + plaColor2 + cPla + "[]/" + reqMK2B.plastanium;
             }));
-            
+
             reqCell.width(380).get().setWrap(true);
             reqCell.get().setAlignment(Align.left);
-            dialog.cont.row(); 
+            dialog.cont.row();
             dialog.cont.add().height(10).row();
 
             let branchesTable = new Table();
-    
-            let spBox = new Table(); 
-            spBox.background(Styles.black6); 
+
+            let spBox = new Table();
+            spBox.background(Styles.black6);
             spBox.margin(12);
             spBox.add(trI("sp_title")).row();
 
@@ -735,24 +736,24 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
 
             if (currentPerk == 0) {
                 let spD = spBox.add(trI("sp_desc"));
-                spD.width(360).get().setWrap(true); 
-                spD.get().setAlignment(Align.left); 
+                spD.width(360).get().setWrap(true);
+                spD.get().setAlignment(Align.left);
                 spBox.row();
 
                 spBox.button(trI("btn_roll"), packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.copper) >= 4000 && core.items.get(Items.lead) >= 4000 && core.items.get(Items.silicon) >= 4000) {
-                        core.items.remove(Items.copper, 4000); 
-                        core.items.remove(Items.lead, 4000); 
-                        core.items.remove(Items.silicon, 4000);
-    
+                        NexNet.take(core, Items.copper, 4000);
+                        NexNet.take(core, Items.lead, 4000);
+                        NexNet.take(core, Items.silicon, 4000);
+
                         let rand = Mathf.random(100);
-                        let resultPerk = 3; 
+                        let resultPerk = 3;
 
                         if (rand < 1.0) {
-                            resultPerk = 5; 
+                            resultPerk = 5;
                         } else if (rand < 2.0) {
-                            resultPerk = 6; 
+                            resultPerk = 6;
                         } else if (rand < 2.0 + 19.6) {
                             resultPerk = 1;
                         } else if (rand < 2.0 + 19.6 + 29.4) {
@@ -764,10 +765,10 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
                         }
 
                         this.setPerkTier(resultPerk);
-                        this.configure(10 + resultPerk); 
+                        this.configure(java.lang.Integer(10 + resultPerk));
 
-                        Fx.upgradeCore.at(this.x, this.y); 
-                        Effect.shake(6, 6, this.x, this.y);
+                        NexNet.fx(Fx.upgradeCore, this.x, this.y);
+                        NexNet.shake(6, 6, this.x, this.y);
 
                         let perkName = "";
                         if (resultPerk == 1) perkName = isEn() ? "[yellow]PERK 1[]" : "[yellow]PHÚC LỢI 1[]";
@@ -779,10 +780,10 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
 
                         Vars.ui.showInfo(trI("won") + perkName);
 
-                        dialog.hide(); 
+                        dialog.hide();
                         this.deselect();
-                    } else { 
-                        Vars.ui.showInfo(trI("no_res_sp")); 
+                    } else {
+                        Vars.ui.showInfo(trI("no_res_sp"));
                     }
                 })).size(300, 40);
             } else {
@@ -795,73 +796,73 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
                 if (currentPerk == 6) perkText = trI("active_p6");
 
                 let spD = spBox.add(perkText);
-                spD.width(360).get().setWrap(true); 
+                spD.width(360).get().setWrap(true);
                 spD.get().setAlignment(Align.left);
             }
 
-            branchesTable.add(spBox).width(360); 
+            branchesTable.add(spBox).width(360);
             branchesTable.row();
             branchesTable.add().height(12).row();
-    
+
             if (tier == 0) {
-                let b1 = new Table(); 
-                b1.background(Styles.black6); 
+                let b1 = new Table();
+                b1.background(Styles.black6);
                 b1.margin(12);
                 b1.add("[cyan]===(MK2)===[]").row();
                 let b1D = b1.add(trI("mk2_desc"));
-                b1D.width(340).get().setWrap(true); 
-                b1D.get().setAlignment(Align.left); 
+                b1D.width(340).get().setWrap(true);
+                b1D.get().setAlignment(Align.left);
                 b1.row();
                 b1.button(trI("mk2_btn"), packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.titanium) >= reqMK2.titanium && core.items.get(Items.silicon) >= reqMK2.silicon) {
-                        core.items.remove(Items.titanium, reqMK2.titanium); 
-                        core.items.remove(Items.silicon, reqMK2.silicon);
-                        
+                        NexNet.take(core, Items.titanium, reqMK2.titanium);
+                        NexNet.take(core, Items.silicon, reqMK2.silicon);
+
                         this.setTier(1);
-                        this.configure(1); 
+                        this.configure(java.lang.Integer(1));
 
-                        Fx.upgradeCore.at(this.x, this.y); 
-                        Fx.mineHuge.at(this.x, this.y); 
-                        Effect.shake(4, 4, this.x, this.y);
+                        NexNet.fx(Fx.upgradeCore, this.x, this.y);
+                        NexNet.fx(Fx.mineHuge, this.x, this.y);
+                        NexNet.shake(4, 4, this.x, this.y);
 
-                        dialog.hide(); 
+                        dialog.hide();
                         this.deselect();
-                    } else { 
-                        Vars.ui.showInfo(trI("no_res_mk2")); 
+                    } else {
+                        Vars.ui.showInfo(trI("no_res_mk2"));
                     }
                 })).size(180, 38);
 
-                let b2 = new Table(); 
-                b2.background(Styles.black6); 
+                let b2 = new Table();
+                b2.background(Styles.black6);
                 b2.margin(12);
                 b2.add("[purple]===(MK2B)===[]").row();
                 let b2D = b2.add(trI("mk2b_desc"));
-                b2D.width(340).get().setWrap(true); 
-                b2D.get().setAlignment(Align.left); 
+                b2D.width(340).get().setWrap(true);
+                b2D.get().setAlignment(Align.left);
                 b2.row();
                 b2.button(trI("mk2b_btn"), packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.titanium) >= reqMK2B.titanium && core.items.get(Items.silicon) >= reqMK2B.silicon && core.items.get(Items.plastanium) >= reqMK2B.plastanium) {
-                        core.items.remove(Items.titanium, reqMK2B.titanium); 
-                        core.items.remove(Items.silicon, reqMK2B.silicon); 
-                        core.items.remove(Items.plastanium, reqMK2B.plastanium);
-                        
+                        NexNet.take(core, Items.titanium, reqMK2B.titanium);
+                        NexNet.take(core, Items.silicon, reqMK2B.silicon);
+                        NexNet.take(core, Items.plastanium, reqMK2B.plastanium);
+
                         this.setTier(2);
-                        this.configure(2); 
+                        this.configure(java.lang.Integer(2));
 
-                        Fx.bigShockwave.at(this.x, this.y); 
-                        Fx.mineHuge.at(this.x, this.y); 
-                        Effect.shake(4, 4, this.x, this.y);
+                        NexNet.fx(Fx.bigShockwave, this.x, this.y);
+                        NexNet.fx(Fx.mineHuge, this.x, this.y);
+                        NexNet.shake(4, 4, this.x, this.y);
 
-                        dialog.hide(); 
+                        dialog.hide();
                         this.deselect();
-                    } else { 
-                        Vars.ui.showInfo(trI("no_res_mk2b")); 
+                    } else {
+                        Vars.ui.showInfo(trI("no_res_mk2b"));
                     }
                 })).size(180, 38);
 
-                branchesTable.add(b1).width(360); 
+                branchesTable.add(b1).width(360);
                 branchesTable.row();
                 branchesTable.add().height(12).row();
                 branchesTable.add(b2).width(360);
@@ -873,7 +874,7 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
             let scroll = new ScrollPane(branchesTable);
             scroll.setScrollingDisabled(true, false);
             dialog.cont.add(scroll).maxHeight(420);
-            dialog.addCloseButton(); 
+            dialog.addCloseButton();
             dialog.show();
         })).size(50, 40).tooltip(trI("dialog_title"));
 
@@ -900,13 +901,13 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
             let dialog = extend(BaseDialog, title, {});
             let infoTable = new Table();
             let cell = infoTable.add(descStr).width(360);
-            cell.get().setWrap(true); 
+            cell.get().setWrap(true);
             cell.get().setAlignment(Align.left);
 
             let scroll = new ScrollPane(infoTable);
             scroll.setScrollingDisabled(true, false);
             dialog.cont.add(scroll).maxHeight(400);
-            dialog.addCloseButton(); 
+            dialog.addCloseButton();
             dialog.show();
         })).size(50, 40).tooltip(isEn() ? "View detailed system stats" : "Xem thông số chi tiết hệ thống");
     },
@@ -914,13 +915,13 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
     config() { return this.getTier(); },
 
     draw(){
-        let modName = this.block.name.split("-")[0]; 
+        let modName = this.block.name.split("-")[0];
         let baseRegion = PerfCore.region(this.block.basePrefix + "" + this.block.size);
-        
+
         if(baseRegion.found()){
             Draw.rect(baseRegion, this.x, this.y);
         } else {
-            this.super$draw(); 
+            this.super$draw();
         }
 
         let rad = this.rotation * Mathf.degRad;
@@ -947,15 +948,15 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
         }
 
         let maxNonRecoilDistance = -8.0;
-        let nonRecoilOffset = this.nonRecoil * maxNonRecoilDistance; 
-        let nonBaseBack = -8.8; 
-        let nonBaseLeft = 8.8;  
+        let nonRecoilOffset = this.nonRecoil * maxNonRecoilDistance;
+        let nonBaseBack = -8.8;
+        let nonBaseLeft = 8.8;
 
         let nonRegion = PerfCore.region(modName + "-indeniter-non");
         if (nonRegion.found()) {
             let nonX = this.x + (nonBaseBack + nonRecoilOffset) * cos - nonBaseLeft * sin;
             let nonY = this.y + (nonBaseBack + nonRecoilOffset) * sin + nonBaseLeft * cos;
-            
+
             Draw.rect(nonRegion, nonX, nonY, this.rotation);
         }
 
@@ -981,7 +982,7 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
             let bulletType = this.peekAmmo();
             let energyColor = bulletType.backColor ? bulletType.backColor : Color.valueOf("#ffcc00");
 
-            let barrelOffset = 14.0 + (this.customRecoil * -5.0); 
+            let barrelOffset = 14.0 + (this.customRecoil * -5.0);
             let ballX = this.x + barrelOffset * cos;
             let ballY = this.y + barrelOffset * sin;
 
@@ -1005,14 +1006,14 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
         Draw.reset();
     },
 
-    write(write){ 
-        this.super$write(write); 
-        write.b(this.getTier()); 
+    write(write){
+        this.super$write(write);
+        write.b(this.getTier());
         write.b(this.getPerkTier());
     },
-    read(read, revision){ 
-        this.super$read(read, revision); 
-        this.setTier(read.b()); 
+    read(read, revision){
+        this.super$read(read, revision);
+        this.setTier(read.b());
         if (revision >= 1) {
             this.setPerkTier(read.b());
         } else {
@@ -1027,8 +1028,6 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
     }
 });
 
-// Tối ưu hóa hiệu năng: Thay vì dùng Groups.build.each duyệt toàn bộ bản đồ,
-// sự kiện này chỉ kiểm tra trực tiếp các pháo đang được buff trong từ điển global.cornerBuffedTurrets.
 Events.on(UnitDamageEvent, cons(e => {
     let unit = e.unit;
     if (unit == null || !unit.isValid()) return;
@@ -1037,18 +1036,18 @@ Events.on(UnitDamageEvent, cons(e => {
         for (let id in global.cornerBuffedTurrets) {
             let sourceIndeniter = global.cornerBuffedTurrets[id];
             let build = Vars.world.build(parseInt(id));
-            
+
             if (build != null && build.isValid() && sourceIndeniter != null && sourceIndeniter.isValid()) {
                 if (unit.team != build.team && build.team == sourceIndeniter.team && build.dst(unit) <= build.range() + 20) {
                     let status = getBemodStatus();
-                    
-                    if (status != null && Mathf.chance(0.35)) { 
+
+                    if (status != null && Mathf.chance(0.35)) {
                         unit.apply(status, 60 * 10);
                         let uid = unit.id;
-                        
+
                         if (global.bemodStacks) {
                             global.bemodStacks[uid] = (global.bemodStacks[uid] || 0) + 1;
-                            
+
                             if (global.bemodStacks[uid] >= 10) {
                                 triggerBemodExplosion(build, unit, 0, false, true, true);
                             }

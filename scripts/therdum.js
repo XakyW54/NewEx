@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
@@ -23,12 +24,12 @@ function t(viText, enText) {
     let alpha = 1.0 - e.fin();
     Draw.color(Color.gray, Color.darkGray, e.fin());
     Draw.alpha(alpha * 0.7);
-    
+
     for (let i = 0; i < 3; i++) {
         let angle = Mathf.randomSeed(e.id + i, 360);
         let dist = Mathf.randomSeed(e.id * 2 + i, 2, 8) * e.fin();
         let size = Mathf.randomSeed(e.id * 3 + i, 2.5, 4.5) * (1.0 - e.fin() * 0.3);
-        
+
         let px = e.x + Angles.trnsx(angle, dist);
         let py = e.y + Angles.trnsy(angle, dist);
         Fill.circle(px, py, size);
@@ -41,7 +42,7 @@ function t(viText, enText) {
 
     Draw.z(Layer.effect);
     Draw.color(PerfCore.color("#ffcc44"), PerfCore.color("#ff5500"), e.fin());
-    
+
     let stroke = (1.0 - e.fin()) * 1.8;
     Lines.stroke(stroke);
 
@@ -68,7 +69,7 @@ const therdumBulletBase = extend(BasicBulletType, {
     height: 14,
     hitEffect: smokeHitFx,
     despawnEffect: smokeHitFx,
-    
+
     draw(b) {
         Draw.z(Layer.bullet);
         let colFront = Color.valueOf("#ffaa00");
@@ -100,7 +101,7 @@ const therdum = extend(ItemTurret, "therdum", {
 therdum.health = 17000;
 therdum.range = 105;
 therdum.reload = 120;
-therdum.shootOffset = 12.0; 
+therdum.shootOffset = 12.0;
 
 therdum.config(java.lang.Integer, packCons2((tile, value) => {
     if (tile != null) {
@@ -155,7 +156,7 @@ therdum.buildType = () => extend(ItemTurret.ItemTurretBuild, therdum, {
     fireExtraSubBullets(count, spreadDeg) {
         let currentRange = this.range();
         let offset = therdum.shootOffset || 12.0;
-        
+
         let spawnX = this.x + Angles.trnsx(this.rotation, offset);
         let spawnY = this.y + Angles.trnsy(this.rotation, offset);
 
@@ -167,7 +168,7 @@ therdum.buildType = () => extend(ItemTurret.ItemTurretBuild, therdum, {
             let rndSpeed = Mathf.random(4.0, 10.0);
             let calculatedLifetime = currentRange / rndSpeed;
             let angle = this.rotation + Mathf.range(spreadDeg);
-            
+
             let b = therdumBulletBase.create(this, this.team, spawnX, spawnY, angle);
             if (b != null) {
                 b.vel.setLength(rndSpeed);
@@ -318,16 +319,16 @@ therdum.buildType = () => extend(ItemTurret.ItemTurretBuild, therdum, {
                 boxA.button(t("[yellow]QUAY PHÚC LỢI A (2K Đồng/Chì/Silicon)[]", "[yellow]ROLL PERK A (2K Cop/Lead/Sil)[]"), packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.copper) >= 2000 && core.items.get(Items.lead) >= 2000 && core.items.get(Items.silicon) >= 2000) {
-                        core.items.remove(Items.copper, 2000);
-                        core.items.remove(Items.lead, 2000);
-                        core.items.remove(Items.silicon, 2000);
+                        NexNet.take(core, Items.copper, 2000);
+                        NexNet.take(core, Items.lead, 2000);
+                        NexNet.take(core, Items.silicon, 2000);
 
                         let res = Math.floor(Mathf.random(1, 3.99));
                         this.setPerkA(res);
-                        this.configure(10 + res);
+                        this.configure(java.lang.Integer(10 + res));
 
-                        Fx.upgradeCore.at(this.x, this.y);
-                        Effect.shake(4, 4, this.x, this.y);
+                        NexNet.fx(Fx.upgradeCore, this.x, this.y);
+                        NexNet.shake(4, 4, this.x, this.y);
                         Vars.ui.showInfo(t("[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[yellow]PHÚC LỢI " + res + "A[]", "[gold]YOU ROLLED:[]\n[yellow]PERK " + res + "A[]"));
                         dialog.hide();
                         this.deselect();
@@ -374,16 +375,16 @@ therdum.buildType = () => extend(ItemTurret.ItemTurretBuild, therdum, {
                 boxB.button(t("[cyan]QUAY PHÚC LỢI B (1K Titan/Thorium/Graphite)[]", "[cyan]ROLL PERK B (1K Tit/Tho/Graph)[]"), packRun(() => {
                     let core = this.team.core();
                     if (core != null && core.items.get(Items.titanium) >= 1000 && core.items.get(Items.thorium) >= 1000 && core.items.get(Items.graphite) >= 1000) {
-                        core.items.remove(Items.titanium, 1000);
-                        core.items.remove(Items.thorium, 1000);
-                        core.items.remove(Items.graphite, 1000);
+                        NexNet.take(core, Items.titanium, 1000);
+                        NexNet.take(core, Items.thorium, 1000);
+                        NexNet.take(core, Items.graphite, 1000);
 
                         let res = Math.floor(Mathf.random(1, 3.99));
                         this.setPerkB(res);
-                        this.configure(20 + res);
+                        this.configure(java.lang.Integer(20 + res));
 
-                        Fx.upgradeCore.at(this.x, this.y);
-                        Effect.shake(4, 4, this.x, this.y);
+                        NexNet.fx(Fx.upgradeCore, this.x, this.y);
+                        NexNet.shake(4, 4, this.x, this.y);
                         Vars.ui.showInfo(t("[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[cyan]PHÚC LỢI " + res + "B[]", "[gold]YOU ROLLED:[]\n[cyan]PERK " + res + "B[]"));
                         dialog.hide();
                         this.deselect();
@@ -413,7 +414,7 @@ therdum.buildType = () => extend(ItemTurret.ItemTurretBuild, therdum, {
 
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
             let title = t(" Thông số pháo Therdum Mk1 ", " Therdum Mk1 Stats ");
-            
+
             let descStr = t(
                 "[gold]⚡ THÔNG SỐ CƠ BẢN PHÁO THERDUM (MK1) ⚡[]\n" +
                 "• Máu: 17,000 | Tầm bắn: 105px (13.1 ô) | Sát thương gốc: 48.0\n" +

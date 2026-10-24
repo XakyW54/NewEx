@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
@@ -17,7 +18,7 @@ const reqMK2B = {
 const tyberExplosionFx = new Effect(40, cons(e => {
     Draw.color(PerfCore.color("d1efff"), PerfCore.color("66b1ff"), e.fin());
     Lines.stroke(3 * e.fout());
-    Lines.circle(e.x, e.y, 80 * e.fin()); 
+    Lines.circle(e.x, e.y, 80 * e.fin());
     Angles.randLenVectors(e.id, 15, 80 * e.fin(), e.rotation, 360, new Floatc2({
         get: function(x, y){ Fill.circle(e.x + x, e.y + y, 1 + 3 * e.fout()); }
     }));
@@ -26,7 +27,7 @@ const tyberExplosionFx = new Effect(40, cons(e => {
 const tyberExplosionBigFx = new Effect(50, cons(e => {
     Draw.color(PerfCore.color("ff8a80"), PerfCore.color("ff1744"), e.fin());
     Lines.stroke(4 * e.fout());
-    Lines.circle(e.x, e.y, 136 * e.fin()); 
+    Lines.circle(e.x, e.y, 136 * e.fin());
     Angles.randLenVectors(e.id, 25, 136 * e.fin(), e.rotation, 360, new Floatc2({
         get: function(x, y){ Fill.circle(e.x + x, e.y + y, 1 + 4 * e.fout()); }
     }));
@@ -37,35 +38,35 @@ const shootMK2 = new ShootAlternate(); shootMK2.shots = 5; shootMK2.shotDelay = 
 const shootMK2B = new ShootPattern(); shootMK2B.shots = 1;
 
 Events.on(EventType.ContentInitEvent, () => {
-    
-    const soundShootMain = Vars.tree.loadSound("shootBig");     
-    const soundShootSecondary = Vars.tree.loadSound("rocklaunch"); 
-    const soundExplosionNormal = Vars.tree.loadSound("explosion"); 
-    const soundExplosionBig = Vars.tree.loadSound("explosionbig"); 
 
-    const mainRocketUnit = Vars.content.getByName(ContentType.unit, "newex-tyberrocket"); 
+    const soundShootMain = Vars.tree.loadSound("shootBig");
+    const soundShootSecondary = Vars.tree.loadSound("rocklaunch");
+    const soundExplosionNormal = Vars.tree.loadSound("explosion");
+    const soundExplosionBig = Vars.tree.loadSound("explosionbig");
+
+    const mainRocketUnit = Vars.content.getByName(ContentType.unit, "newex-tyberrocket");
     const rocket2bUnit = Vars.content.getByName(ContentType.unit, "newex-tyberrocket2b");
 
     let tyberBullet = new BasicBulletType();
     tyberBullet.damage = 0;
-    tyberBullet.speed = 0.01; 
+    tyberBullet.speed = 0.01;
     tyberBullet.instantDisappear = true;
-    if(soundShootMain != null) tyberBullet.shootSound = soundShootMain; 
-    tyberBullet.spawnUnit = mainRocketUnit; 
+    if(soundShootMain != null) tyberBullet.shootSound = soundShootMain;
+    tyberBullet.spawnUnit = mainRocketUnit;
     tyberBullet.shootEffect = Fx.shootBig;
     tyberBullet.smokeEffect = Fx.shootSmokeMissile;
 
     const tyberBase = Vars.content.getByName(ContentType.block, "newex-tyber");
     if(tyberBase != null){
-        tyberBase.configurable = true; 
+        tyberBase.configurable = true;
         tyberBase.ammoTypes.put(Items.titanium, tyberBullet);
 
         tyberBase.buildType = () => extend(ItemTurret.ItemTurretBuild, tyberBase, {
-            shootingTimer: 0.0,      
-            lastRocketTime: 0.0,     
-            lastExplosionTime: 0.0,  
-            evolution: 0, 
-            lastAppliedEvo: -1,  
+            shootingTimer: 0.0,
+            lastRocketTime: 0.0,
+            lastExplosionTime: 0.0,
+            evolution: 0,
+            lastAppliedEvo: -1,
 
             range(){
                 if(this.evolution == 1) return this.super$range() * 1.5;
@@ -77,16 +78,16 @@ Events.on(EventType.ContentInitEvent, () => {
                 if(ammo != null && this.lastAppliedEvo !== this.evolution){
                     this.lastAppliedEvo = this.evolution;
                     if(this.evolution == 1){
-                        tyberBase.shoot = shootMK2; 
-                        tyberBase.reload = 80; 
-                    } 
-                    else if(this.evolution == 2){ 
-                        tyberBase.shoot = shootMK2B; 
-                        tyberBase.reload = 40; 
-                    } 
-                    else { 
-                        tyberBase.shoot = shootMK1; 
-                        tyberBase.reload = 80; 
+                        tyberBase.shoot = shootMK2;
+                        tyberBase.reload = 80;
+                    }
+                    else if(this.evolution == 2){
+                        tyberBase.shoot = shootMK2B;
+                        tyberBase.reload = 40;
+                    }
+                    else {
+                        tyberBase.shoot = shootMK1;
+                        tyberBase.reload = 80;
                     }
                 }
                 return ammo;
@@ -101,53 +102,53 @@ Events.on(EventType.ContentInitEvent, () => {
 
             updateTile(){
                 this.super$updateTile();
-                
+
                 if(this.isShooting && this.hasAmmo() && this.isActive()){
                     this.shootingTimer += Time.delta;
 
-                    let rocketCooldown = 300; 
+                    let rocketCooldown = 300;
                     if(this.evolution == 1){
-                        rocketCooldown = 240; 
+                        rocketCooldown = 240;
                     } else if(this.evolution == 2){
-                        rocketCooldown = 180; 
+                        rocketCooldown = 180;
                     }
 
-                    if(this.shootingTimer - this.lastRocketTime >= rocketCooldown){ 
-                        this.lastRocketTime = this.shootingTimer; 
-                        if(rocket2bUnit != null){ 
-                            if(this.evolution == 2){ 
+                    if(this.shootingTimer - this.lastRocketTime >= rocketCooldown){
+                        this.lastRocketTime = this.shootingTimer;
+                        if(rocket2bUnit != null){
+                            if(this.evolution == 2){
                                 let posL = this.getCustomPos(-6, 4); let posR = this.getCustomPos(6, 4);
-                                let unitA = rocket2bUnit.spawn(this.team, posL.x, posL.y); if(unitA != null) unitA.rotation = this.rotation - 12; 
-                                let unitB = rocket2bUnit.spawn(this.team, posR.x, posR.y); if(unitB != null) unitB.rotation = this.rotation + 12; 
+                                let unitA = rocket2bUnit.spawn(this.team, posL.x, posL.y); if(unitA != null) unitA.rotation = this.rotation - 12;
+                                let unitB = rocket2bUnit.spawn(this.team, posR.x, posR.y); if(unitB != null) unitB.rotation = this.rotation + 12;
                             } else {
                                 let posM = this.getCustomPos(0, 6);
-                                let spawnedUnit = rocket2bUnit.spawn(this.team, posM.x, posM.y); if(spawnedUnit != null) spawnedUnit.rotation = this.rotation; 
+                                let spawnedUnit = rocket2bUnit.spawn(this.team, posM.x, posM.y); if(spawnedUnit != null) spawnedUnit.rotation = this.rotation;
                             }
-                            if(soundShootSecondary != null) soundShootSecondary.at(this.x, this.y, 1.2, 0.8); 
+                            if(soundShootSecondary != null) soundShootSecondary.at(this.x, this.y, 1.2, 0.8);
                         }
                     }
 
-                    let explosionCooldown = 420; 
+                    let explosionCooldown = 420;
                     if(this.evolution == 1){
-                        explosionCooldown = 360; 
+                        explosionCooldown = 360;
                     } else if(this.evolution == 2){
-                        explosionCooldown = 180; 
+                        explosionCooldown = 180;
                     }
 
-                    if(this.shootingTimer - this.lastExplosionTime >= explosionCooldown){ 
-                        this.lastExplosionTime = this.shootingTimer; 
-                        if(this.evolution == 2){ 
-                            tyberExplosionBigFx.at(this.x, this.y); if(soundExplosionBig != null) soundExplosionBig.at(this.x, this.y); 
-                            Damage.damage(this.team, this.x, this.y, 1700, 176, false, true); 
-                        } else { 
-                            tyberExplosionFx.at(this.x, this.y); 
+                    if(this.shootingTimer - this.lastExplosionTime >= explosionCooldown){
+                        this.lastExplosionTime = this.shootingTimer;
+                        if(this.evolution == 2){
+                            tyberExplosionBigFx.at(this.x, this.y); if(soundExplosionBig != null) soundExplosionBig.at(this.x, this.y);
+                            Damage.damage(this.team, this.x, this.y, 1700, 176, false, true);
+                        } else {
+                            tyberExplosionFx.at(this.x, this.y);
                             if(this.evolution == 1 && soundExplosionBig != null) soundExplosionBig.at(this.x, this.y);
-                            else if(soundExplosionNormal != null) soundExplosionNormal.at(this.x, this.y); 
-                            Damage.damage(this.team, this.x, this.y, 1700, 176, false, true); 
+                            else if(soundExplosionNormal != null) soundExplosionNormal.at(this.x, this.y);
+                            Damage.damage(this.team, this.x, this.y, 1700, 176, false, true);
                         }
                     }
                 } else {
-                    if(this.shootingTimer > 0){ 
+                    if(this.shootingTimer > 0){
                         this.shootingTimer = 0.0; this.lastRocketTime = 0.0; this.lastExplosionTime = 0.0;
                     }
                 }
@@ -162,14 +163,14 @@ Events.on(EventType.ContentInitEvent, () => {
                 let isEn = Core.settings.getString("locale").startsWith("en");
 
                 if(ev == 0){
-                    table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => { 
+                    table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
                         let dialogTitle = isEn ? "Tyber Turret Upgrade Center" : "Trung tâm nâng cấp pháo Tyber";
-                        let dialog = extend(BaseDialog, dialogTitle, {}); 
-                        
+                        let dialog = extend(BaseDialog, dialogTitle, {});
+
                         let reqCell = dialog.cont.label(packProv(() => {
                             let core = this.team.core();
                             if(core == null) return isEn ? "[red]Team Core Not Found![]" : "[red]Không tìm thấy Lõi Đội![]";
-                            
+
                             let currentTitanium = core.items.get(Items.titanium);
                             let currentSilicon = core.items.get(Items.silicon);
                             let currentPlastanium = core.items.get(Items.plastanium);
@@ -182,7 +183,7 @@ Events.on(EventType.ContentInitEvent, () => {
                             let plaColor2 = currentPlastanium >= reqMK2B.plastanium ? "[green]" : "[red]";
 
                             if (isEn) {
-                                return "[yellow]CORE STORAGE REQUIREMENTS:[]\n" + 
+                                return "[yellow]CORE STORAGE REQUIREMENTS:[]\n" +
                                        "[cyan]MK2 Branch:[]\n" +
                                        " • Titanium: " + titColor1 + currentTitanium + "[] / " + reqMK2.titanium + "\n" +
                                        " • Silicon: " + silColor1 + currentSilicon + "[] / " + reqMK2.silicon + "\n" +
@@ -191,7 +192,7 @@ Events.on(EventType.ContentInitEvent, () => {
                                        " • Silicon: " + silColor2 + currentSilicon + "[] / " + reqMK2B.silicon + "\n" +
                                        " • Plastanium: " + plaColor2 + currentPlastanium + "[] / " + reqMK2B.plastanium;
                             } else {
-                                return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" + 
+                                return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
                                        "[cyan]Nhánh MK2:[]\n" +
                                        " • Titan: " + titColor1 + currentTitanium + "[] / " + reqMK2.titanium + "\n" +
                                        " • Silicon: " + silColor1 + currentSilicon + "[] / " + reqMK2.silicon + "\n" +
@@ -201,15 +202,15 @@ Events.on(EventType.ContentInitEvent, () => {
                                        " • Nhựa: " + plaColor2 + currentPlastanium + "[] / " + reqMK2B.plastanium;
                             }
                         }));
-                        
+
                         reqCell.width(360).get().setWrap(true);
                         reqCell.get().setAlignment(Align.left);
                         dialog.cont.row(); dialog.cont.add().height(10).row();
 
                         let branchesTable = new Table();
-                        
+
                         let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
-                        b1.add("[cyan]===(MK2)===[]").row(); 
+                        b1.add("[cyan]===(MK2)===[]").row();
                         let b1Text = isEn ? "Upgrades system to 5 alternating barrels:\n" +
                                             " [white]• Total range increased by [green]+50%[] reaching [orange]930 pixels[].[]\n" +
                                             " [white]• Auto-fires long-range light homing missiles (Speed: 3).[]\n" +
@@ -222,18 +223,18 @@ Events.on(EventType.ContentInitEvent, () => {
                                             " [white]• Thời gian sạc xung nổ đại địa tại tâm rút xuống còn [pink]6.0 giây[].[]";
                         let b1D = b1.add(b1Text);
                         b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
-                        b1.button(isEn ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => { 
-                            let core = this.team.core(); 
-                            if(core != null && core.items.get(Items.titanium) >= reqMK2.titanium && core.items.get(Items.silicon) >= reqMK2.silicon){ 
-                                core.items.remove(Items.titanium, reqMK2.titanium); 
-                                core.items.remove(Items.silicon, reqMK2.silicon);
-                                Fx.upgradeCore.at(this.x, this.y); 
-                                this.evolution = 1; dialog.hide(); this.deselect(); 
-                            } else { Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2![]" : "[red]Không đủ tài nguyên cho cấu hình MK2![]"); } 
-                        })).size(180, 38); 
+                        b1.button(isEn ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => {
+                            let core = this.team.core();
+                            if(core != null && core.items.get(Items.titanium) >= reqMK2.titanium && core.items.get(Items.silicon) >= reqMK2.silicon){
+                                NexNet.take(core, Items.titanium, reqMK2.titanium);
+                                NexNet.take(core, Items.silicon, reqMK2.silicon);
+                                NexNet.fx(Fx.upgradeCore, this.x, this.y);
+                                this.evolution = 1; dialog.hide(); this.deselect();
+                            } else { Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2![]" : "[red]Không đủ tài nguyên cho cấu hình MK2![]"); }
+                        })).size(180, 38);
 
                         let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
-                        b2.add("[purple]===(MK2B)===[]").row(); 
+                        b2.add("[purple]===(MK2B)===[]").row();
                         let b2Text = isEn ? "Compresses fire into a single concentrated core barrel:\n" +
                                             " [white]• Core reload speed massively boosted to [green]40 ticks[] (2x Fire rate).[]\n" +
                                             " [white]• Fires dual high-speed side missiles (Speed: 6) every [pink]3.0s[].[]\n" +
@@ -246,30 +247,30 @@ Events.on(EventType.ContentInitEvent, () => {
                                             " [white]• Xung nổ hỏa lực tại tâm nạp siêu tốc [pink]3.0 giây/lần[], giải phóng sóng chấn động tỏa hạt đỏ hạt nhân.[]";
                         let b2D = b2.add(b2Text);
                         b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
-                        b2.button(isEn ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => { 
-                            let core = this.team.core(); 
-                            if(core != null && core.items.get(Items.titanium) >= reqMK2B.titanium && 
-                               core.items.get(Items.silicon) >= reqMK2B.silicon && 
-                               core.items.get(Items.plastanium) >= reqMK2B.plastanium){ 
-                                
-                                core.items.remove(Items.titanium, reqMK2B.titanium); 
-                                core.items.remove(Items.silicon, reqMK2B.silicon);
-                                core.items.remove(Items.plastanium, reqMK2B.plastanium);
-                                
-                                if (typeof Fx.bigShockwave !== 'undefined') Fx.bigShockwave.at(this.x, this.y); 
-                                this.evolution = 2; dialog.hide(); this.deselect(); 
-                            } else { Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2B![]" : "[red]Không đủ tài nguyên cho cấu hình MK2B![]"); } 
-                        })).size(180, 38); 
+                        b2.button(isEn ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => {
+                            let core = this.team.core();
+                            if(core != null && core.items.get(Items.titanium) >= reqMK2B.titanium &&
+                               core.items.get(Items.silicon) >= reqMK2B.silicon &&
+                               core.items.get(Items.plastanium) >= reqMK2B.plastanium){
 
-                        branchesTable.add(b1).width(340); branchesTable.row(); 
-                        branchesTable.add().height(12).row(); 
+                                NexNet.take(core, Items.titanium, reqMK2B.titanium);
+                                NexNet.take(core, Items.silicon, reqMK2B.silicon);
+                                NexNet.take(core, Items.plastanium, reqMK2B.plastanium);
+
+                                if (typeof Fx.bigShockwave !== 'undefined') NexNet.fx(Fx.bigShockwave, this.x, this.y);
+                                this.evolution = 2; dialog.hide(); this.deselect();
+                            } else { Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2B![]" : "[red]Không đủ tài nguyên cho cấu hình MK2B![]"); }
+                        })).size(180, 38);
+
+                        branchesTable.add(b1).width(340); branchesTable.row();
+                        branchesTable.add().height(12).row();
                         branchesTable.add(b2).width(340);
 
                         let scroll = new ScrollPane(branchesTable);
                         scroll.setScrollingDisabled(true, false);
                         dialog.cont.add(scroll).maxHeight(400);
-                        dialog.addCloseButton(); dialog.show(); 
-                    })).size(50, 40).tooltip(isEn ? "Upgrade Tyber turret structure" : "Nâng cấp cấu trúc tháp pháo Tyber"); 
+                        dialog.addCloseButton(); dialog.show();
+                    })).size(50, 40).tooltip(isEn ? "Upgrade Tyber turret structure" : "Nâng cấp cấu trúc tháp pháo Tyber");
                 } else {
                     table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
                         if (isEn) {
@@ -307,7 +308,7 @@ Events.on(EventType.ContentInitEvent, () => {
                                       "• [lightgray]Tên lửa định vị phụ (Tốc độ 3):[] Phóng tầm nhiệt sườn định kỳ mỗi " + (ev == 1 ? "[green]4.0 giây[]" : "[yellow]5.0 giây[]") + ". Khi chạm nổ giải phóng phá hủy diện rộng cực đại lên tới [orange]300 bán kính[] (Sát thương nổ: 235).\n" +
                                       "• [lightgray]Xung nổ đại địa:[] Kích nổ lõi nhiệt hạch tại tâm pháo định kỳ mỗi " + (ev == 1 ? "[green]6.0 giây[]" : "[yellow]7.0 giây[]") + ", gây [red]1700 Sát thương diện rộng[] trong phạm vi [lightgray]176 ô[] giúp chống tiếp cận.";
                         }
-                    } 
+                    }
                     else if (ev == 2) {
                         title += "[purple](MK2B)[]";
                         if (isEn) {

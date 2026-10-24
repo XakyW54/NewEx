@@ -1,23 +1,23 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
 print("LAVUNDER - OPTIMIZED & NO-LIMIT SYSTEM LOADED");
 
-const deadZone = 40; 
-const laserColor = Color.valueOf("bf7fff"); 
-const particleColor = Color.valueOf("e8bfff"); 
-const greenLaserColor = Color.valueOf("33ff55"); 
-const amberTextColor = Color.valueOf("ffaa00"); 
+const deadZone = 40;
+const laserColor = Color.valueOf("bf7fff");
+const particleColor = Color.valueOf("e8bfff");
+const greenLaserColor = Color.valueOf("33ff55");
+const amberTextColor = Color.valueOf("ffaa00");
 
- 
 const reqMK2 = { copper: 400, graphite: 400 };
 const reqMK3 = { lead: 450, silicon: 570 };
 
-const turretTierMap = new ObjectMap();         
-const turretChargeMap = new ObjectMap();       
-const turretBurstTimerMap = new ObjectMap();   
-const turretMilestoneMap = new ObjectMap();    
-const mk3TripleExplosionMap = new ObjectMap(); 
+const turretTierMap = new ObjectMap();
+const turretChargeMap = new ObjectMap();
+const turretBurstTimerMap = new ObjectMap();
+const turretMilestoneMap = new ObjectMap();
+const mk3TripleExplosionMap = new ObjectMap();
 const greenLaserRenderMap = new ObjectMap();
-const turretDamageTimerMap = new ObjectMap(); 
+const turretDamageTimerMap = new ObjectMap();
 
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
@@ -59,7 +59,7 @@ const lavunderLaserBullet = extend(BulletType, {
 
     update(b){
         if(!b || !b.owner) return;
-        
+
         let turretId = b.owner.id;
         let range = 260;
 
@@ -88,11 +88,11 @@ const lavunderLaserBullet = extend(BulletType, {
             }
         }
 
-        let baseDamage = 112; 
+        let baseDamage = 112;
         if(tier == 2){
-            baseDamage = 112; 
+            baseDamage = 112;
         } else if(tier == 3){
-            baseDamage = 112 * 1.71; 
+            baseDamage = 112 * 1.71;
         }
         let currentTickDamage = baseDamage * (1 + (currentPoints / 100));
 
@@ -109,7 +109,7 @@ const lavunderLaserBullet = extend(BulletType, {
 
                     Fx.scatheExplosion.at(exData.x, exData.y);
                     Effect.shake(6, 6, exData.x, exData.y);
-                    
+
                     let targetRadius = 40;
                     let m100DamageValue = 2400 + (currentTickDamage * 3.0);
 
@@ -118,9 +118,9 @@ const lavunderLaserBullet = extend(BulletType, {
                             u.damage(m100DamageValue);
                         }
                     });
-                    
+
                     exData.count--;
-                    exData.timer = 30; 
+                    exData.timer = 30;
                 }
             } else {
                 mk3TripleExplosionMap.remove(turretId);
@@ -147,31 +147,31 @@ const lavunderLaserBullet = extend(BulletType, {
 
             if(currentPoints < 100){
                 let chargeSpeedMultiplier = 1 + Math.pow(currentPoints / 50, 2);
-                let speedBonus = (tier == 2) ? 3.8 : 1.0; 
-                
+                let speedBonus = (tier == 2) ? 3.8 : 1.0;
+
                 currentPoints += (1 / 60) * chargeSpeedMultiplier * speedBonus;
-                
+
                 if(tier == 1 || tier == 2){
                     if(currentPoints >= 100){
                         let refundPoints = (tier == 2 && Mathf.chance(0.50)) ? 80 : 0;
                         currentPoints = refundPoints;
-                        
+
                         turretBurstTimerMap.put(turretId, 14);
 
-                        let explosionRadius = (tier == 2) ? 40 : 60; 
-                        let hpPercent = (tier == 2) ? 0.02 : 0.01; 
-                        let flatDamage = (tier == 2) ? 3200 : 1000; 
+                        let explosionRadius = (tier == 2) ? 40 : 60;
+                        let hpPercent = (tier == 2) ? 0.02 : 0.01;
+                        let flatDamage = (tier == 2) ? 3200 : 1000;
 
                         Units.nearbyEnemies(b.team, target.x - explosionRadius, target.y - explosionRadius, explosionRadius * 2, explosionRadius * 2, u => {
                             if(u && !u.dead && !u.isFlying() && Mathf.dst(target.x, target.y, u.x, u.y) <= explosionRadius){
                                 u.damage((u.maxHealth * hpPercent) + flatDamage);
                             }
                         });
-                        
+
                         Fx.scatheExplosion.at(target.x, target.y);
                         Effect.shake(tier == 2 ? 8 : 6, tier == 2 ? 8 : 6, target.x, target.y);
                     }
-                } 
+                }
                 else if(tier == 3) {
                     let milestones = [20, 40, 60, 80];
                     let lastScannedMilestone = turretMilestoneMap.get(turretId);
@@ -180,7 +180,7 @@ const lavunderLaserBullet = extend(BulletType, {
                         let stone = milestones[i];
                         if(currentPoints >= stone && lastScannedMilestone < stone){
                             turretMilestoneMap.put(turretId, stone);
-                            
+
                             if(Mathf.chance(0.70)){
                                 greenLaserRenderMap.put(turretId, {
                                     x: target.x,
@@ -203,7 +203,7 @@ const lavunderLaserBullet = extend(BulletType, {
 
                     if(currentPoints >= 100){
                         currentPoints = 0;
-                        turretMilestoneMap.put(turretId, 0); 
+                        turretMilestoneMap.put(turretId, 0);
                         turretBurstTimerMap.put(turretId, 14);
 
                         if(Mathf.chance(0.70)){
@@ -226,8 +226,8 @@ const lavunderLaserBullet = extend(BulletType, {
 
                         if(Mathf.chance(0.80)){
                             mk3TripleExplosionMap.put(turretId, {
-                                count: 3,     
-                                timer: 30,    
+                                count: 3,
+                                timer: 30,
                                 x: target.x,
                                 y: target.y
                             });
@@ -245,10 +245,10 @@ const lavunderLaserBullet = extend(BulletType, {
             b.data.lastX = b.x + Angles.trnsx(b.rotation(), range);
             b.data.lastY = b.y + Angles.trnsy(b.rotation(), range);
 
-            turretDamageTimerMap.put(turretId, 0); 
+            turretDamageTimerMap.put(turretId, 0);
 
             if(currentPoints > 0){
-                currentPoints -= (2 / 60); 
+                currentPoints -= (2 / 60);
                 if(currentPoints < 0) currentPoints = 0;
                 turretChargeMap.put(turretId, currentPoints);
                 if(currentPoints == 0) turretMilestoneMap.put(turretId, 0);
@@ -272,17 +272,17 @@ const lavunderLaserBullet = extend(BulletType, {
             let gData = greenLaserRenderMap.get(turretId);
             let zoom = gData.duration / 12;
             Draw.color(greenLaserColor);
-            Lines.stroke(16.0 * zoom); 
+            Lines.stroke(16.0 * zoom);
             Lines.line(startX, startY, gData.x, gData.y);
             Draw.color(Color.white);
-            Lines.stroke(5.0 * zoom); 
+            Lines.stroke(5.0 * zoom);
             Lines.line(startX, startY, gData.x, gData.y);
         }
 
         if(burstTimer > 0){
-            let zoomFactor = burstTimer / 14; 
+            let zoomFactor = burstTimer / 14;
             Draw.color(Color.white);
-            Lines.stroke(9.0 * zoomFactor); 
+            Lines.stroke(9.0 * zoomFactor);
             Lines.line(startX, startY, endX, endY);
         } else {
             Draw.color(laserColor); Lines.stroke(0.3); Lines.line(startX, startY, endX, endY);
@@ -290,8 +290,8 @@ const lavunderLaserBullet = extend(BulletType, {
         }
 
         if(currentPoints > 2) {
-            let scaleFactor = 1 + (currentPoints / 180); 
-            let ringCount = 2;  
+            let scaleFactor = 1 + (currentPoints / 180);
+            let ringCount = 2;
             for(let r = 0; r < ringCount; r++){
                 let ringProgress = ((Time.time * 0.8) + (r * (dist / ringCount))) % dist;
                 let rt = ringProgress / dist;
@@ -309,38 +309,38 @@ const lavunderLaserBullet = extend(BulletType, {
                 let rad = currentAngle * Mathf.degRad;
                 let ox = px + ((Math.cos(rad) * 1.2 * scaleFactor) * Math.cos(laserAngle * Mathf.degRad) - (Math.sin(rad) * 3.5 * scaleFactor) * Math.sin(laserAngle * Mathf.degRad));
                 let oy = py + ((Math.cos(rad) * 1.2 * scaleFactor) * Math.sin(laserAngle * Mathf.degRad) + (Math.sin(rad) * 3.5 * scaleFactor) * Math.cos(laserAngle * Mathf.degRad));
-                Fill.circle(ox, oy, 0.4 + ((i % 3) * 0.2)); 
+                Fill.circle(ox, oy, 0.4 + ((i % 3) * 0.2));
             }
         }
 
         if(b.data.hasTarget){
-            let baseRadius = 3.5 + (currentPoints * 0.05); 
-            let ringRadius = baseRadius * 1.6;             
+            let baseRadius = 3.5 + (currentPoints * 0.05);
+            let ringRadius = baseRadius * 1.6;
 
             Draw.color(laserColor);
-            Lines.stroke(0.8 + (Mathf.sin(Time.time * 0.15) * 0.3)); 
+            Lines.stroke(0.8 + (Mathf.sin(Time.time * 0.15) * 0.3));
             Lines.circle(endX, endY, ringRadius);
 
             Draw.color(particleColor);
             Fill.circle(endX, endY, baseRadius);
             Draw.color(Color.white);
-            Fill.circle(endX, endY, baseRadius * 0.55); 
+            Fill.circle(endX, endY, baseRadius * 0.55);
 
-            let pCount = Math.floor(Mathf.lerp(3, 8, currentPoints / 100)); 
+            let pCount = Math.floor(Mathf.lerp(3, 8, currentPoints / 100));
             Draw.color(particleColor);
             for(let i = 0; i < pCount; i++){
                 let hSeed = i * 45.7 + turretId;
-                let baseProgress = (Time.time * 0.4 + hSeed) % 1.0; 
-                let acceleratedProgress = Math.pow(baseProgress, 3); 
-                let invT = 1.0 - acceleratedProgress; 
+                let baseProgress = (Time.time * 0.4 + hSeed) % 1.0;
+                let acceleratedProgress = Math.pow(baseProgress, 3);
+                let invT = 1.0 - acceleratedProgress;
                 let pAngle = (hSeed + i * (360 / pCount)) % 360;
-                let startDist = ringRadius * 3.5; 
-                let curDist = startDist * invT;   
+                let startDist = ringRadius * 3.5;
+                let curDist = startDist * invT;
 
-                let finalAngle = pAngle + (acceleratedProgress * 80.0); 
+                let finalAngle = pAngle + (acceleratedProgress * 80.0);
                 let hx = endX + Angles.trnsx(finalAngle, curDist);
                 let hy = endY + Angles.trnsy(finalAngle, curDist);
-                Fill.circle(hx, hy, 0.3 + (acceleratedProgress * 0.5)); 
+                Fill.circle(hx, hy, 0.3 + (acceleratedProgress * 0.5));
             }
         }
 
@@ -355,8 +355,8 @@ const lavunderLaserBullet = extend(BulletType, {
 });
 
 lavunderLaserBullet.speed = 0;
-lavunderLaserBullet.damage = 112; 
-lavunderLaserBullet.lifetime = 12; 
+lavunderLaserBullet.damage = 112;
+lavunderLaserBullet.lifetime = 12;
 lavunderLaserBullet.collides = false;
 
 const lavunder = extend(PowerTurret, "lavunder", {
@@ -372,7 +372,7 @@ const lavunder = extend(PowerTurret, "lavunder", {
         this.super$drawPlace(x, y, rotation, valid);
         Draw.color(Pal.remove); Lines.stroke(2);
         dashCircle(x * Vars.tilesize, y * Vars.tilesize, deadZone, Pal.remove);
-        Draw.reset();        
+        Draw.reset();
     }
 });
 
@@ -381,9 +381,9 @@ lavunder.size = 4;
 lavunder.targetAir = false;
 lavunder.targetGround = true;
 lavunder.range = 260;
-lavunder.reload = 10; 
+lavunder.reload = 10;
 lavunder.shootType = lavunderLaserBullet;
-lavunder.recoil = 0; 
+lavunder.recoil = 0;
 lavunder.consumePower(22);
 lavunder.configurable = true;
 lavunder.canControl = false;
@@ -391,8 +391,8 @@ lavunder.canControl = false;
 lavunder.config(java.lang.Integer, packCons2((tile, value) => {
     if(tile != null && value != null) {
         let turretId = tile.id;
-        let valInt = Math.floor(value); 
-        
+        let valInt = Math.floor(value);
+
         turretTierMap.put(turretId, valInt);
         if(valInt == 1) tile.health = 3750;
         else if(valInt == 2) tile.health = 5707;
@@ -402,13 +402,13 @@ lavunder.config(java.lang.Integer, packCons2((tile, value) => {
 
 lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
     downxOffset: 0,
-    wingsOffset: 0, 
+    wingsOffset: 0,
 
     canControl() { return false; },
 
     placed(){
         this.super$placed();
- 
+
         this.downxOffset = 0;
         this.wingsOffset = 0;
     },
@@ -461,7 +461,7 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
             Draw.rect(lavunder.downxRegion, dx, dy, this.rotation);
         }
 
-        let wingBackOffset = -4.0 * this.wingsOffset; 
+        let wingBackOffset = -4.0 * this.wingsOffset;
         let combatSideMove = 4.0 * this.wingsOffset;
 
         if (lavunder.a1Region && lavunder.a1Region.found()) {
@@ -487,16 +487,16 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
         if(tier == 1) {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
                 let dialog = extend(BaseDialog, isEn ? "Lavunder Upgrade Center" : "Trung tâm nâng cấp pháo Lavunder", {});
-                
+
                 let reqCell = dialog.cont.label(packProv(() => {
                     let core = this.team.core();
                     if(!core) return isEn ? "[red]Team Core not found![]" : "[red]Không tìm thấy Lõi Đội![]";
-                    
+
                     let copperAmt = core.items.get(Items.copper);
                     let graphiteAmt = core.items.get(Items.graphite);
                     let leadAmt = core.items.get(Items.lead);
                     let siliconAmt = core.items.get(Items.silicon);
-                    
+
                     let copperColor = copperAmt >= reqMK2.copper ? "[green]" : "[red]";
                     let graphiteColor = graphiteAmt >= reqMK2.graphite ? "[green]" : "[red]";
                     let leadColor = leadAmt >= reqMK3.lead ? "[green]" : "[red]";
@@ -520,13 +520,13 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
                                " • Silicon: " + siliconColor + siliconAmt + "[] / " + reqMK3.silicon;
                     }
                 }));
-                
+
                 reqCell.width(360).get().setWrap(true);
                 reqCell.get().setAlignment(Align.left);
                 dialog.cont.row(); dialog.cont.add().height(10).row();
 
                 let branchesTable = new Table();
- 
+
                 let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                 b1.add("[cyan]===(MK2)===[]").row();
                 let b1Text = isEn ?
@@ -547,15 +547,15 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
                 b1.button(isEn ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => {
                     let core = this.team.core();
                     if(core && core.items.get(Items.copper) >= reqMK2.copper && core.items.get(Items.graphite) >= reqMK2.graphite){
-                        core.items.remove(Items.copper, reqMK2.copper);
-                        core.items.remove(Items.graphite, reqMK2.graphite);
-                        this.configure(java.lang.Integer(2)); 
+                        NexNet.take(core, Items.copper, reqMK2.copper);
+                        NexNet.take(core, Items.graphite, reqMK2.graphite);
+                        this.configure(java.lang.Integer(2));
                         dialog.hide(); this.deselect();
                     } else {
                         Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2 branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]");
                     }
                 })).size(180, 38);
- 
+
                 let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                 b2.add("[purple]===(MK2B)===[]").row();
                 let b2Text = isEn ?
@@ -576,9 +576,9 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
                 b2.button(isEn ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                     let core = this.team.core();
                     if(core && core.items.get(Items.lead) >= reqMK3.lead && core.items.get(Items.silicon) >= reqMK3.silicon){
-                        core.items.remove(Items.lead, reqMK3.lead);
-                        core.items.remove(Items.silicon, reqMK3.silicon);
-                        this.configure(java.lang.Integer(3)); 
+                        NexNet.take(core, Items.lead, reqMK3.lead);
+                        NexNet.take(core, Items.silicon, reqMK3.silicon);
+                        this.configure(java.lang.Integer(3));
                         dialog.hide(); this.deselect();
                     } else {
                         Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2B branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]");
@@ -599,7 +599,7 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
                 Vars.ui.showInfo(isEn ? "[scarlet]LAVUNDER SYSTEM HAS REACHED MAXIMUM EVOLUTION TIER![]" : "[scarlet]HỆ THỐNG LAVUNDER ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]");
             })).size(50, 40).tooltip(isEn ? "Max level reached" : "Đã đạt cấp tối đa");
         }
- 
+
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
             let title = isEn ? " Lavunder Turret Stats: " : " Thông số pháo Lavunder: ";
             let descStr = "";

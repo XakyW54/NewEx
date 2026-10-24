@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
 const RAYKSTONE_NAME = "newex-raykstone";
 const CORE_RAYKSTONE_NAME = "newex-core-raykstone";
@@ -17,7 +18,6 @@ Events.on(ContentInitEvent, () => {
         laserBrey.hasItems = true;
         laserBrey.itemCapacity = 100;
 
-        // Cache biến toàn cục để tránh truy vấn nhiều lần
         let emeraliftBlocks = [];
         let raykItem = null;
         let uraniumShardItem = null;
@@ -29,18 +29,16 @@ Events.on(ContentInitEvent, () => {
             timer2: 0,
             itemTimer1: 0,
             itemTimer2: 0,
-            shardTimer1: 0, // Bộ đếm 1 giây cho target 1
-            shardTimer2: 0, // Bộ đếm 1 giây cho target 2
+            shardTimer1: 0,
+            shardTimer2: 0,
             baseMaxTiles: 5,
             hasBuff: false,
             buffCount: 0,
 
-            // Biến đếm Cooldown tối ưu FPS/TPS
             buffCheckTimer: 0,
             targetSearchTimer: 0,
             initialized: false,
 
-            // Dùng created() để khởi tạo thay vì override init() gây lỗi super$init
             created() {
                 this.super$created();
                 if (emeraliftBlocks.length === 0) {
@@ -187,7 +185,6 @@ Events.on(ContentInitEvent, () => {
                 let isCore = this.isCoreRaykstone(tile);
                 let isVanilla = this.isVanillaWall(tile);
 
-                // --- 1. Xử lý nhận newex-uranilum-shard: Mỗi 1 giây (60 ticks) có 10% cơ hội ---
                 this[shardTimerKey] += progress;
                 if (this[shardTimerKey] >= 60) {
                     this[shardTimerKey] %= 60;
@@ -197,18 +194,17 @@ Events.on(ContentInitEvent, () => {
                     }
                 }
 
-                // --- 2. Xử lý nhận raykItem: Mỗi 1 giây (60 ticks) đào ra item ---
                 this[itemTimerKey] += progress;
                 if (this[itemTimerKey] >= 60) {
                     this[itemTimerKey] %= 60;
 
                     if (raykItem != null) {
-                        // Khối Raykstone & Core Raykstone luôn cấp 1 item mỗi giây
+
                         if (isRayk || isCore) {
                             this.handleItem(this, raykItem);
                             try { Fx.itemTransfer.at(tile.worldx(), tile.worldy(), 0, raykItem, this); } catch(e) {}
-                        } 
-                        // Khối Tường Vanilla có tỉ lệ rớt item mỗi giây tùy theo buff
+                        }
+
                         else if (isVanilla) {
                             let dropChance = this.hasBuff ? 0.60 : 0.40;
                             if (Mathf.chance(dropChance)) {
@@ -227,7 +223,6 @@ Events.on(ContentInitEvent, () => {
                     try { Fx.mine.at(tile.worldx(), tile.worldy()); } catch(e) {}
                 }
 
-                // Khối newex-core-raykstone sẽ không bao giờ bị phá hủy
                 if (this.isCoreRaykstone(tile)) {
                     return progress;
                 }
@@ -236,8 +231,7 @@ Events.on(ContentInitEvent, () => {
                     let tx = tile.worldx();
                     let ty = tile.worldy();
 
-                    // Phá hủy khối khi đủ thời gian đào vỡ
-                    tile.setBlock(Blocks.air);
+                    NexNet.setBlock(tile, Blocks.air, Team.derelict, 0);
 
                     try {
                         Fx.smallExplosion.at(tx, ty);
@@ -254,7 +248,6 @@ Events.on(ContentInitEvent, () => {
             updateTile() {
                 if (this.efficiency <= 0 || !this.shouldConsume()) return;
 
-                // Tối ưu kiểm tra Buff (chỉ chạy mỗi 30 tick)
                 this.buffCheckTimer += Time.delta;
                 if (this.buffCheckTimer >= 30) {
                     this.checkEmeraldBuff();
@@ -264,7 +257,6 @@ Events.on(ContentInitEvent, () => {
                 let liquidBoost = (this.liquids != null && this.liquids.currentAmount() > 0) ? 0.5 : 0;
                 let progress = this.delta() * this.efficiency * (1 + liquidBoost);
 
-                // Tối ưu tìm mục tiêu khi thiếu target (chờ 20 tick mới tìm lại)
                 if (!this.isMineable(this.target1) || !this.isMineable(this.target2)) {
                     this.targetSearchTimer += Time.delta;
                     if (this.targetSearchTimer >= 20) {
@@ -360,7 +352,7 @@ Events.on(ContentInitEvent, () => {
             },
 
             draw() {
-                // Đặt Layer của khối hiển thị ở mức Layer.turret (ngang tầm tháp pháo/cao hơn tường) khi vẽ
+
                 Draw.z(Layer.turret);
                 this.super$draw();
 
@@ -431,7 +423,7 @@ Events.run(Trigger.draw, () => {
     let input = Vars.control.input;
     if (input == null) return;
 
-    let block = input.block; 
+    let block = input.block;
     if (block != null && block.name === "newex-laser-brey") {
         let cursorX = Core.input.mouseWorldX();
         let cursorY = Core.input.mouseWorldY();

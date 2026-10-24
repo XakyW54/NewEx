@@ -10,7 +10,6 @@ const coalGlowColor = Color.valueOf("888888");
 const masterPurpleColor = Color.valueOf("2b003b");
 const masterGlowColor = Color.valueOf("a832d7");
 
-// Hàm kiểm tra cài đặt Bloom/Light của game
 function isBloomEnabled() {
     try {
         return Core.settings.getBool("bloom", true);
@@ -19,7 +18,6 @@ function isBloomEnabled() {
     }
 }
 
-// Hiệu ứng vụ nổ thu gọn tối đa (giảm 90% đồ họa - chỉ 1 vòng tròn zoom ra 10px) khi tắt bloom
 const masterLowParticleImpactEffect = new Effect(15, e => {
     Draw.z(Layer.effect + 0.1);
     Draw.color(masterGlowColor, Color.white, e.fout());
@@ -28,7 +26,6 @@ const masterLowParticleImpactEffect = new Effect(15, e => {
     Draw.reset();
 });
 
-// Kiếm khí thông thường (có đuổi target, xuyên thấu, % máu)
 const masterHomingSwordBullet = extend(BasicBulletType, {
     speed: 18.0,
     damage: 1500,
@@ -36,7 +33,7 @@ const masterHomingSwordBullet = extend(BasicBulletType, {
     width: 14,
     height: 40,
     shrinkY: 0,
-    
+
     pierce: true,
     pierceBuilding: true,
     pierceCap: 6,
@@ -54,7 +51,7 @@ const masterHomingSwordBullet = extend(BasicBulletType, {
 
     hitEntity(b, other, initialHealth) {
         this.super$hitEntity(b, other, initialHealth);
-        
+
         if (other && other.maxHealth) {
             let bonusDmg = other.maxHealth * 0.10;
             other.health -= bonusDmg;
@@ -63,9 +60,9 @@ const masterHomingSwordBullet = extend(BasicBulletType, {
     },
 
     draw(b) {
-        let swordRegion = PerfCore.region("units/cargo/swordmaster", 
-                          PerfCore.region("cargo/swordmaster", 
-                          PerfCore.region("swordmaster", 
+        let swordRegion = PerfCore.region("units/cargo/swordmaster",
+                          PerfCore.region("cargo/swordmaster",
+                          PerfCore.region("swordmaster",
                           PerfCore.region("newex-cargo-swordmaster", PerfCore.region("newex-swordmaster")))));
 
         let angle = b.rotation();
@@ -101,15 +98,14 @@ const masterHomingSwordBullet = extend(BasicBulletType, {
     }
 });
 
-// Kiếm khí phụ bắn ra từ vụ nổ kiếm đặc biệt (900 Dmg, 0.2s, 15 ô = 120px, KHÔNG đuổi, KHÔNG xuyên)
 const masterBurstAuraSwordBullet = extend(BasicBulletType, {
     speed: 10.0,
     damage: 900,
-    lifetime: 12, // 0.2s = 12 ticks
+    lifetime: 12,
     width: 10,
     height: 30,
     shrinkY: 0,
-    
+
     pierce: false,
     pierceBuilding: false,
 
@@ -124,9 +120,9 @@ const masterBurstAuraSwordBullet = extend(BasicBulletType, {
     backColor: masterGlowColor,
 
     draw(b) {
-        let swordRegion = PerfCore.region("units/cargo/swordmaster", 
-                          PerfCore.region("cargo/swordmaster", 
-                          PerfCore.region("swordmaster", 
+        let swordRegion = PerfCore.region("units/cargo/swordmaster",
+                          PerfCore.region("cargo/swordmaster",
+                          PerfCore.region("swordmaster",
                           PerfCore.region("newex-cargo-swordmaster", PerfCore.region("newex-swordmaster")))));
 
         let angle = b.rotation();
@@ -177,9 +173,9 @@ const masterKeySwordFlyEffect = new Effect(25, e => {
     let curX = Mathf.lerp(startX, targetX, e.fin());
     let curY = Mathf.lerp(startY, targetY, e.fin());
 
-    let swordRegion = PerfCore.region("units/cargo/swordmaster", 
-                      PerfCore.region("cargo/swordmaster", 
-                      PerfCore.region("swordmaster", 
+    let swordRegion = PerfCore.region("units/cargo/swordmaster",
+                      PerfCore.region("cargo/swordmaster",
+                      PerfCore.region("swordmaster",
                       PerfCore.region("newex-cargo-swordmaster", PerfCore.region("newex-swordmaster")))));
 
     let trailLen = 60.0 * e.fout();
@@ -232,7 +228,7 @@ const masterShockwaveRingEffect = new Effect(60, e => {
 
 const swordImpactShockwaveEffect = new Effect(45, e => {
     Draw.z(Layer.effect + 0.2);
-    let radius = 120.0 * e.fin(); 
+    let radius = 120.0 * e.fin();
 
     Draw.color(masterGlowColor);
     Lines.stroke(5.0 * e.fout());
@@ -271,9 +267,9 @@ const masterBeamEffect = new Effect(40, e => {
 const masterSwordsSummonEffect = new Effect(70, e => {
     Draw.z(Layer.flyingUnit + 2.5);
 
-    let swordRegion = PerfCore.region("units/cargo/swordmaster", 
-                      PerfCore.region("cargo/swordmaster", 
-                      PerfCore.region("swordmaster", 
+    let swordRegion = PerfCore.region("units/cargo/swordmaster",
+                      PerfCore.region("cargo/swordmaster",
+                      PerfCore.region("swordmaster",
                       PerfCore.region("newex-cargo-swordmaster", PerfCore.region("newex-swordmaster")))));
 
     let neAngle = 45;
@@ -281,7 +277,7 @@ const masterSwordsSummonEffect = new Effect(70, e => {
     let randomSeeds = e.data || [0, 0, 0];
 
     for (let i = -1; i <= 1; i++) {
-        let baseSpacing = i * 22; 
+        let baseSpacing = i * 22;
         let randShift = randomSeeds[i + 1] || 0;
         let totalShift = baseSpacing + randShift;
 
@@ -293,12 +289,12 @@ const masterSwordsSummonEffect = new Effect(70, e => {
         if (swordRegion.found) {
             Draw.color(masterPurpleColor);
             Draw.alpha(0.9 * e.fout());
-            Draw.rect(swordRegion, posX, posY, 
+            Draw.rect(swordRegion, posX, posY,
                       swordRegion.width * Draw.scl * 1.5, swordRegion.height * Draw.scl * 1.5, neAngle - 90);
 
             Draw.color(masterGlowColor);
             Draw.alpha(0.7 * e.fout());
-            Draw.rect(swordRegion, posX, posY, 
+            Draw.rect(swordRegion, posX, posY,
                       swordRegion.width * Draw.scl * 1.35, swordRegion.height * Draw.scl * 1.35, neAngle - 90);
         } else {
             let len = 34.0;
@@ -320,9 +316,9 @@ const masterSwordsSummonEffect = new Effect(70, e => {
 const skySwordHoverEffect = new Effect(450, e => {
     Draw.z(Layer.flyingUnit + 2.8);
 
-    let swordRegion = PerfCore.region("units/cargo/swordmaster", 
-                      PerfCore.region("cargo/swordmaster", 
-                      PerfCore.region("swordmaster", 
+    let swordRegion = PerfCore.region("units/cargo/swordmaster",
+                      PerfCore.region("cargo/swordmaster",
+                      PerfCore.region("swordmaster",
                       PerfCore.region("newex-cargo-swordmaster", PerfCore.region("newex-swordmaster")))));
 
     let alpha = Math.min(1.0, e.fin() * 6.0) * e.fout();
@@ -395,9 +391,9 @@ const skySwordRainEffect = new Effect(14, e => {
     Lines.stroke(2.0 * e.fout());
     Lines.line(currentX, currentY, backX, backY);
 
-    let swordRegion = PerfCore.region("units/cargo/swordmaster", 
-                      PerfCore.region("cargo/swordmaster", 
-                      PerfCore.region("swordmaster", 
+    let swordRegion = PerfCore.region("units/cargo/swordmaster",
+                      PerfCore.region("cargo/swordmaster",
+                      PerfCore.region("swordmaster",
                       PerfCore.region("newex-cargo-swordmaster", PerfCore.region("newex-swordmaster")))));
 
     if (swordRegion.found) {
@@ -422,22 +418,22 @@ const skySwordRainEffect = new Effect(14, e => {
 
 const renderAttachedMasterSwordsEffect = new Effect(2, e => {
     Draw.z(Layer.flyingUnit + 2.0);
-    
-    let swordRegion = PerfCore.region("units/cargo/swordmaster", 
-                      PerfCore.region("cargo/swordmaster", 
-                      PerfCore.region("swordmaster", 
+
+    let swordRegion = PerfCore.region("units/cargo/swordmaster",
+                      PerfCore.region("cargo/swordmaster",
+                      PerfCore.region("swordmaster",
                       PerfCore.region("newex-cargo-swordmaster", PerfCore.region("newex-swordmaster")))));
 
-    let unitAngle = e.rotation; 
+    let unitAngle = e.rotation;
     let sideAngle = unitAngle - 90;
 
     let eData = e.data || {};
     let hideIndex = (eData.hideIndex !== undefined) ? eData.hideIndex : -1;
 
     let offsets = [
-        { forward: 6,  side: 14 }, 
-        { forward: -6, side: 18 },   
-        { forward: -18, side: 22 }  
+        { forward: 6,  side: 14 },
+        { forward: -6, side: 18 },
+        { forward: -18, side: 22 }
     ];
 
     for (let i = 0; i < offsets.length; i++) {
@@ -488,7 +484,7 @@ const recallLaserEffect = new Effect(30, e => {
 
 const swordDashTrailEffect = new Effect(45, e => {
     Draw.z(Layer.flyingUnit - 0.1);
-    
+
     let tailLen = 90.0;
     let backX = e.x - Angles.trnsx(e.rotation, tailLen);
     let backY = e.y - Angles.trnsy(e.rotation, tailLen);
@@ -538,9 +534,9 @@ const renderSwordEffect = new Effect(2, e => {
 
     Draw.z(Layer.flyingUnit + 2.0);
 
-    let swordRegion = PerfCore.region("units/cargo/sword", 
-                      PerfCore.region("cargo/sword", 
-                      PerfCore.region("sword", 
+    let swordRegion = PerfCore.region("units/cargo/sword",
+                      PerfCore.region("cargo/sword",
+                      PerfCore.region("sword",
                       PerfCore.region("newex-cargo-sword", PerfCore.region("newex-sword")))));
 
     let swordX = rx;
@@ -576,7 +572,7 @@ const renderSwordEffect = new Effect(2, e => {
             if (swordRegion.found) {
                 Draw.color(coalColor);
                 Draw.alpha(ghostAlpha);
-                Draw.rect(swordRegion, rx, ry, 
+                Draw.rect(swordRegion, rx, ry,
                           swordRegion.width * Draw.scl * 1.3, swordRegion.height * Draw.scl * 1.3, gAngle - 90);
             } else {
                 let len = 26.0;
@@ -601,7 +597,7 @@ const renderSwordEffect = new Effect(2, e => {
     if (swordRegion.found) {
         Draw.color(coalColor);
         Draw.alpha(alpha);
-        Draw.rect(swordRegion, swordX, swordY, 
+        Draw.rect(swordRegion, swordX, swordY,
                   swordRegion.width * Draw.scl * 1.3, swordRegion.height * Draw.scl * 1.3, swordAngle - 90);
     } else {
         let len = 26.0;
@@ -630,7 +626,7 @@ const droneBulletNormal = extend(BasicBulletType, {
 
 const droneBulletMK2B = extend(BasicBulletType, {
     speed: 26.0,
-    damage: 120,  
+    damage: 120,
     lifetime: 60,
     width: 6,
     height: 32,
@@ -690,9 +686,9 @@ Events.run(Trigger.update, () => {
 
             if (global.mk2bUnits[id] && !droneData[id] && masterSwordDroneType != null) {
                 let currentLauncherId = global.droneLauncherMap[id];
-                
+
                 let hasMasterAlready = false;
-                let rollMaster = Mathf.chance(0.10) && unit.type != masterSwordDroneType;
+                let rollMaster = !Vars.net.client() && Mathf.chance(0.10) && unit.type != masterSwordDroneType;
                 if (rollMaster && currentLauncherId) {
                     Groups.unit.each(u => {
                         if (u.type == masterSwordDroneType && !u.dead && global.droneLauncherMap[u.id] === currentLauncherId) {
@@ -720,17 +716,17 @@ Events.run(Trigger.update, () => {
             let isMK2BUnit = !!global.mk2bUnits[id];
 
             if (!droneData[id]) {
-                droneData[id] = { 
-                    shootTimer: 0, 
-                    targetX: unit.x, 
-                    targetY: unit.y, 
-                    repathTimer: 0, 
+                droneData[id] = {
+                    shootTimer: 0,
+                    targetX: unit.x,
+                    targetY: unit.y,
+                    repathTimer: 0,
                     initializedMK2B: false,
                     aiMode: null,
                     orbitAngle: Mathf.random(360),
                     strafeDir: Mathf.chance(0.5) ? 1 : -1,
                     targetId: -1,
-                    swordState: "idle",  
+                    swordState: "idle",
                     chargeTimer: 0,
                     dashTimer: 0,
                     maxDashTime: 9.33,
@@ -868,7 +864,7 @@ Events.run(Trigger.update, () => {
                     }
 
                     let attackAngle = target ? unit.angleTo(target) : unit.rotation;
-                    
+
                     let tankyEnemies = [];
                     Groups.unit.each(u => {
                         if (u.team !== unit.team && !u.dead && Mathf.dst(unit.x, unit.y, u.x, u.y) <= 1100) {
@@ -926,11 +922,11 @@ Events.run(Trigger.update, () => {
 
                             let isLaserSword = Mathf.chance(0.20);
 
-                            data.masterSwordPositions.push({ 
-                                skyX: skyX, 
-                                skyY: skyY, 
-                                targetX: targetX, 
-                                targetY: targetY, 
+                            data.masterSwordPositions.push({
+                                skyX: skyX,
+                                skyY: skyY,
+                                targetX: targetX,
+                                targetY: targetY,
                                 angle: attackAngle,
                                 hasLaser: isLaserSword,
                                 isSpecialTankTarget: isSpecialTankTarget
@@ -973,9 +969,9 @@ Events.run(Trigger.update, () => {
                                 let finalAngle = pos.angle;
 
                                 if (!pos.isSpecialTankTarget && Mathf.chance(0.30)) {
-                                    let extraDist = Mathf.random(250, 500); 
-                                    let extraAngleSpread = Mathf.range(35); 
-                                    
+                                    let extraDist = Mathf.random(250, 500);
+                                    let extraAngleSpread = Mathf.range(35);
+
                                     finalAngle += extraAngleSpread;
                                     finalTargetX += Angles.trnsx(finalAngle, extraDist);
                                     finalTargetY += Angles.trnsy(finalAngle, extraDist);
@@ -1055,7 +1051,7 @@ Events.run(Trigger.update, () => {
                             let spawnY = unit.y + Angles.trnsy(unitAngle, off.forward) + Angles.trnsy(sideAngle, off.side);
 
                             let spreadAngle = baseAngle + (i - 2) * 15 + Mathf.range(4);
-                            
+
                             masterHomingSwordBullet.create(unit, unit.team, spawnX, spawnY, spreadAngle);
                         }
                     }
@@ -1080,7 +1076,6 @@ Events.run(Trigger.update, () => {
                     data.masterChargeTimer = 0;
                     data.masterSwordsSpawned = 0;
 
-                    // CẬP NHẬT SỐ LƯỢNG KIẾM THEO YÊU CẦU MỚI:
                     let maxSwords = isBloomEnabled() ? Math.floor(Mathf.random(1000, 1100)) : Math.floor(Mathf.random(500, 550));
                     data.masterTotalSwords = maxSwords;
                     data.masterSwordPositions = [];
@@ -1153,7 +1148,7 @@ Events.run(Trigger.update, () => {
 
                 } else if (data.swordState === "dashing") {
                     data.dashTimer += Time.delta;
-                    
+
                     let totalDistance = 400.0;
                     let dashSpeed = totalDistance / data.maxDashTime;
 

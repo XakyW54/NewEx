@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
@@ -46,10 +47,10 @@ Events.on(ClientLoadEvent, cons(e => {
 
         getTier() { return this.tierState == null ? 0 : this.tierState; },
 
-        setTier(val) { 
+        setTier(val) {
             this.tierState = val;
             if (val == 0) this.health = 3000;
-            else if (val == 1) this.health = 4500; 
+            else if (val == 1) this.health = 4500;
             else if (val == 2) this.health = 6000;
             this.maxHealth = this.health;
         },
@@ -171,6 +172,7 @@ Events.on(ClientLoadEvent, cons(e => {
         },
 
         spawnCombatDrone() {
+            if (Vars.net.client()) return;
             let tier = this.getTier();
             let droneType = null;
 
@@ -299,14 +301,14 @@ Events.on(ClientLoadEvent, cons(e => {
                     b1.button(english ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => {
                         let core = this.team.core();
                         if (core != null && core.items.get(Items.copper) >= reqMK2.copper && core.items.get(Items.lead) >= reqMK2.lead && core.items.get(Items.silicon) >= reqMK2.silicon) {
-                            core.items.remove(Items.copper, reqMK2.copper); 
-                            core.items.remove(Items.lead, reqMK2.lead); 
-                            core.items.remove(Items.silicon, reqMK2.silicon);
-                            
-                            Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
+                            NexNet.take(core, Items.copper, reqMK2.copper);
+                            NexNet.take(core, Items.lead, reqMK2.lead);
+                            NexNet.take(core, Items.silicon, reqMK2.silicon);
+
+                            NexNet.fx(Fx.upgradeCore, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
 
                             this.setTier(1);
-                            this.configure(java.lang.Integer.valueOf(1)); 
+                            this.configure(java.lang.Integer.valueOf(1));
                             dialog.hide(); this.deselect();
                         } else { Vars.ui.showInfo(english ? "[red]Not enough resources for MK2 branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                     })).size(180, 38);
@@ -332,14 +334,14 @@ Events.on(ClientLoadEvent, cons(e => {
                     b2.button(english ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => {
                         let core = this.team.core();
                         if (core != null && core.items.get(Items.copper) >= reqMK2B.copper && core.items.get(Items.lead) >= reqMK2B.lead && core.items.get(Items.titanium) >= reqMK2B.titanium) {
-                            core.items.remove(Items.copper, reqMK2B.copper); 
-                            core.items.remove(Items.lead, reqMK2B.lead); 
-                            core.items.remove(Items.titanium, reqMK2B.titanium);
-                            
-                            Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
+                            NexNet.take(core, Items.copper, reqMK2B.copper);
+                            NexNet.take(core, Items.lead, reqMK2B.lead);
+                            NexNet.take(core, Items.titanium, reqMK2B.titanium);
+
+                            NexNet.fx(Fx.bigShockwave, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
 
                             this.setTier(2);
-                            this.configure(java.lang.Integer.valueOf(2)); 
+                            this.configure(java.lang.Integer.valueOf(2));
                             dialog.hide(); this.deselect();
                         } else { Vars.ui.showInfo(english ? "[red]Not enough resources for MK2B branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
                     })).size(180, 38);
@@ -361,7 +363,7 @@ Events.on(ClientLoadEvent, cons(e => {
 
             buttonTable.button(Icon.leftOpen, Styles.cleari, 40, packRun(() => {
                 this.recallAllDrones();
-                Fx.tapBlock.at(this.x, this.y);
+                NexNet.fx(Fx.tapBlock, this.x, this.y);
             })).size(45, 40).tooltip(english ? "Recall all Drones belonging to this turret" : "Thu hồi toàn bộ Drone thuộc tháp pháo này");
 
             buttonTable.button(Icon.info, Styles.cleari, 40, packRun(() => {
@@ -426,13 +428,13 @@ Events.on(ClientLoadEvent, cons(e => {
         config() { return java.lang.Integer.valueOf(this.getTier()); },
 
         write(write) {
-            this.super$write(write); 
-            write.b(this.getTier()); 
+            this.super$write(write);
+            write.b(this.getTier());
         },
 
         read(read, revision) {
-            this.super$read(read, revision); 
-            this.setTier(read.b()); 
+            this.super$read(read, revision);
+            this.setTier(read.b());
         }
     });
 }));

@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
@@ -23,7 +24,7 @@ const reqMK2B = { copper: 8000, lead: 4000, titanium: 2000 };
 const heliyronParticleEffect = new Effect(18, e => {
     Draw.color(e.color);
     let angles = [0, 90, 180, 270];
-    
+
     for (let i = 0; i < angles.length; i++) {
         Angles.randLenVectors(e.id + i * 10, 3, 8 + e.fin() * 12, e.rotation + angles[i], 25, (x, y) => {
             Fill.circle(e.x + x, e.y + y, 1.5 * e.fout());
@@ -81,8 +82,8 @@ const heliyronSubBullet = extend(BasicBulletType, {
     speed: 15, damage: 120, width: 5, height: 26, lifetime: 50,
     frontColor: Color.valueOf("#e0f7fa"), backColor: Color.valueOf("#ff9800"),
     hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor,
-    homingPower: 0.35,  
-    homingRange: 80,    
+    homingPower: 0.35,
+    homingRange: 80,
     trailEffect: heliyronParticleEffect,
     trailInterval: 3
 });
@@ -91,8 +92,8 @@ const heliyronSubBullet2 = extend(BasicBulletType, {
     speed: 16, damage: 120, width: 5, height: 26, lifetime: 50,
     frontColor: Color.valueOf("#ffffff"), backColor: Color.valueOf("#00e5ff"),
     hitEffect: Fx.hitBulletColor, despawnEffect: Fx.hitBulletColor,
-    homingPower: 0.25,  
-    homingRange: 240, 
+    homingPower: 0.25,
+    homingRange: 240,
     trailEffect: heliyronParticleEffect,
     trailInterval: 3
 });
@@ -112,10 +113,10 @@ let heliyron = extend(ItemTurret, "heliyron", {
 heliyron.health = 3625;
 heliyron.size = 3;
 heliyron.reload = 35;
-heliyron.recoil = 0; 
+heliyron.recoil = 0;
 heliyron.configurable = true;
 heliyron.category = Category.turret;
-heliyron.shootSound = shootSoundBlaster; 
+heliyron.shootSound = shootSoundBlaster;
 
 heliyron.ammo(Items.copper, heliyronMK1Bullet, Items.lead, heliyronMK1Bullet);
 
@@ -185,11 +186,11 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
         let bullet = heliyronMK1Bullet;
         if (tier == 1) bullet = heliyronMK2Bullet;
         if (tier == 2) bullet = heliyronMK2BBullet;
-        
+
         this.customRecoil = 1.0;
 
         let dmgMultiplier = this.getDamageMultiplier();
-        
+
         if (shootSoundBlaster) shootSoundBlaster.at(this.x, this.y, Mathf.random(0.9, 1.1));
 
         let b = bullet.create(this, this.team, this.x, this.y, this.rotation);
@@ -261,12 +262,12 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
         if (heliyron.bodyRegion != null && heliyron.bodyRegion.found()) {
             Draw.rect(heliyron.bodyRegion, this.x, this.y, rot);
         }
- 
+
         let recoilDist = this.customRecoil * 5.0;
 
         let c1X = this.x + (-sin * recoilDist) - (cos * recoilDist);
         let c1Y = this.y + (cos * recoilDist) - (sin * recoilDist);
- 
+
         let c2X = this.x + (sin * recoilDist) - (cos * recoilDist);
         let c2Y = this.y + (-cos * recoilDist) - (sin * recoilDist);
 
@@ -303,13 +304,13 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
                     let currentcopper = core.items.get(Items.copper);
                     let currentlead = core.items.get(Items.lead);
                     let currenttitanium = core.items.get(Items.titanium);
-                    
+
                     let copColor1 = currentcopper >= reqMK2.copper ? "[green]" : "[red]";
                     let leaColor1 = currentlead >= reqMK2.lead ? "[green]" : "[red]";
                     let copColor2 = currentcopper >= reqMK2B.copper ? "[green]" : "[red]";
                     let leaColor2 = currentlead >= reqMK2B.lead ? "[green]" : "[red]";
                     let titColor2 = currenttitanium >= reqMK2B.titanium ? "[green]" : "[red]";
-                    
+
                     if (isVN()) {
                         return "[yellow]YÊU CẦU TÀI NGUYÊN NÂNG CẤP:[]\n" +
                                "[cyan]Nhánh MK2:[] " + copColor1 + "Đồng " + currentcopper + "/" + reqMK2.copper + "[] | " + leaColor1 + "Chì " + currentlead + "/" + reqMK2.lead + "[]\n" +
@@ -320,7 +321,7 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
                                "[purple]MK2B Branch:[] " + copColor2 + "Copper " + currentcopper + "/" + reqMK2B.copper + "[] | " + leaColor2 + "Lead " + currentlead + "/" + reqMK2B.lead + "[] | " + titColor2 + "Titanium " + currenttitanium + "/" + reqMK2B.titanium + "[]";
                     }
                 }));
-                
+
                 reqCell.width(360).get().setWrap(true);
                 reqCell.get().setAlignment(Align.left);
                 dialog.cont.row(); dialog.cont.add().height(10).row();
@@ -346,13 +347,13 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
 
                 let b1D = b1.add(b1Desc);
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
-                
+
                 let b1BtnText = isVN() ? "[green]KÍCH HOẠT MK2[]" : "[green]ACTIVATE MK2[]";
                 b1.button(b1BtnText, packRun(() => {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.copper) >= reqMK2.copper && core.items.get(Items.lead) >= reqMK2.lead){
-                        core.items.remove(Items.copper, reqMK2.copper); core.items.remove(Items.lead, reqMK2.lead);
-                        Fx.upgradeCore.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
+                        NexNet.take(core, Items.copper, reqMK2.copper); NexNet.take(core, Items.lead, reqMK2.lead);
+                        NexNet.fx(Fx.upgradeCore, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
                         this.configure(java.lang.Integer(1)); dialog.hide(); this.deselect();
                     } else { Vars.ui.showInfo(isVN() ? "[red]Không đủ tài nguyên cho MK2![]" : "[red]Not enough resources for MK2![]"); }
                 })).size(180, 38);
@@ -381,8 +382,8 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
                 b2.button(b2BtnText, packRun(() => {
                     let core = this.team.core();
                     if(core != null && core.items.get(Items.copper) >= reqMK2B.copper && core.items.get(Items.lead) >= reqMK2B.lead && core.items.get(Items.titanium) >= reqMK2B.titanium){
-                        core.items.remove(Items.copper, reqMK2B.copper); core.items.remove(Items.lead, reqMK2B.lead); core.items.remove(Items.titanium, reqMK2B.titanium);
-                        Fx.bigShockwave.at(this.x, this.y); Fx.mineHuge.at(this.x, this.y); Effect.shake(5, 5, this.x, this.y);
+                        NexNet.take(core, Items.copper, reqMK2B.copper); NexNet.take(core, Items.lead, reqMK2B.lead); NexNet.take(core, Items.titanium, reqMK2B.titanium);
+                        NexNet.fx(Fx.bigShockwave, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
                         this.configure(java.lang.Integer(2)); dialog.hide(); this.deselect();
                     } else { Vars.ui.showInfo(isVN() ? "[red]Không đủ tài nguyên cho MK2B![]" : "[red]Not enough resources for MK2B![]"); }
                 })).size(180, 38);

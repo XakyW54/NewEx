@@ -1,3 +1,4 @@
+const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
 const customCritEffect = new Effect(15, e => {
     Draw.color(Color.yellow, Color.white, e.fin());
@@ -27,9 +28,9 @@ const reqMK2 = { titanium: 400, silicon: 400, plastanium: 0 };
 const reqMK2B = { titanium: 500, silicon: 400, plastanium: 200 };
 
 const overheatCapTable = [60 * 9, 60 * 8, 60 * 8];
-const cooldownCapTable = [60 * 4, 60 * 3, 60 * 1.5]; 
+const cooldownCapTable = [60 * 4, 60 * 3, 60 * 1.5];
 const maxAsCapTable = [60 * 3, 60 * 3, 60 * 3];
-const asMultiplierTable = [3.5, 4.5, 9.99];          
+const asMultiplierTable = [3.5, 4.5, 9.99];
 
 let xylaon = extend(ItemTurret, "xylaon", {});
 xylaon.health = 500;
@@ -39,16 +40,16 @@ xylaon.range = 420;
 xylaon.configurable = true;
 xylaon.category = Category.turret;
 
-xylaon.itemCapacity = 30;     
-xylaon.ammoPerShot = 1;        
-xylaon.shots = 5;              
-xylaon.inaccuracy = 4.5;       
+xylaon.itemCapacity = 30;
+xylaon.ammoPerShot = 1;
+xylaon.shots = 5;
+xylaon.inaccuracy = 4.5;
 
 const setupBulletSpecs = (bullet) => {
-    bullet.pierce = true;             
-    bullet.pierceCap = 3;             
-    bullet.homingPower = 0.04;        
-    bullet.homingRange = 120;        
+    bullet.pierce = true;
+    bullet.pierceCap = 3;
+    bullet.homingPower = 0.04;
+    bullet.homingRange = 120;
 };
 
 let xylaonBullet = extend(BasicBulletType, {
@@ -65,7 +66,7 @@ xylaonBullet.damage = 20;
 xylaonBullet.lifetime = 35;
 xylaonBullet.width = 4;
 xylaonBullet.height = 18;
-xylaonBullet.trailChance = 0.2; 
+xylaonBullet.trailChance = 0.2;
 xylaonBullet.trailEffect = Fx.disperseTrail;
 xylaonBullet.trailColor = Color.valueOf("#66ccff");
 xylaonBullet.backColor = Color.valueOf("#88ddff");
@@ -102,19 +103,19 @@ let xylaonMK2Bullet = extend(BasicBulletType, {
         }
     }
 });
-xylaonMK2Bullet.speed = 15.6; 
-xylaonMK2Bullet.damage = 26; 
-xylaonMK2Bullet.lifetime = 35; 
-xylaonMK2Bullet.width = 5.2; 
-xylaonMK2Bullet.height = 23.4; 
+xylaonMK2Bullet.speed = 15.6;
+xylaonMK2Bullet.damage = 26;
+xylaonMK2Bullet.lifetime = 35;
+xylaonMK2Bullet.width = 5.2;
+xylaonMK2Bullet.height = 23.4;
 xylaonMK2Bullet.hitSize = 13;
-xylaonMK2Bullet.trailChance = 0.2;   
-xylaonMK2Bullet.trailEffect = Fx.disperseTrail; 
+xylaonMK2Bullet.trailChance = 0.2;
+xylaonMK2Bullet.trailEffect = Fx.disperseTrail;
 xylaonMK2Bullet.trailColor = Color.valueOf("#ffaa66");
-xylaonMK2Bullet.backColor = Color.valueOf("#ffcc88"); 
-xylaonMK2Bullet.frontColor = Color.white; 
+xylaonMK2Bullet.backColor = Color.valueOf("#ffcc88");
+xylaonMK2Bullet.frontColor = Color.white;
 xylaonMK2Bullet.despawnEffect = customHitBullet;
-xylaonMK2Bullet.knockback = 1.3; 
+xylaonMK2Bullet.knockback = 1.3;
 xylaonMK2Bullet.impact = true;
 setupBulletSpecs(xylaonMK2Bullet);
 
@@ -127,20 +128,20 @@ let xylaonMK2BBullet = extend(BasicBulletType, {
         }
     }
 });
-xylaonMK2BBullet.speed = 16.5; 
-xylaonMK2BBullet.damage = 13; 
-xylaonMK2BBullet.lifetime = 18; 
-xylaonMK2BBullet.width = 4.5; 
-xylaonMK2BBullet.height = 25.0; 
+xylaonMK2BBullet.speed = 16.5;
+xylaonMK2BBullet.damage = 13;
+xylaonMK2BBullet.lifetime = 18;
+xylaonMK2BBullet.width = 4.5;
+xylaonMK2BBullet.height = 25.0;
 xylaonMK2BBullet.hitSize = 11;
-xylaonMK2BBullet.trailChance = 0.1; 
-xylaonMK2BBullet.trailEffect = Fx.disperseTrail; 
+xylaonMK2BBullet.trailChance = 0.1;
+xylaonMK2BBullet.trailEffect = Fx.disperseTrail;
 xylaonMK2BBullet.trailColor = Color.valueOf("#b92eff");
-xylaonMK2BBullet.backColor = Color.valueOf("#e09cf1"); 
-xylaonMK2BBullet.frontColor = Color.white; 
+xylaonMK2BBullet.backColor = Color.valueOf("#e09cf1");
+xylaonMK2BBullet.frontColor = Color.white;
 xylaonMK2BBullet.despawnEffect = customHitLancer;
 xylaonMK2BBullet.despawnColor = Color.valueOf("#aa2ee8");
-xylaonMK2BBullet.knockback = 0.8; 
+xylaonMK2BBullet.knockback = 0.8;
 xylaonMK2BBullet.impact = true;
 setupBulletSpecs(xylaonMK2BBullet);
 
@@ -159,8 +160,8 @@ xylaon.addBar("heat", e => new Bar(
     new Prov({
         get: function(){
             let heat = e.getHeat();
-            return heat < 0 ? 
-                "COOLING: " + (Math.floor(Math.abs(heat / 6)) / 10) + "s" : 
+            return heat < 0 ?
+                "COOLING: " + (Math.floor(Math.abs(heat / 6)) / 10) + "s" :
                 "HEAT: " + (Math.floor(heat / 6) / 10) + "s";
         }
     }),
@@ -189,23 +190,23 @@ xylaon.addBar("as", e => new Bar(
         get: function(){ return Color.cyan; }
     }),
     new Floatp({
-        get: function(){ 
+        get: function(){
             let tier = e.getTier();
-            return Math.min(Math.max(e.getHeat(), 0) / maxAsCapTable[tier], 1); 
+            return Math.min(Math.max(e.getHeat(), 0) / maxAsCapTable[tier], 1);
         }
     })
 ));
 
 xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
     thermalstate: 0,
-    tierState: 0, 
+    tierState: 0,
 
     paidTitanium: 0,
     paidSilicon: 0,
     paidPlastanium: 0,
 
     getTier(){ return this.tierState == null ? 0 : this.tierState; },
-    setTier(val){ 
+    setTier(val){
         this.tierState = val;
         this.paidTitanium = 0;
         this.paidSilicon = 0;
@@ -257,16 +258,16 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
         let takeS = Math.min(curS, Math.max(0, remS));
         let takeP = Math.min(curP, Math.max(0, remP));
 
-        if(takeT > 0) { core.items.remove(Items.titanium, takeT); this.paidTitanium += takeT; }
-        if(takeS > 0) { core.items.remove(Items.silicon, takeS); this.paidSilicon += takeS; }
-        if(takeP > 0) { core.items.remove(Items.plastanium, takeP); this.paidPlastanium += takeP; }
+        if(takeT > 0) { NexNet.take(core, Items.titanium, takeT); this.paidTitanium += takeT; }
+        if(takeS > 0) { NexNet.take(core, Items.silicon, takeS); this.paidSilicon += takeS; }
+        if(takeP > 0) { NexNet.take(core, Items.plastanium, takeP); this.paidPlastanium += takeP; }
 
         if(this.paidTitanium >= reqT && this.paidSilicon >= reqS && this.paidPlastanium >= reqP){
-            if(targetTier == 1) Fx.upgradeCore.at(this.x, this.y);
-            else Fx.bigShockwave.at(this.x, this.y);
-            Fx.mineHuge.at(this.x, this.y);
-            Effect.shake(5, 5, this.x, this.y);
-            
+            if(targetTier == 1) NexNet.fx(Fx.upgradeCore, this.x, this.y);
+            else NexNet.fx(Fx.bigShockwave, this.x, this.y);
+            NexNet.fx(Fx.mineHuge, this.x, this.y);
+            NexNet.shake(5, 5, this.x, this.y);
+
             if(Vars.net.active()){
                 Call.tileConfig(Vars.player, this, java.lang.Integer(targetTier));
             } else {
@@ -281,7 +282,7 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
 
     range(){
         let tier = this.getTier();
-        if(tier == 2) return 294; 
+        if(tier == 2) return 294;
         if(tier == 1) return 544;
         return 420;
     },
@@ -297,7 +298,7 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                 let reqCell = dialog.cont.label(packProv(() => {
                     let needMK2_T = Math.max(0, reqMK2.titanium - this.paidTitanium);
                     let needMK2_S = Math.max(0, reqMK2.silicon - this.paidSilicon);
-                    
+
                     let needMK2B_T = Math.max(0, reqMK2B.titanium - this.paidTitanium);
                     let needMK2B_S = Math.max(0, reqMK2B.silicon - this.paidSilicon);
                     let needMK2B_P = Math.max(0, reqMK2B.plastanium - this.paidPlastanium);
@@ -322,7 +323,7 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                            " • Silicon: [green]" + needMK2B_S + "[]\n" +
                            " • Nhựa Plastanium: [green]" + needMK2B_P + "[]";
                 }));
-                
+
                 reqCell.width(360).get().setWrap(true);
                 reqCell.get().setAlignment(Align.left);
                 dialog.cont.row(); dialog.cont.add().height(10).row();
@@ -385,7 +386,7 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
 
             if (currentTier == 0) {
                 title += "[yellow](MK1)[]";
-                descStr = isEn() ? 
+                descStr = isEn() ?
                           "[yellow]⚡ BASE STATS (MK1) ⚡[]\n" +
                           "[white]Turret HP: [green]500[]\n" +
                           "Range: [orange]420[] px\n" +
@@ -398,10 +399,10 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                           "Sát thương gốc (Graphite): [yellow]20[] DMG/viên\n" +
                           "Sát thương gốc (Chì/Đồng): [yellow]12[] DMG/viên[]\n\n" +
                           "[gray]Kỹ năng đặc biệt: Hệ Thống Nhiệt Mạch — Mỗi phát bắn tích lũy [orange]1%[] nhiệt lượng ([yellow]540[] điểm). Quá nhiệt sẽ khóa pháo [orange]4.0[] giây để làm mát. Duy trì bắn liên tục trong [orange]3.0[] giây gia tăng tối đa [green]+350%[] tốc độ bắn.[]";
-            } 
+            }
             else if (currentTier == 1) {
                 title += "[cyan](MK2)[]";
-                descStr = isEn() ? 
+                descStr = isEn() ?
                           "[cyan]⚡ UPGRADE STATS (MK2) ⚡[]\n" +
                           "[white]Turret HP: [green]650[] ([green]+30%[])\n" +
                           "Range: [orange]544[] px ([green]+29.5%[])\n" +
@@ -412,10 +413,10 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                           "Tầm bắn: [orange]544[] px ([green]+29.5%[])\n" +
                           "Sát thương gốc: [yellow]26[] DMG/viên ([green]+30%[])[]\n\n" +
                           "[gray]Kỹ năng đặc biệt: Tản Nhiệt Tăng Cường — Giới hạn chịu nhiệt giảm còn [yellow]480[] điểm. Thời gian khóa xả nhiệt rút ngắn còn [orange]3.0[] giây. Tốc độ bắn gia tốc cực đại đạt [green]+450%[].[]";
-            } 
+            }
             else if (currentTier == 2) {
                 title += "[purple](MK2B)[]";
-                descStr = isEn() ? 
+                descStr = isEn() ?
                           "[purple]⚡ SUPER-IMPULSE STATS (MK2B) ⚡[]\n" +
                           "[white]Turret HP: [green]781[] ([green]+56.25%[])\n" +
                           "Range: [orange]294[] px ([red]-30%[])\n" +
@@ -446,12 +447,12 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
 
         let cooldownCap = cooldownCapTable[tier];
         if(this.thermalstate == null) this.thermalstate = -cooldownCap;
-        
+
         if(!this.isShooting || this.thermalstate < 0.2){
             let sign = this.thermalstate > 0 ? 1 : -1;
             this.thermalstate -= Math.min(Math.abs(this.thermalstate), Time.delta) * sign;
         }
-        
+
         this.super$update();
     },
 
@@ -473,11 +474,11 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
 
         this.thermalstate += overheatCap / 100;
         if(this.thermalstate >= overheatCap) this.thermalstate = -cooldownCap;
-        
+
         let activeBullet = type;
         if(tier == 1) activeBullet = xylaonMK2Bullet;
         if(tier == 2) activeBullet = xylaonMK2BBullet;
-        
+
         this.super$shoot(activeBullet);
     },
 
@@ -487,19 +488,19 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
     },
 
     shouldTurn(){ return this.thermalstate >= 0; },
-    
-    write(write){ 
-        this.super$write(write); 
-        write.f(this.thermalstate != null ? this.thermalstate : 0); 
-        write.b(this.getTier()); 
+
+    write(write){
+        this.super$write(write);
+        write.f(this.thermalstate != null ? this.thermalstate : 0);
+        write.b(this.getTier());
         write.i(this.paidTitanium);
         write.i(this.paidSilicon);
         write.i(this.paidPlastanium);
     },
-    read(read, revision){ 
-        this.super$read(read, revision); 
-        this.thermalstate = read.f(); 
-        this.setTier(read.b()); 
+    read(read, revision){
+        this.super$read(read, revision);
+        this.thermalstate = read.f();
+        this.setTier(read.b());
         this.paidTitanium = read.i();
         this.paidSilicon = read.i();
         this.paidPlastanium = read.i();

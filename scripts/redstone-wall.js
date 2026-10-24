@@ -52,7 +52,7 @@ Events.on(ContentInitEvent, () => {
                             this.shockTimer = 0;
                             this.nextShockTime = Mathf.random(200, 400);
 
-                            try { 
+                            try {
                                 Fx.spark.at(this.x, this.y);
                                 Fx.lightning.at(this.x, this.y, Mathf.random(360), Color.valueOf("ff4444"));
                             } catch(e) {}

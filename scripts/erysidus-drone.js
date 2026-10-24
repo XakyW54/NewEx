@@ -23,7 +23,6 @@ const customHitEffect = new Effect(24, new Cons({
     }
 }));
 
- 
 const droneBeam = extend(LaserBulletType, {
     damage: 45,
     length: 280,
@@ -52,15 +51,13 @@ const droneBeam = extend(LaserBulletType, {
     }
 });
 
- 
 const droneStorage = {};
 
- 
 const erysidusDroneAI = () => extend(FlyingAI, {
     updateMovement(){
         let target = this.target;
         if(target != null){
-   
+
             this.circleAttack(200);
         } else {
             let core = this.unit.closestCore();
@@ -79,14 +76,13 @@ Events.on(ClientLoadEvent, new Cons({
             droneType.aiController = erysidusDroneAI;
         }
 
-   
         Events.run(Trigger.update, new java.lang.Runnable({
             run: function(){
                 if(Vars.state.isMenu()) return;
 
                 Groups.unit.each(u => {
                     if(u != null && u.type === droneType && u.isValid()){
-                        
+
                         if(droneStorage[u.id] === undefined){
                             droneStorage[u.id] = {
                                 beamDurationTimer: 0,
@@ -97,7 +93,6 @@ Events.on(ClientLoadEvent, new Cons({
                         let data = droneStorage[u.id];
                         let tier = u.maxHealth > 2000 ? 2 : (u.maxHealth > 1500 ? 1 : 0);
 
-                 
                         Draw.draw(Layer.flyingUnit - 0.01, () => {
                             Drawf.light(u.x, u.y, 50, mainColor, 0.6);
 
@@ -109,7 +104,6 @@ Events.on(ClientLoadEvent, new Cons({
                         if(data.beamDurationTimer > 0){
                             data.beamDurationTimer -= Time.delta;
 
-                            // Đã sửa lỗi: lọc mục tiêu bằng boolean và truyền hàm so sánh máu chính xác
                             let target = Units.bestTarget(u.team, u.x, u.y, 280, e => e.checkTarget(true, true), e => true, (a, b) => b.health - a.health);
                             let targetAngle = u.rotation;
                             if(target != null){
@@ -125,23 +119,23 @@ Events.on(ClientLoadEvent, new Cons({
                             }
 
                             if(data.beamDurationTimer <= 0){
-                                data.beamCooldownTimer = 300;  
+                                data.beamCooldownTimer = 300;
                             }
-                        } 
+                        }
                         else if(data.beamCooldownTimer > 0){
                             data.beamCooldownTimer = Math.max(0, data.beamCooldownTimer - Time.delta);
-                        } 
+                        }
                         else {
                             let target = Units.closestTarget(u.team, u.x, u.y, 280);
                             if(target != null){
-                                data.beamDurationTimer = 42;  
+                                data.beamDurationTimer = 42;
                             }
                         }
                     }
                 });
             }
         }));
- 
+
         Events.on(UnitDestroyEvent, new Cons({
             get: function(event){
                 if(event.unit != null && droneStorage[event.unit.id] !== undefined){

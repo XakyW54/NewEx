@@ -73,6 +73,12 @@ Events.on(ContentInitEvent, () => {
             }
         }));
 
+        sonicorBlock.config(java.lang.Boolean, packCons2((tile, value) => {
+            if (tile != null && tile.applyDtgLink !== undefined) {
+                tile.applyDtgLink(value ? true : false);
+            }
+        }));
+
         sonicorBlock.buildType = () => extend(Building, {
             targetX: 0,
             targetY: 0,
@@ -117,6 +123,31 @@ Events.on(ContentInitEvent, () => {
                 return Point2.pack(Math.floor(this.targetX / Vars.tilesize), Math.floor(this.targetY / Vars.tilesize));
             },
 
+            findDtgBuilding() {
+                let found = null;
+                Units.nearbyBuildings(this.x, this.y, 240, packCons(b => {
+                    if (b.block.name.includes("soldern") || b.block.name.includes("dtg")) {
+                        found = b;
+                    }
+                }));
+                return found;
+            },
+
+            applyDtgLink(link) {
+                let found = link ? this.findDtgBuilding() : null;
+                if (found != null) {
+                    this.dtgBuilding = found;
+                    this.linkedWithDTG = true;
+                    this.savedDtgTileX = found.tileX();
+                    this.savedDtgTileY = found.tileY();
+                } else {
+                    this.linkedWithDTG = false;
+                    this.dtgBuilding = null;
+                    this.savedDtgTileX = -1;
+                    this.savedDtgTileY = -1;
+                }
+            },
+
             getRectBounds(tx, ty) {
                 let minX = Math.min(this.x, tx) - this.rectWidth / 2;
                 let minY = Math.min(this.y, ty) - this.rectWidth / 2;
@@ -136,25 +167,14 @@ Events.on(ContentInitEvent, () => {
                 })).size(50, 40).tooltip(isEn() ? "Set Wave Rect Zone" : "Đặt vị trí vùng chữ nhật sóng âm");
 
                 table.button(Icon.link, Styles.cleari, 40, packRun(() => {
-                    let found = null;
-                    Units.nearbyBuildings(this.x, this.y, 240, packCons(b => {
-                        if (b.block.name.includes("soldern") || b.block.name.includes("dtg")) {
-                            found = b;
-                        }
-                    }));
+                    let found = this.findDtgBuilding();
 
                     if (found != null) {
-                        this.dtgBuilding = found;
-                        this.linkedWithDTG = true;
-                        this.savedDtgTileX = found.tileX();
-                        this.savedDtgTileY = found.tileY();
+                        this.configure(java.lang.Boolean.valueOf(true));
                         NexNet.fx(Fx.select, found.x, found.y);
                         Vars.ui.showInfoToast(isEn() ? "[green]Linked with DTG-Soldern! Interception Active.[]" : "[green]Đã liên kết với DTG-Soldern! Kích hoạt đạn đánh chặn.[]", 3);
                     } else {
-                        this.linkedWithDTG = false;
-                        this.dtgBuilding = null;
-                        this.savedDtgTileX = -1;
-                        this.savedDtgTileY = -1;
+                        this.configure(java.lang.Boolean.valueOf(false));
                         NexNet.fx(Fx.smeltsmoke, this.x, this.y);
                         Vars.ui.showInfoToast(isEn() ? "[red]No DTG-Soldern found within range![]" : "[red]Không tìm thấy công trình liên kết trong phạm vi![]", 3);
                     }

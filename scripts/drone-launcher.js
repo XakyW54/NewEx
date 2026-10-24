@@ -12,6 +12,15 @@ const reqMK2B = { copper: 2000, lead: 1500, titanium: 1000 };
 
 const isEn = () => Core.settings.get("locale", "").startsWith("en");
 
+NexNet.on("drone-recall", (player, payload) => {
+    let pos = parseInt(payload);
+    if (isNaN(pos)) return;
+    let build = Vars.world.build(pos);
+    if (build == null || build.recallAllDrones === undefined) return;
+    if (player != null && build.team != player.team()) return;
+    build.recallAllDrones();
+}, false, 500);
+
 function getUnitType(names) {
     for (let i = 0; i < names.length; i++) {
         let type = Vars.content.getByName(ContentType.unit, names[i]);
@@ -20,7 +29,7 @@ function getUnitType(names) {
     return null;
 }
 
-Events.on(ClientLoadEvent, cons(e => {
+Events.on(ContentInitEvent, cons(e => {
     let launcherBlock = Vars.content.getByName(ContentType.block, "newex-drone-launcher") ||
                         Vars.content.getByName(ContentType.block, "drone-launcher");
 
@@ -362,7 +371,8 @@ Events.on(ClientLoadEvent, cons(e => {
             }
 
             buttonTable.button(Icon.leftOpen, Styles.cleari, 40, packRun(() => {
-                this.recallAllDrones();
+                this.triggerDoor();
+                NexNet.send("drone-recall", String(this.pos()));
                 NexNet.fx(Fx.tapBlock, this.x, this.y);
             })).size(45, 40).tooltip(english ? "Recall all Drones belonging to this turret" : "Thu hồi toàn bộ Drone thuộc tháp pháo này");
 

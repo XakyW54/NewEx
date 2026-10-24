@@ -144,7 +144,7 @@ function spawnErysidusDrone(team, x, y, rotation, tier){
     }
 }
 
-Events.on(ClientLoadEvent, new Cons({
+Events.on(ContentInitEvent, new Cons({
     get: function(e){
         Events.on(BlockDestroyEvent, new Cons({
             get: function(event){

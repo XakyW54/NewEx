@@ -6,9 +6,18 @@ const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
 function isVietnamese() {
-    let loc = Core.settings.get("locale", "en");
-    if (!loc) loc = Core.settings.get("language", "en");
-    return loc != null && loc.toString().toLowerCase().startsWith("vi");
+    let lang = "";
+    try {
+        lang = String(Core.bundle.getLocale().getLanguage());
+    } catch (err) {
+        lang = "";
+    }
+    if (lang == "" || lang == "null" || lang == "undefined") {
+        let loc = Core.settings.get("locale", "en");
+        if (!loc) loc = Core.settings.get("language", "en");
+        lang = loc != null ? loc.toString() : "en";
+    }
+    return lang.toLowerCase().startsWith("vi");
 }
 
 const chargeSound = Vars.tree.loadSound("plasma-charge");
@@ -231,7 +240,7 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                         NexNet.fx(Fx.upgradeCore, this.x, this.y);
                         NexNet.fx(Fx.mineHuge, this.x, this.y);
                         NexNet.shake(5, 5, this.x, this.y);
-                        this.setTier(1);
+                        this.configure(java.lang.Integer.valueOf(1));
                         dialog.hide();
                         this.deselect();
                     } else {
@@ -268,7 +277,7 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                         NexNet.fx(Fx.bigShockwave, this.x, this.y);
                         NexNet.fx(Fx.mineHuge, this.x, this.y);
                         NexNet.shake(5, 5, this.x, this.y);
-                        this.setTier(2);
+                        this.configure(java.lang.Integer.valueOf(2));
                         dialog.hide();
                         this.deselect();
                     } else {

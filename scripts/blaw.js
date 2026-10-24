@@ -5,9 +5,18 @@ const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
 function isVietnamese() {
-    let loc = Core.settings.get("locale", "en");
-    if (!loc) loc = Core.settings.get("language", "en");
-    return loc != null && loc.toString().toLowerCase().startsWith("vi");
+    let lang = "";
+    try {
+        lang = String(Core.bundle.getLocale().getLanguage());
+    } catch (err) {
+        lang = "";
+    }
+    if (lang == "" || lang == "null" || lang == "undefined") {
+        let loc = Core.settings.get("locale", "en");
+        if (!loc) loc = Core.settings.get("language", "en");
+        lang = loc != null ? loc.toString() : "en";
+    }
+    return lang.toLowerCase().startsWith("vi");
 }
 
 const shootSoundCannon = Vars.tree.loadSound("cannon-shot-1");

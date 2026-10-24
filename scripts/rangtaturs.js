@@ -259,6 +259,12 @@ const rangtaturs = extend(ItemTurret, "rangtaturs", {
 rangtaturs.health = 950; rangtaturs.size = 3; rangtaturs.reload = 95; rangtaturs.range = 352; rangtaturs.configurable = true;
 rangtaturs.ammo(Items.silicon, rangtatursNormalBullet);
 
+rangtaturs.config(java.lang.Integer, new Cons2({
+    get: (tile, value) => {
+        if (tile != null) tile.evolutionTier = Number(value);
+    }
+}));
+
 rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
     evolutionTier: 0,
     chargeTimer: 0, superShotCount: 0, berserkTimer: 0,
@@ -336,7 +342,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                     if(core && core.items.get(Items.copper) >= reqRangtatursMK2.copper && core.items.get(Items.lead) >= reqRangtatursMK2.lead){
                         NexNet.take(core, Items.copper, reqRangtatursMK2.copper);
                         NexNet.take(core, Items.lead, reqRangtatursMK2.lead);
-                        this.evolutionTier = 1;
+                        this.configure(java.lang.Integer.valueOf(1));
                         NexNet.fx(Fx.upgradeCore, this.x, this.y);
                         dialog.hide(); this.deselect();
                     } else {
@@ -366,7 +372,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                         NexNet.take(core, Items.copper, reqRangtatursMK2B.copper);
                         NexNet.take(core, Items.lead, reqRangtatursMK2B.lead);
                         NexNet.take(core, Items.silicon, reqRangtatursMK2B.silicon);
-                        this.evolutionTier = 2;
+                        this.configure(java.lang.Integer.valueOf(2));
                         NexNet.fx(Fx.bigShockwave, this.x, this.y);
                         dialog.hide(); this.deselect();
                     } else {
@@ -596,6 +602,8 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
             handleShotgunShoot(this, pType, pellets, spread, dmgMul, spdMul);
         }
     },
+
+    config(){ return java.lang.Integer.valueOf(this.evolutionTier); },
 
     write(write){
         this.super$write(write);

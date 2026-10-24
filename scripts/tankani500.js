@@ -95,7 +95,7 @@ const tankaniMK2BBullet = extend(BasicBulletType, {
     }
 });
 
-Events.on(ClientLoadEvent, cons(e => {
+Events.on(ContentInitEvent, cons(e => {
     const turretBlock = Vars.content.getByName(ContentType.block, "newex-tankani500");
 
     if (turretBlock != null) {

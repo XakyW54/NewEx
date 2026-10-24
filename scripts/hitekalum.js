@@ -442,7 +442,7 @@ Events.on(ContentInitEvent, () => {
                                 NexNet.take(core, itemObsidis, reqPerkHitekA.obsidis);
 
                                 let res = Mathf.rand.nextInt(3) + 1;
-                                this.setPerkA(res);
+                                this.configure(java.lang.Integer.valueOf(10 + res));
 
                                 NexNet.fx(Fx.upgradeCore, this.x, this.y);
                                 NexNet.shake(4, 4, this.x, this.y);
@@ -506,7 +506,7 @@ Events.on(ContentInitEvent, () => {
                                 NexNet.take(core, itemObsidis, reqPerkHitekB.obsidis);
 
                                 let res = Mathf.rand.nextInt(3) + 1;
-                                this.setPerkB(res);
+                                this.configure(java.lang.Integer.valueOf(20 + res));
 
                                 NexNet.fx(Fx.upgradeCore, this.x, this.y);
                                 NexNet.shake(4, 4, this.x, this.y);
@@ -573,7 +573,7 @@ Events.on(ContentInitEvent, () => {
 
                                 let chance = Mathf.rand.nextInt(100);
                                 let res = chance < 40 ? 1 : (chance < 70 ? 2 : (chance < 90 ? 3 : 4));
-                                this.setPerkC(res);
+                                this.configure(java.lang.Integer.valueOf(30 + res));
 
                                 NexNet.fx(Fx.upgradeCore, this.x, this.y);
                                 NexNet.shake(4, 4, this.x, this.y);

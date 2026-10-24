@@ -287,6 +287,8 @@ NexNet.on("rangtaturs-upgrade", (player, payload) => {
             NexNet.take(core, Items.lead, reqRangtatursMK2.lead);
             NexNet.configure(build, java.lang.Integer.valueOf(1));
             NexNet.fx(Fx.upgradeCore, build.x, build.y);
+            // Gửi đồng bộ trạng thái mới đến toàn bộ client
+            NexNet.sendToAll("rangtaturs-sync", tileX + "|" + tileY + "|1");
         }
     } else if (targetTier == 2) {
         if (core.items.get(Items.copper) >= reqRangtatursMK2B.copper && core.items.get(Items.lead) >= reqRangtatursMK2B.lead && core.items.get(Items.silicon) >= reqRangtatursMK2B.silicon) {
@@ -295,7 +297,28 @@ NexNet.on("rangtaturs-upgrade", (player, payload) => {
             NexNet.take(core, Items.silicon, reqRangtatursMK2B.silicon);
             NexNet.configure(build, java.lang.Integer.valueOf(2));
             NexNet.fx(Fx.bigShockwave, build.x, build.y);
+            // Gửi đồng bộ trạng thái mới đến toàn bộ client
+            NexNet.sendToAll("rangtaturs-sync", tileX + "|" + tileY + "|2");
         }
+    }
+}, true, 200);
+
+// Lắng nghe tín hiệu đồng bộ từ server để cập nhật evolutionTier cho các client/bạn bè
+NexNet.on("rangtaturs-sync", (player, payload) => {
+    if (Vars.state == null || !Vars.state.isGame() || Vars.world == null) return;
+    let parts = payload.split("|");
+    if (parts.length < 3) return;
+    let tileX = parseInt(parts[0]);
+    let tileY = parseInt(parts[1]);
+    let targetTier = parseInt(parts[2]);
+
+    let tile = Vars.world.tile(tileX, tileY);
+    if (tile == null || tile.build == null) return;
+    tile.build.evolutionTier = targetTier;
+    if (targetTier == 1) {
+        Fx.upgradeCore.at(tile.build.x, tile.build.y);
+    } else if (targetTier == 2) {
+        Fx.bigShockwave.at(tile.build.x, tile.build.y);
     }
 }, true, 200);
 

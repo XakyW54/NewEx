@@ -205,6 +205,12 @@ const NexNet = global.NexNet;
         let targetTile = Vars.world.tileWorld(tx, ty);
         if (targetTile == null) return;
 
+        // Đảm bảo host thấy hiệu ứng nổ
+        Fx.reactorExplosion.at(tx, ty);
+        Fx.dynamicExplosion.at(tx, ty);
+        Fx.smokeCloud.at(tx, ty);
+        customShockwaveEffect.at(tx, ty);
+
         NexNet.fx(Fx.reactorExplosion, tx, ty);
         NexNet.fx(Fx.dynamicExplosion, tx, ty);
         NexNet.fx(Fx.smokeCloud, tx, ty);
@@ -279,6 +285,7 @@ const NexNet = global.NexNet;
         ty = Mathf.clamp(ty, 0, Vars.world.height() * Vars.tilesize);
 
         Time.run(60, () => {
+            meteorFallingEffect.at(tx, ty);
             NexNet.fx(meteorFallingEffect, tx, ty);
             NexNet.toastAll(isEn() ? "[orange]Meteor falling onto the map![]" : "[orange]Thiên thạch đang rơi xuống bản đồ![]", 2);
             Time.run(50, () => {
@@ -378,6 +385,7 @@ const NexNet = global.NexNet;
                     }
                 }
             }
+            deleteOreEffect.at(sample.worldx(), sample.worldy());
             NexNet.fx(deleteOreEffect, sample.worldx(), sample.worldy());
             NexNet.toastAll(isEn() ? "[orange]Random ore deposit deleted (" + clearedCount + " tiles)![]" : "[orange]Đã xóa ngẫu nhiên 1 bãi khoáng sản (" + clearedCount + " ô)![]", 2);
         });
@@ -592,8 +600,8 @@ const NexNet = global.NexNet;
         }
     }
 
-    // Đã chỉnh sửa: Chỉ cho phép hiển thị nếu là chủ server (Vars.net.host()) và không phải thiết bị di động (!Vars.mobile)
-    const canUseHud = () => !Vars.mobile && Vars.net.host();
+    // Kiểm tra chuẩn client tránh crash và chỉ hiện cho PC không phải client
+    const canUseHud = () => !Vars.mobile && !Vars.net.client();
 
     function centerWaveButton() {
         if (!canUseHud()) return;

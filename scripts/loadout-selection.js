@@ -1,10 +1,10 @@
 const PerfCore = global.PerfCore;
+const NexNet = global.NexNet;
 (function() {
     const shop = require("shop");
-    const pvpFog = require("pvp-core-fog"); 
     const CURRENT_MOD_NAME = "newex";
     const TAG_KEY = "newex-selected-turrets";
-    
+
     const isEn = () => Core.settings.getString("locale").startsWith("en");
 
     const fallbackTurrets = [
@@ -35,14 +35,14 @@ const PerfCore = global.PerfCore;
     let hpPerWavePercentSetting = 10;
     let fpsOptPercentSetting = 0;
 
-     let countWave = 0;
+    let countWave = 0;
     let countWave10 = 0;
     let countSelfDestruct = 0;
     let countMeteor = 0;
     let countClearER = 0;
     let countDeleteOre = 0;
 
-     let targetCamX = -1;
+    let targetCamX = -1;
     let targetCamY = -1;
     let panDuration = 0.4;
     let panTimer = 1.0;
@@ -74,22 +74,22 @@ const PerfCore = global.PerfCore;
         let rotationRad = rotationDeg * Mathf.degRad;
         let cosRot = Math.cos(rotationRad);
         let sinRot = Math.sin(rotationRad);
-        
+
         let localX = radiusX;
         let localY = 0;
         let lastX = centerX + (localX * cosRot - localY * sinRot);
         let lastY = centerY + (localX * sinRot + localY * cosRot);
-        
+
         for (let i = 1; i <= points; i++) {
             let angle = (i * 360 / points) * Mathf.degRad;
             localX = Math.cos(angle) * radiusX;
             localY = Math.sin(angle) * radiusY;
-            
+
             let nextX = centerX + (localX * cosRot - localY * sinRot);
             let nextY = centerY + (localX * sinRot + localY * cosRot);
-            
+
             Lines.line(lastX, lastY, nextX, nextY);
-            
+
             lastX = nextX;
             lastY = nextY;
         }
@@ -128,7 +128,7 @@ const PerfCore = global.PerfCore;
 
     const meteorFallingEffect = new Effect(50, packCons((e) => {
         Draw.z(Layer.effect + 5);
-        let f = e.fin(); 
+        let f = e.fin();
 
         let portalX = e.x - 220;
         let portalY = e.y + 450;
@@ -166,7 +166,7 @@ const PerfCore = global.PerfCore;
             Fill.circle(portalX, portalY, 14);
         }
 
-        let waveAngle = 33; 
+        let waveAngle = 33;
         let waveRadius = 6 + (28 * Interp.pow2Out.apply(f));
         Lines.stroke(2.0 * (1.0 - f), Color.valueOf("ffb380"));
         draw3DRotatedEllipseWave(currentX, currentY, waveRadius, waveRadius * 0.4, waveAngle);
@@ -187,7 +187,7 @@ const PerfCore = global.PerfCore;
 
         if (meteorRegion.found()) {
             Draw.color(Color.white);
-            let rotation = Time.time * 15.0; 
+            let rotation = Time.time * 15.0;
             Draw.rect(meteorRegion, currentX, currentY, 24, 24, rotation);
         } else {
             Draw.color(PerfCore.color("594e48"));
@@ -197,15 +197,19 @@ const PerfCore = global.PerfCore;
         Draw.reset();
     }));
 
-    function spawnRandomMeteor(tx, ty) {
+    function requesterTeam(player) {
+        return player != null ? player.team() : Vars.state.rules.defaultTeam;
+    }
+
+    function serverMeteor(tx, ty) {
         let targetTile = Vars.world.tileWorld(tx, ty);
         if (targetTile == null) return;
 
-        Fx.reactorExplosion.at(tx, ty);
-        Fx.dynamicExplosion.at(tx, ty);
-        Fx.smokeCloud.at(tx, ty);
-        customShockwaveEffect.at(tx, ty);
-        Effect.shake(14, 14, tx, ty);
+        NexNet.fx(Fx.reactorExplosion, tx, ty);
+        NexNet.fx(Fx.dynamicExplosion, tx, ty);
+        NexNet.fx(Fx.smokeCloud, tx, ty);
+        NexNet.fx(customShockwaveEffect, tx, ty);
+        NexNet.shake(14, 14, tx, ty);
 
         Damage.damage(tx, ty, 30 * Vars.tilesize, 1000);
 
@@ -215,9 +219,7 @@ const PerfCore = global.PerfCore;
         for (let rx = -outerRadius; rx <= outerRadius; rx++) {
             for (let ry = -outerRadius; ry <= outerRadius; ry++) {
                 let dist = Math.sqrt(rx * rx + ry * ry);
-                let tileX = targetTile.x + rx;
-                let tileY = targetTile.y + ry;
-                let t = Vars.world.tile(tileX, tileY);
+                let t = Vars.world.tile(targetTile.x + rx, targetTile.y + ry);
 
                 if (t != null && t.build != null) {
                     let b = t.build;
@@ -253,21 +255,39 @@ const PerfCore = global.PerfCore;
         for (let rx = -oreRadius; rx <= oreRadius; rx++) {
             for (let ry = -oreRadius; ry <= oreRadius; ry++) {
                 let dist = Math.sqrt(rx * rx + ry * ry);
-                
+
                 if (dist <= oreRadius && Mathf.chance(1.0 - (dist / (oreRadius + 1.0)))) {
-                    let tileX = targetTile.x + rx;
-                    let tileY = targetTile.y + ry;
-                    let t = Vars.world.tile(tileX, tileY);
+                    let t = Vars.world.tile(targetTile.x + rx, targetTile.y + ry);
 
                     if (t != null && t.floor() != null && !t.floor().isLiquid) {
-                        t.setOverlay(selectedOre);
+                        NexNet.setOverlay(t, selectedOre);
                     }
                 }
             }
         }
     }
 
-     function triggerRandomMeteor(btnActor) {
+    NexNet.on("meteor", (player, payload) => {
+        if (Vars.state == null || !Vars.state.isGame() || Vars.world == null) return;
+
+        let a = payload.split("|");
+        let tx = parseFloat(a[0]);
+        let ty = parseFloat(a[1]);
+        if (isNaN(tx) || isNaN(ty)) return;
+
+        tx = Mathf.clamp(tx, 0, Vars.world.width() * Vars.tilesize);
+        ty = Mathf.clamp(ty, 0, Vars.world.height() * Vars.tilesize);
+
+        Time.run(60, () => {
+            NexNet.fx(meteorFallingEffect, tx, ty);
+            NexNet.toastAll(isEn() ? "[orange]Meteor falling onto the map![]" : "[orange]Thiên thạch đang rơi xuống bản đồ![]", 2);
+            Time.run(50, () => {
+                if (Vars.state != null && Vars.state.isGame()) serverMeteor(tx, ty);
+            });
+        });
+    }, true, 500);
+
+    function triggerRandomMeteor(btnActor) {
         if (Vars.state == null || !Vars.state.isGame() || Vars.world == null) return;
 
         let worldWidth = Vars.world.width() * Vars.tilesize;
@@ -283,13 +303,7 @@ const PerfCore = global.PerfCore;
 
         Vars.ui.showInfoToast(isEn() ? "[orange]Camera panning to meteor target...[]" : "[orange]Đang di chuyển camera đến mục tiêu thiên thạch...[]", 1.5);
 
-        Time.run(60, () => {
-            meteorFallingEffect.at(targetX, targetY);
-            Time.run(50, () => {
-                spawnRandomMeteor(targetX, targetY);
-            });
-            Vars.ui.showInfoToast(isEn() ? "[orange]Meteor falling onto the map![]" : "[orange]Thiên thạch đang rơi xuống bản đồ![]", 2);
-        });
+        NexNet.send("meteor", targetX + "|" + targetY);
 
         countMeteor++;
         if (btnActor != null) {
@@ -297,26 +311,29 @@ const PerfCore = global.PerfCore;
         }
     }
 
-    function clearEnemyUnitsPercent(percent) {
+    NexNet.on("clearE", (player, payload) => {
         if (Vars.state == null || !Vars.state.isGame()) return;
 
-        let playerTeam = Vars.state.rules.defaultTeam;
+        let percent = Mathf.clamp(parseInt(payload) || 99, 1, 99);
+        let ownTeam = requesterTeam(player);
+        let pvp = Vars.state.rules.pvp;
+        let waveTeam = Vars.state.rules.waveTeam;
         let enemies = new Seq();
 
         Groups.unit.each(u => {
-            if (u != null && u.team != playerTeam && !u.dead) {
+            if (u != null && u.team != ownTeam && !u.dead && (!pvp || u.team == waveTeam)) {
                 enemies.add(u);
             }
         });
 
         if (enemies.isEmpty()) {
-            Vars.ui.showInfoToast(isEn() ? "No enemy units on the map!" : "Không có quái địch nào trên bản đồ!", 2);
+            NexNet.toastTo(player, isEn() ? "No enemy units on the map!" : "Không có quái địch nào trên bản đồ!", 2);
             return;
         }
 
         enemies.shuffle();
         let countToKill = Math.floor(enemies.size * (percent / 100));
-        
+
         if (countToKill < 1 && enemies.size > 0) {
             countToKill = 1;
         }
@@ -328,10 +345,45 @@ const PerfCore = global.PerfCore;
             }
         }
 
-        Vars.ui.showInfoToast(isEn() ? "[red]Successfully killed random " + countToKill + " (" + percent + "%) enemy units![]" : "[red]Đã tiêu diệt ngẫu nhiên " + countToKill + " (" + percent + "%) units địch![]", 2);
+        NexNet.toastTo(player, isEn() ? "[red]Successfully killed random " + countToKill + " (" + percent + "%) enemy units![]" : "[red]Đã tiêu diệt ngẫu nhiên " + countToKill + " (" + percent + "%) units địch![]", 2);
+    }, true, 500);
+
+    function clearEnemyUnitsPercent(percent) {
+        if (Vars.state == null || !Vars.state.isGame()) return;
+        NexNet.send("clearE", String(percent));
     }
 
-     function deleteRandomOreDeposit(btnActor) {
+    NexNet.on("delore", (player, payload) => {
+        if (Vars.state == null || !Vars.state.isGame() || Vars.world == null) return;
+
+        let a = payload.split("|");
+        let sample = Vars.world.tile(parseInt(a[0]), parseInt(a[1]));
+        if (sample == null || sample.overlay() == null || sample.overlay() === Blocks.air) {
+            NexNet.toastTo(player, isEn() ? "No ore deposits found on the map!" : "Không tìm thấy bãi khoáng sản nào trên bản đồ!", 2);
+            return;
+        }
+
+        Time.run(60, () => {
+            let oreType = sample.overlay();
+            if (oreType == null || oreType === Blocks.air) return;
+
+            let clearedCount = 0;
+            let radius = 5;
+            for (let rx = -radius; rx <= radius; rx++) {
+                for (let ry = -radius; ry <= radius; ry++) {
+                    let t = Vars.world.tile(sample.x + rx, sample.y + ry);
+                    if (t != null && t.overlay() === oreType) {
+                        NexNet.setOverlay(t, Blocks.air);
+                        clearedCount++;
+                    }
+                }
+            }
+            NexNet.fx(deleteOreEffect, sample.worldx(), sample.worldy());
+            NexNet.toastAll(isEn() ? "[orange]Random ore deposit deleted (" + clearedCount + " tiles)![]" : "[orange]Đã xóa ngẫu nhiên 1 bãi khoáng sản (" + clearedCount + " ô)![]", 2);
+        });
+    }, true, 500);
+
+    function deleteRandomOreDeposit(btnActor) {
         if (Vars.state == null || !Vars.state.isGame() || Vars.world == null) return;
 
         let oreTiles = new Seq();
@@ -359,24 +411,7 @@ const PerfCore = global.PerfCore;
 
         Vars.ui.showInfoToast(isEn() ? "[orange]Camera panning to ore deposit...[]" : "[orange]Đang di chuyển camera đến bãi khoáng sản...[]", 1.5);
 
-        Time.run(60, () => {
-            let oreType = sample.overlay();
-            let clearedCount = 0;
-            let radius = 5;
-            for (let rx = -radius; rx <= radius; rx++) {
-                for (let ry = -radius; ry <= radius; ry++) {
-                    let tx = sample.x + rx;
-                    let ty = sample.y + ry;
-                    let t = Vars.world.tile(tx, ty);
-                    if (t != null && t.overlay() === oreType) {
-                        t.setOverlay(Blocks.air);
-                        clearedCount++;
-                    }
-                }
-            }
-            deleteOreEffect.at(sample.worldx(), sample.worldy());
-            Vars.ui.showInfoToast(isEn() ? "[orange]Random ore deposit deleted (" + clearedCount + " tiles)![]" : "[orange]Đã xóa ngẫu nhiên 1 bãi khoáng sản (" + clearedCount + " ô)![]", 2);
-        });
+        NexNet.send("delore", sample.x + "|" + sample.y);
 
         countDeleteOre++;
         if (btnActor != null) {
@@ -387,10 +422,10 @@ const PerfCore = global.PerfCore;
     function loadTurretsFromFolder() {
         turretList.clear();
         let mod = Vars.mods.getMod(CURRENT_MOD_NAME);
-        
+
         if (mod != null && mod.root != null) {
             let blocksDir = mod.root.child("content").child("blocks");
-            
+
             if (blocksDir.exists() && blocksDir.isDirectory()) {
                 blocksDir.walk(cons(file => {
                     if (!file.isDirectory()) {
@@ -445,14 +480,23 @@ const PerfCore = global.PerfCore;
         });
     }
 
-     function triggerNextWave(btnActor) {
+    NexNet.on("wave", (player, payload) => {
+        if (Vars.state == null || !Vars.state.isGame() || Vars.logic == null) return;
+        let count = Mathf.clamp(parseInt(payload) || 1, 1, 10);
+        for (let i = 0; i < count; i++) {
+            Vars.logic.runWave();
+        }
+        if (count > 1) {
+            NexNet.toastTo(player, isEn() ? "[green]Summoned " + count + " consecutive waves![]" : "[green]Đã triệu hồi " + count + " đợt quái liên tiếp![]", 2);
+        }
+    }, true, 350);
+
+    function triggerNextWave(btnActor) {
         let currentTime = Time.millis();
         if (currentTime - lastSkipTime >= 400) {
             lastSkipTime = currentTime;
             if (Vars.state != null && Vars.state.isGame()) {
-                if (Vars.logic != null) {
-                    Vars.logic.runWave();
-                }
+                NexNet.send("wave", "1");
             }
             countWave++;
             if (btnActor != null) {
@@ -461,15 +505,12 @@ const PerfCore = global.PerfCore;
         }
     }
 
-     function triggerMultipleWaves(count, btnActor) {
+    function triggerMultipleWaves(count, btnActor) {
         let currentTime = Time.millis();
         if (currentTime - lastSkipTime >= 400) {
             lastSkipTime = currentTime;
-            if (Vars.state != null && Vars.state.isGame() && Vars.logic != null) {
-                for (let i = 0; i < count; i++) {
-                    Vars.logic.runWave();
-                }
-                Vars.ui.showInfoToast(isEn() ? "[green]Summoned " + count + " consecutive waves![]" : "[green]Đã triệu hồi " + count + " đợt quái liên tiếp![]", 2);
+            if (Vars.state != null && Vars.state.isGame()) {
+                NexNet.send("wave", String(count));
             }
             countWave10++;
             if (btnActor != null) {
@@ -478,42 +519,56 @@ const PerfCore = global.PerfCore;
         }
     }
 
-     function selfDestructCores(btnActor) {
+    NexNet.on("selfdestruct", (player, payload) => {
         if (Vars.state == null || !Vars.state.isGame()) return;
-        let playerTeam = Vars.state.rules.defaultTeam;
-        if (playerTeam != null) {
-            let cores = playerTeam.cores();
-            if (cores != null && !cores.isEmpty()) {
-                let core = cores.first();
-                if (core != null) {
-                    smoothPanTo(core.x, core.y);
 
-                    Vars.ui.showInfoToast(isEn() ? "[red]Camera panning to core...[]" : "[red]Đang di chuyển camera tới lõi...[]", 1.5);
+        let team = requesterTeam(player);
+        let cores = team != null ? team.cores() : null;
+        if (cores == null || cores.isEmpty()) {
+            NexNet.toastTo(player, isEn() ? "No friendly core found!" : "Không tìm thấy lõi phe ta!", 2);
+            return;
+        }
 
-                    Time.run(60, () => {
-                        cores.each(c => {
-                            if (c != null) {
-                                c.kill();
-                            }
-                        });
-                        Vars.ui.showInfoToast(isEn() ? "[red]Core self-destruction triggered![]" : "[red]Đã kích hoạt tự hủy lõi![]", 2);
-                    });
-
-                    countSelfDestruct++;
-                    if (btnActor != null) {
-                        btnActor.setText((isEn() ? "Self-Destruct" : "Tự hủy lõi") + " (" + countSelfDestruct + ")");
-                    }
+        Time.run(60, () => {
+            let list = team.cores().copy();
+            list.each(c => {
+                if (c != null) {
+                    c.kill();
                 }
-            } else {
-                Vars.ui.showInfoToast(isEn() ? "No friendly core found!" : "Không tìm thấy lõi phe ta!", 2);
+            });
+            NexNet.toastTo(player, isEn() ? "[red]Core self-destruction triggered![]" : "[red]Đã kích hoạt tự hủy lõi![]", 2);
+        });
+    }, true, 1000);
+
+    function selfDestructCores(btnActor) {
+        if (Vars.state == null || !Vars.state.isGame()) return;
+        let team = Vars.player != null ? Vars.player.team() : Vars.state.rules.defaultTeam;
+        if (team == null) return;
+
+        let cores = team.cores();
+        if (cores != null && !cores.isEmpty()) {
+            let core = cores.first();
+            if (core != null) {
+                smoothPanTo(core.x, core.y);
+
+                Vars.ui.showInfoToast(isEn() ? "[red]Camera panning to core...[]" : "[red]Đang di chuyển camera tới lõi...[]", 1.5);
+
+                NexNet.send("selfdestruct", "");
+
+                countSelfDestruct++;
+                if (btnActor != null) {
+                    btnActor.setText((isEn() ? "Self-Destruct" : "Tự hủy lõi") + " (" + countSelfDestruct + ")");
+                }
             }
+        } else {
+            Vars.ui.showInfoToast(isEn() ? "No friendly core found!" : "Không tìm thấy lõi phe ta!", 2);
         }
     }
 
     function applyFpsOptimizationLevel(percent) {
         Core.settings.put("newex-fps-opt-percent", java.lang.Integer(percent));
         fpsOptPercentSetting = percent;
-        
+
         if (percent >= 90) {
             Core.settings.put("effects", java.lang.Boolean(false));
             Core.settings.put("destroyedblocks", java.lang.Boolean(false));
@@ -537,8 +592,10 @@ const PerfCore = global.PerfCore;
         }
     }
 
+    const canUseHud = () => !Vars.mobile || Vars.net.active();
+
     function centerWaveButton() {
-        if (Vars.mobile || Vars.net.client()) return;
+        if (!canUseHud()) return;
         if (customWaveContainer != null) {
             let screenW = Core.graphics.getWidth();
             let screenH = Core.graphics.getHeight();
@@ -556,7 +613,7 @@ const PerfCore = global.PerfCore;
     }
 
     function injectWaveButtonToHUD() {
-        if (waveBtnAdded || Vars.mobile || Vars.net.client()) return;
+        if (waveBtnAdded || !canUseHud()) return;
 
         if (Vars.ui != null && Vars.ui.hudGroup != null) {
             let container = new Table();
@@ -705,7 +762,7 @@ const PerfCore = global.PerfCore;
             });
 
             Vars.ui.hudGroup.addChild(container);
-            
+
             customWaveContainer = container;
             waveBtnAdded = true;
         }
@@ -747,7 +804,7 @@ const PerfCore = global.PerfCore;
     function showTurretSelectionDialog() {
         selectedTurrets.clear();
         const maxCount = getMaxSelectCount();
-        
+
         const dialog = new BaseDialog(isEn() ? "Select Turrets (" + CURRENT_MOD_NAME + ")" : "Chọn Tháp Pháo (" + CURRENT_MOD_NAME + ")");
         dialog.setFillParent(true);
 
@@ -861,6 +918,11 @@ const PerfCore = global.PerfCore;
         btnGachaEnabled.setChecked(Core.settings.getBool("newex-gacha-enabled", true));
         content.add(btnGachaEnabled).size(280, 54).pad(4).row();
 
+        let btnAllowClients = new TextButton(isEn() ? "Let other players use Wave/Meteor/Del Ore buttons\n[gray](Applies when you host a server)[]" : "Cho phép người chơi khác dùng nút Wave/TT rơi/Xóa mỏ\n[gray](Áp dụng khi bạn làm chủ server)[]", Styles.togglet);
+        btnAllowClients.getLabel().setFontScale(0.8);
+        btnAllowClients.setChecked(Core.settings.getBool("newex-allow-client-actions", true));
+        content.add(btnAllowClients).size(280, 54).pad(4).row();
+
         content.add(isEn() ? "[accent]-- TURRET LIMIT --[]" : "[accent]-- GIỚI HẠN THÁP PHÁO --[]").padTop(10).row();
         content.add(isEn() ? "Number of turrets selectable per match:" : "Số lượng tháp pháo chọn mỗi trận:").padBottom(5).row();
 
@@ -881,7 +943,7 @@ const PerfCore = global.PerfCore;
 
         content.add(isEn() ? "[accent]-- FPS / GRAPHICS OPTIMIZATION --[]" : "[accent]-- TỐI ƯU FPS / ĐỒ HỌA --[]").padTop(10).row();
         content.add(isEn() ? "Effect reduction level (1%):" : "Mức độ cắt giảm hiệu ứng (1%):").padBottom(4).row();
-        
+
         let currentFpsOpt = fpsOptPercentSetting;
         let fpsLabel = content.add(currentFpsOpt + "%").fontScale(1.2).get();
         content.row();
@@ -943,11 +1005,6 @@ const PerfCore = global.PerfCore;
 
         content.add(tableHp).row();
 
-         let fogUI = null;
-        if (pvpFog && pvpFog.injectFogSettingsUI) {
-            fogUI = pvpFog.injectFogSettingsUI(content, isEn());
-        }
-
         content.add(isEn() ? "[accent]-- DETAILED INFORMATION --[]" : "[accent]-- THÔNG TIN CHI TIẾT --[]").padTop(10).row();
         content.button(isEn() ? "View README / Update Log" : "Xem README / Update Log", Icon.info, () => {
             showReadmeDialog();
@@ -955,13 +1012,14 @@ const PerfCore = global.PerfCore;
 
         content.button(isEn() ? "Save Settings" : "Lưu Cài Đặt", () => {
             Core.settings.put("newex-gacha-enabled", java.lang.Boolean(btnGachaEnabled.isChecked()));
+            Core.settings.put("newex-allow-client-actions", java.lang.Boolean(btnAllowClients.isChecked()));
 
             let newValue = Math.floor(slider.getValue());
             Core.settings.put("newex-max-turrets", java.lang.Integer(newValue));
 
             let optVal = Math.floor(fpsSlider.getValue());
             applyFpsOptimizationLevel(optVal);
-            
+
             Core.settings.put("newex-auto-low-fps", java.lang.Boolean(btnAutoFps.isChecked()));
             Core.settings.put("newex-redstone-fx", java.lang.Boolean(btnRedstoneFx.isChecked()));
 
@@ -975,10 +1033,6 @@ const PerfCore = global.PerfCore;
             else if (btnHp.isChecked()) selectedStyle = "hp";
 
             Core.settings.put("newex-hp-style", selectedStyle);
-
-             if (fogUI) {
-                fogUI.save();
-            }
 
             reloadCachedSettings();
             applyTurretVisibility(null);
@@ -1055,11 +1109,11 @@ const PerfCore = global.PerfCore;
     Events.run(Trigger.update, () => {
         let inGame = Vars.state != null && Vars.state.isGame();
 
-         if (targetCamX >= 0 && targetCamY >= 0) {
+        if (targetCamX >= 0 && targetCamY >= 0) {
             panTimer += Core.graphics.getDeltaTime();
             let alpha = Math.min(panTimer / panDuration, 1.0);
             let smoothAlpha = Interp.pow3Out.apply(alpha);
-            
+
             Core.camera.position.set(
                 Mathf.lerp(panStartX, targetCamX, smoothAlpha),
                 Mathf.lerp(panStartY, targetCamY, smoothAlpha)
@@ -1074,27 +1128,27 @@ const PerfCore = global.PerfCore;
         if (inGame) {
             if (autoLowFpsSetting) {
                 let currentFps = Core.graphics.getFramesPerSecond();
-                
+
                 if (currentFps < 20 && !isFpsThrottled) {
                     autoFpsSavedEffects = Core.settings.getBool("effects", true);
                     Core.settings.put("effects", java.lang.Boolean(false));
-                    
+
                     Time.setDeltaProvider(slowDeltaProvider);
                     isFpsThrottled = true;
                 } else if (currentFps > 45 && isFpsThrottled) {
                     Core.settings.put("effects", java.lang.Boolean(autoFpsSavedEffects));
-                    
+
                     Time.setDeltaProvider(normalDeltaProvider);
                     isFpsThrottled = false;
                 }
             }
 
-             if (!Vars.mobile && !Vars.net.client()) {
-                let shiftPressed = Core.input.keyDown(KeyCode.shiftLeft) || Core.input.keyDown(KeyCode.shiftRight);
+            if (canUseHud()) {
+                let shiftPressed = !Vars.mobile && (Core.input.keyDown(KeyCode.shiftLeft) || Core.input.keyDown(KeyCode.shiftRight));
                 if (shiftPressed && Core.input.keyTap(KeyCode.n)) {
                     showWaveBtnSetting = !showWaveBtnSetting;
                     Core.settings.put("newex-show-wave-btn", java.lang.Boolean(showWaveBtnSetting));
-                    
+
                     if (showWaveBtnSetting) {
                         Vars.ui.showInfoToast(isEn() ? "Wave button shown" : "Đã hiện nút Gọi Wave", 1.5);
                         centerWaveButton();
@@ -1154,7 +1208,7 @@ const PerfCore = global.PerfCore;
             let unlockedSeq = shop.getUnlockedTurrets(turretList);
             let savedArray = [];
             let allowedNames = new Seq();
-            
+
             turretList.each(block => {
                 let isUnlocked = gachaEnabled ? unlockedSeq.contains(block.name) : true;
                 if (isUnlocked) {

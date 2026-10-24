@@ -1,20 +1,14 @@
 require("perf-core");
-require("pvp-core-fog");
+require("net-sync");
 
 require("show-hp");
 require("fix-save");
 
-
-
-
 require("uranilum-reactor");
 require("laser-charger-uranilum");
 
-
- 
- 
 require("dor");
- 
+
 require("xylaon");
 
 require("vendicum");
@@ -65,71 +59,35 @@ require("zoj");
 
 require("maxitoner");
 
-
-
-
-
-
 require("xeuw-conveyor");
 require("wuex-conveyor");
 
-
-
-
-
 require("obs-ore");
-
-
 
 require("drexkou-drills");
 
-
-
-
-
-
 require("antikei-logic");
-
 
 require("hitekalum");
 
-
-
-
-
-
 require("laser-brey");
-
-
-
-
-
-
 
 require("redstone-wall");
 require("generat-machine");
 require("comduik");
 require("pinfyr");
 
-
-
 require("galaxvorram");
 
 require("emeralift-wall");
 
-
 require("balashilon");
-
-
-
 
 require("cargo-drone");
 require("drone-launcher");
 
-
 require("erysidus");
 require("erysidus-drone");
-
 
 require("buffetles");
 
@@ -143,28 +101,14 @@ require("emperical");
 
 require("ravendes");
 
-
-
-
-
-
-
-
-
 require("flasallow-factory");
-
-
-
-
 
 require("endyr");
 require("nethyr");
 require("overyr");
 
-
 require("korynd");
 require("crynex");
-
 
 require("aether-spiral");
 
@@ -180,32 +124,26 @@ require("laytery");
 
 require("thermion");
 
-
-
-
-
 require("beryi-drills");
-
-
 
 require("loadout-selection");
 require("newmode");
 require("shop");
 
 Events.on(ClientLoadEvent, e => {
-  let zorynex = Vars.content.getByName(ContentType.planet, "zorynex") || 
+  let zorynex = Vars.content.getByName(ContentType.planet, "zorynex") ||
                 Vars.content.getByName(ContentType.planet, "newex-zorynex");
 
   if (!zorynex) return;
 
    const asteroidRing = new Planet("zorynex-asteroids", zorynex, 0.001, 0);
-  
-  asteroidRing.orbitRadius = 0;          
-  asteroidRing.orbitTime = 1200;        
+
+  asteroidRing.orbitRadius = 0;
+  asteroidRing.orbitTime = 1200;
   asteroidRing.rotateTime = 600;
   asteroidRing.camRadius = 0.8;
   asteroidRing.drawOrbit = false;
-  
+
   asteroidRing.hasAtmosphere = false;
   asteroidRing.accessible = false;
   asteroidRing.alwaysUnlocked = false;
@@ -213,17 +151,17 @@ Events.on(ClientLoadEvent, e => {
    asteroidRing.mesh = extend(GenericMesh, {
       build() {
           let builder = new MeshBuilder();
-          let count = 120; 
+          let count = 120;
           let rand = new Rand(1337);
 
-          let c1 = Color.valueOf("707070"); 
-          let c2 = Color.valueOf("4a4a4a"); 
-          let c3 = Color.valueOf("8e8e8e"); 
+          let c1 = Color.valueOf("707070");
+          let c2 = Color.valueOf("4a4a4a");
+          let c3 = Color.valueOf("8e8e8e");
 
           for (let i = 0; i < count; i++) {
                let angle = rand.random(360.0) * Mathf.degRad;
-              let radius = 2.2 + rand.range(0.6); 
-              let elevation = rand.range(0.3);   
+              let radius = 2.2 + rand.range(0.6);
+              let elevation = rand.range(0.3);
 
               let cx = Math.cos(angle) * radius;
               let cy = elevation;
@@ -277,7 +215,6 @@ Events.on(ClientLoadEvent, e => {
   };
 });
 
- 
 Events.on(WorldLoadEvent, e => {
   if (Vars.state.isCampaign() && Vars.state.getSector() && Vars.state.getSector().planet) {
     let currentPlanet = Vars.state.getSector().planet;
@@ -288,64 +225,26 @@ Events.on(WorldLoadEvent, e => {
   }
 });
 
-
-
 require("explayder");
 require("cores");
 require("planets");
 
 require("elorix");
 
-
-
 require("copesblock");
 
 require("sta");
-
-
 
 require("leolyr-summoner");
 
 require("leolyr");
 
-
-
-
-
-
 require("syrufpat-factory");
-
-
-
-
-
-
-
 
 require("damage-display");
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 require("suv-27");
-
-
 
 require("turret-system");
 
-
-
-
 require("buff-enemies");
-

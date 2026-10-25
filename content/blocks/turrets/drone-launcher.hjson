@@ -9,7 +9,6 @@ rotateSpeed: 10
 recoil: 0
 shake: 0
 
-# Khai báo loại đạn giả định để không bị báo lỗi thiếu shootType
 shootType: {
   type: BasicBulletType
   speed: 0

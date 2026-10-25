@@ -1,5 +1,7 @@
 require("perf-core");
 require("net-sync");
+require("free-mode");
+require("element-system");
 
 require("show-hp");
 require("fix-save");

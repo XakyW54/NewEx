@@ -1,3 +1,17 @@
+-------------------------------------------
+> Cập nhật bản 0.8.2:
++ Chế độ Tự do (Sandbox): bỏ yêu cầu tài nguyên của cơ chế nâng cấp MK, roll Phúc lợi và trang bị vật phẩm cho pháo (lõi tự đầy tài nguyên, không bị trừ).
++ Pháo Swordoder: nhát chém nay tạo vết nứt không gian (hạt sao li ti, tinh vân, nhánh nứt) rồi từ từ khép lại. Mỗi lần bắn có 50% kích hoạt chuỗi 7 nhát chém kiểu samurai (nhát cuối là đòn kết liễu lớn).
++ Hệ nguyên tố áp dụng cho cả laser, đòn đánh trực tiếp và sát thương nổ lan từ các file .js (ấn được gắn dựa trên việc mục tiêu bị mất máu bởi pháo đang nhắm/bắn tới khu vực đó).
++ Drone Sword và Master Sword: thanh kiếm đổi thành ngôi sao 4 cánh (1 cánh dài gấp 3), có vòng tròn nằm chéo ở giữa lúc ẩn lúc hiện. Vệt kiếm khí xé gió (đen trắng, 0.3 giây) chỉ xuất hiện tại vị trí mục tiêu khi cú lao chém trúng.
++ Drone Sword: khi đánh trúng có 20% đứng yên 0.5 giây chém quạt, gây 10% máu tối đa. Đường chém để lại vết nứt không gian hình lưỡi liềm tồn tại 1 giây, sau đó nổ bắn ra 12 đạn ngôi sao 4 cánh rồi khép lại.
++ Master Sword: vệt kiếm đen trắng kiểu kiếm khí xé gió, tồn tại 0.3 giây.
++ Hệ nguyên tố cho toàn bộ pháo: mỗi pháo nhận ngẫu nhiên 1 trong 2 nguyên tố (50/50), khi bắn trúng có 20% gắn ấn:
+   - Băng giá: tối đa 3 tầng, mỗi tầng giảm 10% tốc độ di chuyển và 10% tốc độ bắn của mục tiêu.
+   - Lửa đốt: mỗi giây gây 10 + 10% sát thương gốc.
+   - Phản ứng Hoàng Hỏa: mục tiêu có đồng thời ấn Băng giá và ấn Lửa đốt sẽ nhận Hoàng Hỏa trong 10 giây, chịu thêm 50% sát thương.
+
+
 - mod còn lỏd lắm nha :> nhưng mong mọi người trải nghiệm và nêu ý kiến để tui cải thiện.
 
 

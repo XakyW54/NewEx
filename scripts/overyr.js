@@ -79,6 +79,7 @@ const skyLaserStrikeFx = new Effect(30, cons(e => {
 
 function applyDamageWithStarlight(sourceBuild, targetUnit, baseDmg) {
     if (targetUnit == null || !targetUnit.isValid() || targetUnit.dead) return;
+    if (global.NexElement != null) global.NexElement.hit(sourceBuild, targetUnit, baseDmg);
 
     let critChance = sourceBuild.getCritChance ? sourceBuild.getCritChance() : 0.0;
     let critDmgMult = sourceBuild.getCritMultiplier ? sourceBuild.getCritMultiplier() : 1.0;

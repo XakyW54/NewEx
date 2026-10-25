@@ -1,3 +1,4 @@
+// drone-launcher.js
 const NexNet = global.NexNet;
 const PerfCore = global.PerfCore;
 const packCons2 = (func) => new Cons2({ get: func });
@@ -94,7 +95,7 @@ Events.on(ContentInitEvent, cons(e => {
         },
 
         isMyDrone(u, types) {
-            if (u.dead || u.team != this.team) return false;
+            if (u == null || u.dead || u.team != this.team) return false;
             if (global.droneLauncherMap[u.id] !== this.id) return false;
             for (let i = 0; i < types.length; i++) {
                 if (types[i] != null && u.type == types[i]) return true;
@@ -203,17 +204,19 @@ Events.on(ContentInitEvent, cons(e => {
 
             if (droneType != null) {
                 let unit = droneType.create(this.team);
-                unit.set(this.x, this.y);
+                if (unit != null) {
+                    unit.set(this.x, this.y);
 
-                global.droneLauncherMap[unit.id] = this.id;
+                    global.droneLauncherMap[unit.id] = this.id;
 
-                if (tier == 2) {
-                    global.mk2bUnits[unit.id] = true;
+                    if (tier == 2) {
+                        global.mk2bUnits[unit.id] = true;
+                    }
+
+                    unit.controller(new FlyingAI());
+                    unit.add();
+                    Fx.spawn.at(this.x, this.y);
                 }
-
-                unit.controller(new FlyingAI());
-                unit.add();
-                Fx.spawn.at(this.x, this.y);
             }
         },
 
@@ -233,10 +236,10 @@ Events.on(ContentInitEvent, cons(e => {
             let top3 = PerfCore.region("newex-drone-launcher-top3", PerfCore.region("drone-launcher-top3"));
             let top4 = PerfCore.region("newex-drone-launcher-top4", PerfCore.region("drone-launcher-top4"));
 
-            if (top1.found) Draw.rect(top1, this.x - offset, this.y);
-            if (top2.found) Draw.rect(top2, this.x, this.y + offset);
-            if (top3.found) Draw.rect(top3, this.x + offset, this.y);
-            if (top4.found) Draw.rect(top4, this.x, this.y - offset);
+            if (top1 && top1.found) Draw.rect(top1, this.x - offset, this.y);
+            if (top2 && top2.found) Draw.rect(top2, this.x, this.y + offset);
+            if (top3 && top3.found) Draw.rect(top3, this.x + offset, this.y);
+            if (top4 && top4.found) Draw.rect(top4, this.x, this.y - offset);
         },
 
         buildConfiguration(table) {

@@ -91,6 +91,7 @@
 
     function take(core, item, amount) {
         if (core == null || item == null) return;
+        if (global.NexFree != null && global.NexFree.active()) return;
         let n = Math.floor(Number(amount));
         if (!(n > 0)) return;
         if (Vars.net.client()) {
@@ -133,6 +134,7 @@
         let amount = parseInt(a[1]);
         let core = player.team().core();
         if (core == null || item == null || !(amount > 0) || amount > 5000000) return;
+        if (global.NexFree != null && global.NexFree.active()) return;
         if (core.items.has(item, amount)) core.items.remove(item, amount);
     }, false, 0);
 

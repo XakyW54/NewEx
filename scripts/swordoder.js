@@ -38,7 +38,7 @@ function t(viText, enText) {
     }
 }
 
- function damageArc(team, x, y, rotation, radius, arcAngle, damageAmount) {
+ function damageArc(team, x, y, rotation, radius, arcAngle, damageAmount, source) {
     let originX = x - Angles.trnsx(rotation, radius);
     let originY = y - Angles.trnsy(rotation, radius);
 
@@ -46,6 +46,7 @@ function t(viText, enText) {
     let steps = 18;
     let angleStep = arcAngle / steps;
     let hitRadius = 50.0;
+    let rolledUnits = {};
 
     for (let i = 0; i <= steps; i++) {
         let currentAngle = startAngle + angleStep * i;
@@ -56,6 +57,10 @@ function t(viText, enText) {
             if (unit.within(px, py, hitRadius)) {
                 unit.damage(damageAmount);
                 checkExecute(unit, team);
+                if (source != null && rolledUnits[unit.id] !== true) {
+                    rolledUnits[unit.id] = true;
+                    elementHit(source, unit, damageAmount);
+                }
             }
         }));
 
@@ -171,6 +176,356 @@ function t(viText, enText) {
     Draw.reset();
 }));
 
+function clamp01(v) {
+    return v < 0 ? 0 : (v > 1 ? 1 : v);
+}
+
+function elementHit(source, unit, dmg) {
+    if (source == null || unit == null) return;
+    if (global.NexElement != null && typeof global.NexElement.hit === "function") {
+        global.NexElement.hit(source, unit, dmg);
+    }
+}
+
+const RIFT_MAX_POINTS = 26;
+const riftPx = new Array(RIFT_MAX_POINTS + 1);
+const riftPy = new Array(RIFT_MAX_POINTS + 1);
+const riftNx = new Array(RIFT_MAX_POINTS + 1);
+const riftNy = new Array(RIFT_MAX_POINTS + 1);
+const riftHl = new Array(RIFT_MAX_POINTS + 1);
+const riftHr = new Array(RIFT_MAX_POINTS + 1);
+const riftSpawnTimes = [];
+
+function riftDetail() {
+    let now = Time.time;
+    if (riftSpawnTimes.length > 0 && now < riftSpawnTimes[0]) riftSpawnTimes.length = 0;
+    while (riftSpawnTimes.length > 0 && now - riftSpawnTimes[0] > 70) riftSpawnTimes.shift();
+    riftSpawnTimes.push(now);
+
+    let n = riftSpawnTimes.length;
+    let lod = PerfCore.level();
+    if (n > 10) lod = Math.max(lod, 2);
+    else if (n > 4) lod = Math.max(lod, 1);
+    return lod;
+}
+
+function riftBody(fin) {
+    let opening = fin < 0.1 ? 1.0 - Math.pow(1.0 - fin / 0.1, 3.0) : 1.0;
+    let closeK = fin < 0.4 ? 0.0 : (fin - 0.4) / 0.6;
+    return opening * Math.pow(1.0 - closeK, 1.5);
+}
+
+function drawSpaceRift(e, isArc, length, halfWidth, lod) {
+    let fin = e.fin();
+    let body = riftBody(fin);
+    if (body <= 0.01) return;
+
+    let seed = e.id * 977;
+    let n = lod >= 2 ? 16 : RIFT_MAX_POINTS;
+    let grow = clamp01(fin / 0.1);
+    let closeK = fin < 0.4 ? 0.0 : (fin - 0.4) / 0.6;
+    let rot = e.rotation;
+
+    let arcRadius = 240.0;
+    let arcAngle = 90.0;
+    let originX = e.x - Angles.trnsx(rot, arcRadius);
+    let originY = e.y - Angles.trnsy(rot, arcRadius);
+    let startAngle = rot - arcAngle / 2;
+
+    for (let i = 0; i <= n; i++) {
+        let u = i / n;
+        let mid = Math.sin(Math.PI * u);
+        let bx, by, tx, ty;
+
+        if (isArc) {
+            let ang = startAngle + arcAngle * u;
+            bx = originX + Angles.trnsx(ang, arcRadius);
+            by = originY + Angles.trnsy(ang, arcRadius);
+            tx = Angles.trnsx(ang + 90.0, 1.0);
+            ty = Angles.trnsy(ang + 90.0, 1.0);
+        } else {
+            let d = (u - 0.5) * length;
+            bx = e.x + Angles.trnsx(rot, d);
+            by = e.y + Angles.trnsy(rot, d);
+            tx = Angles.trnsx(rot, 1.0);
+            ty = Angles.trnsy(rot, 1.0);
+        }
+
+        let nx = -ty;
+        let ny = tx;
+        let jag = (Mathf.randomSeed(seed + i * 31, -1, 1) + Mathf.randomSeed(seed + i * 53 + 7, -0.5, 0.5)) * 4.5 * Math.pow(mid, 0.5);
+
+        riftPx[i] = bx + nx * jag;
+        riftPy[i] = by + ny * jag;
+        riftNx[i] = nx;
+        riftNy[i] = ny;
+
+        let reveal = clamp01((grow - u) * 8.0 + 0.0001);
+        let shape = Math.pow(mid, 0.65) * body * reveal * (1.0 - closeK * (1.0 - mid) * 0.85);
+        riftHl[i] = halfWidth * shape * (1.0 + 0.4 * Mathf.randomSeed(seed + i * 17 + 3, -1, 1));
+        riftHr[i] = halfWidth * shape * (1.0 + 0.4 * Mathf.randomSeed(seed + i * 19 + 5, -1, 1));
+    }
+
+    Draw.z(Layer.effect + 0.02);
+
+    Draw.color(PerfCore.color("#000008"));
+    Draw.alpha(0.5 * body);
+    for (let i = 0; i < n; i++) {
+        let w0l = riftHl[i] * 1.55 + 1.5 * body, w0r = riftHr[i] * 1.55 + 1.5 * body;
+        let w1l = riftHl[i + 1] * 1.55 + 1.5 * body, w1r = riftHr[i + 1] * 1.55 + 1.5 * body;
+        if (riftHl[i] <= 0.05 && riftHl[i + 1] <= 0.05) continue;
+        Fill.quad(
+            riftPx[i] + riftNx[i] * w0l, riftPy[i] + riftNy[i] * w0l,
+            riftPx[i + 1] + riftNx[i + 1] * w1l, riftPy[i + 1] + riftNy[i + 1] * w1l,
+            riftPx[i + 1] - riftNx[i + 1] * w1r, riftPy[i + 1] - riftNy[i + 1] * w1r,
+            riftPx[i] - riftNx[i] * w0r, riftPy[i] - riftNy[i] * w0r
+        );
+    }
+
+    Draw.color(PerfCore.color("#04010f"));
+    Draw.alpha(0.97);
+    for (let i = 0; i < n; i++) {
+        if (riftHl[i] <= 0.05 && riftHl[i + 1] <= 0.05) continue;
+        Fill.quad(
+            riftPx[i] + riftNx[i] * riftHl[i], riftPy[i] + riftNy[i] * riftHl[i],
+            riftPx[i + 1] + riftNx[i + 1] * riftHl[i + 1], riftPy[i + 1] + riftNy[i + 1] * riftHl[i + 1],
+            riftPx[i + 1] - riftNx[i + 1] * riftHr[i + 1], riftPy[i + 1] - riftNy[i + 1] * riftHr[i + 1],
+            riftPx[i] - riftNx[i] * riftHr[i], riftPy[i] - riftNy[i] * riftHr[i]
+        );
+    }
+
+    Draw.blend(Blending.additive);
+
+    for (let i = 2; i < n - 1; i += 4) {
+        let hw = Math.max(riftHl[i], riftHr[i]);
+        if (hw <= 1.0) continue;
+        Draw.color(i % 8 == 2 ? PerfCore.color("#5b21b6") : PerfCore.color("#1d4ed8"));
+        Draw.alpha(0.3 * body);
+        Fill.circle(riftPx[i], riftPy[i], hw * 0.9);
+    }
+
+    let starCount = lod >= 2 ? 8 : (lod == 1 ? 18 : 34);
+    for (let s = 0; s < starCount; s++) {
+        let u = Mathf.randomSeed(seed + s * 13 + 1, 0.05, 0.95);
+        let idx = u * n;
+        let i = Math.min(n - 1, Math.floor(idx));
+        let f = idx - i;
+        let cx = riftPx[i] + (riftPx[i + 1] - riftPx[i]) * f;
+        let cy = riftPy[i] + (riftPy[i + 1] - riftPy[i]) * f;
+        let nxs = riftNx[i], nys = riftNy[i];
+        let v = Mathf.randomSeed(seed + s * 13 + 2, -0.9, 0.9);
+        let half = (v >= 0 ? riftHl[i] : riftHr[i]) * (1.0 - f) + (v >= 0 ? riftHl[i + 1] : riftHr[i + 1]) * f;
+        if (half < 0.8) continue;
+
+        let sx = cx + nxs * half * v;
+        let sy = cy + nys * half * v;
+        let phase = Mathf.randomSeed(seed + s * 13 + 3, 0, 6.28);
+        let tw = 0.55 + 0.45 * Math.sin(e.time * (0.25 + (s % 5) * 0.07) + phase);
+        let kind = s % 4;
+
+        Draw.color(kind == 0 ? PerfCore.color("#ffffff") : (kind == 1 ? PerfCore.color("#aee5ff") : (kind == 2 ? PerfCore.color("#ffd1f5") : PerfCore.color("#fff4b0"))));
+        Draw.alpha(tw * Math.min(1.0, body * 1.4));
+        Fill.circle(sx, sy, (0.5 + (s % 3) * 0.35) * (0.6 + 0.4 * tw));
+
+        if (s % 7 == 0 && lod == 0) {
+            Lines.stroke(0.7);
+            Lines.line(sx - 2.8 * tw, sy, sx + 2.8 * tw, sy);
+            Lines.line(sx, sy - 2.8 * tw, sx, sy + 2.8 * tw);
+        }
+    }
+
+    if (fin < 0.18) {
+        let flash = 1.0 - fin / 0.18;
+        Draw.color(Color.white);
+        Draw.alpha(flash);
+        Lines.stroke(1.5 + 5.0 * flash);
+        for (let i = 0; i < n; i++) {
+            if (riftHl[i] <= 0.05 && riftHl[i + 1] <= 0.05) continue;
+            Lines.line(riftPx[i], riftPy[i], riftPx[i + 1], riftPy[i + 1]);
+        }
+    }
+
+    for (let pass = 0; pass < 2; pass++) {
+        if (pass == 0) {
+            Draw.color(PerfCore.color("#a855f7"));
+            Draw.alpha(0.28 * body);
+            Lines.stroke(4.0 * body + 0.6);
+        } else {
+            Draw.color(PerfCore.color("#ffffff"), PerfCore.color("#8fd8ff"), fin);
+            Draw.alpha(0.95 * Math.min(1.0, body * 1.6));
+            Lines.stroke(1.3 * body + 0.35);
+        }
+        for (let i = 0; i < n; i++) {
+            if (riftHl[i] > 0.15 || riftHl[i + 1] > 0.15) {
+                Lines.line(
+                    riftPx[i] + riftNx[i] * riftHl[i], riftPy[i] + riftNy[i] * riftHl[i],
+                    riftPx[i + 1] + riftNx[i + 1] * riftHl[i + 1], riftPy[i + 1] + riftNy[i + 1] * riftHl[i + 1]
+                );
+            }
+            if (riftHr[i] > 0.15 || riftHr[i + 1] > 0.15) {
+                Lines.line(
+                    riftPx[i] - riftNx[i] * riftHr[i], riftPy[i] - riftNy[i] * riftHr[i],
+                    riftPx[i + 1] - riftNx[i + 1] * riftHr[i + 1], riftPy[i + 1] - riftNy[i + 1] * riftHr[i + 1]
+                );
+            }
+        }
+    }
+
+    let branchCount = lod >= 2 ? 0 : (lod == 1 ? 3 : 7);
+    let branchGrow = clamp01((fin - 0.04) / 0.16);
+    if (branchCount > 0 && branchGrow > 0) {
+        for (let k = 0; k < branchCount; k++) {
+            let bi = 3 + Math.floor(Mathf.randomSeed(seed + k * 41 + 9, 0, n - 6.01));
+            let side = Mathf.randomSeed(seed + k * 41 + 10, -1, 1) >= 0 ? 1 : -1;
+            let hw = side > 0 ? riftHl[bi] : riftHr[bi];
+            if (hw < 0.8) continue;
+
+            let bx = riftPx[bi] + riftNx[bi] * hw * side;
+            let by = riftPy[bi] + riftNy[bi] * hw * side;
+            let dir = Mathf.angle(riftNx[bi] * side, riftNy[bi] * side) + Mathf.randomSeed(seed + k * 41 + 11, -40, 40);
+            let segs = 3;
+
+            for (let sg = 0; sg < segs; sg++) {
+                if (branchGrow < (sg / segs)) break;
+                let segLen = Mathf.randomSeed(seed + k * 41 + sg * 3 + 12, 9, 22) * clamp01(branchGrow * segs - sg + 0.2);
+                let ex = bx + Angles.trnsx(dir, segLen);
+                let ey = by + Angles.trnsy(dir, segLen);
+                Draw.color(PerfCore.color("#d8b4fe"), PerfCore.color("#ffffff"), 1.0 - sg / segs);
+                Draw.alpha(0.85 * Math.pow(body, 0.8));
+                Lines.stroke(1.5 - sg * 0.45);
+                Lines.line(bx, by, ex, ey);
+                bx = ex;
+                by = ey;
+                dir += Mathf.randomSeed(seed + k * 41 + sg * 3 + 13, -32, 32);
+            }
+        }
+    }
+
+    if (lod == 0 && fin < 0.55) {
+        let t = fin / 0.55;
+        for (let d = 0; d < 12; d++) {
+            let di = 2 + Math.floor(Mathf.randomSeed(seed + d * 23 + 21, 0, n - 4.01));
+            let side = Mathf.randomSeed(seed + d * 23 + 22, -1, 1) >= 0 ? 1 : -1;
+            let hw = side > 0 ? riftHl[di] : riftHr[di];
+            if (hw < 0.8) continue;
+            let dirA = Mathf.angle(riftNx[di] * side, riftNy[di] * side) + Mathf.randomSeed(seed + d * 23 + 23, -55, 55);
+            let dist = Math.sqrt(t) * Mathf.randomSeed(seed + d * 23 + 24, 14, 46);
+            let dx = riftPx[di] + riftNx[di] * hw * side + Angles.trnsx(dirA, dist);
+            let dy = riftPy[di] + riftNy[di] * hw * side + Angles.trnsy(dirA, dist);
+            Draw.color(PerfCore.color("#e0f2ff"), PerfCore.color("#a855f7"), t);
+            Draw.alpha(1.0 - t);
+            Lines.stroke(1.2 * (1.0 - t) + 0.2);
+            Lines.line(dx, dy, dx + Angles.trnsx(dirA, 3.0 + 4.0 * (1.0 - t)), dy + Angles.trnsy(dirA, 3.0 + 4.0 * (1.0 - t)));
+        }
+    }
+
+    Draw.blend();
+    Draw.reset();
+}
+
+const spaceRiftArcFx = new Effect(120, 700, cons(e => {
+    let d = e.data;
+    let lod = (d != null && d.lod !== undefined) ? d.lod : 0;
+    drawSpaceRift(e, true, 340.0, 13.0, lod);
+}));
+
+const spaceRiftCutFx = new Effect(100, 600, cons(e => {
+    let d = e.data;
+    let lod = (d != null && d.lod !== undefined) ? d.lod : 0;
+    let len = (d != null && d.len !== undefined) ? Number(d.len) : 240.0;
+    drawSpaceRift(e, false, len, 8.5, lod);
+}));
+
+const spaceRiftBigFx = new Effect(150, 700, cons(e => {
+    let d = e.data;
+    let lod = (d != null && d.lod !== undefined) ? d.lod : 0;
+    let len = (d != null && d.len !== undefined) ? Number(d.len) : 340.0;
+    drawSpaceRift(e, false, len, 15.0, lod);
+}));
+
+const samuraiCutFx = new Effect(20, 600, cons(e => {
+    let d = e.data;
+    let len = (d != null && d.len !== undefined) ? Number(d.len) : 240.0;
+    let fin = e.fin();
+    let rot = e.rotation;
+
+    let head = 1.0 - Math.pow(1.0 - clamp01(fin / 0.3), 3.0);
+    let tail = clamp01((fin - 0.12) / 0.88);
+    tail = tail * tail;
+
+    let ax = e.x - Angles.trnsx(rot, len / 2);
+    let ay = e.y - Angles.trnsy(rot, len / 2);
+    let bx = e.x + Angles.trnsx(rot, len / 2);
+    let by = e.y + Angles.trnsy(rot, len / 2);
+
+    let p0x = ax + (bx - ax) * tail;
+    let p0y = ay + (by - ay) * tail;
+    let p1x = ax + (bx - ax) * head;
+    let p1y = ay + (by - ay) * head;
+    if (head <= tail) return;
+
+    let mx = (p0x + p1x) / 2;
+    let my = (p0y + p1y) / 2;
+    let nx = -Angles.trnsy(rot, 1.0);
+    let ny = Angles.trnsx(rot, 1.0);
+    let w = 6.0 * Math.pow(1.0 - fin, 1.3);
+
+    Draw.z(Layer.effect + 0.03);
+    Draw.blend(Blending.additive);
+
+    Draw.color(PerfCore.color("#7dd3fc"));
+    Draw.alpha(0.8 * (1.0 - fin));
+    Fill.tri(p0x, p0y, mx + nx * w * 1.8, my + ny * w * 1.8, mx - nx * w * 1.8, my - ny * w * 1.8);
+    Fill.tri(p1x, p1y, mx + nx * w * 1.8, my + ny * w * 1.8, mx - nx * w * 1.8, my - ny * w * 1.8);
+
+    Draw.color(Color.white);
+    Draw.alpha(1.0 - fin * 0.6);
+    Fill.tri(p0x, p0y, mx + nx * w * 0.8, my + ny * w * 0.8, mx - nx * w * 0.8, my - ny * w * 0.8);
+    Fill.tri(p1x, p1y, mx + nx * w * 0.8, my + ny * w * 0.8, mx - nx * w * 0.8, my - ny * w * 0.8);
+
+    if (fin < 0.5) {
+        let k = fin / 0.5;
+        Draw.color(PerfCore.color("#e0f2ff"), PerfCore.color("#a855f7"), k);
+        Draw.alpha(1.0 - k);
+        Lines.stroke(1.4 * (1.0 - k) + 0.2);
+        for (let i = 0; i < 6; i++) {
+            let a = rot + 90.0 + Mathf.randomSeed(e.id * 7 + i, -70, 70) + (i % 2 == 0 ? 0 : 180);
+            let dist = 6.0 + k * Mathf.randomSeed(e.id * 7 + i + 100, 14, 36);
+            let sx = p1x + Angles.trnsx(a, dist);
+            let sy = p1y + Angles.trnsy(a, dist);
+            Lines.line(sx, sy, sx + Angles.trnsx(a, 4.0), sy + Angles.trnsy(a, 4.0));
+        }
+    }
+
+    Draw.blend();
+    Draw.reset();
+}));
+
+function damageCut(team, x, y, angle, length, damageAmount, source) {
+    let half = length / 2;
+    let radius = 28.0;
+    let steps = Math.max(1, Math.ceil(length / (radius * 1.5)));
+    let rolled = {};
+
+    for (let i = 0; i <= steps; i++) {
+        let d = -half + (length * i) / steps;
+        let px = x + Angles.trnsx(angle, d);
+        let py = y + Angles.trnsy(angle, d);
+
+        Damage.damage(team, px, py, radius, damageAmount, true, true);
+
+        Units.nearbyEnemies(team, px - radius, py - radius, radius * 2, radius * 2, cons(unit => {
+            if (unit.within(px, py, radius)) {
+                checkExecute(unit, team);
+                if (source != null && rolled[unit.id] !== true) {
+                    rolled[unit.id] = true;
+                    elementHit(source, unit, damageAmount);
+                }
+            }
+        }));
+    }
+}
+
 function triggerSlashArea(b) {
     if (b == null) return;
 
@@ -181,12 +536,14 @@ function triggerSlashArea(b) {
 
         let mult = dataObj.mult !== undefined ? dataObj.mult : 1.0;
         let slashDmg = mult * 19.0;
-        damageArc(b.team, b.x, b.y, b.rotation(), 240.0, 90.0, slashDmg);
+        spaceRiftArcFx.at(b.x, b.y, b.rotation(), Color.white, { lod: riftDetail() });
+        damageArc(b.team, b.x, b.y, b.rotation(), 240.0, 90.0, slashDmg, b.owner);
     } else if (b.data === true) {
         return;
     } else {
         b.data = { slashed: true, mult: 1.0 };
-        damageArc(b.team, b.x, b.y, b.rotation(), 240.0, 90.0, 19.0);
+        spaceRiftArcFx.at(b.x, b.y, b.rotation(), Color.white, { lod: riftDetail() });
+        damageArc(b.team, b.x, b.y, b.rotation(), 240.0, 90.0, 19.0, b.owner);
     }
 }
 
@@ -263,11 +620,26 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
         this.subBulletTaskTimer = 0.0;
         this.pendingSubBullets = 0;
         this.customRecoil = 0.0;
+        this.comboQueue = [];
+        this.comboClock = 0.0;
         return this;
     },
 
     updateTile() {
         this.super$updateTile();
+
+        if (!this.comboQueue) {
+            this.comboQueue = [];
+            this.comboClock = 0.0;
+        }
+
+        if (this.comboQueue.length > 0) {
+            this.comboClock += Time.delta;
+            while (this.comboQueue.length > 0 && this.comboQueue[0].t <= this.comboClock) {
+                this.executeSamuraiCut(this.comboQueue.shift());
+            }
+            if (this.comboQueue.length == 0) this.comboClock = 0.0;
+        }
 
         if (this.customRecoil > 0) {
             this.customRecoil = Math.max(0, this.customRecoil - Time.delta * 0.15);
@@ -434,16 +806,92 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
         }
     },
 
+    startSamuraiCombo() {
+        if (!this.comboQueue) {
+            this.comboQueue = [];
+            this.comboClock = 0.0;
+        }
+        if (this.comboQueue.length > 0) return;
+
+        let range = this.range();
+        let aimAngle = this.rotation;
+        let dist = range * 0.75;
+
+        if (this.target != null) {
+            aimAngle = this.angleTo(this.target);
+            dist = Math.min(range, Mathf.dst(this.x, this.y, this.target.x, this.target.y));
+        } else if (this.targetPos != null) {
+            aimAngle = Mathf.angle(this.targetPos.x - this.x, this.targetPos.y - this.y);
+            dist = Math.min(range, Mathf.dst(this.x, this.y, this.targetPos.x, this.targetPos.y));
+        }
+
+        let cx = this.x + Angles.trnsx(aimAngle, dist);
+        let cy = this.y + Angles.trnsy(aimAngle, dist);
+
+        let perkA = this.getPerkA();
+        let mult = 1.0;
+        if (perkA == 1) mult = 1.5;
+        else if (perkA == 2) mult = 1.2;
+        else if (perkA == 3) mult = 3.0;
+
+        let baseAng = Mathf.random(0.0, 180.0);
+        let travelDelay = dist / 6.0;
+        let pattern = [
+            { da: -38, d: 0 },
+            { da: 38, d: 7 },
+            { da: 90, d: 14 },
+            { da: 0, d: 21 },
+            { da: -64, d: 28 },
+            { da: 64, d: 35 },
+            { da: 96, d: 46, big: true }
+        ];
+
+        for (let i = 0; i < pattern.length; i++) {
+            let step = pattern[i];
+            this.comboQueue.push({
+                t: this.comboClock + travelDelay + step.d,
+                x: cx + (step.big ? 0.0 : Mathf.range(14.0)),
+                y: cy + (step.big ? 0.0 : Mathf.range(14.0)),
+                ang: baseAng + step.da,
+                big: step.big === true,
+                dmg: mult * 19.0 * (step.big ? 3.0 : 1.0)
+            });
+        }
+    },
+
+    executeSamuraiCut(cut) {
+        if (cut == null || !this.isValid()) return;
+
+        let len = cut.big ? 340.0 : 240.0;
+        let lod = riftDetail();
+
+        samuraiCutFx.at(cut.x, cut.y, cut.ang, Color.white, { len: len });
+        (cut.big ? spaceRiftBigFx : spaceRiftCutFx).at(cut.x, cut.y, cut.ang, Color.white, { len: len, lod: lod });
+
+        if (!Vars.headless) {
+            Effect.shake(cut.big ? 5.0 : 1.8, cut.big ? 12.0 : 5.0, cut.x, cut.y);
+        }
+
+        if (!Vars.net.client()) {
+            damageCut(this.team, cut.x, cut.y, cut.ang, len, cut.dmg, this);
+        }
+    },
+
     shoot(type) {
         this.customRecoil = 1.0;
 
         let perkA = this.getPerkA();
         let perkB = this.getPerkB();
 
+        if (Mathf.chance(0.5)) {
+            this.startSamuraiCombo();
+        }
+
         if (perkB == 1) {
             this.fire1BSidePattern(-30.0);
             this.pendingSubBullets = 1;
             this.subBulletTaskTimer = 12.0;
+            this.useAmmo();
             return;
         }
 
@@ -498,11 +946,10 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
                 b.vel.setLength(rndSpeed);
                 b.lifetime = calculatedLifetime;
                 b.damage = baseDmg;
-
-        this.useAmmo();
-
             }
         }
+
+        this.useAmmo();
     },
 
     buildConfiguration(table) {

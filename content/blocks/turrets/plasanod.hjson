@@ -11,7 +11,6 @@ laserWidth: 1.5
 targetAir: true
 targetGround: true
 
-# Chỉ sử dụng điện năng, không cần cấp đạn
 hasPower: true
 consumes: {
   power: 15.0

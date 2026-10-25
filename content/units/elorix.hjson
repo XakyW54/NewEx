@@ -15,7 +15,6 @@ targetGround: true
 rotateSpeed: 3
 itemCapacity: 60
 
-# Cấu hình chân nhện
 legCount: 6
 legMaxLength: 1.1
 legMinLength: 0.6
@@ -38,7 +37,6 @@ immunities: [
 ]
 
 weapons: [
-  # --- Loại 1: Đạn Nổ (Blasted) - 5 viên x 2 băng ---
   {
     name: elorix-weapon
     reload: 180
@@ -78,7 +76,6 @@ weapons: [
     }
   }
 
-  # --- Loại 2: Đạn Tan Chảy (Melting) - 5 viên x 2 băng ---
   {
     name: elorix-weapon
     reload: 180
@@ -117,7 +114,6 @@ weapons: [
     }
   }
 
-  # --- Loại 3: Đạn Bốc Cháy (Burning) - 5 viên x 2 băng ---
   {
     name: elorix-weapon
     reload: 180
@@ -156,7 +152,6 @@ weapons: [
     }
   }
 
-  # --- Loại 4: Đạn Đóng Băng (Freezing) - 5 viên x 2 băng ---
   {
     name: elorix-weapon
     reload: 180
@@ -195,7 +190,6 @@ weapons: [
     }
   }
 
-  # --- Loại 5: Đạn Điện Giật (Shocked) - 5 viên x 2 băng ---
   {
     name: elorix-weapon
     reload: 180
@@ -234,7 +228,6 @@ weapons: [
     }
   }
 
-  # --- Loại 6: Đạn Làm Ướt (Wet) - 5 viên x 2 băng ---
   {
     name: elorix-weapon
     reload: 180
@@ -273,7 +266,6 @@ weapons: [
     }
   }
 
-  # --- Loại 7: Đạn Ăn Mòn (Corroded) - 5 viên x 2 băng ---
   {
     name: elorix-weapon
     reload: 180

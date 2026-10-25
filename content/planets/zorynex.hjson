@@ -28,7 +28,6 @@ enemyBuildSpeedMultiplier: 0.6
 
 defaultCore: core-shard
 
-# MESH BỀ MẶT HÀNH TINH CHÍNH
 mesh: [
   {
     type: NoiseMesh
@@ -88,7 +87,6 @@ mesh: [
   }
 ]
 
-# MÂY BĂNG
 cloudMesh: [
   {
     type: HexSkyMesh

@@ -26,6 +26,95 @@ const masterLowParticleImpactEffect = new Effect(15, e => {
     Draw.reset();
 });
 
+const swordWindSlashFx = new Effect(18, 700, cons(e => {
+    let d = e.data;
+    if (!d) return;
+
+    let ax = e.x, ay = e.y, bx = d.x2, by = d.y2;
+    let dx = bx - ax, dy = by - ay;
+    let len = Math.sqrt(dx * dx + dy * dy);
+    if (len < 1.0) return;
+
+    let ux = dx / len, uy = dy / len;
+    let nx = -uy, ny = ux;
+    let fin = e.fin(), fout = e.fout();
+    let baseW = d.w !== undefined ? d.w : 6.0;
+    let w = baseW * Math.pow(fout, 1.3);
+    if (w < 0.05) return;
+
+    let tail = d.taper ? fin * 0.55 : 0.0;
+    let sx = ax + dx * tail, sy = ay + dy * tail;
+    let slen = len * (1.0 - tail);
+    let seed = e.id * 37;
+    let black = PerfCore.color("#000000");
+    let white = PerfCore.color("#ffffff");
+    let grey = PerfCore.color("#d0d0d0");
+
+    Draw.z(Layer.effect + 0.06);
+
+    if (d.taper) {
+        let mx = sx + ux * slen * 0.38, my = sy + uy * slen * 0.38;
+        Draw.color(grey);
+        Draw.alpha(0.18 * fout);
+        Fill.tri(sx, sy, mx + nx * w * 2.6, my + ny * w * 2.6, mx - nx * w * 2.6, my - ny * w * 2.6);
+        Fill.tri(bx, by, mx + nx * w * 2.6, my + ny * w * 2.6, mx - nx * w * 2.6, my - ny * w * 2.6);
+
+        Draw.color(black);
+        Draw.alpha(0.95);
+        Fill.tri(sx, sy, mx + nx * w, my + ny * w, mx - nx * w, my - ny * w);
+        Fill.tri(bx, by, mx + nx * w, my + ny * w, mx - nx * w, my - ny * w);
+
+        Draw.color(white);
+        Draw.alpha(fout);
+        Lines.stroke(1.3 * fout + 0.25);
+        Lines.line(sx, sy, mx + nx * w, my + ny * w);
+        Lines.line(mx + nx * w, my + ny * w, bx, by);
+        Lines.line(sx, sy, mx - nx * w, my - ny * w);
+        Lines.line(mx - nx * w, my - ny * w, bx, by);
+    } else {
+        Draw.color(grey);
+        Draw.alpha(0.16 * fout);
+        Fill.quad(sx + nx * w * 2.4, sy + ny * w * 2.4, bx + nx * w * 2.4, by + ny * w * 2.4,
+                  bx - nx * w * 2.4, by - ny * w * 2.4, sx - nx * w * 2.4, sy - ny * w * 2.4);
+
+        Draw.color(black);
+        Draw.alpha(0.95);
+        Fill.quad(sx + nx * w, sy + ny * w, bx + nx * w * 0.8, by + ny * w * 0.8,
+                  bx - nx * w * 0.8, by - ny * w * 0.8, sx - nx * w, sy - ny * w);
+
+        Draw.color(white);
+        Draw.alpha(fout);
+        Lines.stroke(1.2 * fout + 0.2);
+        Lines.line(sx + nx * w, sy + ny * w, bx + nx * w * 0.8, by + ny * w * 0.8);
+        Lines.line(sx - nx * w, sy - ny * w, bx - nx * w * 0.8, by - ny * w * 0.8);
+    }
+
+    let streaks = PerfCore.level() >= 1 ? 2 : 4;
+    Draw.color(white);
+    Lines.stroke(0.8 * fout + 0.15);
+    for (let i = 0; i < streaks; i++) {
+        let side = (i % 2 == 0) ? 1.0 : -1.0;
+        let off = side * w * (1.8 + Mathf.randomSeed(seed + i * 5, 0.0, 2.2));
+        let t0 = Mathf.randomSeed(seed + i * 5 + 1, 0.0, 0.4) + fin * 0.35;
+        let t1 = Math.min(1.0, t0 + Mathf.randomSeed(seed + i * 5 + 2, 0.35, 0.6));
+        Draw.alpha(0.85 * fout);
+        Lines.line(sx + ux * slen * t0 + nx * off, sy + uy * slen * t0 + ny * off,
+                   sx + ux * slen * t1 + nx * off, sy + uy * slen * t1 + ny * off);
+    }
+
+    if (d.head) {
+        let ang = Angles.angle(ax, ay, bx, by) + 180.0;
+        let vLen = Math.min(slen * 0.3, 70.0);
+        Draw.color(white);
+        Draw.alpha(fout);
+        Lines.stroke(1.4 * fout + 0.2);
+        Lines.line(bx, by, bx + Angles.trnsx(ang + 15.0, vLen), by + Angles.trnsy(ang + 15.0, vLen));
+        Lines.line(bx, by, bx + Angles.trnsx(ang - 15.0, vLen), by + Angles.trnsy(ang - 15.0, vLen));
+    }
+
+    Draw.reset();
+}));
+
 const masterHomingSwordBullet = extend(BasicBulletType, {
     speed: 18.0,
     damage: 1500,
@@ -49,6 +138,16 @@ const masterHomingSwordBullet = extend(BasicBulletType, {
     frontColor: Color.white,
     backColor: masterGlowColor,
 
+    update(b) {
+        this.super$update(b);
+        if (PerfCore.level() >= 2 || !b.timer.get(1, 2)) return;
+        let ang = b.rotation();
+        let seg = b.vel.len() * 2.0 + 6.0;
+        swordWindSlashFx.at(b.x - Angles.trnsx(ang, seg), b.y - Angles.trnsy(ang, seg), 0, {
+            x2: b.x, y2: b.y, w: 5.5, taper: false, head: false
+        });
+    },
+
     hitEntity(b, other, initialHealth) {
         this.super$hitEntity(b, other, initialHealth);
 
@@ -60,34 +159,22 @@ const masterHomingSwordBullet = extend(BasicBulletType, {
     },
 
     draw(b) {
-        let swordRegion = PerfCore.region("units/cargo/swordmaster",
-                          PerfCore.region("cargo/swordmaster",
-                          PerfCore.region("swordmaster",
-                          PerfCore.region("newex-cargo-swordmaster", PerfCore.region("newex-swordmaster")))));
-
         let angle = b.rotation();
 
         Draw.z(Layer.bullet);
-        if (swordRegion.found) {
-            Draw.color(masterPurpleColor);
-            Draw.rect(swordRegion, b.x, b.y, swordRegion.width * Draw.scl * 1.5, swordRegion.height * Draw.scl * 1.5, angle - 90);
-            Draw.color(masterGlowColor);
-            Draw.rect(swordRegion, b.x, b.y, swordRegion.width * Draw.scl * 1.2, swordRegion.height * Draw.scl * 1.2, angle - 90);
-            Draw.reset();
-        } else {
-            this.super$draw(b);
-        }
+        drawSwordStar(b.x, b.y, angle, 1.3, 1.0, true, b.id, false);
+        Draw.reset();
 
         let trailLen = 45.0;
         let backX = b.x - Angles.trnsx(angle, trailLen);
         let backY = b.y - Angles.trnsy(angle, trailLen);
 
         Draw.z(Layer.bullet + 0.01);
-        Draw.color(masterPurpleColor);
+        Draw.color(Color.black);
         Lines.stroke(8.0);
         Lines.line(b.x, b.y, backX, backY);
 
-        Draw.color(masterGlowColor);
+        Draw.color(Color.lightGray);
         Lines.stroke(4.0);
         Lines.line(b.x, b.y, backX, backY);
 
@@ -119,35 +206,33 @@ const masterBurstAuraSwordBullet = extend(BasicBulletType, {
     frontColor: Color.white,
     backColor: masterGlowColor,
 
-    draw(b) {
-        let swordRegion = PerfCore.region("units/cargo/swordmaster",
-                          PerfCore.region("cargo/swordmaster",
-                          PerfCore.region("swordmaster",
-                          PerfCore.region("newex-cargo-swordmaster", PerfCore.region("newex-swordmaster")))));
+    update(b) {
+        this.super$update(b);
+        if (PerfCore.level() >= 1 || !b.timer.get(1, 2)) return;
+        let ang = b.rotation();
+        let seg = b.vel.len() * 2.0 + 4.0;
+        swordWindSlashFx.at(b.x - Angles.trnsx(ang, seg), b.y - Angles.trnsy(ang, seg), 0, {
+            x2: b.x, y2: b.y, w: 3.2, taper: false, head: false
+        });
+    },
 
+    draw(b) {
         let angle = b.rotation();
 
         Draw.z(Layer.bullet);
-        if (swordRegion.found) {
-            Draw.color(masterPurpleColor);
-            Draw.rect(swordRegion, b.x, b.y, swordRegion.width * Draw.scl * 1.1, swordRegion.height * Draw.scl * 1.1, angle - 90);
-            Draw.color(masterGlowColor);
-            Draw.rect(swordRegion, b.x, b.y, swordRegion.width * Draw.scl * 0.9, swordRegion.height * Draw.scl * 0.9, angle - 90);
-            Draw.reset();
-        } else {
-            this.super$draw(b);
-        }
+        drawSwordStar(b.x, b.y, angle, 0.95, 1.0, true, b.id, false);
+        Draw.reset();
 
         let trailLen = 20.0;
         let backX = b.x - Angles.trnsx(angle, trailLen);
         let backY = b.y - Angles.trnsy(angle, trailLen);
 
         Draw.z(Layer.bullet + 0.01);
-        Draw.color(masterPurpleColor);
+        Draw.color(Color.black);
         Lines.stroke(4.0);
         Lines.line(b.x, b.y, backX, backY);
 
-        Draw.color(masterGlowColor);
+        Draw.color(Color.lightGray);
         Lines.stroke(2.0);
         Lines.line(b.x, b.y, backX, backY);
 
@@ -173,16 +258,11 @@ const masterKeySwordFlyEffect = new Effect(25, e => {
     let curX = Mathf.lerp(startX, targetX, e.fin());
     let curY = Mathf.lerp(startY, targetY, e.fin());
 
-    let swordRegion = PerfCore.region("units/cargo/swordmaster",
-                      PerfCore.region("cargo/swordmaster",
-                      PerfCore.region("swordmaster",
-                      PerfCore.region("newex-cargo-swordmaster", PerfCore.region("newex-swordmaster")))));
-
     let trailLen = 60.0 * e.fout();
     let backX = curX - Angles.trnsx(angle, trailLen);
     let backY = curY - Angles.trnsy(angle, trailLen);
 
-    Draw.color(masterGlowColor, e.fout());
+    Draw.color(Color.black, e.fout());
     Lines.stroke(6.0 * e.fout());
     Lines.line(curX, curY, backX, backY);
 
@@ -190,12 +270,7 @@ const masterKeySwordFlyEffect = new Effect(25, e => {
     Lines.stroke(2.5 * e.fout());
     Lines.line(curX, curY, backX, backY);
 
-    if (swordRegion.found) {
-        Draw.color(masterPurpleColor);
-        Draw.rect(swordRegion, curX, curY, swordRegion.width * Draw.scl * 1.5, swordRegion.height * Draw.scl * 1.5, angle - 90);
-        Draw.color(masterGlowColor);
-        Draw.rect(swordRegion, curX, curY, swordRegion.width * Draw.scl * 1.25, swordRegion.height * Draw.scl * 1.25, angle - 90);
-    }
+    drawSwordStar(curX, curY, angle, 1.3, 1.0, true, e.id, false);
 
     if (e.fin() >= 0.85) {
         if (isBloomEnabled()) Drawf.light(targetX, targetY, 150, masterGlowColor, 1.0);
@@ -267,11 +342,6 @@ const masterBeamEffect = new Effect(40, e => {
 const masterSwordsSummonEffect = new Effect(70, e => {
     Draw.z(Layer.flyingUnit + 2.5);
 
-    let swordRegion = PerfCore.region("units/cargo/swordmaster",
-                      PerfCore.region("cargo/swordmaster",
-                      PerfCore.region("swordmaster",
-                      PerfCore.region("newex-cargo-swordmaster", PerfCore.region("newex-swordmaster")))));
-
     let neAngle = 45;
     let baseOffsetAngle = neAngle + 90;
     let randomSeeds = e.data || [0, 0, 0];
@@ -286,29 +356,7 @@ const masterSwordsSummonEffect = new Effect(70, e => {
 
         if (isBloomEnabled()) Drawf.light(posX, posY, 60 * e.fout(), masterGlowColor, 0.8 * e.fout());
 
-        if (swordRegion.found) {
-            Draw.color(masterPurpleColor);
-            Draw.alpha(0.9 * e.fout());
-            Draw.rect(swordRegion, posX, posY,
-                      swordRegion.width * Draw.scl * 1.5, swordRegion.height * Draw.scl * 1.5, neAngle - 90);
-
-            Draw.color(masterGlowColor);
-            Draw.alpha(0.7 * e.fout());
-            Draw.rect(swordRegion, posX, posY,
-                      swordRegion.width * Draw.scl * 1.35, swordRegion.height * Draw.scl * 1.35, neAngle - 90);
-        } else {
-            let len = 34.0;
-            let tipX = posX + Angles.trnsx(neAngle, len);
-            let tipY = posY + Angles.trnsy(neAngle, len);
-
-            Draw.color(masterPurpleColor, e.fout());
-            Lines.stroke(6.0 * e.fout());
-            Lines.line(posX, posY, tipX, tipY);
-
-            Draw.color(masterGlowColor, e.fout());
-            Lines.stroke(3.5 * e.fout());
-            Lines.line(posX, posY, tipX, tipY);
-        }
+        drawSwordStar(posX, posY, neAngle, 1.3, 0.9 * e.fout(), true, e.id + i * 5, false);
     }
     Draw.reset();
 });
@@ -316,35 +364,13 @@ const masterSwordsSummonEffect = new Effect(70, e => {
 const skySwordHoverEffect = new Effect(450, e => {
     Draw.z(Layer.flyingUnit + 2.8);
 
-    let swordRegion = PerfCore.region("units/cargo/swordmaster",
-                      PerfCore.region("cargo/swordmaster",
-                      PerfCore.region("swordmaster",
-                      PerfCore.region("newex-cargo-swordmaster", PerfCore.region("newex-swordmaster")))));
-
     let alpha = Math.min(1.0, e.fin() * 6.0) * e.fout();
     let angle = e.rotation;
 
     let skyX = e.x;
     let skyY = e.y;
 
-    if (swordRegion.found) {
-        Draw.color(masterPurpleColor);
-        Draw.alpha(alpha);
-        Draw.rect(swordRegion, skyX, skyY, swordRegion.width * Draw.scl * 1.5, swordRegion.height * Draw.scl * 1.5, angle - 90);
-        Draw.color(masterGlowColor);
-        Draw.alpha(alpha * 0.8);
-        Draw.rect(swordRegion, skyX, skyY, swordRegion.width * Draw.scl * 1.25, swordRegion.height * Draw.scl * 1.25, angle - 90);
-    } else {
-        let len = 30.0;
-        let tipX = skyX + Angles.trnsx(angle, len);
-        let tipY = skyY + Angles.trnsy(angle, len);
-        Draw.color(masterPurpleColor, alpha);
-        Lines.stroke(6.0);
-        Lines.line(skyX, skyY, tipX, tipY);
-        Draw.color(masterGlowColor, alpha);
-        Lines.stroke(3.0);
-        Lines.line(skyX, skyY, tipX, tipY);
-    }
+    drawSwordStar(skyX, skyY, angle, 1.3, alpha, true, e.id, false);
     Draw.reset();
 });
 
@@ -369,7 +395,7 @@ const skySwordRainEffect = new Effect(14, e => {
         let skyTopX = targetX - Angles.trnsx(angle, 600);
         let skyTopY = targetY - Angles.trnsy(angle, 600);
 
-        Draw.color(masterGlowColor, Color.white, e.fout());
+        Draw.color(Color.black, Color.white, e.fout());
         Lines.stroke(6.0 * e.fout());
         Lines.line(skyTopX, skyTopY, targetX, targetY);
 
@@ -383,32 +409,15 @@ const skySwordRainEffect = new Effect(14, e => {
     let backX = currentX - Angles.trnsx(angle, trailLen);
     let backY = currentY - Angles.trnsy(angle, trailLen);
 
+    Draw.color(Color.black, e.fout());
+    Lines.stroke(6.0 * e.fout());
+    Lines.line(currentX, currentY, backX, backY);
+
     Draw.color(Color.white, e.fout());
-    Lines.stroke(4.5 * e.fout());
+    Lines.stroke(2.2 * e.fout());
     Lines.line(currentX, currentY, backX, backY);
 
-    Draw.color(masterGlowColor, e.fout());
-    Lines.stroke(2.0 * e.fout());
-    Lines.line(currentX, currentY, backX, backY);
-
-    let swordRegion = PerfCore.region("units/cargo/swordmaster",
-                      PerfCore.region("cargo/swordmaster",
-                      PerfCore.region("swordmaster",
-                      PerfCore.region("newex-cargo-swordmaster", PerfCore.region("newex-swordmaster")))));
-
-    if (swordRegion.found) {
-        Draw.color(masterPurpleColor);
-        Draw.rect(swordRegion, currentX, currentY, swordRegion.width * Draw.scl * 1.6, swordRegion.height * Draw.scl * 1.6, angle - 90);
-        Draw.color(masterGlowColor);
-        Draw.rect(swordRegion, currentX, currentY, swordRegion.width * Draw.scl * 1.3, swordRegion.height * Draw.scl * 1.3, angle - 90);
-    } else {
-        Draw.color(masterPurpleColor);
-        Lines.stroke(8.0);
-        Lines.line(currentX, currentY, currentX + Angles.trnsx(angle, 35), currentY + Angles.trnsy(angle, 35));
-        Draw.color(masterGlowColor);
-        Lines.stroke(4.0);
-        Lines.line(currentX, currentY, currentX + Angles.trnsx(angle, 35), currentY + Angles.trnsy(angle, 35));
-    }
+    drawSwordStar(currentX, currentY, angle, 1.35, 1.0, true, e.id, false);
 
     if (e.fin() >= 0.9) {
         if (isBloomEnabled()) Drawf.light(targetX, targetY, 120, masterGlowColor, 0.9);
@@ -418,11 +427,6 @@ const skySwordRainEffect = new Effect(14, e => {
 
 const renderAttachedMasterSwordsEffect = new Effect(2, e => {
     Draw.z(Layer.flyingUnit + 2.0);
-
-    let swordRegion = PerfCore.region("units/cargo/swordmaster",
-                      PerfCore.region("cargo/swordmaster",
-                      PerfCore.region("swordmaster",
-                      PerfCore.region("newex-cargo-swordmaster", PerfCore.region("newex-swordmaster")))));
 
     let unitAngle = e.rotation;
     let sideAngle = unitAngle - 90;
@@ -447,21 +451,7 @@ const renderAttachedMasterSwordsEffect = new Effect(2, e => {
 
         let renderAngle = unitAngle + 90;
 
-        if (swordRegion.found) {
-            Draw.color(masterPurpleColor);
-            Draw.rect(swordRegion, sx, sy, swordRegion.width * Draw.scl * 1.25, swordRegion.height * Draw.scl * 1.25, renderAngle);
-            Draw.color(masterGlowColor);
-            Draw.rect(swordRegion, sx, sy, swordRegion.width * Draw.scl * 1.05, swordRegion.height * Draw.scl * 1.05, renderAngle);
-        } else {
-            let tipX = sx - Angles.trnsx(unitAngle, 22);
-            let tipY = sy - Angles.trnsy(unitAngle, 22);
-            Draw.color(masterPurpleColor);
-            Lines.stroke(4.5);
-            Lines.line(sx, sy, tipX, tipY);
-            Draw.color(masterGlowColor);
-            Lines.stroke(2.2);
-            Lines.line(sx, sy, tipX, tipY);
-        }
+        drawSwordStar(sx, sy, renderAngle + 90, 1.05, 1.0, true, i * 7 + 3, false);
     }
     Draw.reset();
 });
@@ -518,6 +508,398 @@ const swordDissolveSparkEffect = new Effect(40, e => {
     Fill.circle(e.x, e.y, 3.5 * e.fout());
 });
 
+const starVx = new Array(8);
+const starVy = new Array(8);
+const STAR_RADII_UNIT = [30.0, 3.2, 10.0, 3.2, 10.0, 3.2, 10.0, 3.2];
+
+function starRingAlpha(seed) {
+    let s1 = Math.sin(Time.time * 0.045 + seed * 1.37);
+    if (s1 <= 0) return 0.0;
+    return Math.pow(s1, 0.8) * (0.6 + 0.4 * Math.sin(Time.time * 0.021 + seed * 3.1));
+}
+
+function drawSwordStar(cx, cy, angle, scale, alpha, master, seed, noRing) {
+    for (let k = 0; k < 8; k++) {
+        let a = angle + 45.0 * k;
+        starVx[k] = cx + Angles.trnsx(a, STAR_RADII_UNIT[k] * scale);
+        starVy[k] = cy + Angles.trnsy(a, STAR_RADII_UNIT[k] * scale);
+    }
+
+    let body = master ? masterPurpleColor : PerfCore.color("#0b0b0e");
+    let edge = master ? masterGlowColor : Color.white;
+
+    Draw.color(body);
+    Draw.alpha(alpha);
+    for (let k = 0; k < 8; k++) {
+        let n = (k + 1) % 8;
+        Fill.tri(cx, cy, starVx[k], starVy[k], starVx[n], starVy[n]);
+    }
+
+    Draw.color(edge);
+    Draw.alpha(alpha);
+    Lines.stroke(Math.max(0.6, 0.9 * scale));
+    for (let k = 0; k < 8; k++) {
+        let n = (k + 1) % 8;
+        Lines.line(starVx[k], starVy[k], starVx[n], starVy[n]);
+    }
+
+    Draw.color(Color.white);
+    Draw.alpha(0.85 * alpha);
+    Lines.stroke(Math.max(0.5, 0.7 * scale));
+    Lines.line(cx, cy, cx + (starVx[0] - cx) * 0.9, cy + (starVy[0] - cy) * 0.9);
+    Fill.circle(cx, cy, 1.5 * scale);
+
+    if (!noRing) {
+        let ra = starRingAlpha(seed) * alpha;
+        if (ra > 0.02) {
+            let ringAng = angle + 55.0;
+            let ca = Angles.trnsx(ringAng, 1.0), sa = Angles.trnsy(ringAng, 1.0);
+            let ra1 = 9.0 * scale, rb1 = 3.3 * scale;
+            let px = 0, py = 0;
+            Draw.color(master ? masterGlowColor : Color.white);
+            Draw.alpha(ra);
+            Lines.stroke(Math.max(0.5, 0.8 * scale));
+            for (let j = 0; j <= 20; j++) {
+                let th = (j / 20.0) * Math.PI * 2.0;
+                let lx = Math.cos(th) * ra1, ly = Math.sin(th) * rb1;
+                let wx = cx + ca * lx - sa * ly;
+                let wy = cy + sa * lx + ca * ly;
+                if (j > 0) Lines.line(px, py, wx, wy);
+                px = wx;
+                py = wy;
+            }
+        }
+    }
+}
+
+const swordHitSlashFx = new Effect(30, 400, cons(e => {
+    let d = e.data;
+    let size = (d && d.size !== undefined) ? d.size : 10.0;
+    let len = 70.0 + size * 2.0;
+    let fout = e.fout();
+    Draw.z(Layer.effect + 0.07);
+    Draw.color(Color.white);
+    Draw.alpha(0.6 * fout * fout);
+    Fill.circle(e.x, e.y, (6.0 + size * 0.6) * fout);
+    Draw.reset();
+}));
+
+function spawnSwordHitSlash(x, y, dashAngle, size) {
+    let len = 80.0 + size * 2.0;
+    let side = Mathf.chance(0.5) ? 1.0 : -1.0;
+    let a1 = dashAngle + 55.0 * side;
+    let a2 = dashAngle - 40.0 * side;
+
+    swordHitSlashFx.at(x, y, 0, { size: size });
+    swordWindSlashFx.at(x - Angles.trnsx(a1, len / 2), y - Angles.trnsy(a1, len / 2), 0, {
+        x2: x + Angles.trnsx(a1, len / 2), y2: y + Angles.trnsy(a1, len / 2), w: 7.5, taper: true, head: true
+    });
+
+    Time.run(3, () => {
+        let l2 = len * 0.75;
+        swordWindSlashFx.at(x - Angles.trnsx(a2, l2 / 2), y - Angles.trnsy(a2, l2 / 2), 0, {
+            x2: x + Angles.trnsx(a2, l2 / 2), y2: y + Angles.trnsy(a2, l2 / 2), w: 5.0, taper: true, head: false
+        });
+    });
+}
+
+function clamp01(v) {
+    return v < 0 ? 0 : (v > 1 ? 1 : v);
+}
+
+const SWORD_FAN_RADIUS = 120.0;
+const SWORD_FAN_CRACK_WIDTH = 46.0;
+const SWORD_FAN_SWEEP_TICKS = 30.0;
+const SWORD_FAN_BURST_AT = 60.0;
+const SWORD_FAN_CRACK_LIFE = 75.0;
+const FAN_CRACK_MAX_POINTS = 30;
+
+const fcOx = new Array(FAN_CRACK_MAX_POINTS + 1);
+const fcOy = new Array(FAN_CRACK_MAX_POINTS + 1);
+const fcIx = new Array(FAN_CRACK_MAX_POINTS + 1);
+const fcIy = new Array(FAN_CRACK_MAX_POINTS + 1);
+const fcRx = new Array(FAN_CRACK_MAX_POINTS + 1);
+const fcRy = new Array(FAN_CRACK_MAX_POINTS + 1);
+const fcW = new Array(FAN_CRACK_MAX_POINTS + 1);
+const fcPt = [0.0, 0.0, 0.0];
+
+function fanCrackPoint(u, v, n) {
+    let idx = u * n;
+    let i = Math.min(n - 1, Math.max(0, Math.floor(idx)));
+    let f = idx - i;
+    let ox = fcOx[i] + (fcOx[i + 1] - fcOx[i]) * f;
+    let oy = fcOy[i] + (fcOy[i + 1] - fcOy[i]) * f;
+    let ix = fcIx[i] + (fcIx[i + 1] - fcIx[i]) * f;
+    let iy = fcIy[i] + (fcIy[i + 1] - fcIy[i]) * f;
+    fcPt[0] = ix + (ox - ix) * v;
+    fcPt[1] = iy + (oy - iy) * v;
+    fcPt[2] = fcW[i] + (fcW[i + 1] - fcW[i]) * f;
+    return fcPt;
+}
+
+const swordStarBullet = extend(BasicBulletType, {
+    speed: 5.5,
+    damage: 140,
+    lifetime: 70,
+    drag: 0.045,
+    width: 8,
+    height: 8,
+    hitSize: 7,
+    collidesAir: true,
+    collidesGround: true,
+    collidesTiles: false,
+    pierce: true,
+    pierceCap: 2,
+    hitEffect: Fx.none,
+    despawnEffect: Fx.none,
+    shootEffect: Fx.none,
+    smokeEffect: Fx.none,
+    frontColor: Color.white,
+    backColor: Color.black,
+
+    draw(b) {
+        let f = b.fout();
+        let ang = b.rotation();
+        let scl = 0.28 + 0.62 * f;
+        let a = Math.pow(f, 0.5);
+        let backLen = 22.0 * f;
+
+        Draw.z(Layer.bullet + 0.05);
+        Draw.color(Color.white);
+        Draw.alpha(0.55 * a);
+        Lines.stroke(2.2 * f + 0.3);
+        Lines.line(b.x, b.y, b.x - Angles.trnsx(ang, backLen), b.y - Angles.trnsy(ang, backLen));
+
+        drawSwordStar(b.x, b.y, ang, scl, a, false, b.id, true);
+        Draw.reset();
+    }
+});
+
+const swordFanCrackFx = new Effect(SWORD_FAN_CRACK_LIFE, 700, cons(e => {
+    let d = e.data;
+    if (!d) return;
+
+    let t = e.time;
+    let lod = PerfCore.level();
+    let n = lod >= 2 ? 18 : FAN_CRACK_MAX_POINTS;
+    let seed = e.id * 211;
+    let k = t > d.burstAt ? clamp01((t - d.burstAt) / (SWORD_FAN_CRACK_LIFE - d.burstAt)) : 0.0;
+    let closeF = Math.pow(1.0 - k, 1.8);
+    if (closeF <= 0.01) return;
+    let pre = clamp01((t - (d.burstAt - 18.0)) / 18.0);
+
+    for (let i = 0; i <= n; i++) {
+        let u = i / n;
+        let ang = d.a0 + d.sweep * u;
+        let cs = Angles.trnsx(ang, 1.0), sn = Angles.trnsy(ang, 1.0);
+        let sh = Math.pow(Math.sin(Math.PI * u), 0.8);
+        let open = clamp01((t - u * d.sweepTicks) / 6.0);
+        open = open * open * (3.0 - 2.0 * open);
+        let w = d.W * sh * open * closeF * (1.0 + 0.12 * pre * Math.sin(t * 1.7 + i));
+        let jag = clamp01(w / 3.0);
+        let ro = d.R + Mathf.randomSeed(seed + i * 31, -1, 1) * 2.0 * jag;
+        let ri = ro - w + Mathf.randomSeed(seed + i * 53 + 7, -1, 1) * 3.5 * jag;
+        if (w < 0.05) ri = ro;
+
+        fcRx[i] = cs;
+        fcRy[i] = sn;
+        fcOx[i] = d.cx + cs * ro;
+        fcOy[i] = d.cy + sn * ro;
+        fcIx[i] = d.cx + cs * ri;
+        fcIy[i] = d.cy + sn * ri;
+        fcW[i] = ro - ri;
+    }
+
+    let black = PerfCore.color("#02010a");
+    Draw.z(Layer.effect + 0.02);
+
+    Draw.color(PerfCore.color("#000008"));
+    Draw.alpha(0.5 * closeF);
+    for (let i = 0; i < n; i++) {
+        if (fcW[i] <= 0.1 && fcW[i + 1] <= 0.1) continue;
+        Fill.quad(
+            fcOx[i] + fcRx[i] * 2.2, fcOy[i] + fcRy[i] * 2.2,
+            fcOx[i + 1] + fcRx[i + 1] * 2.2, fcOy[i + 1] + fcRy[i + 1] * 2.2,
+            fcIx[i + 1] - fcRx[i + 1] * 3.2, fcIy[i + 1] - fcRy[i + 1] * 3.2,
+            fcIx[i] - fcRx[i] * 3.2, fcIy[i] - fcRy[i] * 3.2
+        );
+    }
+
+    Draw.color(black);
+    Draw.alpha(0.97);
+    for (let i = 0; i < n; i++) {
+        if (fcW[i] <= 0.1 && fcW[i + 1] <= 0.1) continue;
+        Fill.quad(fcOx[i], fcOy[i], fcOx[i + 1], fcOy[i + 1], fcIx[i + 1], fcIy[i + 1], fcIx[i], fcIy[i]);
+    }
+
+    Draw.blend(Blending.additive);
+
+    for (let i = 3; i < n - 2; i += 5) {
+        if (fcW[i] < 6.0) continue;
+        let mx = (fcOx[i] + fcIx[i]) / 2, my = (fcOy[i] + fcIy[i]) / 2;
+        Draw.color(i % 10 == 3 ? PerfCore.color("#5b21b6") : PerfCore.color("#1d4ed8"));
+        Draw.alpha(0.3 * closeF);
+        Fill.circle(mx, my, fcW[i] * 0.55);
+    }
+
+    let starCount = lod >= 2 ? 8 : (lod == 1 ? 16 : 30);
+    for (let s = 0; s < starCount; s++) {
+        let u = Mathf.randomSeed(seed + s * 13 + 1, 0.04, 0.96);
+        let v = Mathf.randomSeed(seed + s * 13 + 2, 0.08, 0.92);
+        let pt = fanCrackPoint(u, v, n);
+        if (pt[2] < 2.5) continue;
+        let phase = Mathf.randomSeed(seed + s * 13 + 3, 0, 6.28);
+        let tw = 0.55 + 0.45 * Math.sin(t * (0.25 + (s % 5) * 0.07) + phase);
+        let kind = s % 4;
+        Draw.color(kind == 0 ? PerfCore.color("#ffffff") : (kind == 1 ? PerfCore.color("#aee5ff") : (kind == 2 ? PerfCore.color("#ffd1f5") : PerfCore.color("#fff4b0"))));
+        Draw.alpha(tw * closeF);
+        Fill.circle(pt[0], pt[1], (0.55 + (s % 3) * 0.35) * (0.6 + 0.4 * tw));
+        if (s % 6 == 0 && lod == 0) {
+            Lines.stroke(0.7);
+            Lines.line(pt[0] - 3.0 * tw, pt[1], pt[0] + 3.0 * tw, pt[1]);
+            Lines.line(pt[0], pt[1] - 3.0 * tw, pt[0], pt[1] + 3.0 * tw);
+        }
+    }
+
+    if (lod < 2) {
+        for (let m = 0; m < 4; m++) {
+            let ph = (t * 0.032 + Mathf.randomSeed(seed + m * 17 + 600, 0, 1)) % 1.0;
+            let u0 = Mathf.randomSeed(seed + m * 17 + 601, 0.15, 0.7);
+            let hu = u0 + 0.12 * ph, hv = 0.93 - 0.84 * ph;
+            let tp = Math.max(0.0, ph - 0.18);
+            let tu = u0 + 0.12 * tp, tv = 0.93 - 0.84 * tp;
+            let hx, hy, hw, tx, ty;
+            let p1 = fanCrackPoint(Math.min(0.98, hu), hv, n);
+            hx = p1[0]; hy = p1[1]; hw = p1[2];
+            let p2 = fanCrackPoint(Math.min(0.98, tu), tv, n);
+            tx = p2[0]; ty = p2[1];
+            if (hw < 4.0) continue;
+            Draw.color(PerfCore.color("#ffffff"));
+            Draw.alpha(0.9 * closeF * (1.0 - ph * 0.5));
+            Lines.stroke(1.1);
+            Lines.line(hx, hy, tx, ty);
+            Fill.circle(hx, hy, 0.9);
+        }
+    }
+
+    if (t >= d.burstAt && t < d.burstAt + 8.0) {
+        let fl = 1.0 - (t - d.burstAt) / 8.0;
+        Draw.color(Color.white);
+        Draw.alpha(0.35 * fl);
+        for (let i = 0; i < n; i++) {
+            if (fcW[i] <= 0.1 && fcW[i + 1] <= 0.1) continue;
+            Fill.quad(fcOx[i], fcOy[i], fcOx[i + 1], fcOy[i + 1], fcIx[i + 1], fcIy[i + 1], fcIx[i], fcIy[i]);
+        }
+    }
+
+    for (let pass = 0; pass < 2; pass++) {
+        if (pass == 0) {
+            Draw.color(PerfCore.color("#a855f7"));
+            Draw.alpha((0.28 + 0.3 * pre) * closeF);
+            Lines.stroke(4.0 * closeF + 0.6 + 2.0 * pre);
+        } else {
+            Draw.color(PerfCore.color("#ffffff"), PerfCore.color("#8fd8ff"), clamp01(t / d.burstAt));
+            Draw.alpha(Math.min(1.0, 0.95 * closeF * 1.6));
+            Lines.stroke(1.3 * closeF + 0.35);
+        }
+        for (let i = 0; i < n; i++) {
+            if (fcW[i] <= 0.15 && fcW[i + 1] <= 0.15) continue;
+            Lines.line(fcOx[i], fcOy[i], fcOx[i + 1], fcOy[i + 1]);
+            Lines.line(fcIx[i], fcIy[i], fcIx[i + 1], fcIy[i + 1]);
+        }
+    }
+
+    if (lod == 0) {
+        for (let b = 0; b < 6; b++) {
+            let bi = 3 + Math.floor(Mathf.randomSeed(seed + b * 41 + 9, 0, n - 6.01));
+            if (fcW[bi] < 8.0) continue;
+            let outer = Mathf.randomSeed(seed + b * 41 + 10, -1, 1) >= 0;
+            let bx = outer ? fcOx[bi] : fcIx[bi];
+            let by = outer ? fcOy[bi] : fcIy[bi];
+            let dir = Mathf.angle(fcRx[bi], fcRy[bi]) + (outer ? 0.0 : 180.0) + Mathf.randomSeed(seed + b * 41 + 11, -35, 35);
+            let grow = clamp01((t - (bi / n) * d.sweepTicks - 4.0) / 10.0);
+            if (grow <= 0) continue;
+            for (let sg = 0; sg < 3; sg++) {
+                if (grow < sg / 3.0) break;
+                let segLen = Mathf.randomSeed(seed + b * 41 + sg * 3 + 12, 7, 14) * clamp01(grow * 3.0 - sg + 0.2);
+                let ex = bx + Angles.trnsx(dir, segLen), ey = by + Angles.trnsy(dir, segLen);
+                Draw.color(PerfCore.color("#d8b4fe"), PerfCore.color("#ffffff"), 1.0 - sg / 3.0);
+                Draw.alpha(0.85 * closeF);
+                Lines.stroke(1.4 - sg * 0.4);
+                Lines.line(bx, by, ex, ey);
+                bx = ex;
+                by = ey;
+                dir += Mathf.randomSeed(seed + b * 41 + sg * 3 + 13, -30, 30);
+            }
+        }
+    }
+
+    Draw.blend();
+    Draw.reset();
+}));
+
+function startSwordFan(unit, data, dashAngle, isMK2B) {
+    let cx = unit.x, cy = unit.y;
+    let a0 = dashAngle + 80.0;
+    let sweep = -160.0;
+
+    data.fanX = cx;
+    data.fanY = cy;
+    data.fanA0 = a0;
+    data.fanSweep = sweep;
+    data.fanTimer = 0.0;
+    data.fanHit = {};
+
+    swordFanCrackFx.at(cx, cy, 0, {
+        cx: cx, cy: cy, a0: a0, sweep: sweep,
+        R: SWORD_FAN_RADIUS, W: SWORD_FAN_CRACK_WIDTH,
+        sweepTicks: SWORD_FAN_SWEEP_TICKS, burstAt: SWORD_FAN_BURST_AT
+    });
+
+    let team = unit.team;
+    Time.run(SWORD_FAN_BURST_AT, () => {
+        for (let i = 0; i < 12; i++) {
+            let u = Mathf.random(0.06, 0.94);
+            let sh = Math.pow(Math.sin(Math.PI * u), 0.8);
+            let r = SWORD_FAN_RADIUS - SWORD_FAN_CRACK_WIDTH * sh * Mathf.random(0.1, 0.9);
+            let ang = a0 + sweep * u;
+            let bx = cx + Angles.trnsx(ang, r);
+            let by = cy + Angles.trnsy(ang, r);
+            // SỬA TỪ null THÀNH unit ĐỂ KHẮC PHỤC LỖI AMBIGUOUS METHOD
+            let shot = swordStarBullet.create(unit, team, bx, by, Mathf.random(360.0));
+            if (shot != null && isMK2B) shot.damage *= 2.0;
+        }
+    });
+}
+
+function swordFanDamage(unit, data, prog) {
+    if (Vars.net.client()) return;
+    let aNow = data.fanA0 + data.fanSweep * prog;
+    let cx = data.fanX, cy = data.fanY;
+    let reach = SWORD_FAN_RADIUS;
+
+    Units.nearbyEnemies(unit.team, cx, cy, reach + 30.0, enemy => {
+        if (!enemy || !enemy.isValid() || enemy.dead || data.fanHit["u" + enemy.id]) return;
+        if (!enemy.within(cx, cy, reach + enemy.hitSize / 2)) return;
+        let ang = Angles.angle(cx, cy, enemy.x, enemy.y);
+        let rel = ((ang - data.fanA0) % 360.0 + 540.0) % 360.0 - 180.0;
+        let frac = rel / data.fanSweep;
+        if (frac < -0.04 || frac > prog + 0.04) return;
+        data.fanHit["u" + enemy.id] = true;
+        enemy.damagePierce(enemy.maxHealth * 0.10);
+    });
+
+    for (let r = 0.3; r <= 1.0; r += 0.35) {
+        let bx = cx + Angles.trnsx(aNow, reach * r);
+        let by = cy + Angles.trnsy(aNow, reach * r);
+        let bld = Vars.world.buildWorld(bx, by);
+        if (bld != null && bld.team != unit.team && !data.fanHit["b" + bld.pos()]) {
+            data.fanHit["b" + bld.pos()] = true;
+            bld.damage(bld.maxHealth * 0.10);
+        }
+    }
+}
+
 const renderSwordEffect = new Effect(2, e => {
     let data = e.data;
     if (!data) return;
@@ -531,13 +913,10 @@ const renderSwordEffect = new Effect(2, e => {
     let chargeProgress = data.chargeProgress;
     let dashProgress = data.dashProgress;
     let alpha = data.alpha;
+    let seed = data.seed !== undefined ? data.seed : 0;
+    let swordScale = 1.0;
 
     Draw.z(Layer.flyingUnit + 2.0);
-
-    let swordRegion = PerfCore.region("units/cargo/sword",
-                      PerfCore.region("cargo/sword",
-                      PerfCore.region("sword",
-                      PerfCore.region("newex-cargo-sword", PerfCore.region("newex-sword")))));
 
     let swordX = rx;
     let swordY = ry;
@@ -556,6 +935,11 @@ const renderSwordEffect = new Effect(2, e => {
         Draw.color(Color.black, alpha * 0.6);
         Fill.circle(swordX, swordY, circleRadius * 0.7);
 
+    } else if (data.isFan) {
+        swordScale = 2.4;
+        swordAngle = data.fanAngle;
+        swordX = rx + Angles.trnsx(swordAngle, 48.0);
+        swordY = ry + Angles.trnsy(swordAngle, 48.0);
     } else if (isDashing) {
         let t = Math.min(1.0, Math.max(0.0, dashProgress));
         swordAngle = rot - Mathf.lerp(0, 140, t);
@@ -569,19 +953,7 @@ const renderSwordEffect = new Effect(2, e => {
             let gAngle = rot - Mathf.lerp(0, 140, ghostT);
             let ghostAlpha = alpha * (1.0 - (g / (ghostCount + 1))) * 0.6;
 
-            if (swordRegion.found) {
-                Draw.color(coalColor);
-                Draw.alpha(ghostAlpha);
-                Draw.rect(swordRegion, rx, ry,
-                          swordRegion.width * Draw.scl * 1.3, swordRegion.height * Draw.scl * 1.3, gAngle - 90);
-            } else {
-                let len = 26.0;
-                let tipX = rx + Angles.trnsx(gAngle, len);
-                let tipY = ry + Angles.trnsy(gAngle, len);
-                Draw.color(coalColor, ghostAlpha);
-                Lines.stroke((5.0 - g * 0.6) * alpha);
-                Lines.line(rx, ry, tipX, tipY);
-            }
+            drawSwordStar(rx, ry, gAngle, 1.0, ghostAlpha * 0.7, false, seed, true);
         }
     } else {
         let sideAngle = rot + 90;
@@ -594,22 +966,7 @@ const renderSwordEffect = new Effect(2, e => {
 
     if (isBloomEnabled()) Drawf.light(swordX, swordY, 50 * alpha, Color.white, 0.9 * alpha);
 
-    if (swordRegion.found) {
-        Draw.color(coalColor);
-        Draw.alpha(alpha);
-        Draw.rect(swordRegion, swordX, swordY,
-                  swordRegion.width * Draw.scl * 1.3, swordRegion.height * Draw.scl * 1.3, swordAngle - 90);
-    } else {
-        let len = 26.0;
-        let tipX = swordX + Angles.trnsx(swordAngle, len);
-        let tipY = swordY + Angles.trnsy(swordAngle, len);
-        Draw.color(coalColor, alpha);
-        Lines.stroke(4.0 * alpha);
-        Lines.line(swordX, swordY, tipX, tipY);
-        Draw.color(coalGlowColor, alpha);
-        Lines.stroke(2.0 * alpha);
-        Lines.line(swordX, swordY, tipX, tipY);
-    }
+    drawSwordStar(swordX, swordY, swordAngle, swordScale, alpha, false, seed, false);
 
     Draw.reset();
 });
@@ -1103,18 +1460,28 @@ Events.run(Trigger.update, () => {
                 if (data.swordState === "charging") {
                     let prog = Math.min(1.0, data.chargeTimer / 72.0);
                     renderSwordEffect.at(unit.x, unit.y, unit.rotation, {
+                        seed: unit.id,
                         isCharging: true, isDashing: false, chargeProgress: prog, dashProgress: 0, alpha: prog
                     });
 
                 } else if (data.swordState === "dashing") {
                     let dashProg = Math.min(1.0, data.dashTimer / data.maxDashTime);
                     renderSwordEffect.at(unit.x, unit.y, unit.rotation, {
+                        seed: unit.id,
                         isCharging: false, isDashing: true, chargeProgress: 1.0, dashProgress: dashProg, alpha: 1.0
+                    });
+
+                } else if (data.swordState === "fanslash") {
+                    let fanProg = Math.min(1.0, data.fanTimer / SWORD_FAN_SWEEP_TICKS);
+                    renderSwordEffect.at(data.fanX, data.fanY, unit.rotation, {
+                        seed: unit.id,
+                        isFan: true, fanAngle: data.fanA0 + data.fanSweep * fanProg, alpha: 1.0
                     });
 
                 } else if (data.swordState === "resting") {
                     let alpha = Math.max(0.0, 1.0 - (data.restTimer / 60.0));
                     renderSwordEffect.at(unit.x, unit.y, unit.rotation, {
+                        seed: unit.id,
                         isCharging: false, isDashing: false, chargeProgress: 1.0, dashProgress: 0, alpha: alpha
                     });
 
@@ -1126,6 +1493,7 @@ Events.run(Trigger.update, () => {
 
                 } else if (data.swordState === "idle") {
                     renderSwordEffect.at(unit.x, unit.y, unit.rotation, {
+                        seed: unit.id,
                         isCharging: false, isDashing: false, chargeProgress: 1.0, dashProgress: 0, alpha: 1.0
                     });
                 }
@@ -1139,6 +1507,9 @@ Events.run(Trigger.update, () => {
                         data.chargeTimer = 0;
                         data.dashTimer = 0;
                         data.maxDashTime = 9.33;
+                        data.dashHit = {};
+                        data.dashHitCount = 0;
+                        data.fanRolled = false;
 
                         let angle = target ? unit.angleTo(target) : unit.rotation;
                         data.dashDirX = Angles.trnsx(angle, 1);
@@ -1159,19 +1530,60 @@ Events.run(Trigger.update, () => {
                     let dashAngle = Angles.angle(0, 0, data.dashDirX, data.dashDirY);
                     unit.rotation = dashAngle;
 
-                    if (Mathf.chance(0.4)) {
-                        swordDashTrailEffect.at(unit.x, unit.y, dashAngle);
-                    }
-
                     let swordDmg = 150 * (isMK2BUnit ? 2.0 : 1.0);
                     let steps = 6;
+                    if (!data.dashHit) {
+                        data.dashHit = {};
+                        data.dashHitCount = 0;
+                    }
                     for (let i = 0; i <= steps; i++) {
                         let sampleX = Mathf.lerp(prevX, unit.x, i / steps);
                         let sampleY = Mathf.lerp(prevY, unit.y, i / steps);
                         Damage.damage(unit.team, sampleX, sampleY, 36, swordDmg, true, true);
+
+                        if (data.dashHitCount < 14) {
+                            Units.nearbyEnemies(unit.team, sampleX, sampleY, 36, enemy => {
+                                if (!enemy || !enemy.isValid() || data.dashHit["u" + enemy.id]) return;
+                                if (!enemy.within(sampleX, sampleY, 36 + enemy.hitSize / 2)) return;
+                                data.dashHit["u" + enemy.id] = true;
+                                data.dashHitCount++;
+                                spawnSwordHitSlash(enemy.x, enemy.y, dashAngle, enemy.hitSize);
+                            });
+
+                            let hitBuild = Vars.world.buildWorld(sampleX, sampleY);
+                            if (hitBuild != null && hitBuild.team != unit.team && !data.dashHit["b" + hitBuild.pos()]) {
+                                data.dashHit["b" + hitBuild.pos()] = true;
+                                data.dashHitCount++;
+                                spawnSwordHitSlash(hitBuild.x, hitBuild.y, dashAngle, hitBuild.block.size * 8);
+                            }
+                        }
+                    }
+
+                    if (data.dashHitCount > 0 && !data.fanRolled) {
+                        data.fanRolled = true;
+                        if (Mathf.chance(0.20)) {
+                            unit.vel.set(0, 0);
+                            startSwordFan(unit, data, dashAngle, isMK2BUnit);
+                            data.swordState = "fanslash";
+                            return;
+                        }
                     }
 
                     if (data.dashTimer >= data.maxDashTime) {
+                        data.swordState = "resting";
+                        data.restTimer = 0;
+                        data.dashTimer = 0;
+                    }
+                    return;
+
+                } else if (data.swordState === "fanslash") {
+                    data.fanTimer += Time.delta;
+                    unit.vel.set(0, 0);
+
+                    let fanProg = Math.min(1.0, data.fanTimer / SWORD_FAN_SWEEP_TICKS);
+                    swordFanDamage(unit, data, fanProg);
+
+                    if (data.fanTimer >= SWORD_FAN_SWEEP_TICKS) {
                         data.swordState = "resting";
                         data.restTimer = 0;
                         data.dashTimer = 0;

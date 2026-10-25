@@ -37,7 +37,6 @@ weapons: [
     shootSound: laser
     inaccuracy: 5
 
-    # ĐẠN BẮN RA NGUYÊN BẢN TỪ PHÁO BAYROWFYR
     bullet: {
       type: BasicBulletType
       sprite: large-orb
@@ -59,7 +58,6 @@ weapons: [
       trailWidth: 3
       trailLength: 15
 
-      # Hiệu ứng đổi màu vòng tròn RGB
       parts: [
         {
           type: RegionPart
@@ -123,7 +121,6 @@ weapons: [
         }
       ]
 
-      # Bắn ra sét 6 màu trên đường bay
       bulletInterval: 3
       intervalBullet: {
         type: MultiBulletType
@@ -140,7 +137,6 @@ weapons: [
         ]
       }
 
-      # Nổ sắc màu và phát tán sét khi trúng đích
       hitEffect: [
         { type: ExplosionEffect, sparkColor: ff6060, smokeColor: ff6060, waveColor: ff6060, waveRad: 30, waveLife: 8 }
         { type: ExplosionEffect, sparkColor: ffff60, smokeColor: ffff60, waveColor: ffff60, waveRad: 35, waveLife: 10 }

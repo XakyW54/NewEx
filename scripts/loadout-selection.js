@@ -205,7 +205,6 @@ const NexNet = global.NexNet;
         let targetTile = Vars.world.tileWorld(tx, ty);
         if (targetTile == null) return;
 
-        // Đảm bảo host thấy hiệu ứng nổ
         Fx.reactorExplosion.at(tx, ty);
         Fx.dynamicExplosion.at(tx, ty);
         Fx.smokeCloud.at(tx, ty);
@@ -600,7 +599,6 @@ const NexNet = global.NexNet;
         }
     }
 
-    // Kiểm tra chuẩn client tránh crash và chỉ hiện cho PC không phải client
     const canUseHud = () => !Vars.mobile && !Vars.net.client();
 
     function centerWaveButton() {

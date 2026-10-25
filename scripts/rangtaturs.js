@@ -262,7 +262,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
     chargeTimer: 0, superShotCount: 0, berserkTimer: 0,
     laserCount: 0, burstTimer: 0, customReloadTimer: 0,
 
-    // Thêm hàm configure để xử lý đồng bộ mạng cho cả host và bạn bè
+    // [ĐÃ THÊM] Hàm chuẩn của Mindustry để đồng bộ hóa thao tác qua mạng cho cả bạn bè và host
     configure(value){
         if(value == 1 && this.evolutionTier == 0){
             let core = this.team.core();
@@ -354,7 +354,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                 b1.button(isEn ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", run(() => {
                     let core = this.team.core();
                     if(core && core.items.get(Items.copper) >= reqRangtatursMK2.copper && core.items.get(Items.lead) >= reqRangtatursMK2.lead){
-                        this.configure(1); // Gọi hàm configure để đồng bộ qua mạng cho cả server và client
+                        this.configure(1); // [ĐÃ SỬA] Gọi configure(1) thay vì sửa trực tiếp để gửi lệnh mạng đồng bộ cho cả bạn bè và server
                         dialog.hide(); this.deselect();
                     } else {
                         Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2 branch![]" : "[red]Không đủ tài nguyên nâng cấp cho nhánh MK2![]");
@@ -380,7 +380,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                 b2.button(isEn ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", run(() => {
                     let core = this.team.core();
                     if(core && core.items.get(Items.copper) >= reqRangtatursMK2B.copper && core.items.get(Items.lead) >= reqRangtatursMK2B.lead && core.items.get(Items.silicon) >= reqRangtatursMK2B.silicon){
-                        this.configure(2); // Gọi hàm configure để đồng bộ qua mạng cho cả server và client
+                        this.configure(2); // [ĐÃ SỬA] Gọi configure(2) thay vì sửa trực tiếp để gửi lệnh mạng đồng bộ cho cả bạn bè và server
                         dialog.hide(); this.deselect();
                     } else {
                         Vars.ui.showInfo(isEn ? "[red]Not enough resources for MK2B branch![]" : "[red]Không đủ tài nguyên nâng cấp cho nhánh MK2B![]");

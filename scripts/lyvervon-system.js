@@ -326,7 +326,7 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                 let dialogTitle = en ? "Lyvervon Upgrade Center" : "Trung tâm nâng cấp pháo Lyvervon";
                 let dialog = extend(BaseDialog, dialogTitle, {});
 
-                let reqCell = dialog.cont.label(packProv(() => {
+                let reqSnapshot = (() => {
                     let core = this.team.core();
                     if(core == null) return en ? "[red]Team Core Not Found![]" : "[red]Không tìm thấy Lõi Đội![]";
                     let currentCopper = core.items.get(Items.copper);
@@ -356,7 +356,8 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                                " • Đồng: " + copColor2 + currentCopper + "[] / " + reqMK3.copper + "\n" +
                                " • Chì: " + leaColor2 + currentLead + "[] / " + reqMK3.lead;
                     }
-                }));
+                })();
+                let reqCell = dialog.cont.add(reqSnapshot.toString());
 
                 reqCell.width(360).get().setWrap(true);
                 reqCell.get().setAlignment(Align.left);
@@ -369,12 +370,12 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                 let b1Text = en ?
                     "[white]• Health: [green]+73.5%[] (4,295 HP)\n" +
                     "• Range: [green]+16.6%[] (303.3 px)\n" +
-                    "• Power Usage: [orange]+1100%[] (1,200/s)\n\n" +
-                    "[lightgray]Special Ability: Chain green Discharge — Continuous firing increases damage up to +1499%. green chains across up to 5 targets, triggering Sonic Shockwaves at max charge.[]" :
+                    "• Power Usage: [orange]+1100%[] (1,200/s)\n" +
+                    "• [orange]Chain green Discharge:[] Continuous firing increases damage up to +1499%\n• Green chains across up to 5 targets\n• Triggering Sonic Shockwaves at max charge" :
                     "[white]• Máu cấu trúc: [green]+73.5%[] (4,295 HP)\n" +
                     "• Tầm bắn: [green]+16.6%[] (303.3 px)\n" +
-                    "• Tiêu thụ điện: [orange]+1100%[] (1,200/s)\n\n" +
-                    "[lightgray]Kỹ năng đặc biệt: Chuỗi Điện Truyền Dẫn — Bắn liên tục tăng tiến sát thương lên tới +1499%. Sét tự động nảy qua 5 mục tiêu và kích nổ xung Sonic khi tích đủ điểm.[]";
+                    "• Tiêu thụ điện: [orange]+1100%[] (1,200/s)\n" +
+                    "• [orange]Chuỗi Điện Truyền Dẫn:[] Bắn liên tục tăng tiến sát thương lên tới +1499%\n• Sét tự động nảy qua 5 mục tiêu và kích nổ xung Sonic khi tích đủ điểm";
                 let b1D = b1.add(b1Text);
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                 b1.button(en ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => {
@@ -392,12 +393,12 @@ lyvervon.buildType = () => extend(PowerTurret.PowerTurretBuild, lyvervon, {
                 let b2Text = en ?
                     "[white]• Health: [green]+111.7%[] (5,241 HP)\n" +
                     "• Range: [green]+26.6%[] (329.3 px)\n" +
-                    "• Power Usage: [orange]+750%[] (850/s)\n\n" +
-                    "[lightgray]Special Ability: Dual Chaos Explosion — Charges 5 pts/sec while firing. Reaching max charge triggers simultaneous explosions at both turret and target, releasing 13 Chaos green bolts.[]" :
+                    "• Power Usage: [orange]+750%[] (850/s)\n" +
+                    "• [orange]Dual Chaos Explosion:[] Charges 5 pts/sec while firing\n• Reaching max charge triggers simultaneous explosions at both turret and target\n• Releasing 13 Chaos green bolts" :
                     "[white]• Máu cấu trúc: [green]+111.7%[] (5,241 HP)\n" +
                     "• Tầm bắn: [green]+26.6%[] (329.3 px)\n" +
-                    "• Tiêu thụ điện: [orange]+750%[] (850/s)\n\n" +
-                    "[lightgray]Kỹ năng đặc biệt: Kích Nổ Kép Chaos — Bắn duy trì nạp 5 điểm/giây. Đạt mốc kích nổ đồng thời tại tâm pháo và mục tiêu, tung 13 luồng sét Chaos diện rộng.[]";
+                    "• Tiêu thụ điện: [orange]+750%[] (850/s)\n" +
+                    "• [orange]Kích Nổ Kép Chaos:[] Bắn duy trì nạp 5 điểm/giây\n• Đạt mốc kích nổ đồng thời tại tâm pháo và mục tiêu\n• Tung 13 luồng sét Chaos diện rộng";
                 let b2D = b2.add(b2Text);
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
                 b2.button(en ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => {

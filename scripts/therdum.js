@@ -255,7 +255,7 @@ therdum.buildType = () => extend(ItemTurret.ItemTurretBuild, therdum, {
         table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
             let dialog = extend(BaseDialog, t("Trung tâm nâng cấp pháo Therdum", "Therdum Turret Upgrade Center"), {});
 
-            let reqCell = dialog.cont.label(packProv(() => {
+            let reqSnapshot = (() => {
                 let core = this.team.core();
                 if (core == null) return t("[red]Không tìm thấy Lõi Đội![]", "[red]Team Core not found![]");
 
@@ -285,7 +285,8 @@ therdum.buildType = () => extend(ItemTurret.ItemTurretBuild, therdum, {
                     "[cyan]★ ROLL PERK B:[] Titanium: " + colTit + cTit + "[]/1000 | Thorium: " + colTho + cTho + "[]/1000 | Graphite: " + colGra + cGra + "[]/1000\n" +
                     "[gray](Therdum Mk1 upgrades directly via Perk system)[]"
                 );
-            }));
+            })();
+            let reqCell = dialog.cont.add(reqSnapshot.toString());
 
             reqCell.width(380).get().setWrap(true);
             reqCell.get().setAlignment(Align.left);
@@ -435,28 +436,28 @@ therdum.buildType = () => extend(ItemTurret.ItemTurretBuild, therdum, {
                 if (perkA == 1) {
                     descStr += t(
                         "\n[green]• Phúc lợi 1A: Sát thương +50% (72), Tầm bắn +50% (157.5px), Số đạn +10 (50 viên).[]\n" +
-                        "  [gray]Kỹ năng đặc biệt: Tăng quy mô hỏa lực diện rộng và khoảng cách áp chế.[]",
+                        "[white]• Tăng quy mô hỏa lực diện rộng và khoảng cách áp chế.[]",
 
                         "\n[green]• Perk 1A: Damage +50% (72), Range +50% (157.5px), Bullets +10 (50 count).[]\n" +
-                        "  [gray]Special Skill: Increases wide-area firepower and suppression distance.[]"
+                        "[white]• Increases wide-area firepower and suppression distance.[]"
                     );
                 }
                 if (perkA == 2) {
                     descStr += t(
                         "\n[green]• Phúc lợi 2A: Sát thương +20% (57.6), Tầm bắn +20% (126px).[]\n" +
-                        "  [gray]Kỹ năng đặc biệt: Đạn gây thêm 10 Dmg lan trong phạm vi 10px quanh mục tiêu.[]",
+                        "[white]• Đạn gây thêm 10 Dmg lan trong phạm vi 10px quanh mục tiêu.[]",
 
                         "\n[green]• Perk 2A: Damage +20% (57.6), Range +20% (126px).[]\n" +
-                        "  [gray]Special Skill: Bullets deal +10 splash damage in 10px radius around target.[]"
+                        "[white]• Bullets deal +10 splash damage in 10px radius around target.[]"
                     );
                 }
                 if (perkA == 3) {
                     descStr += t(
                         "\n[green]• Phúc lợi 3A: Sát thương +200% (144), Tầm bắn -30% (73.5px), Nạp đạn nhanh +100% (1s).[]\n" +
-                        "  [gray]Kỹ năng đặc biệt: Biến thành pháo cận chiến siêu sát thương với tốc độ xả đạn cực nhanh.[]",
+                        "[white]• Biến thành pháo cận chiến siêu sát thương với tốc độ xả đạn cực nhanh.[]",
 
                         "\n[green]• Perk 3A: Damage +200% (144), Range -30% (73.5px), Fast Reload +100% (1s).[]\n" +
-                        "  [gray]Special Skill: Transforms into ultra-high damage melee turret with extreme burst rate.[]"
+                        "[white]• Transforms into ultra-high damage melee turret with extreme burst rate.[]"
                     );
                 }
             }
@@ -466,28 +467,28 @@ therdum.buildType = () => extend(ItemTurret.ItemTurretBuild, therdum, {
                 if (perkB == 1) {
                     descStr += t(
                         "\n[green]• Phúc lợi 1B: Giữ nguyên các chỉ số cơ bản.[]\n" +
-                        "  [gray]Kỹ năng đặc biệt: 15% cơ hội bắn bổ sung loạt 10 đạn phụ phân tán khi trúng mục tiêu.[]",
+                        "[white]• 15% cơ hội bắn bổ sung loạt 10 đạn phụ phân tán khi trúng mục tiêu.[]",
 
                         "\n[green]• Perk 1B: Keeps base stats unchanged.[]\n" +
-                        "  [gray]Special Skill: 15% chance to trigger extra 10 sub-bullets spread fire on hit.[]"
+                        "[white]• 15% chance to trigger extra 10 sub-bullets spread fire on hit.[]"
                     );
                 }
                 if (perkB == 2) {
                     descStr += t(
                         "\n[green]• Phúc lợi 2B: Giữ nguyên các chỉ số cơ bản.[]\n" +
-                        "  [gray]Kỹ năng đặc biệt: 50% cơ hội hồi 100% máu khi bắn. Nếu máu đã đầy, bắn xả thêm 20 đạn phụ.[]",
+                        "[white]• 50% cơ hội hồi 100% máu khi bắn. Nếu máu đã đầy, bắn xả thêm 20 đạn phụ.[]",
 
                         "\n[green]• Perk 2B: Keeps base stats unchanged.[]\n" +
-                        "  [gray]Special Skill: 50% chance to heal 100% HP when firing. Overheal releases 20 sub-bullets.[]"
+                        "[white]• 50% chance to heal 100% HP when firing. Overheal releases 20 sub-bullets.[]"
                     );
                 }
                 if (perkB == 3) {
                     descStr += t(
                         "\n[green]• Phúc lợi 3B: Tốc độ bắn buff +120% khi kích hoạt.[]\n" +
-                        "  [gray]Kỹ năng đặc biệt: 30% cơ hội tự kích hoạt buff siêu tốc độ bắn duy trì trong 15s mỗi khi bắn trúng địch.[]",
+                        "[white]• 30% cơ hội tự kích hoạt buff siêu tốc độ bắn duy trì trong 15s mỗi khi bắn trúng địch.[]",
 
                         "\n[green]• Perk 3B: Fire rate buffed +120% when active.[]\n" +
-                        "  [gray]Special Skill: 30% chance to trigger super fire rate buff for 15s upon hitting target.[]"
+                        "[white]• 30% chance to trigger super fire rate buff for 15s upon hitting target.[]"
                     );
                 }
             }

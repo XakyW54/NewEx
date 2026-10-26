@@ -1,6 +1,6 @@
 name: "ravendes"
 localizedName: "Ravendes"
-description: "Siêu tháp pháo hoàng gia tích hợp công nghệ sấy đạn ngôi sao 4 cánh, với khả năng phân chia sát thương theo tầm bắn và tùy chọn nâng cấp đa phân nhánh."
+description: "Siêu pháo hoàng gia bắn đạn sao 4 cánh. Sát thương đổi theo tầm bắn, có nhiều nhánh nâng cấp."
 type: "PowerTurret"
 size: 3
 health: 1200

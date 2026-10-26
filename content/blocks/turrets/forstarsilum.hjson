@@ -1,6 +1,6 @@
 type: PowerTurret
 name: Forstarsilum
-description: Tháp pháo năng lượng nâng cấp. Bắn ra đạn Starsword không lệch tâm mỗi 1 giây. Tự động tích tụ buff năng lượng khi khai hỏa liên tục để tăng sát thương và tốc độ bắn.
+description: "Bắn đạn Starsword chính xác mỗi 1 giây. Bắn liên tục sẽ tích buff tăng sát thương và tốc độ bắn."
 researchCostMultiplier: 0.1
 size: 3
 health: 3000

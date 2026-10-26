@@ -283,12 +283,12 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                 let b1D = b1.add(isEn() ?
                                  "[white]• Health: [green]+30%[] ([green]1,235[] HP)\n" +
                                  "• Range: [green]+30%[] ([orange]390[] px)\n" +
-                                 "• Base Damage: [green]+75%[] ([yellow]21[] DMG/bullet)\n\n" +
-                                 "[lightgray]Special Ability: Pulse Charge Core — Charges in [orange]0.8s[] to unleash [yellow]20[] spray bullets. Triggering [yellow]2[] bursts activates Berserk Mode Lvl 2 for [orange]6s[] (x[yellow]2.6[] Fire Rate).[]" :
+                                 "• Base Damage: [green]+75%[] ([yellow]21[] DMG/bullet)\n" +
+                                 "• [orange]Pulse Charge Core:[] Charges in [orange]0.8s[] to unleash [yellow]20[] spray bullets\n• Triggering [yellow]2[] bursts activates Berserk Mode Lvl 2 for [orange]6s[] (x[yellow]2.6[] Fire Rate)" :
                                  "[white]• Máu cấu trúc: [green]+30%[] ([green]1,235[] HP)\n" +
                                  "• Tầm bắn: [green]+30%[] ([orange]390[] px)\n" +
-                                 "• Sát thương gốc: [green]+75%[] ([yellow]21[] DMG/viên)\n\n" +
-                                 "[lightgray]Kỹ năng đặc biệt: Mạch Tích Xung Điện — Tích sạc [orange]0.8s[] xả loạt [yellow]20[] viên đạn tỏa. Bắn đủ [yellow]2[] đợt kích hoạt Điên Cường Cấp 2 trong [orange]6[] giây (x[yellow]2.6[] tốc bắn).[]");
+                                 "• Sát thương gốc: [green]+75%[] ([yellow]21[] DMG/viên)\n" +
+                                 "• [orange]Mạch Tích Xung Điện:[] Tích sạc [orange]0.8s[] xả loạt [yellow]20[] viên đạn tỏa\n• Bắn đủ [yellow]2[] đợt kích hoạt Điên Cường Cấp 2 trong [orange]6[] giây (x[yellow]2.6[] tốc bắn)");
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                 b1.button(isEn() ? "[green]UPGRADE MK2[]" : "[green]NÂNG CẤP MK2[]", packRun(() => {
                     let done = this.processPartialUpgrade(1, reqMK2);
@@ -300,12 +300,12 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                 let b2D = b2.add(isEn() ?
                                  "[white]• Health: [green]+80%[] ([green]1,710[] HP)\n" +
                                  "• Range: [red]-20%[] ([orange]240[] px)\n" +
-                                 "• Base Damage: [yellow]27[] DMG/bullet\n\n" +
-                                 "[lightgray]Special Ability: Gravity Core Cycle — Fires [yellow]3[] consecutive Gravity Lasers ([yellow]18[] DMG, pierces [orange]240[]px), followed by [yellow]100[] Homing Heavy Bullets.[]" :
+                                 "• Base Damage: [yellow]27[] DMG/bullet\n" +
+                                 "• [orange]Gravity Core Cycle:[] Fires [yellow]3[] consecutive Gravity Lasers ([yellow]18[] DMG, pierces [orange]240[]px)\n• Followed by [yellow]100[] Homing Heavy Bullets" :
                                  "[white]• Máu cấu trúc: [green]+80%[] ([green]1,710[] HP)\n" +
                                  "• Tầm bắn: [red]-20%[] ([orange]240[] px)\n" +
-                                 "• Sát thương gốc: [yellow]27[] DMG/viên\n\n" +
-                                 "[lightgray]Kỹ năng đặc biệt: Tuần Hoàn Lõi Trọng Lực — Bắn [yellow]3[] phát Laser Trọng Lực liên tiếp ([yellow]18[] DMG, xuyên thấu [orange]240[]px), sau đó xả [yellow]100[] viên Trọng Đạn tự dẫn đường.[]");
+                                 "• Sát thương gốc: [yellow]27[] DMG/viên\n" +
+                                 "• [orange]Tuần Hoàn Lõi Trọng Lực:[] Bắn [yellow]3[] phát Laser Trọng Lực liên tiếp ([yellow]18[] DMG, xuyên thấu [orange]240[]px)\n• Sau đó xả [yellow]100[] viên Trọng Đạn tự dẫn đường");
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
                 b2.button(isEn() ? "[orange]UPGRADE MK2B[]" : "[orange]NÂNG CẤP MK2B[]", packRun(() => {
                     let done = this.processPartialUpgrade(2, reqMK2B);
@@ -359,12 +359,12 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                 let b3D = b3.add(isEn() ?
                                  "[white]• Health: [green]+35%[] ([green]1,667[] HP)\n" +
                                  "• Range: [green]+35%[] ([orange]526.5[] px)\n" +
-                                 "• Base Damage: [green]+35%[] ([yellow]28.35[] DMG/bullet)\n\n" +
-                                 "[lightgray]Special Ability: Ultimate Rampage Burst — Spread storm of [yellow]27[] bullets/salvo ([yellow]34.42[] DMG). Triggers Ultimate Rampage state for [orange]8.1s[] (x[yellow]3.51[] Fire Rate).[]" :
+                                 "• Base Damage: [green]+35%[] ([yellow]28.35[] DMG/bullet)\n" +
+                                 "• [orange]Ultimate Rampage Burst:[] Spread storm of [yellow]27[] bullets/salvo ([yellow]34.42[] DMG)\n• Triggers Ultimate Rampage state for [orange]8.1s[] (x[yellow]3.51[] Fire Rate)" :
                                  "[white]• Máu cấu trúc: [green]+35%[] ([green]1,667[] HP)\n" +
                                  "• Tầm bắn: [green]+35%[] ([orange]526.5[] px)\n" +
-                                 "• Sát thương gốc: [green]+35%[] ([yellow]28.35[] DMG/viên)\n\n" +
-                                 "[lightgray]Kỹ năng đặc biệt: Bão Nộ Tối Thượng — Bão đạn tỏa [yellow]27[] viên/loạt ([yellow]34.42[] DMG). Kích hoạt Cuồng Báo Tối Thượng kéo dài [orange]8.1[] giây (x[yellow]3.51[] tốc bắn).[]");
+                                 "• Sát thương gốc: [green]+35%[] ([yellow]28.35[] DMG/viên)\n" +
+                                 "• [orange]Bão Nộ Tối Thượng:[] Bão đạn tỏa [yellow]27[] viên/loạt ([yellow]34.42[] DMG)\n• Kích hoạt Cuồng Báo Tối Thượng kéo dài [orange]8.1[] giây (x[yellow]3.51[] tốc bắn)");
                 b3D.width(340).get().setWrap(true); b3D.get().setAlignment(Align.left); b3.row();
                 b3.button(isEn() ? "[gold]UPGRADE MK3[]" : "[gold]NÂNG CẤP MK3[]", packRun(() => {
                     let done = this.processPartialUpgrade(3, reqMK3);
@@ -424,12 +424,12 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                 let b4D = b4.add(isEn() ?
                                  "[white]• Health: [green]+10%[] ([green]1,881[] HP)\n" +
                                  "• Range: [green]+10%[] ([orange]264[] px)\n" +
-                                 "• Base Damage: [green]+10%[] ([yellow]29.7[] DMG/bullet)\n\n" +
-                                 "[lightgray]Special Ability: Dual Laser Barrage — Fires [yellow]2[] parallel Lasers ([yellow]19.8[] DMG) simultaneously, followed by a double storm of [yellow]200[] Homing Heavy Bullets.[]" :
+                                 "• Base Damage: [green]+10%[] ([yellow]29.7[] DMG/bullet)\n" +
+                                 "• [orange]Dual Laser Barrage:[] Fires [yellow]2[] parallel Lasers ([yellow]19.8[] DMG) simultaneously\n• Followed by a double storm of [yellow]200[] Homing Heavy Bullets" :
                                  "[white]• Máu cấu trúc: [green]+10%[] ([green]1,881[] HP)\n" +
                                  "• Tầm bắn: [green]+10%[] ([orange]264[] px)\n" +
-                                 "• Sát thương gốc: [green]+10%[] ([yellow]29.7[] DMG/viên)\n\n" +
-                                 "[lightgray]Kỹ năng đặc biệt: Bão Laser Kép — Bắn [yellow]2[] tia Laser song song cùng lúc ([yellow]19.8[] DMG), sau đó xả nhân đôi lên [yellow]200[] viên Trọng Đạn tự dẫn đường.[]");
+                                 "• Sát thương gốc: [green]+10%[] ([yellow]29.7[] DMG/viên)\n" +
+                                 "• [orange]Bão Laser Kép:[] Bắn [yellow]2[] tia Laser song song cùng lúc ([yellow]19.8[] DMG)\n• Sau đó xả nhân đôi lên [yellow]200[] viên Trọng Đạn tự dẫn đường");
                 b4D.width(340).get().setWrap(true); b4D.get().setAlignment(Align.left); b4.row();
                 b4.button(isEn() ? "[purple]UPGRADE MK2B1[]" : "[purple]NÂNG CẤP MK2B1[]", packRun(() => {
                     let done = this.processPartialUpgrade(4, reqMK2B1);
@@ -441,12 +441,12 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                 let b5D = b5.add(isEn() ?
                                  "[white]• Health: [green]+50%[] ([green]2,565[] HP)\n" +
                                  "• Range: [green]+50%[] ([orange]360[] px)\n" +
-                                 "• Shotgun Damage: [green]+200%[] ([yellow]81[] DMG/bullet)\n\n" +
-                                 "[lightgray]Special Ability: Extreme Gravity Storm — Fires [yellow]3[] wide Supercharged Lasers ([yellow]27[] DMG). Replaces single bursts with a [yellow]100[]-bullet Shotgun Storm Salvo (FPS Optimized).[]" :
+                                 "• Shotgun Damage: [green]+200%[] ([yellow]81[] DMG/bullet)\n" +
+                                 "• [orange]Extreme Gravity Storm:[] Fires [yellow]3[] wide Supercharged Lasers ([yellow]27[] DMG)\n• Replaces single bursts with a [yellow]100[]-bullet Shotgun Storm Salvo (FPS Optimized)" :
                                  "[white]• Máu cấu trúc: [green]+50%[] ([green]2,565[] HP)\n" +
                                  "• Tầm bắn: [green]+50%[] ([orange]360[] px)\n" +
-                                 "• Sát thương Shotgun: [green]+200%[] ([yellow]81[] DMG/viên)\n\n" +
-                                 "[lightgray]Kỹ năng đặc biệt: Bão Cực Hạn Trọng Lực — Bắn [yellow]3[] đợt Laser Siêu Tải chùm rộng ([yellow]27[] DMG). Chuyển đạn xả lẻ thành loạt Shotgun Bão Tỏa [yellow]100[] viên (Đã tối ưu FPS).[]");
+                                 "• Sát thương Shotgun: [green]+200%[] ([yellow]81[] DMG/viên)\n" +
+                                 "• [orange]Bão Cực Hạn Trọng Lực:[] Bắn [yellow]3[] đợt Laser Siêu Tải chùm rộng ([yellow]27[] DMG)\n• Chuyển đạn xả lẻ thành loạt Shotgun Bão Tỏa [yellow]100[] viên (Đã tối ưu FPS)");
                 b5D.width(340).get().setWrap(true); b5D.get().setAlignment(Align.left); b5.row();
                 b5.button(isEn() ? "[pink]UPGRADE MK3B[]" : "[pink]NÂNG CẤP MK3B[]", packRun(() => {
                     let done = this.processPartialUpgrade(5, reqMK3B);
@@ -479,78 +479,78 @@ dor.buildType = () => extend(ItemTurret.ItemTurretBuild, dor, {
                           "[yellow]⚡ BASE STATS (MK1) ⚡[]\n" +
                           "[white]Turret HP: [green]950[]\n" +
                           "Range: [orange]300[] px\n" +
-                          "Base Damage: [yellow]12[] DMG/bullet[]\n\n" +
-                          "[lightgray]Special Ability: Pulse Charge Burst — Normal shots deal [yellow]12[] DMG. Charges for [orange]1.0s[] to fire [yellow]10[] spread bullets ([yellow]21[] DMG). Firing [yellow]3[] bursts activates Berserk State for [orange]5s[] (x[yellow]1.5[] Fire Rate).[]" :
+                          "Base Damage: [yellow]12[] DMG/bullet[]\n" +
+                          "• [orange]Pulse Charge Burst:[] Normal shots deal [yellow]12[] DMG\n• Charges for [orange]1.0s[] to fire [yellow]10[] spread bullets ([yellow]21[] DMG)\n• Firing [yellow]3[] bursts activates Berserk State for [orange]5s[] (x[yellow]1.5[] Fire Rate)" :
                           "[yellow]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
                           "[white]Máu tháp pháo: [green]950[]\n" +
                           "Tầm bắn: [orange]300[] px\n" +
-                          "Sát thương gốc: [yellow]12[] DMG/viên[]\n\n" +
-                          "[lightgray]Kỹ năng đặc biệt: Tích Sạc Tỏa Đạn — Bắn thường gây [yellow]12[] DMG. Tích sạc [orange]1.0s[] xả loạt [yellow]10[] viên đạn tỏa ([yellow]21[] DMG). Bắn đủ [yellow]3[] đợt kích hoạt Trạng Thái Điên Cường trong [orange]5[] giây (x[yellow]1.5[] tốc bắn).[]";
+                          "Sát thương gốc: [yellow]12[] DMG/viên[]\n" +
+                          "• [orange]Tích Sạc Tỏa Đạn:[] Bắn thường gây [yellow]12[] DMG\n• Tích sạc [orange]1.0s[] xả loạt [yellow]10[] viên đạn tỏa ([yellow]21[] DMG)\n• Bắn đủ [yellow]3[] đợt kích hoạt Trạng Thái Điên Cường trong [orange]5[] giây (x[yellow]1.5[] tốc bắn)";
             } else if (currentTier == 1) {
                 title += "[cyan](MK2)[]";
                 descStr = isEn() ?
                           "[cyan]⚡ UPGRADE STATS (MK2) ⚡[]\n" +
                           "[white]Turret HP: [green]1,235[] ([green]+30%[])\n" +
                           "Range: [orange]390[] px ([green]+30%[])\n" +
-                          "Base Damage: [yellow]21[] DMG/bullet ([green]+75%[])[]\n\n" +
-                          "[lightgray]Special Ability: Enhanced Pulse Charge — Fast [orange]0.8s[] charge fires [yellow]20[] spread bullets ([yellow]25.5[] DMG). Firing [yellow]2[] bursts activates Berserk Lvl 2 for [orange]6s[] (x[yellow]2.6[] Fire Rate).[]" :
+                          "Base Damage: [yellow]21[] DMG/bullet ([green]+75%[])[]\n" +
+                          "• [orange]Enhanced Pulse Charge:[] Fast [orange]0.8s[] charge fires [yellow]20[] spread bullets ([yellow]25.5[] DMG)\n• Firing [yellow]2[] bursts activates Berserk Lvl 2 for [orange]6s[] (x[yellow]2.6[] Fire Rate)" :
                           "[cyan]⚡ THÔNG SỐ NÂNG CẤP (MK2) ⚡[]\n" +
                           "[white]Máu tháp pháo: [green]1,235[] ([green]+30%[])\n" +
                           "Tầm bắn: [orange]390[] px ([green]+30%[])\n" +
-                          "Sát thương gốc: [yellow]21[] DMG/viên ([green]+75%[])[]\n\n" +
-                          "[lightgray]Kỹ năng đặc biệt: Tích Sạc Tăng Cường — Tích sạc [orange]0.8s[] xả loạt [yellow]20[] viên đạn tỏa ([yellow]25.5[] DMG). Bắn đủ [yellow]2[] đợt kích hoạt Điên Cường Cấp 2 trong [orange]6[] giây (x[yellow]2.6[] tốc bắn).[]";
+                          "Sát thương gốc: [yellow]21[] DMG/viên ([green]+75%[])[]\n" +
+                          "• [orange]Tích Sạc Tăng Cường:[] Tích sạc [orange]0.8s[] xả loạt [yellow]20[] viên đạn tỏa ([yellow]25.5[] DMG)\n• Bắn đủ [yellow]2[] đợt kích hoạt Điên Cường Cấp 2 trong [orange]6[] giây (x[yellow]2.6[] tốc bắn)";
             } else if (currentTier == 2) {
                 title += "[purple](MK2B)[]";
                 descStr = isEn() ?
                           "[purple]⚡ GRAVITY STATS (MK2B) ⚡[]\n" +
                           "[white]Turret HP: [green]1,710[] ([green]+80%[])\n" +
                           "Range: [orange]240[] px ([red]-20%[])\n" +
-                          "Base Damage: [yellow]27[] DMG/bullet[]\n\n" +
-                          "[lightgray]Special Ability: Gravity Cycle Mode — Fires [yellow]3[] Gravity Lasers ([yellow]18[] DMG, [orange]240[]px piercing), followed immediately by [yellow]100[] Homing Heavy Bullets ([yellow]27[] DMG/bullet).[]" :
+                          "Base Damage: [yellow]27[] DMG/bullet[]\n" +
+                          "• [orange]Gravity Cycle Mode:[] Fires [yellow]3[] Gravity Lasers ([yellow]18[] DMG, [orange]240[]px piercing)\n• Followed immediately by [yellow]100[] Homing Heavy Bullets ([yellow]27[] DMG/bullet)" :
                           "[purple]⚡ THÔNG SỐ TRỌNG LỰC (MK2B) ⚡[]\n" +
                           "[white]Máu tháp pháo: [green]1,710[] ([green]+80%[])\n" +
                           "Tầm bắn: [orange]240[] px ([red]-20%[])\n" +
-                          "Sát thương gốc: [yellow]27[] DMG/viên[]\n\n" +
-                          "[lightgray]Kỹ năng đặc biệt: Chế Độ Tuần Hoàn Trọng Lực — Bắn [yellow]3[] phát Laser Trọng Lực ([yellow]18[] DMG, xuyên thấu [orange]240[]px), sau đó xả [yellow]100[] viên Trọng Đạn tự dẫn đường ([yellow]27[] DMG/viên).[]";
+                          "Sát thương gốc: [yellow]27[] DMG/viên[]\n" +
+                          "• [orange]Chế Độ Tuần Hoàn Trọng Lực:[] Bắn [yellow]3[] phát Laser Trọng Lực ([yellow]18[] DMG, xuyên thấu [orange]240[]px)\n• Sau đó xả [yellow]100[] viên Trọng Đạn tự dẫn đường ([yellow]27[] DMG/viên)";
             } else if (currentTier == 3) {
                 title += "[gold](MK3)[]";
                 descStr = isEn() ?
                           "[gold]⚡ EVOLUTION STATS (MK3) ⚡[]\n" +
                           "[white]Turret HP: [green]1,667[] ([green]+35%[])\n" +
                           "Range: [orange]526.5[] px ([green]+35%[])\n" +
-                          "Base Damage: [yellow]28.35[] DMG/bullet[]\n\n" +
-                          "[lightgray]Special Ability: Ultimate Burst Storm — Fires spread storm of [yellow]27[] bullets/salvo ([yellow]34.42[] DMG). Ultimate Rampage state lasts [orange]8.1s[] (x[yellow]3.51[] Fire Rate).[]" :
+                          "Base Damage: [yellow]28.35[] DMG/bullet[]\n" +
+                          "• [orange]Ultimate Burst Storm:[] Fires spread storm of [yellow]27[] bullets/salvo ([yellow]34.42[] DMG)\n• Ultimate Rampage state lasts [orange]8.1s[] (x[yellow]3.51[] Fire Rate)" :
                           "[gold]⚡ THÔNG SỐ TIẾN HÓA (MK3) ⚡[]\n" +
                           "[white]Máu tháp pháo: [green]1,667[] ([green]+35%[])\n" +
                           "Tầm bắn: [orange]526.5[] px ([green]+35%[])\n" +
-                          "Sát thương gốc: [yellow]28.35[] DMG/viên[]\n\n" +
-                          "[lightgray]Kỹ năng đặc biệt: Bão Siêu Nộ Tối Thượng — Bão đạn tỏa [yellow]27[] viên/loạt ([yellow]34.42[] DMG). Trạng thái Cuồng Báo Tối Thượng kéo dài [orange]8.1[] giây (x[yellow]3.51[] tốc bắn).[]";
+                          "Sát thương gốc: [yellow]28.35[] DMG/viên[]\n" +
+                          "• [orange]Bão Siêu Nộ Tối Thượng:[] Bão đạn tỏa [yellow]27[] viên/loạt ([yellow]34.42[] DMG)\n• Trạng thái Cuồng Báo Tối Thượng kéo dài [orange]8.1[] giây (x[yellow]3.51[] tốc bắn)";
             } else if (currentTier == 4) {
                 title += "[purple](MK2B1)[]";
                 descStr = isEn() ?
                           "[purple]⚡ CONFIGURATION STATS (MK2B1) ⚡[]\n" +
                           "[white]Turret HP: [green]1,881[] ([green]+10%[])\n" +
                           "Range: [orange]264[] px ([green]+10%[])\n" +
-                          "Base Damage: [yellow]29.7[] DMG/bullet[]\n\n" +
-                          "[lightgray]Special Ability: Dual Breakthrough Mode — Fires [yellow]2[] parallel Lasers ([yellow]19.8[] DMG). Releases a double storm of [yellow]200[] Homing Heavy Bullets ([yellow]29.7[] DMG/bullet).[]" :
+                          "Base Damage: [yellow]29.7[] DMG/bullet[]\n" +
+                          "• [orange]Dual Breakthrough Mode:[] Fires [yellow]2[] parallel Lasers ([yellow]19.8[] DMG)\n• Releases a double storm of [yellow]200[] Homing Heavy Bullets ([yellow]29.7[] DMG/bullet)" :
                           "[purple]⚡ THÔNG SỐ CẤU HÌNH (MK2B1) ⚡[]\n" +
                           "[white]Máu tháp pháo: [green]1,881[] ([green]+10%[])\n" +
                           "Tầm bắn: [orange]264[] px ([green]+10%[])\n" +
-                          "Sát thương gốc: [yellow]29.7[] DMG/viên[]\n\n" +
-                          "[lightgray]Kỹ năng đặc biệt: Chế Độ Đột Phá Kép — Bắn [yellow]2[] tia Laser song song ([yellow]19.8[] DMG). Xả bão đạn nhân đôi [yellow]200[] viên Trọng Đạn tự dẫn đường ([yellow]29.7[] DMG/viên).[]";
+                          "Sát thương gốc: [yellow]29.7[] DMG/viên[]\n" +
+                          "• [orange]Chế Độ Đột Phá Kép:[] Bắn [yellow]2[] tia Laser song song ([yellow]19.8[] DMG)\n• Xả bão đạn nhân đôi [yellow]200[] viên Trọng Đạn tự dẫn đường ([yellow]29.7[] DMG/viên)";
             } else if (currentTier == 5) {
                 title += "[pink](MK3B)[]";
                 descStr = isEn() ?
                           "[pink]⚡ ULTIMATE STATS (MK3B) ⚡[]\n" +
                           "[white]Turret HP: [green]2,565[] ([green]+50%[])\n" +
                           "Range: [orange]360[] px ([green]+50%[])\n" +
-                          "Shotgun Damage: [yellow]81[] DMG/bullet[]\n\n" +
-                          "[lightgray]Special Ability: Extreme Gravity Mode — Fires [yellow]3[] wide Supercharged Lasers ([yellow]27[] DMG). Replaces burst shots with [yellow]100[]-bullet Shotgun Storm Salvos (FPS Optimized).[]" :
+                          "Shotgun Damage: [yellow]81[] DMG/bullet[]\n" +
+                          "• [orange]Extreme Gravity Mode:[] Fires [yellow]3[] wide Supercharged Lasers ([yellow]27[] DMG)\n• Replaces burst shots with [yellow]100[]-bullet Shotgun Storm Salvos (FPS Optimized)" :
                           "[pink]⚡ THÔNG SỐ TỐI THƯỢNG (MK3B) ⚡[]\n" +
                           "[white]Máu tháp pháo: [green]2,565[] ([green]+50%[])\n" +
                           "Tầm bắn: [orange]360[] px ([green]+50%[])\n" +
-                          "Sát thương Shotgun: [yellow]81[] DMG/viên[]\n\n" +
-                          "[lightgray]Kỹ năng đặc biệt: Chế Độ Cực Hạn Trọng Lực — Bắn [yellow]3[] đợt Laser Siêu Tải chùm rộng ([yellow]27[] DMG). Chuyển đạn xả lẻ thành Loạt Shotgun Bão Tỏa [yellow]100[] viên (Đã tối ưu FPS).[]";
+                          "Sát thương Shotgun: [yellow]81[] DMG/viên[]\n" +
+                          "• [orange]Chế Độ Cực Hạn Trọng Lực:[] Bắn [yellow]3[] đợt Laser Siêu Tải chùm rộng ([yellow]27[] DMG)\n• Chuyển đạn xả lẻ thành Loạt Shotgun Bão Tỏa [yellow]100[] viên (Đã tối ưu FPS)";
             }
 
             let dialog = extend(BaseDialog, title, {});

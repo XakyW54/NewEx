@@ -292,7 +292,7 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
                 let dialogTitle = isVN() ? "Trung tâm nâng cấp pháo Nucleytor" : "Nucleytor Upgrade Center";
                 let dialog = extend(BaseDialog, dialogTitle, {});
 
-                let reqCell = dialog.cont.label(packProv(() => {
+                let reqSnapshot = (() => {
                     let core = this.team.core();
                     if(core == null) return isVN() ? "[red]Không tìm thấy Lõi Đội![]" : "[red]No Team Core Found![]";
                     let currentTitanium = core.items.get(Items.titanium);
@@ -325,7 +325,8 @@ nucleytor.buildType = () => extend(ItemTurret.ItemTurretBuild, nucleytor, {
                                " • Silicon: " + silColor2 + currentSilicon + "[] / " + reqMK2B.silicon + "\n" +
                                " • Plastanium: " + plaColor2 + currentPlastanium + "[] / " + reqMK2B.plastanium;
                     }
-                }));
+                })();
+                let reqCell = dialog.cont.add(reqSnapshot.toString());
 
                 reqCell.width(360).get().setWrap(true);
                 reqCell.get().setAlignment(Align.left);

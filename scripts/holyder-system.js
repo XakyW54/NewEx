@@ -211,7 +211,7 @@ function makeBuildSetup(initialTier) {
                     let dialogTitle = en ? "Holyder Turret Upgrade Center" : "Trung tâm nâng cấp tháp pháo Holyder";
                     let dialog = extend(BaseDialog, dialogTitle, {});
 
-                    let reqCell = dialog.cont.label(packProv(() => {
+                    let reqSnapshot = (() => {
                         let core = this.team.core();
                         if(core == null) return en ? "[red]Team Core Not Found![]" : "[red]Không tìm thấy Lõi Đội![]";
                         let currenttitanium = core.items.get(Items.titanium);
@@ -244,7 +244,8 @@ function makeBuildSetup(initialTier) {
                                    " • Silicon: " + silColor2 + currentsilicon + "[] / " + reqMK2B.silicon + "\n" +
                                    " • Nhựa: " + plaColor2 + currentplastanium + "[] / " + reqMK2B.plastanium;
                         }
-                    }));
+                    })();
+                    let reqCell = dialog.cont.add(reqSnapshot.toString());
 
                     reqCell.width(360).get().setWrap(true);
                     reqCell.get().setAlignment(Align.left);

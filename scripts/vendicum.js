@@ -297,12 +297,12 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                 let b1D = b1.add(isEn() ?
                                 "[white]• Health: [green]+50%[] (8,250 HP)\n" +
                                 "• Range: [green]+31.25%[] (538.1 px)\n" +
-                                "• Base Damage: [green]+44.4%[] (97.5 DMG)\n\n" +
-                                "[lightgray]Special Ability: Penetrating Magnetic Acceleration — Expands pierce cap to 5 enemy targets or structures, built-in supercharge circuit reduces full energy recharge time to 3.0s.[]" :
+                                "• Base Damage: [green]+44.4%[] (97.5 DMG)\n" +
+                                "• [orange]Penetrating Magnetic Acceleration:[] Expands pierce cap to 5 enemy targets or structures\n• Built-in supercharge circuit reduces full energy recharge time to 3.0s" :
                                 "[white]• Máu cấu trúc: [green]+50%[] (8,250 HP)\n" +
                                 "• Tầm bắn: [green]+31.25%[] (538.1 px)\n" +
-                                "• Sát thương gốc: [green]+44.4%[] (97.5 DMG)\n\n" +
-                                "[lightgray]Kỹ năng đặc biệt: Gia Tốc Từ Tính Xuyên Thấu — Đạn mở rộng khả năng xuyên qua tối đa 5 mục tiêu kẻ địch hoặc công trình, tích hợp mạch siêu sạc giúp rút ngắn thời gian hồi đầy năng lượng xuống 3.0 giây.[]");
+                                "• Sát thương gốc: [green]+44.4%[] (97.5 DMG)\n" +
+                                "• [orange]Gia Tốc Từ Tính Xuyên Thấu:[] Đạn mở rộng khả năng xuyên qua tối đa 5 mục tiêu kẻ địch hoặc công trình\n• Tích hợp mạch siêu sạc giúp rút ngắn thời gian hồi đầy năng lượng xuống 3.0 giây");
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                 b1.button(isEn() ? "[green]UPGRADE MK2[]" : "[green]NÂNG CẤP MK2[]", packRun(() => {
                     if(Vars.net.active()){
@@ -319,12 +319,12 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
                 let b2D = b2.add(isEn() ?
                                 "[white]• Health: [green]+33.3%[] (7,333 HP)\n" +
                                 "• Range: [green]+12.5%[] (461.2 px)\n" +
-                                "• Base Damage: [green]+172.2%[] (183.75 DMG)\n\n" +
-                                "[lightgray]Special Ability: Homing Heat-Seeking Impulse — Removes piercing to integrate smart sensors that automatically steer towards nearby targets, saving 70% energy per shot.[]" :
+                                "• Base Damage: [green]+172.2%[] (183.75 DMG)\n" +
+                                "• [orange]Homing Heat-Seeking Impulse:[] Removes piercing to integrate smart sensors that automatically steer towards nearby targets\n• Saving 70% energy per shot" :
                                 "[white]• Máu cấu trúc: [green]+33.3%[] (7,333 HP)\n" +
                                 "• Tầm bắn: [green]+12.5%[] (461.2 px)\n" +
-                                "• Sát thương gốc: [green]+172.2%[] (183.75 DMG)\n\n" +
-                                "[lightgray]Kỹ năng đặc biệt: Xung Kích Tầm Nhiệt Truy Đuổi — Loại bỏ xuyên thấu để tích hợp chip cảm biến thông minh tự động bẻ lái truy đuổi mục tiêu xung quanh, tiết kiệm 70% năng lượng mỗi phát bắn.[]");
+                                "• Sát thương gốc: [green]+172.2%[] (183.75 DMG)\n" +
+                                "• [orange]Xung Kích Tầm Nhiệt Truy Đuổi:[] Loại bỏ xuyên thấu để tích hợp chip cảm biến thông minh tự động bẻ lái truy đuổi mục tiêu xung quanh\n• Tiết kiệm 70% năng lượng mỗi phát bắn");
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
                 b2.button(isEn() ? "[orange]UPGRADE MK2B[]" : "[orange]NÂNG CẤP MK2B[]", packRun(() => {
                     if(Vars.net.active()){

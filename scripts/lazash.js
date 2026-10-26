@@ -467,7 +467,7 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
         table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
             let dialog = extend(BaseDialog, t("Trung tâm nâng cấp pháo Lazash", "Lazash Turret Upgrade Center"), {});
 
-            let reqCell = dialog.cont.label(packProv(() => {
+            let reqSnapshot = (() => {
                 let core = this.team.core();
                 if (core == null) return t("[red]Không tìm thấy Lõi Đội![]", "[red]Team Core not found![]");
 
@@ -495,7 +495,8 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
                     "[yellow]★ ROLL PERK A:[] Copper: " + colCop + cCop + "[]/2000 | Lead: " + colLea + cLea + "[]/2000 | Silicon: " + colSil + cSil + "[]/2000\n" +
                     "[cyan]★ ROLL PERK B:[] Titanium: " + colTit + cTit + "[]/1000 | Thorium: " + colTho + cTho + "[]/1000 | Graphite: " + colGra + cGra + "[]/1000\n"
                 );
-            }));
+            })();
+            let reqCell = dialog.cont.add(reqSnapshot.toString());
 
             reqCell.width(380).get().setWrap(true);
             reqCell.get().setAlignment(Align.left);

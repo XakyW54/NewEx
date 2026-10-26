@@ -1,6 +1,6 @@
 
 name: Xylaon
-description: Pháo Xylaon: Tháp pháo sở hữu cơ chế quá tải nhiệt độc đáo. Càng bắn liên tục, pháo càng nóng và tốc độ xả đạn càng tăng mạnh (lên đến +350% tốc độ bắn). Tuy nhiên, nếu để thanh nhiệt quá tải chạm mức giới hạn, pháo sẽ bị cưỡng ép dừng bắn để chuyển sang chế độ làm nguội.
+description: "Bắn càng lâu càng nóng, tốc độ bắn tối đa +350%. Nhiệt chạm đỉnh sẽ bị ép ngừng bắn để làm nguội."
 health: 500
 size: 3
 reload: 20

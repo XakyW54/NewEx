@@ -157,7 +157,7 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
                 let dialogTitle = vi ? "Trung tâm nâng cấp pháo" : "Turret Upgrade Center";
                 let dialog = extend(BaseDialog, dialogTitle, {});
-                let reqCell = dialog.cont.label(packProv(() => {
+                let reqSnapshot = (() => {
                     let core = this.team.core();
                     if(core == null) return vi ? "[red]Không tìm thấy Lõi Đội![]" : "[red]Team Core not found![]";
                     let currentCopper = core.items.get(Items.copper);
@@ -179,7 +179,8 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
                                "[cyan]MK2 Configuration Path[]\n • Copper: " + copColor1 + currentCopper + "[] / " + reqBlawMK2.copper + "\n • Lead: " + leaColor1 + currentLead + "[] / " + reqBlawMK2.lead + "\n" +
                                "[purple]MK2B Variant Path[]\n • Copper: " + copColor2 + currentCopper + "[] / " + reqBlawMK2B.copper + "\n • Lead: " + leaColor2 + currentLead + "[] / " + reqBlawMK2B.lead + "\n • Titanium: " + titColor2 + currentTitanium + "[] / " + reqBlawMK2B.titanium;
                     }
-                }));
+                })();
+                let reqCell = dialog.cont.add(reqSnapshot.toString());
 
                 reqCell.width(360).get().setWrap(true);
                 reqCell.get().setAlignment(Align.left);
@@ -192,13 +193,13 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
                 let b1Text = vi ? "[white]• Tầm bắn: [green]663 px[]\n" +
                                    "• Sát thương nổ nòng Hỏa: [green]+50%[]\n" +
                                    "• Tốc độ nạp đạn: [green]+20%[]\n" +
-                                   "• Bạo kích: [green]80% Tỉ lệ | +120% ST Bạo kích[]\n\n" +
-                                   "[lightgray]Kỹ năng đặc biệt: Cải Tiến Băng Hỏa — Nòng Băng đóng băng và xuyên 3 mục tiêu, nòng Hỏa gây nổ lan 120 DMG. Tăng mạnh khả năng khuếch đại sát thương theo HP đối thủ.[]"
+                                   "• Bạo kích: [green]80% Tỉ lệ | +120% ST Bạo kích[]\n" +
+                                   "• [orange]Cải Tiến Băng Hỏa:[] Nòng Băng đóng băng và xuyên 3 mục tiêu\n• Nòng Hỏa gây nổ lan 120 DMG\n• Tăng mạnh khả năng khuếch đại sát thương theo HP đối thủ"
                                 : "[white]• Range: [green]663 px[]\n" +
                                    "• Fire barrel splash DMG: [green]+50%[]\n" +
                                    "• Reload speed: [green]+20%[]\n" +
-                                   "• Critical: [green]80% Rate | +120% Crit DMG[]\n\n" +
-                                   "[lightgray]Special Skill: Enhanced Frostfire — Ice barrel freezes and pierces 3 targets, Fire barrel deals 120 splash DMG. Greatly amplifies DMG based on target HP.[]";
+                                   "• Critical: [green]80% Rate | +120% Crit DMG[]\n" +
+                                   "• [orange]Enhanced Frostfire:[] Ice barrel freezes and pierces 3 targets\n• Fire barrel deals 120 splash DMG\n• Greatly amplifies DMG based on target HP";
                 let b1D = b1.add(b1Text);
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
 
@@ -219,13 +220,13 @@ blaw.buildType = () => extend(ItemTurret.ItemTurretBuild, blaw, {
                 let b2Text = vi ? "[white]• Máu cấu trúc: [green]+150%[] (1,425 HP)\n" +
                                    "• Tầm bắn: [orange]309.4 px[]\n" +
                                    "• Sát thương gốc: [green]550 DMG[] / viên\n" +
-                                   "• Bạo kích: [green]80% Tỉ lệ | +120% ST Bạo kích[]\n\n" +
-                                   "[lightgray]Kỹ năng đặc biệt: Cận Chiến Shotgun — Bắn tỏa chùm 20 viên đạn hỗn hợp Băng Hỏa cực đại, tối ưu diệt Boss tầm gần kèm cơ chế Xả-Hồi.[]"
+                                   "• Bạo kích: [green]80% Tỉ lệ | +120% ST Bạo kích[]\n" +
+                                   "• [orange]Cận Chiến Shotgun:[] Bắn tỏa chùm 20 viên đạn hỗn hợp Băng Hỏa cực đại\n• Tối ưu diệt Boss tầm gần kèm cơ chế Xả-Hồi"
                                 : "[white]• Health: [green]+150%[] (1,425 HP)\n" +
                                    "• Range: [orange]309.4 px[]\n" +
                                    "• Base Damage: [green]550 DMG[] / bullet\n" +
-                                   "• Critical: [green]80% Rate | +120% Crit DMG[]\n\n" +
-                                   "[lightgray]Special Skill: Shotgun Melee — Fires a spread burst of 20 ultimate Frostfire bullets, optimized for close-range Boss killing with Burst-Cooldown mechanics.[]";
+                                   "• Critical: [green]80% Rate | +120% Crit DMG[]\n" +
+                                   "• [orange]Shotgun Melee:[] Fires a spread burst of 20 ultimate Frostfire bullets\n• Optimized for close-range Boss killing with Burst-Cooldown mechanics";
                 let b2D = b2.add(b2Text);
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
 

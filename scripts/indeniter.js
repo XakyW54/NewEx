@@ -693,7 +693,7 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
         table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
             let dialog = extend(BaseDialog, trI("dialog_title"), {});
 
-            let reqCell = dialog.cont.label(packProv(() => {
+            let reqSnapshot = (() => {
                 let core = this.team.core();
                 if (core == null) return trI("no_core");
                 let cCop = core.items.get(Items.copper);
@@ -717,7 +717,8 @@ indeniter.buildType = () => extend(ItemTurret.ItemTurretBuild, indeniter, {
                        trI("req_sp") + copCol + cCop + "[]/4000" + trI("req_lead") + leaCol + cLea + "[]/4000 | Silicon: " + silColSp + cSil + "[]/4000\n" +
                        trI("req_mk2") + titColor1 + cTit + "[]/" + reqMK2.titanium + " | Silicon: " + silColor1 + cSil + "[]/" + reqMK2.silicon + "\n" +
                        trI("req_mk2b") + titColor2 + cTit + "[]/" + reqMK2B.titanium + " | Silicon: " + silColor2 + cSil + "[]/" + reqMK2B.silicon + trI("req_plast") + plaColor2 + cPla + "[]/" + reqMK2B.plastanium;
-            }));
+            })();
+            let reqCell = dialog.cont.add(reqSnapshot.toString());
 
             reqCell.width(380).get().setWrap(true);
             reqCell.get().setAlignment(Align.left);

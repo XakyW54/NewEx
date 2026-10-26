@@ -61,13 +61,13 @@ function trP(key, viText, enText) {
         return currentIsEn ?
             "[white]• Structure HP: [gray]+0%[] (10,500 HP)\n" +
             "• Range: [green]+30%[] (364 px)\n" +
-            "• Base Damage: [green]+300%[] (140 DPS)\n\n" +
-            "[lightgray]Special Skill: Long-Range Superconductive Beam Config — Focuses long-range energy beam, adding Shocked effect with 15% lightning chain chance.[]"
+            "• Base Damage: [green]+300%[] (140 DPS)\n" +
+            "• [orange]Long-Range Superconductive Beam Config:[] Focuses long-range energy beam\n• Adding Shocked effect with 15% lightning chain chance"
             :
             "[white]• Máu cấu trúc: [gray]+0%[] (10,500 HP)\n" +
             "• Tầm bắn: [green]+30%[] (364 px)\n" +
-            "• Sát thương gốc: [green]+300%[] (140 DPS)\n\n" +
-            "[lightgray]Kỹ năng đặc biệt: Cấu Hình Tia Siêu Dẫn Tầm Xa — Tập trung chùm tia năng lượng siêu dẫn tầm xa, bổ sung hiệu ứng Giật Điện (Shocked) kèm 15% tỷ lệ phóng sét lan rộng sang các mục tiêu lân cận.[]";
+            "• Sát thương gốc: [green]+300%[] (140 DPS)\n" +
+            "• [orange]Cấu Hình Tia Siêu Dẫn Tầm Xa:[] Tập trung chùm tia năng lượng siêu dẫn tầm xa\n• Bổ sung hiệu ứng Giật Điện (Shocked) kèm 15% tỷ lệ phóng sét lan rộng sang các mục tiêu lân cận";
     }
     if (key === "mk2_btn") return currentIsEn ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]";
     if (key === "no_res_mk2") return currentIsEn ? "[red]Not enough resources for MK2 branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]";
@@ -76,13 +76,13 @@ function trP(key, viText, enText) {
         return currentIsEn ?
             "[white]• Structure HP: [green]+55%[] (16,250 HP)\n" +
             "• Range: [gray]+0%[] (280 px)\n" +
-            "• Base Damage: [green]+357%[] (160 DPS)\n\n" +
-            "[lightgray]Special Skill: Melee Gravity Vortex Variant — Optimizes turret at close range, continuously applying +3 CEI stacks/sec (Melting, Electrified, Demon Lightning).[]"
+            "• Base Damage: [green]+357%[] (160 DPS)\n" +
+            "• [orange]Melee Gravity Vortex Variant:[] Optimizes turret at close range\n• Continuously applying +3 CEI stacks/sec (Melting, Electrified, Demon Lightning)"
             :
             "[white]• Máu cấu trúc: [green]+55%[] (16,250 HP)\n" +
             "• Tầm bắn: [gray]+0%[] (280 px)\n" +
-            "• Sát thương gốc: [green]+357%[] (160 DPS)\n\n" +
-            "[lightgray]Kỹ năng đặc biệt: Biến Thể Xoáy Trọng Lực Cận Chiến — Tối ưu hóa pháo ở tầm gần, gắn liên tục +3 tầng hiệu ứng CEI/giây (bao gồm Nóng Chảy, Điện Hóa và Sét Ma Quỷ) lên mục tiêu.[]";
+            "• Sát thương gốc: [green]+357%[] (160 DPS)\n" +
+            "• [orange]Biến Thể Xoáy Trọng Lực Cận Chiến:[] Tối ưu hóa pháo ở tầm gần\n• Gắn liên tục +3 tầng hiệu ứng CEI/giây (bao gồm Nóng Chảy, Điện Hóa và Sét Ma Quỷ) lên mục tiêu";
     }
     if (key === "mk2b_btn") return currentIsEn ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]";
     if (key === "no_res_mk2b") return currentIsEn ? "[red]Not enough resources for MK2B branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]";
@@ -356,7 +356,7 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
         table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
             let dialog = extend(BaseDialog, trP("dialog_title"), {});
 
-            let reqCell = dialog.cont.label(packProv(() => {
+            let reqSnapshot = (() => {
                 let core = this.team.core();
                 if (core == null) return trP("no_core");
                 let cCop = core.items.get(Items.copper);
@@ -383,7 +383,8 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
                        trP("req_sp") + copCol + cCop + "[]/4000" + trP("req_lead") + leaCol + cLea + "[]/4000 | Silicon: " + silColSp + cSil + "[]/4000\n" +
                        trP("req_mk2") + silColor1 + cSil + "[]/" + reqPlasanodMK2.silicon + " | Plastanium: " + plaColor1 + cPla + "[]/" + reqPlasanodMK2.plastanium + " | Surge Alloy: " + surColor1 + cSur + "[]/" + reqPlasanodMK2.surgeAlloy + "\n" +
                        trP("req_mk2b") + silColor2 + cSil + "[]/" + reqPlasanodMK2B.silicon + " | Thorium: " + thoColor2 + cTho + "[]/" + reqPlasanodMK2B.thorium + " | Phase Fabric: " + phaColor2 + cPha + "[]/" + reqPlasanodMK2B.phaseFabric;
-            }));
+            })();
+            let reqCell = dialog.cont.add(reqSnapshot.toString());
 
             reqCell.width(380).get().setWrap(true);
             reqCell.get().setAlignment(Align.left);

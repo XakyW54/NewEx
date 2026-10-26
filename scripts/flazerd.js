@@ -449,7 +449,7 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
                 let dialogTitle = vi ? "Trung tâm nâng cấp pháo Flazerd" : "Flazerd Turret Upgrade Center";
                 let dialog = extend(BaseDialog, dialogTitle, {});
 
-                let reqCell = dialog.cont.label(packProv(() => {
+                let reqSnapshot = (() => {
                     let core = this.team.core();
                     if(core == null) return vi ? "[red]Không tìm thấy Lõi Đội![]" : "[red]Team Core not found![]";
                     let currentcopper = core.items.get(Items.copper);
@@ -480,7 +480,8 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
                                " • Lead: " + leaColor + currentlead + "[] / " + reqMK3.lead + "\n" +
                                " • Silicon: " + silColor + currentsilicon + "[] / " + reqMK3.silicon;
                     }
-                }));
+                })();
+                let reqCell = dialog.cont.add(reqSnapshot.toString());
 
                 reqCell.width(360).get().setWrap(true);
                 reqCell.get().setAlignment(Align.left);

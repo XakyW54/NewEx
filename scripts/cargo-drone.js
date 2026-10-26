@@ -1223,13 +1223,15 @@ Events.run(Trigger.update, () => {
                     let attackAngle = target ? unit.angleTo(target) : unit.rotation;
 
                     let tankyEnemies = [];
-                    Groups.unit.each(u => {
-                        if (u.team !== unit.team && !u.dead && Mathf.dst(unit.x, unit.y, u.x, u.y) <= 1100) {
-                            tankyEnemies.push(u);
-                        }
-                    });
+                    if (data.masterSwordsSpawned < 3) {
+                        Units.nearbyEnemies(unit.team, unit.x - 1100, unit.y - 1100, 2200, 2200, u => {
+                            if (!u.dead && Mathf.dst(unit.x, unit.y, u.x, u.y) <= 1100) {
+                                tankyEnemies.push(u);
+                            }
+                        });
 
-                    tankyEnemies.sort((a, b) => b.maxHealth - a.maxHealth);
+                        tankyEnemies.sort((a, b) => b.maxHealth - a.maxHealth);
+                    }
 
                     let swordsPerFrame = 14;
                     for (let s = 0; s < swordsPerFrame; s++) {

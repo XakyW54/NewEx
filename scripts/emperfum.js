@@ -592,7 +592,7 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
                 reqCell.setWrap(true);
                 reqCell.setAlignment(Align.left);
 
-                reqTable.update(packRun(() => {
+                (() => {
                     let core = this.team.core();
                     if(core == null) {
                         reqCell.setText(isVN() ? "[red]⚠️ KHÔNG THẤY LÕI ĐỘI![]" : "[red]⚠️ NO TEAM CORE FOUND![]");
@@ -640,7 +640,7 @@ emperfum.buildType = () => extend(ItemTurret.ItemTurretBuild, emperfum, {
                             " • Silicon: " + silCol2 + cSil + "[] / " + reqMK2B.silicon
                         );
                     }
-                }));
+                })();
 
                 dialog.cont.add(reqTable).width(340).padBottom(10).row();
 

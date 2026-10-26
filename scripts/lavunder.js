@@ -488,7 +488,7 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
                 let dialog = extend(BaseDialog, isEn ? "Lavunder Upgrade Center" : "Trung tâm nâng cấp pháo Lavunder", {});
 
-                let reqCell = dialog.cont.label(packProv(() => {
+                let reqSnapshot = (() => {
                     let core = this.team.core();
                     if(!core) return isEn ? "[red]Team Core not found![]" : "[red]Không tìm thấy Lõi Đội![]";
 
@@ -519,7 +519,8 @@ lavunder.buildType = () => extend(PowerTurret.PowerTurretBuild, lavunder, {
                                " • Chì: " + leadColor + leadAmt + "[] / " + reqMK3.lead + "\n" +
                                " • Silicon: " + siliconColor + siliconAmt + "[] / " + reqMK3.silicon;
                     }
-                }));
+                })();
+                let reqCell = dialog.cont.add(reqSnapshot.toString());
 
                 reqCell.width(360).get().setWrap(true);
                 reqCell.get().setAlignment(Align.left);

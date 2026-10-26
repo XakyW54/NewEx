@@ -116,19 +116,36 @@ Events.on(ContentInitEvent, () => {
                 this.laserTimer += this.delta();
                 let shouldShowLaser = (this.laserTimer >= 60.0);
 
-                let hasKoryndAdjacent = false;
-                if (this.proximity != null) {
-                    this.proximity.each(other => {
-                        if (other != null && other.block != null && other.block.name === "newex-korynd") {
-                            hasKoryndAdjacent = true;
-                        }
-                    });
+                this.scanTimer = (this.scanTimer || 0) + this.delta();
+                if (this.scanTimer >= 30 || this.cachedTargets == null || this.cachedX !== this.targetX || this.cachedY !== this.targetY) {
+                    this.scanTimer = 0;
+                    this.cachedX = this.targetX;
+                    this.cachedY = this.targetY;
+                    this.hasKoryndCached = false;
+                    if (this.proximity != null) {
+                        this.proximity.each(other => {
+                            if (other != null && other.block != null && other.block.name === "newex-korynd") {
+                                this.hasKoryndCached = true;
+                            }
+                        });
+                    }
+
+                    this.cachedTargets = [];
+                    if (this.hasKoryndCached && this.hasTargetSet) {
+                        Units.nearbyBuildings(this.targetX, this.targetY, 84 * 1.5, packCons(found => {
+                            if (found != null) this.cachedTargets.push(found);
+                        }));
+                    }
                 }
+
+                let hasKoryndAdjacent = this.hasKoryndCached;
 
                 if (hasKoryndAdjacent && cryoAmount > 10 && this.hasTargetSet) {
                     let targetBoxRadius = 84;
+                    let targetList = this.cachedTargets;
 
-                    Units.nearbyBuildings(this.targetX, this.targetY, targetBoxRadius * 1.5, packCons(other => {
+                    for (let ci = 0; ci < targetList.length; ci++) {
+                        let other = targetList[ci];
                         if (other != null && other.team === this.team && other.isValid() && other !== this) {
                             if (Math.abs(other.x - this.targetX) <= targetBoxRadius && Math.abs(other.y - this.targetY) <= targetBoxRadius) {
 
@@ -154,7 +171,7 @@ Events.on(ContentInitEvent, () => {
                                 }
                             }
                         }
-                    }));
+                    }
                 }
 
                 if (shouldShowLaser) {

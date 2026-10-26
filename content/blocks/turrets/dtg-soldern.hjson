@@ -1,6 +1,6 @@
 
 name: CTG Soldern
-description: "Pháo DTG Soldern: Tháp pháo độc bản. Tự động đổi dạng: bắn đạn đơn khi địch ở xa, và sấy xả Shotgun khi địch đến gần. Chỉ tự dựng khiên chặn đạn ở hướng trước mặt khi đang bắn."
+description: "Bắn đạn đơn khi địch ở xa, đổi sang shotgun khi địch đến gần. Chỉ dựng khiên chặn đạn phía trước khi đang bắn."
 health: 5500
 size: 3
 reload: 20

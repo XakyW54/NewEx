@@ -298,7 +298,7 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
                 let dialogTitle = isVN() ? "Trung tâm Nâng cấp Heliyron" : "Heliyron Upgrade Center";
                 let dialog = extend(BaseDialog, dialogTitle, {});
-                let reqCell = dialog.cont.label(packProv(() => {
+                let reqSnapshot = (() => {
                     let core = this.team.core();
                     if(core == null) return isVN() ? "[red]Không tìm thấy Lõi Đội![]" : "[red]No Team Core Found![]";
                     let currentcopper = core.items.get(Items.copper);
@@ -320,7 +320,8 @@ heliyron.buildType = () => extend(ItemTurret.ItemTurretBuild, heliyron, {
                                "[cyan]MK2 Branch:[] " + copColor1 + "Copper " + currentcopper + "/" + reqMK2.copper + "[] | " + leaColor1 + "Lead " + currentlead + "/" + reqMK2.lead + "[]\n" +
                                "[purple]MK2B Branch:[] " + copColor2 + "Copper " + currentcopper + "/" + reqMK2B.copper + "[] | " + leaColor2 + "Lead " + currentlead + "/" + reqMK2B.lead + "[] | " + titColor2 + "Titanium " + currenttitanium + "/" + reqMK2B.titanium + "[]";
                     }
-                }));
+                })();
+                let reqCell = dialog.cont.add(reqSnapshot.toString());
 
                 reqCell.width(360).get().setWrap(true);
                 reqCell.get().setAlignment(Align.left);

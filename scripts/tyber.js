@@ -175,7 +175,7 @@ Events.on(EventType.ContentInitEvent, () => {
                         let dialogTitle = isEn ? "Tyber Turret Upgrade Center" : "Trung tâm nâng cấp pháo Tyber";
                         let dialog = extend(BaseDialog, dialogTitle, {});
 
-                        let reqCell = dialog.cont.label(packProv(() => {
+                        let reqSnapshot = (() => {
                             let core = this.team.core();
                             if(core == null) return isEn ? "[red]Team Core Not Found![]" : "[red]Không tìm thấy Lõi Đội![]";
 
@@ -209,7 +209,8 @@ Events.on(EventType.ContentInitEvent, () => {
                                        " • Silicon: " + silColor2 + currentSilicon + "[] / " + reqMK2B.silicon + "\n" +
                                        " • Nhựa: " + plaColor2 + currentPlastanium + "[] / " + reqMK2B.plastanium;
                             }
-                        }));
+                        })();
+                        let reqCell = dialog.cont.add(reqSnapshot.toString());
 
                         reqCell.width(360).get().setWrap(true);
                         reqCell.get().setAlignment(Align.left);

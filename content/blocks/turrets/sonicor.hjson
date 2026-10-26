@@ -1,6 +1,6 @@
 type: Block
 name: "Sonicor"
-description: "Tháp pháo sóng âm phòng thủ không quân. Phát ra sóng âm cực mạnh đẩy lùi mục tiêu trên không trong vùng hình chữ nhật kéo dài từ pháo tới điểm chọn (Sát thương: 10).\n\nCó thể kết nối với [accent]DTG-Soldern[] để kích hoạt hệ thống bắn đạn đánh chặn siêu tốc phá hủy đạn kẻ thù trong vùng ảnh hưởng."
+description: "Phòng không bằng sóng âm, đẩy lùi mục tiêu trên không trong vùng chữ nhật (10 sát thương).\n\nNối với [accent]DTG-Soldern[] để bắn đạn đánh chặn siêu nhanh, phá đạn địch trong vùng."
 size: 3
 health: 3000
 update: true

@@ -959,7 +959,7 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
         table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
             let dialog = extend(BaseDialog, t("Trung tâm nâng cấp pháo Swordoder", "Swordoder Turret Upgrade Center"), {});
 
-            let reqCell = dialog.cont.label(packProv(() => {
+            let reqSnapshot = (() => {
                 let core = this.team.core();
                 if (core == null) return t("[red]Không tìm thấy Lõi Đội![]", "[red]Team Core not found![]");
 
@@ -989,7 +989,8 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
                     "[cyan]★ ROLL PERK B:[] Titanium: " + colTit + cTit + "[]/1000 | Thorium: " + colTho + cTho + "[]/1000 | Graphite: " + colGra + cGra + "[]/1000\n" +
                     "[gray](All tiers feature Execute passive: Enemies <= 1% HP receive 999,999 damage)[]"
                 );
-            }));
+            })();
+            let reqCell = dialog.cont.add(reqSnapshot.toString());
 
             reqCell.width(380).get().setWrap(true);
             reqCell.get().setAlignment(Align.left);
@@ -1163,28 +1164,28 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
                 if (perkB == 1) {
                     descStr += t(
                         "\n[green]• Phúc lợi 1B: Đổi kiểu bắn sang 2 bên góc 30° (-30° bắn trước, +30° bắn sau 0.2s). Ghi đè kiểu bắn của Phúc lợi A![]\n" +
-                        "  [gray]Kỹ năng đặc biệt: 15% cơ hội bắn bổ sung loạt 10 đạn phụ phân tán khi trúng mục tiêu.[]",
+                        "[white]• 15% cơ hội bắn bổ sung loạt 10 đạn phụ phân tán khi trúng mục tiêu.[]",
 
                         "\n[green]• Perk 1B: Switch pattern to dual 30° sides (-30° first, +30° after 0.2s). Overrides Perk A pattern![]\n" +
-                        "  [gray]Special Skill: 15% chance to trigger extra 10 sub-bullets spread fire on hit.[]"
+                        "[white]• 15% chance to trigger extra 10 sub-bullets spread fire on hit.[]"
                     );
                 }
                 if (perkB == 2) {
                     descStr += t(
                         "\n[green]• Phúc lợi 2B: Giữ nguyên các chỉ số cơ bản.[]\n" +
-                        "  [gray]Kỹ năng đặc biệt: 50% cơ hội hồi 100% máu khi bắn. Nếu máu đã đầy, bắn xả thêm 20 đạn phụ.[]",
+                        "[white]• 50% cơ hội hồi 100% máu khi bắn. Nếu máu đã đầy, bắn xả thêm 20 đạn phụ.[]",
 
                         "\n[green]• Perk 2B: Keeps base stats unchanged.[]\n" +
-                        "  [gray]Special Skill: 50% chance to heal 100% HP when firing. Overheal releases 20 sub-bullets.[]"
+                        "[white]• 50% chance to heal 100% HP when firing. Overheal releases 20 sub-bullets.[]"
                     );
                 }
                 if (perkB == 3) {
                     descStr += t(
                         "\n[green]• Phúc lợi 3B: Tốc độ bắn buff +120% khi kích hoạt.[]\n" +
-                        "  [gray]Kỹ năng đặc biệt: 30% cơ hội tự kích hoạt buff siêu tốc độ bắn duy trì trong 15s mỗi khi bắn trúng địch.[]",
+                        "[white]• 30% cơ hội tự kích hoạt buff siêu tốc độ bắn duy trì trong 15s mỗi khi bắn trúng địch.[]",
 
                         "\n[green]• Perk 3B: Fire rate buffed +120% when active.[]\n" +
-                        "  [gray]Special Skill: 30% chance to trigger super fire rate buff for 15s upon hitting target.[]"
+                        "[white]• 30% chance to trigger super fire rate buff for 15s upon hitting target.[]"
                     );
                 }
             }

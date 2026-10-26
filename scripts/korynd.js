@@ -42,12 +42,17 @@ Events.on(ContentInitEvent, () => {
 
             updateTile() {
 
-                let hasCrynex = false;
-                this.proximity.each(other => {
-                    if (other.block != null && other.block.name === "newex-crynex") {
-                        hasCrynex = true;
-                    }
-                });
+                this.proxTimer = (this.proxTimer || 0) + Time.delta;
+                if (this.proxTimer >= 30 || this.hasCrynexCached === undefined) {
+                    this.proxTimer = 0;
+                    this.hasCrynexCached = false;
+                    this.proximity.each(other => {
+                        if (other.block != null && other.block.name === "newex-crynex") {
+                            this.hasCrynexCached = true;
+                        }
+                    });
+                }
+                let hasCrynex = this.hasCrynexCached;
 
                 let hasCryo = (this.liquids != null && this.liquids.get(Liquids.cryofluid) > 0);
 

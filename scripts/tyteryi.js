@@ -846,7 +846,7 @@ TyterYi.buildType = () => extend(ItemTurret.ItemTurretBuild, TyterYi, {
                 let dialog = extend(BaseDialog, nextTier == 1 ? "TRUNG TÂM NÂNG CẤP MK2" : "TRUNG TÂM NÂNG CẤP MK3", {});
                 dialog.cont.add(nextTier == 1 ? "[#ffe066]=== NÂNG CẤP LÊN PROTOCOL MK2 ===[]" : "[#ffaa00]=== NÂNG CẤP LÊN PROTOCOL MK3 ===[]").row();
 
-                dialog.cont.label(packProv(() => {
+                let reqSnapshot = (() => {
                     let core = this.team.core(); if(core == null) return "[red]CRITICAL ERROR: Mất tín hiệu với Kho Lõi Trung Tâm![]";
                     let getVal = (item) => core.items.get(Vars.content.item(item));
                     let req = nextTier == 1 ? reqTyterYiMK2 : reqTyterYiMK3;
@@ -865,7 +865,8 @@ TyterYi.buildType = () => extend(ItemTurret.ItemTurretBuild, TyterYi, {
                         resStr += "\n • Plastanium: " + cPla + pla + "[]/" + req.plastanium;
                     }
                     return resStr;
-                })).row(); dialog.cont.add().height(10).row();
+                })();
+                dialog.cont.add(reqSnapshot.toString()).row(); dialog.cont.add().height(10).row();
 
                 let btnText = nextTier == 1 ? "[#ffd700]KÍCH HOẠT MK2[]" : "[#ffaa00]KÍCH HOẠT MK3[]";
                 dialog.cont.button(btnText, packRun(() => {

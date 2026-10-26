@@ -1,6 +1,6 @@
 name: "tyteryi"
 displayName: "Tyteryi Turret"
-description: "Một tháp pháo cao cấp với cơ chế gia tốc linh hoạt: càng bắn càng chậm nhưng sát thương tăng tiến vượt trội, hỗ trợ các nhánh nâng cấp MK2 và MK2B chuyên sâu."
+description: "Càng bắn càng chậm nhưng sát thương tăng vọt. Nâng cấp MK2 hoặc MK2B."
 health: 3000
 size: 4
 category: "turret"

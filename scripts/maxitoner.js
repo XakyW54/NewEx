@@ -484,7 +484,7 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
             let dialogTitle = isEnglish() ? "Maxitoner Upgrade Center" : "Trung tâm nâng cấp pháo Maxitoner";
             let dialog = extend(BaseDialog, dialogTitle, {});
 
-            let reqCell = dialog.cont.label(packProv(() => {
+            let reqSnapshot = (() => {
                 let core = this.team.core();
                 if (core == null) return isEnglish() ? "[red]Team Core not found![]" : "[red]Không tìm thấy Lõi Đội![]";
 
@@ -519,7 +519,8 @@ maxitoner.buildType = () => extend(ItemTurret.ItemTurretBuild, maxitoner, {
                            "[cyan]★ ROLL PHÚC LỢI B:[] Titan: " + colTitB + cTit + "[]/1500 | Thorium: " + colThoB + cTho + "[]/1500 | Silicon: " + colSilB + cSil + "[]/1500\n" +
                            "[purple]★ ROLL PHÚC LỢI C:[] Surge: " + colSurC + cSur + "[]/500 | Phase: " + colPhaC + cPha + "[]/500 | Silicon: " + colSilC + cSil + "[]/2000";
                 }
-            }));
+            })();
+            let reqCell = dialog.cont.add(reqSnapshot.toString());
 
             reqCell.width(380).get().setWrap(true);
             reqCell.get().setAlignment(Align.left);

@@ -242,7 +242,7 @@ Events.on(ContentInitEvent, new Cons({
                             let dialogTitle = isEn ? "Tankani-4k Upgrade Center" : "Trung tâm nâng cấp Tankani-4k";
                             let dialog = extend(BaseDialog, dialogTitle, {});
 
-                            let reqCell = dialog.cont.label(packProv(() => {
+                            let reqSnapshot = (() => {
                                 let core = this.team.core();
                                 if (core == null) return isEn ? "[red]Team Core Not Found![]" : "[red]Không tìm thấy Lõi Đội![]";
                                 let currentcopper = core.items.get(Items.copper);
@@ -275,7 +275,8 @@ Events.on(ContentInitEvent, new Cons({
                                            " • Chì: " + leaColor2 + currentlead + "[] / " + reqMK2B.lead + "\n" +
                                            " • Titan: " + titColor2 + currenttitanium + "[] / " + reqMK2B.titanium;
                                 }
-                            }));
+                            })();
+                            let reqCell = dialog.cont.add(reqSnapshot.toString());
 
                             reqCell.width(360).get().setWrap(true);
                             reqCell.get().setAlignment(Align.left);

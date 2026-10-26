@@ -322,12 +322,12 @@ Events.on(ContentInitEvent, cons(e => {
                     let b1D = b1.add(isEn() ?
                                     "[white]• Health: [green]+50%[] (4,500 HP)\n" +
                                     "• Range: [green]+31.25%[] (420 px)\n" +
-                                    "• Base Damage: [green]+44.4%[] (97.5 DMG)\n\n" +
-                                    "[lightgray]Special Perk: Full Heat Empowerment — Reaching max stack adds +1% Max HP true damage per bullet.[]" :
+                                    "• Base Damage: [green]+44.4%[] (97.5 DMG)\n" +
+                                    "• [orange]Full Heat Empowerment:[] Reaching max stack adds +1% Max HP true damage per bullet" :
                                     "[white]• Máu cấu trúc: [green]+50%[] (4,500 HP)\n" +
                                     "• Tầm bắn: [green]+31.25%[] (420 px)\n" +
-                                    "• Sát thương gốc: [green]+44.4%[] (97.5 DMG)\n\n" +
-                                    "[lightgray]Nội tại nâng cấp: Tích đủ tần giới hạn, đạn bắn ra sẽ gây thêm 1% Max HP của mục tiêu.[]");
+                                    "• Sát thương gốc: [green]+44.4%[] (97.5 DMG)\n" +
+                                    "• [orange]Nội tại nâng cấp:[] Tích đủ tần giới hạn\n• Đạn bắn ra sẽ gây thêm 1% Max HP của mục tiêu");
                     b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                     b1.button(isEn() ? "[green]UPGRADE MK2[]" : "[green]NÂNG CẤP MK2[]", packRun(() => {
                         if(Vars.net.active()){
@@ -344,12 +344,12 @@ Events.on(ContentInitEvent, cons(e => {
                     let b2D = b2.add(isEn() ?
                                     "[white]• Health: [green]+33.3%[] (4,000 HP)\n" +
                                     "• Range: [green]+12.5%[] (360 px)\n" +
-                                    "• Base Damage: [green]+172.2%[] (183.75 DMG)\n\n" +
-                                    "[lightgray]Special Perk: Full Heat Blast — Reaching max stack causes bullet hits to trigger a 35-tile explosion dealing 0.5% Max HP.[]" :
+                                    "• Base Damage: [green]+172.2%[] (183.75 DMG)\n" +
+                                    "• [orange]Full Heat Blast:[] Reaching max stack causes bullet hits to trigger a 35-tile explosion dealing 0.5% Max HP" :
                                     "[white]• Máu cấu trúc: [green]+33.3%[] (4,000 HP)\n" +
                                     "• Tầm bắn: [green]+12.5%[] (360 px)\n" +
-                                    "• Sát thương gốc: [green]+172.2%[] (183.75 DMG)\n\n" +
-                                    "[lightgray]Nội tại nâng cấp: Tích đủ tần giới hạn, đạn bắn ra nổ phạm vi 35 ô với 0.5% Max HP.[]");
+                                    "• Sát thương gốc: [green]+172.2%[] (183.75 DMG)\n" +
+                                    "• [orange]Nội tại nâng cấp:[] Tích đủ tần giới hạn\n• Đạn bắn ra nổ phạm vi 35 ô với 0.5% Max HP");
                     b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
                     b2.button(isEn() ? "[orange]UPGRADE MK2B[]" : "[orange]NÂNG CẤP MK2B[]", packRun(() => {
                         if(Vars.net.active()){

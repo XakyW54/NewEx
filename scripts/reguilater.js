@@ -130,7 +130,7 @@ function makeReguBuild() {
                     let dialogTitle = en ? "Turret Upgrade Center" : "Trung tâm nâng cấp pháo";
                     let dialog = extend(BaseDialog, dialogTitle, {});
 
-                    let reqCell = dialog.cont.label(packProv(() => {
+                    let reqSnapshot = (() => {
                         let core = this.team.core();
                         if (!core) return en ? "[red]Team Core Not Found![]" : "[red]Không tìm thấy Lõi Đội![]";
 
@@ -161,7 +161,8 @@ function makeReguBuild() {
                                    " • Thori: " + thColor + thAmt + "[] / " + reguReqMK3.thorium + "\n" +
                                    " • Titan: " + tiColor + tiAmt + "[] / " + reguReqMK3.titanium;
                         }
-                    }));
+                    })();
+                    let reqCell = dialog.cont.add(reqSnapshot.toString());
 
                     reqCell.width(360).get().setWrap(true);
                     reqCell.get().setAlignment(Align.left);
@@ -174,12 +175,12 @@ function makeReguBuild() {
                     let b1Text = en ?
                         "[white]• Range: [green]+50%[]\n" +
                         "• Base Damage: [green]+150%[]\n" +
-                        "• Aim Speed: [green]+60%[]\n\n" +
-                        "[lightgray]Special Skill: Dual Pressure Compression — Unlocks high-speed Burst-Shot mechanism and Crit strike bursts dealing double damage.[]" :
+                        "• Aim Speed: [green]+60%[]\n" +
+                        "• [orange]Dual Pressure Compression:[] Unlocks high-speed Burst-Shot mechanism and Crit strike bursts dealing double damage" :
                         "[white]• Tầm bắn: [green]+50%[]\n" +
                         "• sát thương gốc: [green]+150%[]\n" +
-                        "• Tốc độ ngắm: [green]+60%[]\n\n" +
-                        "[lightgray]Kỹ năng đặc biệt: Nén Áp Suất Kép — Mở khóa cơ chế bắn bồi Burst-Shot siêu tốc và bộc phát đòn bạo kích Crit gây gấp đôi sát thương.[]";
+                        "• Tốc độ ngắm: [green]+60%[]\n" +
+                        "• [orange]Nén Áp Suất Kép:[] Mở khóa cơ chế bắn bồi Burst-Shot siêu tốc và bộc phát đòn bạo kích Crit gây gấp đôi sát thương";
                     let b1D = b1.add(b1Text);
                     b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                     b1.button(en ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => {
@@ -199,12 +200,12 @@ function makeReguBuild() {
                     let b2Text = en ?
                         "[white]• Structure Health: [green]13,000 HP[]\n" +
                         "• Range: [red]-30%[]\n" +
-                        "• Base Damage: [green]+500%[]\n\n" +
-                        "[lightgray]Special Skill: Destructive Saturation Circuit — Automatically splits sub-laser chains (up to 6 rays) to incinerate nearby targets upon hit.[]" :
+                        "• Base Damage: [green]+500%[]\n" +
+                        "• [orange]Destructive Saturation Circuit:[] Automatically splits sub-laser chains (up to 6 rays) to incinerate nearby targets upon hit" :
                         "[white]• Máu cấu trúc: [green]13,000 HP[]\n" +
                         "• Tầm bắn: [red]-30%[]\n" +
-                        "• sát thương gốc: [green]+500%[]\n\n" +
-                        "[lightgray]Kỹ năng đặc biệt: Mạch Bão Hòa Hủy Diệt — Tự động phân tách chuỗi liên laser phụ (tối đa 6 tia) thiêu rụi mục tiêu lân cận khi đánh trúng kẻ địch.[]";
+                        "• sát thương gốc: [green]+500%[]\n" +
+                        "• [orange]Mạch Bão Hòa Hủy Diệt:[] Tự động phân tách chuỗi liên laser phụ (tối đa 6 tia) thiêu rụi mục tiêu lân cận khi đánh trúng kẻ địch";
                     let b2D = b2.add(b2Text);
                     b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
                     b2.button(en ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => {

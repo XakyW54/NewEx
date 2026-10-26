@@ -1,6 +1,6 @@
 type: "ItemTurret"
 name: "Nethyr"
-description: "Tháp pháo điều khiển thủ công. Bắn ra các đạn vật lý xoay quanh pháo 2 vòng trước khi bay đến tấn công mục tiêu chỉ định với sát thương ngẫu nhiên 50%-200%."
+description: "Pháo chỉ định tay. Đạn xoay 2 vòng quanh pháo rồi bay vào mục tiêu, sát thương ngẫu nhiên 50%-200%."
 size: 3
 health: 3000
 reload: 12.0

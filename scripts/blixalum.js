@@ -180,7 +180,7 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                 let dialogTitle = vi ? "Trung tâm nâng cấp pháo" : "Turret Upgrade Center";
                 let dialog = extend(BaseDialog, dialogTitle, {});
 
-                let reqCell = dialog.cont.label(packProv(() => {
+                let reqSnapshot = (() => {
                     let core = this.team.core();
                     if (core == null) return vi ? "[red]Không tìm thấy Lõi Đội![]" : "[red]Team Core not found![]";
                     let inv = core.items;
@@ -206,7 +206,8 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                                " • Lead: " + (l >= reqBlixalumMK2B.lead ? "[green]" : "[red]") + l + "[] / " + reqBlixalumMK2B.lead + "\n" +
                                " • Titanium: " + (t >= reqBlixalumMK2B.titanium ? "[green]" : "[red]") + t + "[] / " + reqBlixalumMK2B.titanium;
                     }
-                }));
+                })();
+                let reqCell = dialog.cont.add(reqSnapshot.toString());
 
                 reqCell.width(360).get().setWrap(true);
                 reqCell.get().setAlignment(Align.left);
@@ -222,13 +223,13 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                 let b1Text = vi ? "[white]• Tầm bắn: [green]578 px[]\n" +
                                    "• Tốc độ bắn tối đa: [green]+200%[]\n" +
                                    "• Bán kính nổ lan: [green]+25%[] (80 px)\n" +
-                                   "• Bạo kích: [yellow]80% Tỉ lệ | 120% ST Bạo kích[]\n\n" +
-                                   "[lightgray]Kỹ năng đặc biệt: Tần Tốc Thông Minh — Tự động quét từ trường xung quanh và gia tăng tốc độ hỏa lực đột biến theo mật độ kẻ địch trong tầm bắn.[]"
+                                   "• Bạo kích: [yellow]80% Tỉ lệ | 120% ST Bạo kích[]\n" +
+                                   "• [orange]Tần Tốc Thông Minh:[] Tự động quét từ trường xung quanh và gia tăng tốc độ hỏa lực đột biến theo mật độ kẻ địch trong tầm bắn"
                                 : "[white]• Range: [green]578 px[]\n" +
                                    "• Max Fire Rate: [green]+200%[]\n" +
                                    "• Splash Damage Radius: [green]+25%[] (80 px)\n" +
-                                   "• Critical: [yellow]80% Rate | 120% Crit DMG[]\n\n" +
-                                   "[lightgray]Special Skill: Smart Speed Frequency — Automatically scans surrounding magnetic fields and surges firing speed according to enemy density within range.[]";
+                                   "• Critical: [yellow]80% Rate | 120% Crit DMG[]\n" +
+                                   "• [orange]Smart Speed Frequency:[] Automatically scans surrounding magnetic fields and surges firing speed according to enemy density within range";
                 let b1D = b1.add(b1Text);
                 b1D.width(340).get().setWrap(true);
                 b1D.get().setAlignment(Align.left);
@@ -258,13 +259,13 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                 let b2Text = vi ? "[white]• Sát thương gốc: [green]750 DMG[]\n" +
                                    "• Bán kính nổ lan: [red]-25%[] (48 px)\n" +
                                    "• Tốc độ bắn tối đa: [red]-20%[]\n" +
-                                   "• Bạo kích: [yellow]80% Tỉ lệ | 120% ST Bạo kích[]\n\n" +
-                                   "[lightgray]Kỹ năng đặc biệt: Bảo Táp Laser — Tích tụ ma trận lõi năng lượng và tự động kích hoạt phóng 4 tia Laser hội tụ thiêu rụi mục tiêu mỗi 5 giây.[]"
+                                   "• Bạo kích: [yellow]80% Tỉ lệ | 120% ST Bạo kích[]\n" +
+                                   "• [orange]Bảo Táp Laser:[] Tích tụ ma trận lõi năng lượng và tự động kích hoạt phóng 4 tia Laser hội tụ thiêu rụi mục tiêu mỗi 5 giây"
                                 : "[white]• Base Damage: [green]750 DMG[]\n" +
                                    "• Splash Damage Radius: [red]-25%[] (48 px)\n" +
                                    "• Max Fire Rate: [red]-20%[]\n" +
-                                   "• Critical: [yellow]80% Rate | 120% Crit DMG[]\n\n" +
-                                   "[lightgray]Special Skill: Laser Tempest — Charges core energy matrix and automatically fires 4 focused Laser beams to incinerate targets every 5 seconds.[]";
+                                   "• Critical: [yellow]80% Rate | 120% Crit DMG[]\n" +
+                                   "• [orange]Laser Tempest:[] Charges core energy matrix and automatically fires 4 focused Laser beams to incinerate targets every 5 seconds";
                 let b2D = b2.add(b2Text);
                 b2D.width(340).get().setWrap(true);
                 b2D.get().setAlignment(Align.left);

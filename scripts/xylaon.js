@@ -295,7 +295,13 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
             table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
                 let dialog = extend(BaseDialog, isEn() ? "Xylaon Upgrade Center" : "Trung tâm nâng cấp pháo Xylaon", {});
 
-                let reqCell = dialog.cont.label(packProv(() => {
+                let reqSnapshot = (() => {
+                    let scanCore = this.team.core();
+                    let curT = scanCore == null ? 0 : scanCore.items.get(Items.titanium);
+                    let curS = scanCore == null ? 0 : scanCore.items.get(Items.silicon);
+                    let curP = scanCore == null ? 0 : scanCore.items.get(Items.plastanium);
+                    let cl = (c, n) => (c >= n ? "[green]" : "[red]") + c + "[]";
+
                     let needMK2_T = Math.max(0, reqMK2.titanium - this.paidTitanium);
                     let needMK2_S = Math.max(0, reqMK2.silicon - this.paidSilicon);
 
@@ -306,23 +312,24 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                     if(isEn()){
                         return "[yellow]RESOURCE REQUIREMENTS FOR UPGRADE:[]\n" +
                                "[cyan]MK2 Branch:[]\n" +
-                               " • Titanium: [green]" + needMK2_T + "[]\n" +
-                               " • Silicon: [green]" + needMK2_S + "[]\n" +
+                               " • Titanium: " + cl(curT, needMK2_T) + " / " + needMK2_T + "\n" +
+                               " • Silicon: " + cl(curS, needMK2_S) + " / " + needMK2_S + "\n" +
                                "[purple]MK2B Branch:[]\n" +
-                               " • Titanium: [green]" + needMK2B_T + "[]\n" +
-                               " • Silicon: [green]" + needMK2B_S + "[]\n" +
-                               " • Plastanium: [green]" + needMK2B_P + "[]";
+                               " • Titanium: " + cl(curT, needMK2B_T) + " / " + needMK2B_T + "\n" +
+                               " • Silicon: " + cl(curS, needMK2B_S) + " / " + needMK2B_S + "\n" +
+                               " • Plastanium: " + cl(curP, needMK2B_P) + " / " + needMK2B_P + "";
                     }
 
                     return "[yellow]YÊU CẦU TÀI NGUYÊN NÂNG CẤP:[]\n" +
                            "[cyan]Nhánh MK2:[]\n" +
-                           " • Titan: [green]" + needMK2_T + "[]\n" +
-                           " • Silicon: [green]" + needMK2_S + "[]\n" +
+                           " • Titan: " + cl(curT, needMK2_T) + " / " + needMK2_T + "\n" +
+                           " • Silicon: " + cl(curS, needMK2_S) + " / " + needMK2_S + "\n" +
                            "[purple]Nhánh MK2B:[]\n" +
-                           " • Titan: [green]" + needMK2B_T + "[]\n" +
-                           " • Silicon: [green]" + needMK2B_S + "[]\n" +
-                           " • Nhựa Plastanium: [green]" + needMK2B_P + "[]";
-                }));
+                           " • Titan: " + cl(curT, needMK2B_T) + " / " + needMK2B_T + "\n" +
+                           " • Silicon: " + cl(curS, needMK2B_S) + " / " + needMK2B_S + "\n" +
+                           " • Nhựa Plastanium: " + cl(curP, needMK2B_P) + " / " + needMK2B_P + "";
+                })();
+                let reqCell = dialog.cont.add(reqSnapshot.toString());
 
                 reqCell.width(360).get().setWrap(true);
                 reqCell.get().setAlignment(Align.left);
@@ -335,12 +342,12 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                 let b1D = b1.add(isEn() ?
                                  "[white]• Health: [green]+30%[] ([green]650[] HP)\n" +
                                  "• Range: [green]+29.5%[] ([orange]544[] px)\n" +
-                                 "• Base Damage: [green]+30%[] ([yellow]26[] DMG/bullet)\n\n" +
-                                 "[gray]Special Ability: Accelerated Semiconductor Cooling — Attack speed increases up to [green]+450%[] based on heat buildup, while reducing cooldown lock time down to [orange]3.0s[].[]" :
+                                 "• Base Damage: [green]+30%[] ([yellow]26[] DMG/bullet)\n" +
+                                 "• [orange]Accelerated Semiconductor Cooling:[] Attack speed increases up to [green]+450%[] based on heat buildup\n• While reducing cooldown lock time down to [orange]3.0s[]" :
                                  "[white]• Máu cấu trúc: [green]+30%[] ([green]650[] HP)\n" +
                                  "• Tầm bắn: [green]+29.5%[] ([orange]544[] px)\n" +
-                                 "• Sát thương gốc: [green]+30%[] ([yellow]26[] DMG/viên)\n\n" +
-                                 "[gray]Kỹ năng đặc biệt: Tản Nhiệt Bán Dẫn Gia Tốc — Tốc độ xả đạn gia tăng tối đa [green]+450%[] theo nhiệt tích lũy, đồng thời giảm thời gian khóa xả nhiệt xuống chỉ còn [orange]3.0[] giây.[]");
+                                 "• Sát thương gốc: [green]+30%[] ([yellow]26[] DMG/viên)\n" +
+                                 "• [orange]Tản Nhiệt Bán Dẫn Gia Tốc:[] Tốc độ xả đạn gia tăng tối đa [green]+450%[] theo nhiệt tích lũy\n• Đồng thời giảm thời gian khóa xả nhiệt xuống chỉ còn [orange]3.0[] giây");
                 b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                 b1.button(isEn() ? "[green]UPGRADE MK2[]" : "[green]NÂNG CẤP MK2[]", packRun(() => {
                     let done = this.processPartialUpgrade(1, reqMK2);
@@ -352,12 +359,12 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                 let b2D = b2.add(isEn() ?
                                  "[white]• Health: [green]+56.25%[] ([green]781[] HP)\n" +
                                  "• Range: [red]-30%[] ([orange]294[] px)\n" +
-                                 "• Base Damage: [red]-35%[] ([yellow]13[] DMG/bullet)\n\n" +
-                                 "[gray]Special Ability: Cyclic Super-Impulse Burst — Accelerated fire rate hits an explosive [green]+999%[], automatically triggering ultra-fast [orange]1.5s[] cooling to maintain relentless close-range firepower.[]" :
+                                 "• Base Damage: [red]-35%[] ([yellow]13[] DMG/bullet)\n" +
+                                 "• [orange]Cyclic Super-Impulse Burst:[] Accelerated fire rate hits an explosive [green]+999%[]\n• Automatically triggering ultra-fast [orange]1.5s[] cooling to maintain relentless close-range firepower" :
                                  "[white]• Máu cấu trúc: [green]+56.25%[] ([green]781[] HP)\n" +
                                  "• Tầm bắn: [red]-30%[] ([orange]294[] px)\n" +
-                                 "• Sát thương gốc: [red]-35%[] ([yellow]13[] DMG/viên)\n\n" +
-                                 "[gray]Kỹ năng đặc biệt: Siêu Xung Bùng Nổ Chu Kỳ Tốc Độ — Tốc độ bắn gia tốc chạm mốc bùng nổ [green]+999%[], tự động kích hoạt xả nhiệt cực nhanh chỉ trong [orange]1.5[] giây để duy trì mật độ hỏa lực tầm gần liên tục.[]");
+                                 "• Sát thương gốc: [red]-35%[] ([yellow]13[] DMG/viên)\n" +
+                                 "• [orange]Siêu Xung Bùng Nổ Chu Kỳ Tốc Độ:[] Tốc độ bắn gia tốc chạm mốc bùng nổ [green]+999%[]\n• Tự động kích hoạt xả nhiệt cực nhanh chỉ trong [orange]1.5[] giây để duy trì mật độ hỏa lực tầm gần liên tục");
                 b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
                 b2.button(isEn() ? "[orange]UPGRADE MK2B[]" : "[orange]NÂNG CẤP MK2B[]", packRun(() => {
                     let done = this.processPartialUpgrade(2, reqMK2B);
@@ -391,14 +398,14 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                           "[white]Turret HP: [green]500[]\n" +
                           "Range: [orange]420[] px\n" +
                           "Base Damage (Graphite): [yellow]20[] DMG/bullet\n" +
-                          "Base Damage (Copper): [yellow]12[] DMG/bullet[]\n\n" +
-                          "[gray]Special Ability: Thermal Circuit System — Each shot builds [orange]1%[] heat ([yellow]540[] max). Overheat forces a [orange]4.0s[] cooling shutdown. Sustained firing for [orange]3.0s[] grants up to [green]+350%[] attack speed.[]" :
+                          "Base Damage (Copper): [yellow]12[] DMG/bullet[]\n" +
+                          "• [orange]Thermal Circuit System:[] Each shot builds [orange]1%[] heat ([yellow]540[] max)\n• Overheat forces a [orange]4.0s[] cooling shutdown\n• Sustained firing for [orange]3.0s[] grants up to [green]+350%[] attack speed" :
                           "[yellow]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
                           "[white]Máu tháp pháo: [green]500[]\n" +
                           "Tầm bắn: [orange]420[] px\n" +
                           "Sát thương gốc (Graphite): [yellow]20[] DMG/viên\n" +
-                          "Sát thương gốc (Chì/Đồng): [yellow]12[] DMG/viên[]\n\n" +
-                          "[gray]Kỹ năng đặc biệt: Hệ Thống Nhiệt Mạch — Mỗi phát bắn tích lũy [orange]1%[] nhiệt lượng ([yellow]540[] điểm). Quá nhiệt sẽ khóa pháo [orange]4.0[] giây để làm mát. Duy trì bắn liên tục trong [orange]3.0[] giây gia tăng tối đa [green]+350%[] tốc độ bắn.[]";
+                          "Sát thương gốc (Chì/Đồng): [yellow]12[] DMG/viên[]\n" +
+                          "• [orange]Hệ Thống Nhiệt Mạch:[] Mỗi phát bắn tích lũy [orange]1%[] nhiệt lượng ([yellow]540[] điểm)\n• Quá nhiệt sẽ khóa pháo [orange]4.0[] giây để làm mát\n• Duy trì bắn liên tục trong [orange]3.0[] giây gia tăng tối đa [green]+350%[] tốc độ bắn";
             }
             else if (currentTier == 1) {
                 title += "[cyan](MK2)[]";
@@ -406,13 +413,13 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                           "[cyan]⚡ UPGRADE STATS (MK2) ⚡[]\n" +
                           "[white]Turret HP: [green]650[] ([green]+30%[])\n" +
                           "Range: [orange]544[] px ([green]+29.5%[])\n" +
-                          "Base Damage: [yellow]26[] DMG/bullet ([green]+30%[])[]\n\n" +
-                          "[gray]Special Ability: Enhanced Semiconductor Cooling — Max heat reduced to [yellow]480[] points. Cooling system lock duration reduced to [orange]3.0s[]. Peak attack speed increased to [green]+450%[].[]" :
+                          "Base Damage: [yellow]26[] DMG/bullet ([green]+30%[])[]\n" +
+                          "• [orange]Enhanced Semiconductor Cooling:[] Max heat reduced to [yellow]480[] points\n• Cooling system lock duration reduced to [orange]3.0s[]\n• Peak attack speed increased to [green]+450%[]" :
                           "[cyan]⚡ THÔNG SỐ NÂNG CẤP (MK2) ⚡[]\n" +
                           "[white]Máu tháp pháo: [green]650[] ([green]+30%[])\n" +
                           "Tầm bắn: [orange]544[] px ([green]+29.5%[])\n" +
-                          "Sát thương gốc: [yellow]26[] DMG/viên ([green]+30%[])[]\n\n" +
-                          "[gray]Kỹ năng đặc biệt: Tản Nhiệt Tăng Cường — Giới hạn chịu nhiệt giảm còn [yellow]480[] điểm. Thời gian khóa xả nhiệt rút ngắn còn [orange]3.0[] giây. Tốc độ bắn gia tốc cực đại đạt [green]+450%[].[]";
+                          "Sát thương gốc: [yellow]26[] DMG/viên ([green]+30%[])[]\n" +
+                          "• [orange]Tản Nhiệt Tăng Cường:[] Giới hạn chịu nhiệt giảm còn [yellow]480[] điểm\n• Thời gian khóa xả nhiệt rút ngắn còn [orange]3.0[] giây\n• Tốc độ bắn gia tốc cực đại đạt [green]+450%[]";
             }
             else if (currentTier == 2) {
                 title += "[purple](MK2B)[]";
@@ -420,13 +427,13 @@ xylaon.buildType = () => extend(ItemTurret.ItemTurretBuild, xylaon, {
                           "[purple]⚡ SUPER-IMPULSE STATS (MK2B) ⚡[]\n" +
                           "[white]Turret HP: [green]781[] ([green]+56.25%[])\n" +
                           "Range: [orange]294[] px ([red]-30%[])\n" +
-                          "Base Damage: [yellow]13[] DMG/bullet ([red]-35%[])[]\n\n" +
-                          "[gray]Special Ability: Cyclic Super-Impulse System — Reaches an explosive [green]+999%[] fire rate. System lock duration to flush heat is reduced to an extreme [orange]1.5s[] for continuous close-range output.[]" :
+                          "Base Damage: [yellow]13[] DMG/bullet ([red]-35%[])[]\n" +
+                          "• [orange]Cyclic Super-Impulse System:[] Reaches an explosive [green]+999%[] fire rate\n• System lock duration to flush heat is reduced to an extreme [orange]1.5s[] for continuous close-range output" :
                           "[purple]⚡ THÔNG SỐ SIÊU XUNG (MK2B) ⚡[]\n" +
                           "[white]Máu tháp pháo: [green]781[] ([green]+56.25%[])\n" +
                           "Tầm bắn: [orange]294[] px ([red]-30%[])\n" +
-                          "Sát thương gốc: [yellow]13[] DMG/viên ([red]-35%[])[]\n\n" +
-                          "[gray]Kỹ năng đặc biệt: Hệ Thống Siêu Xung Chu Kỳ — Tốc độ bắn gia tốc bùng nổ lên mốc [green]+999%[]. Thời gian khóa xả sạch nhiệt giảm cực hạn xuống còn [orange]1.5[] giây giúp duy trì hỏa lực tầm gần liên tục.[]";
+                          "Sát thương gốc: [yellow]13[] DMG/viên ([red]-35%[])[]\n" +
+                          "• [orange]Hệ Thống Siêu Xung Chu Kỳ:[] Tốc độ bắn gia tốc bùng nổ lên mốc [green]+999%[]\n• Thời gian khóa xả sạch nhiệt giảm cực hạn xuống còn [orange]1.5[] giây giúp duy trì hỏa lực tầm gần liên tục";
             }
 
             let dialog = extend(BaseDialog, title, {});

@@ -232,7 +232,7 @@ Events.on(ContentInitEvent, () => {
 
                     if (dialog.cont != null) {
                         let reqCell = dialog.cont.add(new Table());
-                        reqCell.get().add(new Label(packProv(() => {
+                        let reqSnapshot = (() => {
                             let core = this.team != null ? this.team.core() : null;
                             if(core == null) return isEnglish() ? "[red]Team Core not found![]" : "[red]Không tìm thấy Lõi Đội![]";
                             let currentThorium = core.items.get(Items.thorium);
@@ -266,7 +266,8 @@ Events.on(ContentInitEvent, () => {
                                        " • Silicon: " + silColor2 + currentSilicon + "[] / " + reqMK2B.silicon + "\n" +
                                        " • Vải Phase: " + phaColor2 + currentPhase + "[] / " + reqMK2B.phaseFabric;
                             }
-                        }))).growX();
+                        })();
+                        reqCell.get().add(new Label(reqSnapshot.toString())).growX();
 
                         dialog.cont.row(); dialog.cont.add().height(10).row();
 
@@ -275,8 +276,8 @@ Events.on(ContentInitEvent, () => {
                         let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
                         b1.add(isEnglish() ? "[cyan]===(MK2 - SUPER SPEED CRIT)===[]" : "[cyan]===(MK2 - BẠO KÍCH SIÊU TỐC)===[]").row();
                         let b1Text = isEnglish() ?
-                            "[white]• Crit chance gain/stack: [green]+0.5%[] (base 0.1%)\n• TRUE DAMAGE: [scarlet]50% True Damage (Bypasses armor, shield, Vela mechanism)[]\n\n[lightgray]Special Ability: Accelerates crit chance stacking speed by 5x. On shoot, 20% chance to permanently gain +1% crit damage. 2% chance to gain 500% fire rate for 1s.[]" :
-                            "[white]• Tăng tỉ lệ bạo kích/stack: [green]+0.5%[] (gốc 0.1%)\n• SÁT THƯƠNG CHUẨN: [scarlet]50% True Damage (Xuyên giáp, khiên, cơ chế Vela)[]\n\n[lightgray]Kỹ năng đặc biệt: Tăng tốc tích lũy tỉ lệ bạo kích gấp 5 lần. Khi bắn đạn có 20% tỉ lệ tăng vĩnh viễn +1% sát thương bạo kích. Khi bắn có 2% tỉ lệ tăng 500% tốc bắn trong 1s.[]";
+                            "[white]• Crit chance gain/stack: [green]+0.5%[] (base 0.1%)\n• TRUE DAMAGE: [scarlet]50% True Damage (Bypasses armor, shield, Vela mechanism)[]\n• [orange]Special Ability:[] Accelerates crit chance stacking speed by 5x\n• On shoot, 20% chance to permanently gain +1% crit damage. 2% chance to gain 500% fire rate for 1s" :
+                            "[white]• Tăng tỉ lệ bạo kích/stack: [green]+0.5%[] (gốc 0.1%)\n• SÁT THƯƠNG CHUẨN: [scarlet]50% True Damage (Xuyên giáp, khiên, cơ chế Vela)[]\n• [orange]Kỹ năng đặc biệt:[] Tăng tốc tích lũy tỉ lệ bạo kích gấp 5 lần\n• Khi bắn đạn có 20% tỉ lệ tăng vĩnh viễn +1% sát thương bạo kích\n• Khi bắn có 2% tỉ lệ tăng 500% tốc bắn trong 1s";
                         let b1D = b1.add(b1Text);
                         b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
                         b1.button(isEnglish() ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => {
@@ -292,8 +293,8 @@ Events.on(ContentInitEvent, () => {
                         let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
                         b2.add(isEnglish() ? "[purple]===(MK2B - DAMAGE MULTIPLIER)===[]" : "[purple]===(MK2B - BỘI PHÁT SÁT THƯƠNG)===[]").row();
                         let b2Text = isEnglish() ?
-                            "[white]• Base bullet damage: [green]+50.0%[]\n• TRUE DAMAGE: [scarlet]50% True Damage (Bypasses armor, shield, Vela mechanism)[]\n\n[lightgray]Special Ability: Maintains maximum crit mechanism and 2% chance to gain 500% fire rate for 1s on shot.[]" :
-                            "[white]• Sát thương gốc của đạn: [green]+50.0%[]\n• SÁT THƯƠNG CHUẨN: [scarlet]50% True Damage (Xuyên giáp, khiên, cơ chế Vela)[]\n\n[lightgray]Kỹ năng đặc biệt: Duy trì cơ chế bạo kích cực đại và khi bắn có 2% cơ hội tăng 500% tốc bắn trong 1s.[]";
+                            "[white]• Base bullet damage: [green]+50.0%[]\n• TRUE DAMAGE: [scarlet]50% True Damage (Bypasses armor, shield, Vela mechanism)[]\n• [orange]Special Ability:[] Maintains maximum crit mechanism and 2% chance to gain 500% fire rate for 1s on shot" :
+                            "[white]• Sát thương gốc của đạn: [green]+50.0%[]\n• SÁT THƯƠNG CHUẨN: [scarlet]50% True Damage (Xuyên giáp, khiên, cơ chế Vela)[]\n• [orange]Kỹ năng đặc biệt:[] Duy trì cơ chế bạo kích cực đại và khi bắn có 2% cơ hội tăng 500% tốc bắn trong 1s";
                         let b2D = b2.add(b2Text);
                         b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
                         b2.button(isEnglish() ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => {

@@ -577,7 +577,7 @@ Events.on(ContentInitEvent, () => {
 
                     if (dialog.cont != null) {
                         let reqCell = dialog.cont.add(new Table());
-                        reqCell.get().add(new Label(packProv(() => {
+                        let reqSnapshot = (() => {
                             let core = this.team != null ? this.team.core() : null;
                             if (core == null) return vi ? "[red]Không tìm thấy Lõi Đội![]" : "[red]Team Core not found![]";
                             let currentCopper = core.items.get(Items.copper);
@@ -605,7 +605,8 @@ Events.on(ContentInitEvent, () => {
                                        "[cyan]MK2 Upgrade Path[]\n • Copper: " + copColor1 + currentCopper + "[] / " + reqEmpericalMK2.copper + "\n • Lead: " + leaColor1 + currentLead + "[] / " + reqEmpericalMK2.lead + "\n • Titanium: " + titColor1 + currentTitanium + "[] / " + reqEmpericalMK2.titanium + "\n • Thorium: " + thoColor1 + currentThorium + "[] / " + reqEmpericalMK2.thorium + "\n" +
                                        "[purple]MK2B Long-Range Path[]\n • Copper: " + copColor2 + currentCopper + "[] / " + reqEmpericalMK2B.copper + "\n • Lead: " + leaColor2 + currentLead + "[] / " + reqEmpericalMK2B.lead + "\n • Titanium: " + titColor2 + currentTitanium + "[] / " + reqEmpericalMK2B.titanium + "\n • Surge Alloy: " + surColor2 + currentSurge + "[] / " + reqEmpericalMK2B.surgeAlloy;
                             }
-                        }))).growX();
+                        })();
+                        reqCell.get().add(new Label(reqSnapshot.toString())).growX();
 
                         dialog.cont.row(); dialog.cont.add().height(10).row();
 

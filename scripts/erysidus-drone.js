@@ -93,18 +93,26 @@ Events.on(ClientLoadEvent, new Cons({
                         let data = droneStorage[u.id];
                         let tier = u.maxHealth > 2000 ? 2 : (u.maxHealth > 1500 ? 1 : 0);
 
-                        Draw.draw(Layer.flyingUnit - 0.01, () => {
-                            Drawf.light(u.x, u.y, 50, mainColor, 0.6);
+                        if(global.PerfCore == null || global.PerfCore.onScreen(u.x, u.y, 120)){
+                            Draw.draw(Layer.flyingUnit - 0.01, () => {
+                                Drawf.light(u.x, u.y, 50, mainColor, 0.6);
 
-                            if(data.beamDurationTimer > 0){
-                                Drawf.light(u.x, u.y, 90, mainColor, 0.95);
-                            }
-                        });
+                                if(data.beamDurationTimer > 0){
+                                    Drawf.light(u.x, u.y, 90, mainColor, 0.95);
+                                }
+                            });
+                        }
 
                         if(data.beamDurationTimer > 0){
                             data.beamDurationTimer -= Time.delta;
 
-                            let target = Units.bestTarget(u.team, u.x, u.y, 280, e => e.checkTarget(true, true), e => true, (a, b) => b.health - a.health);
+                            data.targetTimer = (data.targetTimer || 0) - Time.delta;
+                            if(data.targetTimer <= 0){
+                                data.targetTimer = 6;
+                                data.cachedTarget = Units.bestTarget(u.team, u.x, u.y, 280, e => e.checkTarget(true, true), e => true, (a, b) => b.health - a.health);
+                            }
+                            let target = data.cachedTarget;
+                            if(target != null && Units.invalidateTarget(target, u.team, u.x, u.y)) target = null;
                             let targetAngle = u.rotation;
                             if(target != null){
                                 targetAngle = u.angleTo(target);
@@ -126,9 +134,14 @@ Events.on(ClientLoadEvent, new Cons({
                             data.beamCooldownTimer = Math.max(0, data.beamCooldownTimer - Time.delta);
                         }
                         else {
-                            let target = Units.closestTarget(u.team, u.x, u.y, 280);
-                            if(target != null){
-                                data.beamDurationTimer = 42;
+                            data.scanTimer = (data.scanTimer || 0) - Time.delta;
+                            if(data.scanTimer <= 0){
+                                data.scanTimer = 10;
+                                let target = Units.closestTarget(u.team, u.x, u.y, 280);
+                                if(target != null){
+                                    data.beamDurationTimer = 42;
+                                    data.targetTimer = 0;
+                                }
                             }
                         }
                     }

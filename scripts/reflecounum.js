@@ -469,7 +469,7 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
             let dialogTitle = isEn() ? "Reflecounum Turret Upgrade Center" : "Trung tâm nâng cấp pháo Reflecounum";
             let dialog = extend(BaseDialog, dialogTitle, {});
 
-            let reqCell = dialog.cont.label(packProv(() => {
+            let reqSnapshot = (() => {
                 let core = this.team.core();
                 if (core == null) return isEn() ? "[red]Team Core Not Found![]" : "[red]Không tìm thấy Lõi Đội![]";
 
@@ -505,7 +505,8 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
                        "[orange]★ PHÚC LỢI ĐẶC BIỆT:[] Đồng: " + copCol + currentCopper + "[]/4000 | Chì: " + leaCol + currentLead + "[]/4000 | Silicon: " + silColSp + currentSilicon + "[]/4000\n" +
                        "[cyan]Nhánh MK2:[] Titan: " + titColor1 + currentTitanium + "[]/" + reqMK2.titanium + " | Silicon: " + silColor1 + currentSilicon + "[]/" + reqMK2.silicon + " | Thorium: " + thoColor1 + currentThorium + "[]/" + reqMK2.thorium + "\n" +
                        "[purple]Nhánh MK2B:[] Titan: " + titColor2 + currentTitanium + "[]/" + reqMK2B.titanium + " | Silicon: " + silColor2 + currentSilicon + "[]/" + reqMK2B.silicon + " | Nhựa: " + plaColor2 + currentPlastanium + "[]/" + reqMK2B.plastanium + " | Surge: " + surColor2 + currentSurge + "[]/" + reqMK2B.surgeAlloy;
-            }));
+            })();
+            let reqCell = dialog.cont.add(reqSnapshot.toString());
 
             reqCell.width(380).get().setWrap(true);
             reqCell.get().setAlignment(Align.left);

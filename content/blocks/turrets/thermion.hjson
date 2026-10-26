@@ -1,11 +1,10 @@
 name: "newex-thermion"
 localizedName: "Thermion Wave Tower"
-description: 
-'''
-Một công trình chiến thuật cao cấp với 3 dạng thức chuyển đổi:
-- 💛 Form Yellow: Khống chế diện rộng & Sát thương dòng điện.
-- 💙 Form Blue: Hỏa lực quỹ đạo & Hủy diệt tầm xa.
-- 💜 Form Purple: Thao túng tâm lý & Cướp quân địch.
+description: '''
+Tháp chiến thuật 3 dạng:
+- 💛 Vàng: khống chế diện rộng, sát thương điện.
+- 💙 Xanh: hỏa lực quỹ đạo, hủy diệt tầm xa.
+- 💜 Tím: thao túng, cướp quân địch.
 '''
 type: "Block"
 size: 3

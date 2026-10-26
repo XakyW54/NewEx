@@ -1,6 +1,6 @@
 type: ItemTurret
 name: tenytisyr
-description: Pháo Tenytisyr: Tháp pháo cường hóa nhiệt năng với cơ chế tích tụ năng lượng độc đáo. Càng bắn liên tục, pháo càng nóng lên giúp tăng mạnh Tốc độ bắn (lên tới +250%) và Sát thương được khuếch đại tối đa +500% DMG. Pháo có khả năng nâng cấp lên MK2 hoặc MK2B với hiệu ứng nội tại kích nổ/sát thương % máu khi nạp đầy nhiệt lượng.
+description: "Càng bắn càng nóng: tốc độ bắn tối đa +250%, sát thương tối đa +500%. Nâng cấp MK2 hoặc MK2B với hiệu ứng nổ hoặc sát thương theo % máu khi đầy nhiệt."
 health: 3000
 size: 4
 reload: 20

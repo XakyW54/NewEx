@@ -370,7 +370,7 @@ Events.on(ContentInitEvent, () => {
                     let dialogTitle = isEn() ? "Hitekalum Turret Upgrade Center" : "Trung tâm nâng cấp pháo Hitekalum";
                     let dialog = extend(BaseDialog, dialogTitle, {});
 
-                    let reqCell = dialog.cont.label(packProv(() => {
+                    let reqSnapshot = (() => {
                         let core = this.team.core();
                         if (core == null) return isEn() ? "[red]Team Core Not Found![]" : "[red]Không tìm thấy Lõi Đội![]";
 
@@ -405,7 +405,8 @@ Events.on(ContentInitEvent, () => {
                             "[yellow]★ ROLL PHÚC LỢI A:[] Đồng: " + colCopA + cCop + "[]/1000 | Chì: " + colLeaA + cLea + "[]/1000 | Obsidis: " + colObsA + cObs + "[]/375\n" +
                             "[cyan]★ ROLL PHÚC LỢI B:[] Titan: " + colTitB + cTit + "[]/1000 | Thorium: " + colThoB + cTho + "[]/500 | Obsidis: " + colObsB + cObs + "[]/500\n" +
                             "[purple]★ ROLL PHÚC LỢI C:[] Surge: " + colSurC + cSur + "[]/400 | Phase: " + colPhaC + cPha + "[]/400 | Obsidis: " + colObsC + cObs + "[]/625";
-                    }));
+                    })();
+                    let reqCell = dialog.cont.add(reqSnapshot.toString());
 
                     reqCell.width(380).get().setWrap(true);
                     reqCell.get().setAlignment(Align.left);

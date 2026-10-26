@@ -1,6 +1,6 @@
 
 name: Rangtaturs
-description: "Pháo Rangtaturs: Dòng tháp pháo Shotgun đa dụng mang cơ chế 7 loại hiệu ứng bất ngờ. Bình thường, pháo xả một loạt đạn mảnh hỗn hợp ngẫu nhiên các hiệu ứng (Nổ, Đốt, Băng, Điện, Ướt, Axit, Tan chảy) để khống chế mục tiêu. Cứ sau một khoảng thời gian tự động nén năng lượng, pháo sẽ phóng thêm một tia Laser gây sát thương đột biến, đồng thời tích nội tại kích hoạt trạng thái Cuồng Nộ để sấy đạn thường nhanh gấp bội."
+description: "Shotgun bắn đạn mảnh ngẫu nhiên 7 hiệu ứng: nổ, đốt, băng, điện, ướt, axit, tan chảy. Định kỳ phóng thêm laser mạnh và vào Cuồng Nộ bắn rất nhanh."
 health: 950
 size: 3
 reload: 20

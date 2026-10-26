@@ -1,6 +1,6 @@
 type: ItemTurret
 name: "Erysidus"
-description: "Tháp pháo cao cấp phóng đơn vị tên lửa erysidusrocket càn quét mục tiêu. Tích tụ đủ năng lượng sẽ kích hoạt chưởng Repulsor gây thêm 200% sát thương đối với các đơn vị trên không."
+description: "Phóng tên lửa Erysidus quét mục tiêu. Đủ năng lượng sẽ tung chưởng Repulsor, gây thêm 200% sát thương lên mục tiêu trên không."
 
 size: 3
 health: 3125

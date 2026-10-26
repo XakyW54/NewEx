@@ -284,7 +284,7 @@ const PerfCore = global.PerfCore;
                         let dialogTitle = english ? "Forstarsilum Upgrade Center" : "Trung tâm nâng cấp pháo Forstarsilum";
                         let dialog = extend(BaseDialog, dialogTitle, {});
 
-                        let reqCell = dialog.cont.label(packProv(() => {
+                        let reqSnapshot = (() => {
                             let core = this.team.core();
                             if(core == null) return english ? "[red]Team Core not found![]" : "[red]Không tìm thấy Lõi Đội![]";
                             let currentTitanium = core.items.get(Items.titanium);
@@ -317,7 +317,8 @@ const PerfCore = global.PerfCore;
                                    " • Titan: " + titColor2 + currentTitanium + "[] / " + reqMK2B.titanium + "\n" +
                                    " • Silicon: " + silColor2 + currentSilicon + "[] / " + reqMK2B.silicon + "\n" +
                                    " • Nhựa: " + plaColor2 + currentPlastanium + "[] / " + reqMK2B.plastanium;
-                        }));
+                        })();
+                        let reqCell = dialog.cont.add(reqSnapshot.toString());
 
                         reqCell.width(360).get().setWrap(true);
                         reqCell.get().setAlignment(Align.left);
@@ -330,12 +331,12 @@ const PerfCore = global.PerfCore;
                         let b1Text = english ?
                             "[white]• Max Health: [green]+50%[] (4,500 HP)\n" +
                             "• Range: [gold]750 px[]\n" +
-                            "• Base Damage: [green]+34.6%[] (105 DMG)\n\n" +
-                            "[lightgray]Special Skill: Magnetic Acceleration — Doubles buff accumulation (+20%/shot), [gold]40% chance to fire charged attack (1s charge, deals 75% True Damage)[] per regular shot.[]" :
+                            "• Base Damage: [green]+34.6%[] (105 DMG)\n" +
+                            "• [orange]Magnetic Acceleration:[] Doubles buff accumulation (+20%/shot)\n• [gold]40% chance to fire charged attack (1s charge, deals 75% True Damage)[] per regular shot" :
                             "[white]• Máu cấu trúc: [green]+50%[] (4,500 HP)\n" +
                             "• Tầm bắn: [gold]750 px[]\n" +
-                            "• Sát thương gốc: [green]+34.6%[] (105 DMG)\n\n" +
-                            "[lightgray]Kỹ năng đặc biệt: Gia Tốc Từ Tính — Tích lũy buff gấp đôi (+20%/viên), [gold]40% cơ hội bắn đòn dồn lực (tụ kiếm 1s, gây 75% True Damage)[] theo mỗi phát bắn thường.[]";
+                            "• Sát thương gốc: [green]+34.6%[] (105 DMG)\n" +
+                            "• [orange]Gia Tốc Từ Tính:[] Tích lũy buff gấp đôi (+20%/viên)\n• [gold]40% cơ hội bắn đòn dồn lực (tụ kiếm 1s, gây 75% True Damage)[] theo mỗi phát bắn thường";
 
                         let b1D = b1.add(b1Text);
                         b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
@@ -354,12 +355,12 @@ const PerfCore = global.PerfCore;
                         let b2Text = english ?
                             "[white]• Max Health: [green]+33.3%[] (4,000 HP)\n" +
                             "• Range: [gold]750 px[]\n" +
-                            "• Base Damage: [green]+111.5%[] (165 DMG)\n\n" +
-                            "[lightgray]Special Skill: Energy Retention — After firing charged attack (deals 75% True Damage), [gold]has a chance to NOT RESET buff bar (80% -> 70% -> ... -> 0%)[].[]" :
+                            "• Base Damage: [green]+111.5%[] (165 DMG)\n" +
+                            "• [orange]Energy Retention:[] After firing charged attack (deals 75% True Damage)\n• [gold]has a chance to NOT RESET buff bar (80% -> 70% -> ... -> 0%)[]" :
                             "[white]• Máu cấu trúc: [green]+33.3%[] (4,000 HP)\n" +
                             "• Tầm bắn: [gold]750 px[]\n" +
-                            "• Sát thương gốc: [green]+111.5%[] (165 DMG)\n\n" +
-                            "[lightgray]Kỹ năng đặc biệt: Duy Trì Năng Lượng — Sau khi bắn đòn dồn lực (gây 75% True Damage), [gold]có xác suất KHÔNG RESET thanh buff (80% -> 70% -> ... -> 0%)[].[]";
+                            "• Sát thương gốc: [green]+111.5%[] (165 DMG)\n" +
+                            "• [orange]Duy Trì Năng Lượng:[] Sau khi bắn đòn dồn lực (gây 75% True Damage)\n• [gold]có xác suất KHÔNG RESET thanh buff (80% -> 70% -> ... -> 0%)[]";
 
                         let b2D = b2.add(b2Text);
                         b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();

@@ -1,7 +1,7 @@
 type: ItemTurret
 
 localizedName: Emperical
-description: "Fire energy orbs, lasers, and missiles; unleash lightning strikes; and pull in enemies."
+description: "Bắn cầu năng lượng, laser và tên lửa. Giáng sét và hút kẻ địch lại gần."
 
 health: 48250
 size: 3

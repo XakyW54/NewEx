@@ -253,7 +253,7 @@ Events.on(ContentInitEvent, cons(e => {
                     let dialogTitle = english ? "Drone Launcher Upgrade Center" : "Trung tâm nâng cấp Drone Launcher";
                     let dialog = extend(BaseDialog, dialogTitle, {});
 
-                    let reqCell = dialog.cont.label(packProv(() => {
+                    let reqSnapshot = (() => {
                         let core = this.team.core();
                         if (core == null) return english ? "[red]Core not found![]" : "[red]Không tìm thấy Lõi![]";
                         let currentcopper = core.items.get(Items.copper);
@@ -290,7 +290,8 @@ Events.on(ContentInitEvent, cons(e => {
                                " • Đồng: " + copColor2 + currentcopper + "[] / " + reqMK2B.copper + "\n" +
                                " • Chì: " + leaColor2 + currentlead + "[] / " + reqMK2B.lead + "\n" +
                                " • Titan: " + titColor2 + currenttitanium + "[] / " + reqMK2B.titanium;
-                    }));
+                    })();
+                    let reqCell = dialog.cont.add(reqSnapshot.toString());
 
                     reqCell.width(360).get().setWrap(true);
                     reqCell.get().setAlignment(Align.left);

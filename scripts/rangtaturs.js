@@ -292,7 +292,7 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
             table.button(Icon.upOpen, Styles.cleari, 40, run(() => {
                 let dialog = extend(BaseDialog, isEn ? "Rangtaturs Upgrade Center" : "Trung tâm nâng cấp pháo Rangtaturs", {});
                 
-                let reqCell = dialog.cont.label(prov(() => {
+                let reqSnapshot = (() => {
                     let core = this.team.core();
                     if(!core) return isEn ? "[red]Core Vault not found![]" : "[red]Không tìm thấy Kho cốt lõi![]";
                     
@@ -326,7 +326,8 @@ rangtaturs.buildType = () => extend(ItemTurret.ItemTurretBuild, rangtaturs, {
                                " • Chì: " + ledColor2 + currentLead + "[] / " + reqRangtatursMK2B.lead + "\n" +
                                " • Silic: " + silColor2 + currentSilicon + "[] / " + reqRangtatursMK2B.silicon;
                     }
-                }));
+                })();
+                let reqCell = dialog.cont.add(reqSnapshot.toString());
                 
                 reqCell.width(360).get().setWrap(true);
                 reqCell.get().setAlignment(Align.left);

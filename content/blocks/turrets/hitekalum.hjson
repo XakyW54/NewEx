@@ -1,6 +1,6 @@
 type: PowerTurret
 name: Hitekalum
-description: Pháo điện từ cao cấp với khả năng nâng cấp phúc lợi ngẫu nhiên.
+description: "Pháo điện từ cao cấp. Roll phúc lợi ngẫu nhiên để tăng sức mạnh."
 size: 4
 health: 8500
 range: 320

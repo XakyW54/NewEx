@@ -255,6 +255,15 @@ Events.on(ContentInitEvent, () => {
                 this.super$onDestroyed();
             },
 
+            enemiesInRange() {
+                let list = [];
+                let r = this.affectRadius;
+                Units.nearbyEnemies(this.team, this.x - r, this.y - r, r * 2, r * 2, packCons(u => {
+                    if (u.isValid() && Mathf.dst(this.x, this.y, u.x, u.y) <= r) list.push(u);
+                }));
+                return list;
+            },
+
             updateTile() {
                 this.super$updateTile();
 
@@ -282,6 +291,7 @@ Events.on(ContentInitEvent, () => {
                 }
 
                 if (!hasEnoughPower || this.efficiency <= 0) {
+                    this.nearEnemies = null;
                     return;
                 }
 
@@ -298,69 +308,80 @@ Events.on(ContentInitEvent, () => {
                     }
                 }
 
+                this.scanTimer = (this.scanTimer || 0) + Time.delta;
+                let doScan = this.scanTimer >= 10;
+                if (doScan) {
+                    this.scanTimer = 0;
+                    this.nearEnemies = this.enemiesInRange();
+                }
+                let enemies = this.nearEnemies || [];
+                let enemyCount = enemies.length;
+
                 if (this.currentForm === ThermionForm.YELLOW) {
-                    let enemyCount = 0;
-
-                    Groups.unit.each(packCons(u => {
-                        if (u.team != this.team && Mathf.dst(this.x, this.y, u.x, u.y) <= this.affectRadius) {
-                            enemyCount++;
-
-                            if (this.level >= 1) {
-                                u.apply(StatusEffects.slow, 60);
-                            }
-
-                            if (this.level >= 4 && this.generalTimer % 60 < Time.delta) {
-                                u.damage(u.maxHealth * 0.05);
-                            }
+                    if (doScan && this.level >= 1) {
+                        for (let i = 0; i < enemyCount; i++) {
+                            let u = enemies[i];
+                            if (u.isValid()) u.apply(StatusEffects.slow, 60);
                         }
-                    }));
+                    }
+
+                    if (this.level >= 4 && this.generalTimer % 60 < Time.delta) {
+                        for (let i = 0; i < enemyCount; i++) {
+                            let u = enemies[i];
+                            if (u.isValid()) u.damage(u.maxHealth * 0.05);
+                        }
+                    }
 
                     if (this.level >= 2 && enemyCount > 0 && this.generalTimer % 120 < Time.delta) {
-                        Groups.unit.each(packCons(u => {
-                            if (u.team != this.team && Mathf.dst(this.x, this.y, u.x, u.y) <= this.affectRadius) {
-                                u.damage(30 * enemyCount);
-                            }
-                        }));
+                        for (let i = 0; i < enemyCount; i++) {
+                            let u = enemies[i];
+                            if (u.isValid()) u.damage(30 * enemyCount);
+                        }
                     }
                 }
                 else if (this.currentForm === ThermionForm.BLUE) {
                     if (this.level >= 4) {
-                        Groups.bullet.each(packCons(b => {
-                            if (b.team != this.team && Mathf.dst(this.x, this.y, b.x, b.y) <= this.affectRadius) {
+                        let r = this.affectRadius;
+                        Groups.bullet.intersect(this.x - r, this.y - r, r * 2, r * 2, packCons(b => {
+                            if (b.team != this.team && Mathf.dst(this.x, this.y, b.x, b.y) <= r) {
                                 b.vel.scl(0.99);
                             }
                         }));
                     }
 
-                    Groups.unit.each(packCons(u => {
-                        if (u.team != this.team && Mathf.dst(this.x, this.y, u.x, u.y) <= this.affectRadius) {
-                            if (this.level >= 1 && this.generalTimer % 30 < Time.delta) {
-                                u.damage(45);
-                            }
+                    for (let i = 0; i < enemyCount; i++) {
+                        let u = enemies[i];
+                        if (!u.isValid()) continue;
 
-                            if (this.level >= 2 && this.generalTimer % 180 < Time.delta) {
-                                u.damage(u.maxHealth * 0.08);
-                                Puddles.deposit(Vars.world.tileWorld(u.x, u.y), Liquids.slag, 20);
-                            }
-
-                            if (this.level >= 3) {
-                                u.apply(StatusEffects.slow, 60);
-                            }
+                        if (this.level >= 1 && this.generalTimer % 30 < Time.delta) {
+                            u.damage(45);
                         }
-                    }));
+
+                        if (this.level >= 2 && this.generalTimer % 180 < Time.delta) {
+                            u.damage(u.maxHealth * 0.08);
+                            Puddles.deposit(Vars.world.tileWorld(u.x, u.y), Liquids.slag, 20);
+                        }
+
+                        if (doScan && this.level >= 3) {
+                            u.apply(StatusEffects.slow, 60);
+                        }
+                    }
                 }
                 else if (this.currentForm === ThermionForm.PURPLE) {
-                    Groups.unit.each(packCons(u => {
-                        if (u.team != this.team && Mathf.dst(this.x, this.y, u.x, u.y) <= this.affectRadius) {
+                    if (doScan) {
+                        for (let i = 0; i < enemyCount; i++) {
+                            let u = enemies[i];
+                            if (!u.isValid()) continue;
+
                             if (this.level >= 1) {
                                 u.apply(StatusEffects.derelict, 60);
                             }
 
-                            if (this.level >= 4 && Mathf.chance(0.001)) {
+                            if (this.level >= 4 && Mathf.chance(0.01)) {
                                 u.team = this.team;
                             }
                         }
-                    }));
+                    }
                 }
             },
 
@@ -401,11 +422,13 @@ Events.on(ContentInitEvent, () => {
                     drawCustomElectricEffect(this.x, this.y, 20, Color.purple, 5);
                 }
 
-                Groups.unit.each(packCons(u => {
-                    if (u.team != this.team && Mathf.dst(this.x, this.y, u.x, u.y) <= this.affectRadius) {
-                        drawCustomCorePulse(u.x, u.y, formColor, 0.5);
+                let near = this.nearEnemies;
+                if (near != null) {
+                    for (let i = 0; i < near.length; i++) {
+                        let u = near[i];
+                        if (u.isValid() && u.team != this.team) drawCustomCorePulse(u.x, u.y, formColor, 0.5);
                     }
-                }));
+                }
             }
         });
     }

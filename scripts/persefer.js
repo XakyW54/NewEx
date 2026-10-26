@@ -442,7 +442,7 @@ Events.on(ContentInitEvent, () => {
 
                     if (dialog.cont != null) {
                         let reqCell = dialog.cont.add(new Table());
-                        reqCell.get().add(new Label(packProv(() => {
+                        let reqSnapshot = (() => {
                             let core = this.team != null ? this.team.core() : null;
                             if(core == null) return isEn() ? "[red]Team Core Not Found![]" : "[red]Không tìm thấy Lõi Đội![]";
                             let currentThorium = core.items.get(Items.thorium);
@@ -474,7 +474,8 @@ Events.on(ContentInitEvent, () => {
                                 " • Kim loại Surge: " + surColor2 + currentSurge + "[] / " + reqMK2B.surgeAlloy + "\n" +
                                 " • Silicon: " + silColor2 + currentSilicon + "[] / " + reqMK2B.silicon + "\n" +
                                 " • Vải Phase: " + phaColor2 + currentPhase + "[] / " + reqMK2B.phaseFabric;
-                        }))).growX();
+                        })();
+                        reqCell.get().add(new Label(reqSnapshot.toString())).growX();
 
                         dialog.cont.row(); dialog.cont.add().height(10).row();
 

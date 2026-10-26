@@ -1,6 +1,6 @@
 type: "ItemTurret"
 name: "Overyr"
-description: "Tháp pháo điều khiển chỉ định mục tiêu. Chiếu ngay 1 laser chỉ định và tạo hiệu ứng dấu '+' cảnh báo. Sau 1 giây (60 ticks), đồng thời giội một loạt đạn vật lý và tia laser từ trên trời xuống vị trí chỉ định."
+description: "Chỉ định mục tiêu bằng laser. Sau 1 giây, một loạt đạn và laser giáng từ trên trời xuống điểm đó."
 size: 3
 health: 3625
 reload: 120.0

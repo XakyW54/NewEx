@@ -323,7 +323,7 @@ Events.on(ContentInitEvent, new Cons({
                             let dialogTitle = english ? "Erysidus Upgrade Center" : "Trung tâm nâng cấp Erysidus";
                             let dialog = extend(BaseDialog, dialogTitle, {});
 
-                            let reqCell = dialog.cont.label(() => {
+                            let reqSnapshot = (() => {
                                 let core = this.team.core();
                                 if(core == null) return english ? "[red]Team Core not found![]" : "[red]Không tìm thấy Lõi Đội![]";
                                 let currentcopper = core.items.get(Items.copper);
@@ -363,7 +363,8 @@ Events.on(ContentInitEvent, new Cons({
                                        " • Chì: " + leaColor2 + currentlead + "[] / " + reqMK2B.lead + "\n" +
                                        " • Silicon: " + silColor2 + currentsilicon + "[] / " + reqMK2B.silicon + "\n" +
                                        " • Titan: " + titColor2 + currenttitanium + "[] / " + reqMK2B.titanium;
-                            });
+                            })();
+                            let reqCell = dialog.cont.add(reqSnapshot.toString());
 
                             reqCell.width(360).get().setWrap(true);
                             reqCell.get().setAlignment(Align.left);

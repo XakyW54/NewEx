@@ -1,6 +1,6 @@
 type: ItemTurret
 name: Aether Spiral
-description: .
+description: "Pháo cỡ lớn bắn đạn Surge hoặc Silicon. Gắn trang bị để mạnh hơn; bắn thường có 10% tạo Sao Đen gây 50% máu tối đa của mục tiêu."
 size: 5
 health: 21250
 range: 320

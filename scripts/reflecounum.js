@@ -57,6 +57,427 @@ const shockwaveFx = new Effect(30, e => {
     Draw.reset();
 });
 
+function insideHex(px, py, cx, cy, r) {
+    let ax = Math.abs(px - cx);
+    let ay = Math.abs(py - cy);
+    return ay <= r * 0.866 && 0.866 * ax + 0.5 * ay <= r * 0.866;
+}
+
+function drawHexClipped(x, y, r, others) {
+    let steps = 4;
+    for (let i = 0; i < 6; i++) {
+        let x1 = x + Mathf.cosDeg(i * 60) * r;
+        let y1 = y + Mathf.sinDeg(i * 60) * r;
+        let x2 = x + Mathf.cosDeg((i + 1) * 60) * r;
+        let y2 = y + Mathf.sinDeg((i + 1) * 60) * r;
+
+        for (let k = 0; k < steps; k++) {
+            let ax = x1 + (x2 - x1) * (k / steps);
+            let ay = y1 + (y2 - y1) * (k / steps);
+            let bx = x1 + (x2 - x1) * ((k + 1) / steps);
+            let by = y1 + (y2 - y1) * ((k + 1) / steps);
+            let mx = (ax + bx) / 2;
+            let my = (ay + by) / 2;
+
+            let covered = false;
+            for (let j = 0; j < others.length; j++) {
+                if (insideHex(mx, my, others[j].x, others[j].y, others[j].r - 1)) {
+                    covered = true;
+                    break;
+                }
+            }
+
+            if (!covered) Lines.line(ax, ay, bx, by);
+        }
+    }
+}
+
+const NexReflect = {
+    list: [],
+    buffers: [],
+    blockBuffers: [],
+    baseline: {},
+    lines: [],
+    lineCache: {},
+    lineClasses: null,
+    EXT: 320,
+    hideFx: false,
+    fpsLow: 0,
+    fpsHigh: 0,
+
+    register(build) {
+        for (let i = 0; i < this.list.length; i++) {
+            if (this.list[i].id == build.id) return;
+        }
+        this.list.push(build);
+    },
+
+    active() {
+        let out = [];
+        for (let i = this.list.length - 1; i >= 0; i--) {
+            let s = this.list[i];
+            if (s == null || !s.isValid()) {
+                this.list.splice(i, 1);
+                continue;
+            }
+            if (!s.isShieldBroken() && s.getShieldHp() > 0) out.push(s);
+        }
+        return out;
+    },
+
+    isProtected(e) {
+        if (e == null) return false;
+        let shields = this.active();
+        for (let i = 0; i < shields.length; i++) {
+            let s = shields[i];
+            if (s.team == e.team && Mathf.within(s.x, s.y, e.x, e.y, s.getShieldRadius())) return true;
+        }
+        return false;
+    },
+
+    sizeOf(e, isB) {
+        return isB ? e.block.size * 8 : e.hitSize;
+    },
+
+    maxHp(e, isB) {
+        let m = e.maxHealth;
+        if (typeof m === "function") return e.maxHealth();
+        return Number(m);
+    },
+
+    initLineClasses() {
+        this.lineClasses = [];
+        let names = ["LaserBulletType", "ContinuousBulletType", "RailBulletType", "PointLaserBulletType", "SapBulletType"];
+        for (let i = 0; i < names.length; i++) {
+            try {
+                this.lineClasses.push(java.lang.Class.forName("mindustry.entities.bullet." + names[i]));
+            } catch (err) {
+            }
+        }
+    },
+
+    lineInfo(type) {
+        let id = type.id;
+        let c = this.lineCache[id];
+        if (c !== undefined) return c;
+        if (this.lineClasses == null) this.initLineClasses();
+
+        let line = false;
+        for (let i = 0; i < this.lineClasses.length; i++) {
+            if (this.lineClasses[i].isInstance(type)) line = true;
+        }
+
+        let len = Number(type.length);
+        if (!(len > 0)) len = Number(type.speed) * Number(type.lifetime);
+        let w = Number(type.width);
+        let half = (w > 0 ? w * 0.5 : 8) + 4;
+
+        c = { line: line, len: len, half: half };
+        this.lineCache[id] = c;
+        return c;
+    },
+
+    collectLines(shields) {
+        let out = [];
+        let group = Groups.bullet;
+        let n = group.size();
+        for (let i = 0; i < n; i++) {
+            let b = group.index(i);
+            if (b == null) continue;
+            let info = this.lineInfo(b.type);
+            if (!info.line || !(info.len > 0)) continue;
+
+            let ang = b.rotation() * Mathf.degRad;
+            let dx = Math.cos(ang);
+            let dy = Math.sin(ang);
+            let ox = b.x;
+            let oy = b.y;
+
+            for (let j = 0; j < shields.length; j++) {
+                let s = shields[j];
+                if (b.team == s.team) continue;
+                let R = s.getShieldRadius();
+                let rx = s.x - ox;
+                let ry = s.y - oy;
+                let proj = rx * dx + ry * dy;
+                let perp2 = rx * rx + ry * ry - proj * proj;
+                if (perp2 > R * R) continue;
+                let t1 = proj - Math.sqrt(R * R - perp2);
+                if (t1 < 0 || t1 > info.len) continue;
+                out.push({
+                    sx: ox + dx * t1,
+                    sy: oy + dy * t1,
+                    ex: ox + dx * info.len,
+                    ey: oy + dy * info.len,
+                    half: info.half,
+                    shield: s
+                });
+            }
+        }
+        return out;
+    },
+
+    hasLines(s) {
+        for (let i = 0; i < this.lines.length; i++) {
+            if (this.lines[i].shield.id == s.id) return true;
+        }
+        return false;
+    },
+
+    segDist(px, py, ax, ay, bx, by) {
+        let vx = bx - ax;
+        let vy = by - ay;
+        let wx = px - ax;
+        let wy = py - ay;
+        let c1 = vx * wx + vy * wy;
+        if (c1 <= 0) return Math.sqrt(wx * wx + wy * wy);
+        let c2 = vx * vx + vy * vy;
+        if (c2 <= c1) {
+            let ux = px - bx;
+            let uy = py - by;
+            return Math.sqrt(ux * ux + uy * uy);
+        }
+        let t = c1 / c2;
+        let qx = ax + t * vx;
+        let qy = ay + t * vy;
+        return Math.sqrt((px - qx) * (px - qx) + (py - qy) * (py - qy));
+    },
+
+    inCorridor(x, y, size, s) {
+        for (let i = 0; i < this.lines.length; i++) {
+            let l = this.lines[i];
+            if (l.shield.id != s.id) continue;
+            if (this.segDist(x, y, l.sx, l.sy, l.ex, l.ey) <= l.half + size / 2) return true;
+        }
+        return false;
+    },
+
+    visit(cb, ringOnlyWithLines) {
+        let shields = this.active();
+        if (shields.length == 0) return;
+        let seen = {};
+
+        for (let phase = 0; phase < 2; phase++) {
+            for (let i = 0; i < shields.length; i++) {
+                let s = shields[i];
+                if (phase == 1 && ringOnlyWithLines && !this.hasLines(s)) continue;
+                let R = s.getShieldRadius();
+                let sx = s.x;
+                let sy = s.y;
+                let query = phase == 0 ? R : R + this.EXT;
+
+                Units.nearby(s.team, sx, sy, query, cons(u => {
+                    if (u == null || !u.isValid() || u.dead || seen[u.id] === true) return;
+                    let inDisk = Mathf.within(sx, sy, u.x, u.y, R + u.hitSize / 2);
+                    if (phase == 0 ? !inDisk : inDisk) return;
+                    seen[u.id] = true;
+                    cb(u, s, u.id, false, phase);
+                }));
+
+                Vars.indexer.eachBlock(s.team, sx, sy, query, packBoolf(b => true), cons(b => {
+                    if (b == null || !b.isValid() || seen[b.id] === true) return;
+                    if (String(b.block.name).indexOf("build") == 0) return;
+                    let inDisk = Mathf.within(sx, sy, b.x, b.y, R + b.block.size * 4);
+                    if (phase == 0 ? !inDisk : inDisk) return;
+                    seen[b.id] = true;
+                    cb(b, s, b.id, true, phase);
+                }));
+            }
+        }
+    },
+
+    strip() {
+        let recs = this.buffers;
+        this.buffers = [];
+        for (let i = 0; i < recs.length; i++) {
+            let u = recs[i].unit;
+            if (u != null && u.isValid() && !u.dead) u.shield = recs[i].base;
+        }
+
+        let brecs = this.blockBuffers;
+        this.blockBuffers = [];
+        for (let i = 0; i < brecs.length; i++) {
+            let b = brecs[i].build;
+            if (b != null && b.isValid()) b.health = brecs[i].base;
+        }
+    },
+
+    applyBuffers() {
+        this.strip();
+        if (Vars.net.client()) return;
+
+        let shields = this.active();
+        if (shields.length == 0) return;
+
+        this.visit((e, s, id, isB, phase) => {
+            if (phase == 1 && !this.inCorridor(e.x, e.y, this.sizeOf(e, isB), s)) return;
+            let cap = s.getShieldHp();
+
+            if (!isB) {
+                let base = e.shield;
+                e.shield = base + cap;
+                this.buffers.push({ unit: e, shield: s, base: base, buf: cap });
+                return;
+            }
+
+            let base = e.health;
+            let max = this.maxHp(e, true);
+            let target = base >= max - 0.05 ? base + cap : Math.min(base + cap, max * 0.75);
+            if (target <= base) return;
+            e.health = target;
+            this.blockBuffers.push({ build: e, shield: s, base: base, pre: target });
+        }, true);
+    },
+
+    pay(s, amount) {
+        if (s == null || !s.isValid() || s.isShieldBroken()) return 0;
+        let p = Math.min(amount, s.getShieldHp());
+        if (p > 0) {
+            s.damageShield(p);
+            s._hitTimer = 25;
+        }
+        return p;
+    },
+
+    sync(b) {
+        if (Vars.net.server()) {
+            try { Call.tileDamage(b, b.health); } catch (err) {}
+        }
+    },
+
+    settle() {
+        if (Vars.net.client()) {
+            this.buffers = [];
+            this.blockBuffers = [];
+            this.baseline = {};
+            this.lines = [];
+            return;
+        }
+
+        let recs = this.buffers;
+        this.buffers = [];
+        let excess = {};
+
+        for (let i = 0; i < recs.length; i++) {
+            let r = recs[i];
+            let u = r.unit;
+            if (u == null || !u.isValid() || u.dead) continue;
+
+            let after = u.shield;
+            let consumed = Math.max(0, r.base + r.buf - after);
+            let fromBuf = Math.min(consumed, r.buf);
+            u.shield = consumed > r.buf ? Math.max(0, after) : r.base;
+
+            if (fromBuf > 0.001) {
+                let paid = this.pay(r.shield, fromBuf);
+                if (fromBuf - paid > 0.001) excess[u.id] = fromBuf - paid;
+            }
+        }
+
+        let brecs = this.blockBuffers;
+        this.blockBuffers = [];
+
+        for (let i = 0; i < brecs.length; i++) {
+            let r = brecs[i];
+            let b = r.build;
+            if (b == null || !b.isValid()) continue;
+
+            let net = b.health - r.pre;
+            if (net < 0) {
+                let loss = -net;
+                let paid = this.pay(r.shield, loss);
+                b.health = r.base;
+                let rest = loss - paid;
+                if (rest > 0.001) {
+                    let hp = r.base - rest;
+                    if (hp > 0) {
+                        b.health = hp;
+                        this.sync(b);
+                    } else {
+                        b.health = 0;
+                        b.kill();
+                    }
+                } else {
+                    this.sync(b);
+                }
+            } else {
+                b.health = r.base + net;
+                if (net > 0) this.sync(b);
+            }
+        }
+
+        let shields = this.active();
+        this.lines = shields.length > 0 ? this.collectLines(shields) : [];
+
+        let nextBase = {};
+
+        this.visit((e, s, id, isB, phase) => {
+            let prev = this.baseline[id];
+            let cur = e.health;
+
+            if (prev !== undefined && cur < prev - 0.01 && !s.isShieldBroken()) {
+                if (phase == 0 || this.inCorridor(e.x, e.y, this.sizeOf(e, isB), s)) {
+                    let paid = this.pay(s, prev - cur);
+                    if (paid > 0.01) {
+                        e.health = cur + paid;
+                        if (isB) this.sync(e);
+                    }
+                }
+            }
+
+            if (!isB && excess[id] !== undefined) {
+                e.damagePierce(excess[id]);
+            }
+
+            nextBase[id] = e.health;
+        });
+
+        this.baseline = nextBase;
+    }
+};
+
+global.NexReflect = NexReflect;
+
+Events.run(Trigger.update, () => {
+    if (Core.graphics == null || !Vars.state.isGame() || Time.time % 30 > Time.delta) return;
+    let fps = Core.graphics.getFramesPerSecond();
+    if (fps < 25) {
+        NexReflect.fpsLow++;
+        NexReflect.fpsHigh = 0;
+        if (NexReflect.fpsLow >= 2) NexReflect.hideFx = true;
+    } else {
+        NexReflect.fpsLow = 0;
+        NexReflect.fpsHigh++;
+        if (NexReflect.fpsHigh >= 3) NexReflect.hideFx = false;
+    }
+});
+
+if (Trigger.beforeGameUpdate !== undefined && Trigger.afterGameUpdate !== undefined) {
+    Events.run(Trigger.beforeGameUpdate, () => {
+        try {
+            NexReflect.applyBuffers();
+        } catch (err) {
+            Log.err("[NexReflect] " + err);
+        }
+    });
+
+    Events.run(Trigger.afterGameUpdate, () => {
+        try {
+            NexReflect.settle();
+        } catch (err) {
+            Log.err("[NexReflect] " + err);
+        }
+    });
+} else {
+    Events.run(Trigger.update, () => {
+        try {
+            NexReflect.settle();
+        } catch (err) {
+            Log.err("[NexReflect] " + err);
+        }
+    });
+}
+
 const reflecounum = extend(Turret, "reflecounum", {
     size: 3,
     health: 23000,
@@ -103,6 +524,8 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
 
         this.updateMaxShield();
         this._shieldHp = this._maxShieldHp;
+        NexReflect.register(this);
+        this._registered = true;
     },
 
     getMaxShieldHp() {
@@ -211,6 +634,11 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
 
     updateTile() {
         this.super$updateTile();
+
+        if (!this._registered) {
+            NexReflect.register(this);
+            this._registered = true;
+        }
 
         if (this._hitTimer > 0) {
             this._hitTimer -= Time.delta;
@@ -405,28 +833,66 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
         }
     },
 
+    getOverlaps(r) {
+        if (this._ovAt === undefined || Time.time - this._ovAt > 20 || Time.time < this._ovAt) {
+            this._ovAt = Time.time;
+            let out = [];
+            let l = NexReflect.list;
+            for (let i = 0; i < l.length; i++) {
+                let o = l[i];
+                if (o.id == this.id || !o.isValid() || o.team != this.team) continue;
+                if (o.isShieldBroken() || o.getShieldHp() <= 0) continue;
+                let orad = o.getShieldRadius();
+                if (Mathf.dst(this.x, this.y, o.x, o.y) < r + orad) out.push({ x: o.x, y: o.y, r: orad });
+            }
+            this._ov = out;
+        }
+        return this._ov;
+    },
+
     draw() {
         this.super$draw();
 
         let currentRadius = this.getShieldRadius();
 
         if (!this.isShieldBroken() && this.getShieldHp() > 0) {
-            Draw.z(Layer.shields);
+            if (NexReflect.hideFx) return;
+            if (global.PerfCore != null && !global.PerfCore.onScreen(this.x, this.y, currentRadius + 16)) return;
 
             let isHit = this._hitTimer > 0;
             let hitFactor = isHit ? (this._hitTimer / 25) : 0;
+            let animated = Vars.renderer != null && Vars.renderer.animateShields;
 
-            let coreAlpha = 0.08 + (hitFactor * 0.25);
-            Draw.color(isHit ? reflectorGlow : reflectorColor, coreAlpha);
-            Fill.poly(this.x, this.y, 6, currentRadius);
+            if (animated) {
+                Draw.z(Layer.shields + 0.001 * hitFactor);
+                Draw.color(reflectorColor, Color.white, hitFactor);
+                Fill.poly(this.x, this.y, 6, currentRadius);
+                Draw.z(Layer.shields + 2);
+            } else {
+                Draw.z(Layer.shields);
 
-            Lines.stroke(isHit ? 2.8 : 1.5);
-            Draw.color(isHit ? Color.white : reflectorColor, 0.8 + (hitFactor * 0.2));
-            Lines.poly(this.x, this.y, 6, currentRadius);
+                let others = this.getOverlaps(currentRadius);
 
-            Draw.color(reflectorGlow, 0.5 + (hitFactor * 0.5));
-            Lines.stroke(1.0);
-            Lines.poly(this.x, this.y, 6, currentRadius - 3);
+                let coreAlpha = 0.08 + (hitFactor * 0.25);
+                Draw.color(isHit ? reflectorGlow : reflectorColor, coreAlpha);
+                Fill.poly(this.x, this.y, 6, currentRadius);
+
+                Lines.stroke(isHit ? 2.8 : 1.5);
+                Draw.color(isHit ? Color.white : reflectorColor, 0.8 + (hitFactor * 0.2));
+                if (others.length == 0) {
+                    Lines.poly(this.x, this.y, 6, currentRadius);
+                } else {
+                    drawHexClipped(this.x, this.y, currentRadius, others);
+                }
+
+                Draw.color(reflectorGlow, 0.5 + (hitFactor * 0.5));
+                Lines.stroke(1.0);
+                if (others.length == 0) {
+                    Lines.poly(this.x, this.y, 6, currentRadius - 3);
+                } else {
+                    drawHexClipped(this.x, this.y, currentRadius - 3, others);
+                }
+            }
 
             if (isHit) {
                 Draw.color(reflectorGlow, hitFactor);

@@ -53,7 +53,7 @@ function applyDamageWithStarlight(sourceBuild, targetUnit, baseDmg) {
 
     targetUnit.damage(finalDmg);
 
-    if (hasStarlightPassive && targetUnit.isValid() && !targetUnit.dead) {
+    if (hasStarlightPassive && targetUnit.isValid() && !targetUnit.dead && !(global.NexReflect != null && global.NexReflect.isProtected(targetUnit))) {
         if (hpRatioBeforeHit <= 0.05 || targetUnit.health <= targetUnit.maxHealth * 0.05) {
             targetUnit.kill();
             executeFx.at(targetUnit.x, targetUnit.y);

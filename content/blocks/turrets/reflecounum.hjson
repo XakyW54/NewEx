@@ -1,6 +1,6 @@
 
 name: Reflecounum
-description: "Tạo khiên năng lượng hấp thụ sát thương, vỡ sẽ tự hồi, và phản đạn địch ngược lại. Nâng cấp để khiên bền hơn, hỗ trợ đồng minh và sửa công trình."
+description: "Tạo khiên năng lượng bảo vệ mọi khối và unit trong vùng: khiên bị trừ độ bền trước, hết khiên mới trừ máu. Chặn mọi loại đạn, phản đạn địch ngược lại. Nâng cấp để khiên bền hơn, hỗ trợ đồng minh và sửa công trình."
 health: 23000
 size: 4
 reload: 0

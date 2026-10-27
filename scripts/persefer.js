@@ -61,6 +61,8 @@ const starBullet = extend(BasicBulletType, {
     ammoMultiplier: 4,
     reloadMultiplier: 1.3,
     pierceArmor: true,
+    pierce: true,
+    pierceCap: 999,
     collidesGround: false,
     collidesAir: true,
     frontColor: ORANGE_GLOW,
@@ -160,6 +162,8 @@ function createPerseferBullet(baseSpeed, baseDamage, baseLifetime, extraProps) {
         speed: baseSpeed,
         damage: baseDamage,
         lifetime: baseLifetime,
+        pierce: true,
+        pierceCap: 999,
         collidesGround: false,
         collidesAir: true,
 

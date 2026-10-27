@@ -321,7 +321,7 @@ Events.on(ContentInitEvent, cons(e => {
                             NexNet.fx(Fx.upgradeCore, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
 
                             this.setTier(1);
-                            NexNet.configure(this, java.lang.Integer.valueOf(1));
+                            NexNet.configure(this, java.lang.Integer(1));
                             dialog.hide(); this.deselect();
                         } else { Vars.ui.showInfo(english ? "[red]Not enough resources for MK2 branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                     })).size(180, 38);
@@ -354,7 +354,7 @@ Events.on(ContentInitEvent, cons(e => {
                             NexNet.fx(Fx.bigShockwave, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
 
                             this.setTier(2);
-                            NexNet.configure(this, java.lang.Integer.valueOf(2));
+                            NexNet.configure(this, java.lang.Integer(2));
                             dialog.hide(); this.deselect();
                         } else { Vars.ui.showInfo(english ? "[red]Not enough resources for MK2B branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
                     })).size(180, 38);
@@ -439,7 +439,7 @@ Events.on(ContentInitEvent, cons(e => {
             table.add(buttonTable);
         },
 
-        config() { return java.lang.Integer.valueOf(this.getTier()); },
+        config() { return java.lang.Integer(this.getTier()); },
 
         write(write) {
             this.super$write(write);

@@ -6,7 +6,7 @@ size: 3
 health: 3125
 armor: 5
 rotateSpeed: 4.5
-range: 450
+range: 1125
 reload: 42
 recoil: 2
 shootCone: 15

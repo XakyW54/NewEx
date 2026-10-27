@@ -130,11 +130,11 @@ vendicum.addBar("dmg_bonus", new Func({
     get: function(e){
         return new Bar(
             new Prov({ get: function(){
-                let totalBonus = Math.floor((e.getDmgRatio() * 5 + (e.stackDmgBonus || 0)) * 100);
+                let totalBonus = Math.floor((e.getDmgRatio() * 10 + (e.stackDmgBonus || 0)) * 100);
                 return "DMG: +" + totalBonus + "%";
             } }),
             new Prov({ get: function(){ return Color.orange; } }),
-            new Floatp({ get: function(){ return Math.min(1.0, (e.getDmgRatio() * 5 + (e.stackDmgBonus || 0)) / 14.99); } })
+            new Floatp({ get: function(){ return Math.min(1.0, (e.getDmgRatio() * 10 + (e.stackDmgBonus || 0)) / 19.99); } })
         );
     }
 }));
@@ -472,7 +472,7 @@ vendicum.buildType = () => extend(ItemTurret.ItemTurretBuild, vendicum, {
 
     handleBullet(bullet, x, y, angle){
         if(bullet != null) {
-            let totalDmgMult = 1 + (this.energyState * 5) + (this.stackDmgBonus || 0);
+            let totalDmgMult = 1 + (this.energyState * 10) + (this.stackDmgBonus || 0);
             bullet.damage = bullet.type.damage * totalDmgMult;
             bullet.data = this;
         }

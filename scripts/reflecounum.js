@@ -157,7 +157,7 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
 
     getShieldRadius() {
         let baseRadius = (reflecounum.size * Vars.tilesize) / 2 + 8;
-        let perkMult = 1.0;
+        let perkMult = 3.0;
         let p = this.getPerkTier();
 
         if (p === 1) perkMult += 1.50;

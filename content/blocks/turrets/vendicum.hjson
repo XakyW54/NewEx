@@ -1,6 +1,6 @@
 
 name: Vendicum
-description: "Khi đầy năng lượng (hoặc nghỉ bắn để hồi), pháo được buff +500% sát thương và +250% tốc độ bắn."
+description: "Khi đầy năng lượng (hoặc nghỉ bắn để hồi), pháo được buff +1000% sát thương và +250% tốc độ bắn."
 health: 5500
 size: 3
 reload: 20

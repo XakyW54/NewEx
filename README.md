@@ -1,3 +1,29 @@
+- mod còn lỏd lắm nha :> nhưng mong mọi người trải nghiệm và nêu ý kiến để tui cải thiện.
+
+
+
+-------------------------------------------
+> Cập nhật bản 0.8.3xyak:
++ Vendicum: 500% dmg bonus tăng lên 1000%
++ Blaw: tăng 99% giảm sát thương lên công trình
++ Rangtaturs: tăng 100% tài nguyên nâng mk2 
++ Lauvunder: tăng từ nạp 1 điểm/s lên 15 điểm/s
++ Holyder: tăng 500% độ bền khiên, thêm 90% tỉ lệ bạo kích và 250% sát thương bạo kích, tăng 120% kích thước khiên
++ Plazerd: tăng 1% cộng +1% sát thương thành 1% cộng +50% sát thương
++ Plasanod: tăng số tầng cei kích lên mục tiêu mỗi giây 20
++ Reflecounum: tăng kích thước khiên mặt định thêm 200%
++ Therdum: giảm 50% sát thương
++ Swordoder: chỉnh sửa lại: sát thương gốc là 500 + 1200 chém, tầm bắn 210, tăng máu thêm 5000%, nội tại tận diệt: tăng từ 1% lên 15% và chỉnh sửa gây 999999 đổi thành gây 100% max hp / loại bỏ cơ chế roll phúc lợi đổi thành nâng cấp nhánh mk2 và mk2b / mk2: đổi hoàn toàn kiểu bắn sang 2 bên góc 30 độ (30 độ trước, 30 độ sau 0.2s), tăng 50% tỉ lệ bạo kích và 145% sát thương bạo kích / mk2b: tăng 500% tầm bắn, pháo đổi cơ chế tấn công thành: khi mục tiêu vào tấm bắn của pháo thì sẽ lập tức mỗi 1s tạo nhát chém ngay vị trí cảu mục tiêu đó, tối đa khóa 3 mục tiêu
++ Lazash: tăng 10000% phạm vi bắn (các dòn bắn tùy chỉnh lại bằng với phạm vi bắn)
++ Tyteryui: tăng 500% phạm vi bắn (các dòn bắn tùy chỉnh lại bằng với phạm vi bắn), tăng 200% sát thương cho các loại đạn của pháo bán ra.
++ Tháp điều phối drone: tăng 200% tài nguyên xây khối ở file .hjson
++ Erysidus: giảm bắn 1 tia laser thay vì bắn nhiều, tăng tầm bắn mặt định và tầm bắn cận chiến thêm 150% (các dòn bắn tùy chỉnh lại bằng với phạm vi bắn)
++ Forstarsilum: tăng sát thương cho nộ thêm 80% và thêm cơ chế 10% gây 1% max hp, sửa lỗi 9% không rơi vật phẩm newex-starlight
++ Hitekalum: tăng 500% sát thương gốc và mọi nguồn của khối pháo này, tăng 110% tốc bắn
++ Persefer: các loại đạn thêm cơ chế xuyên thấu 999
+
+
+
 -------------------------------------------
 > Cập nhật bản 0.8.2:
 + Chế độ Tự do (Sandbox): bỏ yêu cầu tài nguyên của cơ chế nâng cấp MK, roll Phúc lợi và trang bị vật phẩm cho pháo (lõi tự đầy tài nguyên, không bị trừ).
@@ -10,9 +36,6 @@
    - Băng giá: tối đa 3 tầng, mỗi tầng giảm 10% tốc độ di chuyển và 10% tốc độ bắn của mục tiêu.
    - Lửa đốt: mỗi giây gây 10 + 10% sát thương gốc.
    - Phản ứng Hoàng Hỏa: mục tiêu có đồng thời ấn Băng giá và ấn Lửa đốt sẽ nhận Hoàng Hỏa trong 10 giây, chịu thêm 50% sát thương.
-
-
-- mod còn lỏd lắm nha :> nhưng mong mọi người trải nghiệm và nêu ý kiến để tui cải thiện.
 
 
 

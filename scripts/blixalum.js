@@ -244,7 +244,7 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                         NexNet.fx(Fx.upgradeCore, this.x, this.y);
                         NexNet.fx(Fx.mineHuge, this.x, this.y);
                         NexNet.shake(5, 5, this.x, this.y);
-                        NexNet.configure(this, java.lang.Integer.valueOf(1));
+                        NexNet.configure(this, java.lang.Integer(1));
                         dialog.hide();
                         this.deselect();
                     } else {
@@ -281,7 +281,7 @@ blixalum.buildType = () => extend(ItemTurret.ItemTurretBuild, blixalum, {
                         NexNet.fx(Fx.bigShockwave, this.x, this.y);
                         NexNet.fx(Fx.mineHuge, this.x, this.y);
                         NexNet.shake(5, 5, this.x, this.y);
-                        NexNet.configure(this, java.lang.Integer.valueOf(2));
+                        NexNet.configure(this, java.lang.Integer(2));
                         dialog.hide();
                         this.deselect();
                     } else {

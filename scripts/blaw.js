@@ -54,6 +54,7 @@ var mirrorSparks = extend(RadialEffect, {
 });
 
 const blawBlueMK1 = extend(BasicBulletType, {
+    buildingDamageMultiplier: 0.01,
     speed: 3.25, damage: 25, width: 9, height: 22, lifetime: 70,
     sprite: "newex-diamond-shard",
     hitEffect: nhCircleHitEffect, despawnEffect: nhCircleHitEffect,
@@ -63,6 +64,7 @@ const blawBlueMK1 = extend(BasicBulletType, {
 });
 
 const blawRedMK1 = extend(BasicBulletType, {
+    buildingDamageMultiplier: 0.01,
     speed: 3.25, damage: 25, width: 9, height: 22, lifetime: 70,
     frontColor: Color.valueOf("FF0000FF"), backColor: Color.white,
     hitEffect: nhCircleHitEffect, despawnEffect: nhCircleHitEffect,
@@ -71,6 +73,7 @@ const blawRedMK1 = extend(BasicBulletType, {
 });
 
 const blawBlueMK2 = extend(BasicBulletType, {
+    buildingDamageMultiplier: 0.01,
     speed: 3.64, damage: 50, width: 10, height: 24, lifetime: 70,
     frontColor: Color.valueOf("0031FFFF"), backColor: Color.white,
     hitEffect: nhCircleHitEffect, despawnEffect: nhCircleHitEffect,
@@ -79,6 +82,7 @@ const blawBlueMK2 = extend(BasicBulletType, {
 });
 
 const blawRedMK2 = extend(BasicBulletType, {
+    buildingDamageMultiplier: 0.01,
     speed: 3.64, damage: 50, width: 10, height: 24, lifetime: 70,
     frontColor: Color.valueOf("FF0000FF"), backColor: Color.white,
     hitEffect: nhCircleHitEffect, despawnEffect: nhCircleHitEffect,
@@ -87,6 +91,7 @@ const blawRedMK2 = extend(BasicBulletType, {
 });
 
 const blawBlueBulletMK2B = extend(BasicBulletType, {
+    buildingDamageMultiplier: 0.01,
     speed: 15.86, damage: 550, width: 5, height: 12, lifetime: 19.51,
     frontColor: Color.valueOf("0031FFFF"), backColor: Color.white,
     hitEffect: nhCircleHitEffect, despawnEffect: nhCircleHitEffect,
@@ -95,6 +100,7 @@ const blawBlueBulletMK2B = extend(BasicBulletType, {
 });
 
 const blawRedBulletMK2B = extend(BasicBulletType, {
+    buildingDamageMultiplier: 0.01,
     speed: 15.86, damage: 550, width: 5, height: 12, lifetime: 19.51,
     frontColor: Color.valueOf("FF5A00FF"), backColor: Color.white,
     hitEffect: nhCircleHitEffect, despawnEffect: nhCircleHitEffect,

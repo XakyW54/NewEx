@@ -127,7 +127,7 @@ const lazash = extend(PowerTurret, "lazash", {
 });
 
 lazash.health = 17000;
-lazash.range = 105;
+lazash.range = 10605;
 lazash.reload = 120;
 
 lazash.targetAir = false;
@@ -136,7 +136,7 @@ lazash.targetBuildings = true;
 
 lazash.shootType = extend(LaserBulletType, {
     damage: 10,
-    length: 1100,
+    length: 10605,
     width: 18,
     colors: [Color.valueOf("#ff4444"), Color.valueOf("#ff8866"), Color.white]
 });
@@ -196,7 +196,7 @@ lazash.buildType = () => extend(PowerTurret.PowerTurretBuild, lazash, {
 
     range() {
         let perkA = this.getPerkA();
-        return (perkA == 2) ? 105.0 * 1.12 : 105.0;
+        return (perkA == 2) ? 10605.0 * 1.12 : 10605.0;
     },
 
     findTarget() {

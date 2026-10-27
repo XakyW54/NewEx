@@ -2,6 +2,7 @@
     const REQ = "newex-req";
     const TOAST = "newex-toast";
     const SHAKE = "newex-shake";
+    const CFG = "newex-cfg";
 
     const handlers = {};
     const cooldowns = {};
@@ -108,13 +109,33 @@
         if (!Vars.net.client()) core.items.add(item, n);
     }
 
+    function isNumeric(value) {
+        if (typeof value === "number") return true;
+        return value != null && typeof value === "object" && typeof value.intValue === "function";
+    }
+
+    function applyConfig(build, n) {
+        if (build == null || !build.isValid()) return;
+        try {
+            build.configured(null, java.lang.Integer(n));
+        } catch (err) {
+            Log.err("[NexNet] config: " + err);
+        }
+    }
+
     function configure(build, value) {
         if (build == null) return;
-        if (Vars.net.active()) {
-            Call.tileConfig(Vars.player, build, value);
-        } else {
-            build.configure(value);
+        if (!isNumeric(value)) {
+            if (Vars.net.active()) {
+                Call.tileConfig(Vars.player, build, value);
+            } else {
+                build.configure(value);
+            }
+            return;
         }
+        let n = Math.floor(Number(value));
+        if (isNaN(n)) return;
+        send("cfg", build.pos() + "|" + n);
     }
 
     function setOverlay(tile, block) {
@@ -136,6 +157,20 @@
         if (core == null || item == null || !(amount > 0) || amount > 5000000) return;
         if (global.NexFree != null && global.NexFree.active()) return;
         if (core.items.has(item, amount)) core.items.remove(item, amount);
+    }, false, 0);
+
+    on("cfg", (player, payload) => {
+        let a = payload.split("|");
+        let pos = parseInt(a[0]);
+        let n = parseInt(a[1]);
+        if (isNaN(pos) || isNaN(n)) return;
+        let build = Vars.world.build(pos);
+        if (build == null) return;
+        if (player != null && !isHostPlayer(player) && build.team != player.team()) return;
+        applyConfig(build, n);
+        if (Vars.net.server()) {
+            Call.clientPacketReliable(CFG, pos + "|" + n);
+        }
     }, false, 0);
 
     on("fx", (player, payload) => {
@@ -164,6 +199,16 @@
                     let i = s.indexOf("|");
                     if (i < 0) return;
                     showToast(s.substring(i + 1), parseFloat(s.substring(0, i)) || 2);
+                }
+            }));
+
+            Vars.netClient.addPacketHandler(CFG, new Cons({
+                get: (content) => {
+                    let a = String(content).split("|");
+                    let pos = parseInt(a[0]);
+                    let n = parseInt(a[1]);
+                    if (isNaN(pos) || isNaN(n)) return;
+                    applyConfig(Vars.world.build(pos), n);
                 }
             }));
 

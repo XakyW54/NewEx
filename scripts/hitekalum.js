@@ -196,7 +196,7 @@ Events.on(ContentInitEvent, () => {
             },
 
             getRawDamage(){
-                let baseDmg = 120;
+                let baseDmg = 720;
                 let dmgMult = 1.0;
 
                 if(this.getPerkA() == 3) dmgMult += 0.30;
@@ -229,7 +229,7 @@ Events.on(ContentInitEvent, () => {
                 this.super$collision(other);
                 if (this.getPerkB() == 1 && other != null && other.team != this.team) {
                     if (typeof other.damage === "function") {
-                        other.damage(this.maxHealth * 0.15);
+                        other.damage(this.maxHealth * 0.9);
                         Fx.spark.at(other.x, other.y);
                     }
                 }
@@ -303,7 +303,7 @@ Events.on(ContentInitEvent, () => {
                         let tankyUnit = list.get(i);
 
                         createLightningStandard(this.x, this.y, tankyUnit.x, tankyUnit.y, 2.5, true);
-                        let subDmg = (currentDmg * 0.20) + (tankyUnit.maxHealth * 0.01);
+                        let subDmg = (currentDmg * 0.20) + (tankyUnit.maxHealth * 0.06);
                         this.applyHitekalumDamage(tankyUnit, subDmg);
                         count++;
                     }
@@ -348,11 +348,11 @@ Events.on(ContentInitEvent, () => {
                             if(this.getPerkC() == 4) {
                                 createLightningStandard(this.x, this.y, u.x, u.y, 6.0, false);
                                 laserBeamEffect.at(this.x, this.y, 0, { tx: u.x, ty: u.y });
-                                let execDmg = (120 * 50.0) + (u.maxHealth * 0.05);
+                                let execDmg = (720 * 50.0) + (u.maxHealth * 0.3);
                                 u.damage(execDmg);
                             } else {
                                 createLightningStandard(this.x, this.y, u.x, u.y, 5.0, false);
-                                u.damage((120 * 10.0) + (u.maxHealth * 0.05));
+                                u.damage((720 * 10.0) + (u.maxHealth * 0.3));
                             }
 
                             mk3ExplosionFX.at(u.x, u.y);
@@ -443,7 +443,7 @@ Events.on(ContentInitEvent, () => {
                                 NexNet.take(core, itemObsidis, reqPerkHitekA.obsidis);
 
                                 let res = Mathf.rand.nextInt(3) + 1;
-                                NexNet.configure(this, java.lang.Integer.valueOf(10 + res));
+                                NexNet.configure(this, java.lang.Integer(10 + res));
 
                                 NexNet.fx(Fx.upgradeCore, this.x, this.y);
                                 NexNet.shake(4, 4, this.x, this.y);
@@ -507,7 +507,7 @@ Events.on(ContentInitEvent, () => {
                                 NexNet.take(core, itemObsidis, reqPerkHitekB.obsidis);
 
                                 let res = Mathf.rand.nextInt(3) + 1;
-                                NexNet.configure(this, java.lang.Integer.valueOf(20 + res));
+                                NexNet.configure(this, java.lang.Integer(20 + res));
 
                                 NexNet.fx(Fx.upgradeCore, this.x, this.y);
                                 NexNet.shake(4, 4, this.x, this.y);
@@ -574,7 +574,7 @@ Events.on(ContentInitEvent, () => {
 
                                 let chance = Mathf.rand.nextInt(100);
                                 let res = chance < 40 ? 1 : (chance < 70 ? 2 : (chance < 90 ? 3 : 4));
-                                NexNet.configure(this, java.lang.Integer.valueOf(30 + res));
+                                NexNet.configure(this, java.lang.Integer(30 + res));
 
                                 NexNet.fx(Fx.upgradeCore, this.x, this.y);
                                 NexNet.shake(4, 4, this.x, this.y);

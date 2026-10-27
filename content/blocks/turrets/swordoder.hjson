@@ -1,11 +1,11 @@
 
 name: Swordoder
-description: "Pháo kiếm: bắn đạn và chém. Roll phúc lợi A, B để đổi kiểu bắn."
-health: 17000
+description: "Pháo kiếm: bắn đạn và chém, tận diệt mục tiêu dưới 15% máu. Nâng cấp MK2 (bắn 2 bên, bạo kích) hoặc MK2B (tầm xa, chém thẳng vào mục tiêu)."
+health: 867000
 size: 3
 reload: 120
 recoil: 3
-range: 105
+range: 210
 inaccuracy: 2
 targetAir: true
 targetGround: true

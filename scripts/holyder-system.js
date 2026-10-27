@@ -161,8 +161,8 @@ function makeBuildSetup(initialTier) {
         secondaryTarget: null,
 
         shieldHealth: 0,
-        maxShield: (initialTier == 3) ? 1000 : 9000,
-        shieldRadius: 32,
+        maxShield: (initialTier == 3) ? 6000 : 54000,
+        shieldRadius: 70.4,
         shieldActive: false,
         shieldVisualScale: 0,
         shieldHitTime: 0,
@@ -184,13 +184,13 @@ function makeBuildSetup(initialTier) {
         setTier(val) {
             this.holyderInternalTier = val;
             if (val == 1) {
-                this.maxShield = 9000;
+                this.maxShield = 54000;
                 this.health = 550;
             } else if (val == 2) {
-                this.maxShield = 9000;
+                this.maxShield = 54000;
                 this.health = 704;
             } else if (val == 3) {
-                this.maxShield = 1000;
+                this.maxShield = 6000;
                 this.health = 880;
             }
             this.shieldHealth = this.maxShield;
@@ -328,14 +328,14 @@ function makeBuildSetup(initialTier) {
                         "Effective Range:[] [orange]410 pixels[] | [lightgray]Target:[] Ground\n\n" +
                         "[sky]⚡ THERMAL CIRCUIT & SHIELD MECHANICS:[]\n" +
                         "• [lightgray]Targeting:[] Uses red laser beam to lock position before charging.\n" +
-                        "• [lightgray]Energy Shield:[] Automatically activates shield absorbing [teal]9,000 HP[]. Requires [yellow]10.0 seconds[] to restart core when broken." :
+                        "• [lightgray]Energy Shield:[] Automatically activates shield absorbing [teal]54,000 HP[]. Requires [yellow]10.0 seconds[] to restart core when broken." :
                         "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
                         "[lightgray]Máu tháp pháo:[] [green]550 HP (Quy cách 3x3)[]\n" +
                         "Sát thương thô:[] [purple]380 / viên[] (Sát thương tăng theo tỷ lệ sạc hỏa lực)\n" +
                         "Tầm bắn hiệu dụng:[] [orange]410 pixel[] | [lightgray]Mục tiêu:[] Mặt đất\n\n" +
                         "[sky]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH & KHIÊN:[]\n" +
                         "• [lightgray]Định vị mục tiêu:[] Sử dụng tia laser đỏ để khóa cứng vị trí trước khi tích sạc.\n" +
-                        "• [lightgray]Trường khiên năng lượng:[] Tự động kích hoạt khiên hấp thụ [teal]9,000 HP[]. Khi vỡ cần [yellow]10.0 giây[] để tái khởi động lõi khiên.";
+                        "• [lightgray]Trường khiên năng lượng:[] Tự động kích hoạt khiên hấp thụ [teal]54,000 HP[]. Khi vỡ cần [yellow]10.0 giây[] để tái khởi động lõi khiên.";
                 }
                 else if (currentTier == 2) {
                     title += "[cyan](MK2)[]";
@@ -347,7 +347,7 @@ function makeBuildSetup(initialTier) {
                         "[lime]⚡ THERMAL CIRCUIT & SHIELD MECHANICS:[]\n" +
                         "• [lightgray]Max Impulse:[] Enhanced charge accumulation limit reaches [yellow]200%[].\n" +
                         "• [lightgray]Multi-Target:[] Activates secondary accelerated barrel, firing support rounds at a secondary target.\n" +
-                        "• [lightgray]Energy Shield:[] Maintains strong core shield protecting [teal]9,000 HP[]." :
+                        "• [lightgray]Energy Shield:[] Maintains strong core shield protecting [teal]54,000 HP[]." :
                         "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
                         "[lightgray]Máu tháp pháo:[] [green]704 HP [lime](+28%)[]\n" +
                         "Sát thương chính:[] [purple]380[] + [orange]50% sát thương từ nòng phụ[]\n" +
@@ -355,7 +355,7 @@ function makeBuildSetup(initialTier) {
                         "[lime]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH & KHIÊN:[]\n" +
                         "• [lightgray]Xung kích cực đại:[] Giới hạn tích lũy điểm xung sạc nâng cao chạm mốc [yellow]200%[].\n" +
                         "• [lightgray]Đa mục tiêu:[] Kích hoạt thêm nòng phụ gia tốc, tự động xả đạn hỗ trợ vào 1 mục tiêu phụ lân cận.\n" +
-                        "• [lightgray]Trường khiên năng lượng:[] Duy trì hệ thống lõi khiên bảo vệ vững chắc [teal]9,000 HP[].";
+                        "• [lightgray]Trường khiên năng lượng:[] Duy trì hệ thống lõi khiên bảo vệ vững chắc [teal]54,000 HP[].";
                 }
                 else if (currentTier == 3) {
                     title += "[purple](MK2B)[]";
@@ -366,14 +366,14 @@ function makeBuildSetup(initialTier) {
                         "Effective Range:[] [orange]360 pixels [lime](+12.5%)[]\n\n" +
                         "[purple]🔥 THERMAL CIRCUIT & SHIELD MECHANICS:[]\n" +
                         "• [lightgray]Rapid Fire:[] Charge threshold reduced to [yellow]50%[] for fast fire cycles.\n" +
-                        "• [lightgray]Overloaded Circuit:[] Energy shield core reduced to [purple]1,000 HP[] (Recovers 12s after break). When broken, charge speed and firing cycle boost by [red]+500%[] (5x speed)." :
+                        "• [lightgray]Overloaded Circuit:[] Energy shield core reduced to [purple]6,000 HP[] (Recovers 12s after break). When broken, charge speed and firing cycle boost by [red]+500%[] (5x speed)." :
                         "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
                         "[lightgray]Máu siêu gia cố:[] [green]880 HP [lime](+60%)[]\n" +
                         "Sát thương xung kích:[] [pink]Tối đa theo tiến trình nạp sạc[]\n" +
                         "Tầm bắn hiệu dụng:[] [orange]360 pixel [lime](+12.5%)[]\n\n" +
                         "[purple]🔥 CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH & KHIÊN:[]\n" +
                         "• [lightgray]Xả đạn thần tốc:[] Giới hạn sạc điểm giảm xuống mốc [yellow]50%[] hỗ trợ chu kỳ xả đạn cực nhanh.\n" +
-                        "• [lightgray]Mạch Quá Tải (Overloaded):[] Lõi khiên năng lượng chủ động giảm tải chỉ còn [purple]1,000 HP[] (Hồi khiên sau 12 giây vỡ). Khi khiên vỡ, tốc độ sạc và chu kỳ nạp bắn tăng mạnh [red]+500%[] (Gấp 5 lần bình thường).";
+                        "• [lightgray]Mạch Quá Tải (Overloaded):[] Lõi khiên năng lượng chủ động giảm tải chỉ còn [purple]6,000 HP[] (Hồi khiên sau 12 giây vỡ). Khi khiên vỡ, tốc độ sạc và chu kỳ nạp bắn tăng mạnh [red]+500%[] (Gấp 5 lần bình thường).";
                 }
 
                 let dialog = extend(BaseDialog, title, {});
@@ -391,7 +391,7 @@ function makeBuildSetup(initialTier) {
             if (!this.enabled) return;
 
             let tier = this.getTier();
-            this.maxShield = (tier == 3) ? 1000 : 9000;
+            this.maxShield = (tier == 3) ? 6000 : 54000;
 
             if (this.shieldHitTime > 0) this.shieldHitTime -= Time.delta;
 
@@ -408,7 +408,7 @@ function makeBuildSetup(initialTier) {
                 if (this.regenTimer >= this.maxRegenCooldown) {
                     this.isShieldBroken = false;
                     this.shieldActive = true;
-                    this.shieldHealth = (tier == 3) ? 200 : 1000;
+                    this.shieldHealth = (tier == 3) ? 1200 : 6000;
                     this.regenTimer = 0;
                 }
             }
@@ -435,7 +435,7 @@ function makeBuildSetup(initialTier) {
 
                     if (!this.shieldActive && !this.isShieldBroken) {
                         this.shieldActive = true;
-                        if (this.shieldHealth <= 0) this.shieldHealth = (tier == 3) ? 200 : 1000;
+                        if (this.shieldHealth <= 0) this.shieldHealth = (tier == 3) ? 1200 : 6000;
                     }
 
                     if (this.shieldActive && this.shieldHealth > 0 && !this.isShieldBroken) {
@@ -475,6 +475,10 @@ function makeBuildSetup(initialTier) {
                             let baseDamage = 380;
                             let damageMultiplier = 1 + (this.laserCharge / 100);
                             let finalDamage = baseDamage * damageMultiplier;
+                            if (Mathf.chance(0.9)) {
+                                finalDamage *= 3.5;
+                                Fx.hitLaserBlast.at(this.x + Angles.trnsx(angle, 24), this.y + Angles.trnsy(angle, 24), angle, bulletColor);
+                            }
 
                             let bulletType = (tier == 3) ? holyderMainBulletMK2B : holyderMainBullet;
                             let bullet = bulletType.create(this, this.team, this.x, this.y, angle);
@@ -487,7 +491,7 @@ function makeBuildSetup(initialTier) {
                             }
 
                             if (this.shieldActive && !this.isShieldBroken && this.shieldHealth > 0) {
-                                this.shieldHealth = Math.min(this.shieldHealth + 450, this.maxShield);
+                                this.shieldHealth = Math.min(this.shieldHealth + 2700, this.maxShield);
                             }
 
                             muzzleFlashFX.at(this.x, this.y);

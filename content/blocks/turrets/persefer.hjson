@@ -30,6 +30,8 @@ requirements: [
 ammoTypes: {
   copper: {
     type: BasicBulletType
+    pierce: true
+    pierceCap: 999
     speed: 12
     damage: 22
     width: 7
@@ -39,6 +41,8 @@ ammoTypes: {
   }
   graphite: {
     type: BasicBulletType
+    pierce: true
+    pierceCap: 999
     speed: 14
     damage: 35
     width: 8
@@ -49,6 +53,8 @@ ammoTypes: {
   }
   silicon: {
     type: BasicBulletType
+    pierce: true
+    pierceCap: 999
     speed: 13
     damage: 26
     width: 7

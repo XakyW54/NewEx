@@ -36,6 +36,16 @@ const PerfCore = global.PerfCore;
         }
     }
 
+    function onStarHit(b, entity, wasDead) {
+        if (entity == null || wasDead) return;
+        if (!Vars.net.client() && Mathf.chance(0.10)) {
+            entity.damagePierce(entity.maxHealth * 0.01);
+        }
+        if (entity.dead || entity.health <= 0) {
+            tryRewardStarlight(b.team);
+        }
+    }
+
     const galileoHitEffect = extend(ParticleEffect, {
         line: true,
         particles: 8,
@@ -145,7 +155,13 @@ const PerfCore = global.PerfCore;
         inaccuracy: 0,
         pierce: true, pierceCap: 999, pierceBuilding: true, knockback: 1, impact: true,
         hitEffect: galileoHitEffect,
-        despawnEffect: galileoHitEffect
+        despawnEffect: galileoHitEffect,
+
+        hitEntity: function(b, entity, health) {
+            let wasDead = entity.dead === true || entity.health <= 0;
+            this.super$hitEntity(b, entity, health);
+            onStarHit(b, entity, wasDead);
+        }
     });
 
     const forstarsilumMK2Bullet = extend(BasicBulletType, {
@@ -156,7 +172,13 @@ const PerfCore = global.PerfCore;
         inaccuracy: 0,
         pierce: true, pierceCap: 999, pierceBuilding: true, knockback: 1.4, impact: true,
         hitEffect: galileoHitEffect,
-        despawnEffect: galileoHitEffect
+        despawnEffect: galileoHitEffect,
+
+        hitEntity: function(b, entity, health) {
+            let wasDead = entity.dead === true || entity.health <= 0;
+            this.super$hitEntity(b, entity, health);
+            onStarHit(b, entity, wasDead);
+        }
     });
 
     const forstarsilumMK2BBullet = extend(BasicBulletType, {
@@ -168,7 +190,13 @@ const PerfCore = global.PerfCore;
         pierce: true, pierceCap: 999, pierceBuilding: true, knockback: 2.0, impact: true,
         homingPower: 0.18, homingRange: 300,
         hitEffect: galileoHitEffect,
-        despawnEffect: galileoHitEffect
+        despawnEffect: galileoHitEffect,
+
+        hitEntity: function(b, entity, health) {
+            let wasDead = entity.dead === true || entity.health <= 0;
+            this.super$hitEntity(b, entity, health);
+            onStarHit(b, entity, wasDead);
+        }
     });
 
     const ultBullet = extend(BasicBulletType, {
@@ -185,6 +213,7 @@ const PerfCore = global.PerfCore;
         despawnEffect: galileoHitEffect,
 
         hitEntity: function(b, entity, health) {
+            let wasDead = entity.dead === true || entity.health <= 0;
             this.super$hitEntity(b, entity, health);
 
             if (entity.armor !== undefined) {
@@ -203,6 +232,8 @@ const PerfCore = global.PerfCore;
                 ultParticlesEffect.at(b.x, b.y);
                 Effect.shake(14, 14, b.x, b.y);
             }
+
+            onStarHit(b, entity, wasDead);
         }
     });
 
@@ -482,7 +513,7 @@ const PerfCore = global.PerfCore;
                 let bullet = ultBullet.create(this, this.team, muzzleX, muzzleY, this.rotation, 1.0, 1.0);
 
                 if (bullet != null) {
-                    let totalDmg = bullet.damage * (1 + this.energyState * 5);
+                    let totalDmg = bullet.damage * (1 + this.energyState * 9);
 
                     let trueDmgVal = totalDmg * 0.75;
                     let normalDmgVal = totalDmg * 0.25;
@@ -618,7 +649,7 @@ const PerfCore = global.PerfCore;
             },
 
             handleBullet(bullet, x, y, angle){
-                if(bullet != null) bullet.damage = bullet.type.damage * (1 + this.energyState * 5);
+                if(bullet != null) bullet.damage = bullet.type.damage * (1 + this.energyState * 9);
                 this.super$handleBullet(bullet, x, y, angle);
             },
 

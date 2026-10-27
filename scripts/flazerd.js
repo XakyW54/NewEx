@@ -125,7 +125,7 @@ const flazerdLaserBullet = extend(BulletType, {
         if(tier == 2) baseDamage = 33 * 3.5;
         else if(tier == 3) baseDamage = 33 * 6.0;
 
-        let damageBonusPercent = currentPoints * 0.02;
+        let damageBonusPercent = currentPoints * 0.5;
         let currentTickDamage = baseDamage * (1 + damageBonusPercent);
 
         let mainTarget = null;
@@ -493,12 +493,12 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
                 b1.add("[cyan]===(MK2)===[]").row();
                 let b1Text = vi ? "Mô-đun mạch xung hỏa lực bứt tốc:\n" +
                                    " [white]• Tốc độ sạc tụ gia tốc vượt bậc đạt ngưỡng [yellow]150%[].[]\n" +
-                                   " [white]• Tăng tiến [red]+2% Sát thương[] tổng ứng với mỗi 1% năng lượng sạc.[]\n" +
+                                   " [white]• Tăng tiến [red]+50% Sát thương[] tổng ứng với mỗi 1% năng lượng sạc.[]\n" +
                                    " [white]• Gia cố [green]+5,707 Máu[] và mở rộng tầm phát xạ lên [green]276.2 pixel[].[]\n" +
                                    " [white]• Kích hoạt cặp laze sóng uốn cong đối xứng dọc trục chính."
                                 : "Accelerated Pulse Fire Circuit Module:\n" +
                                    " [white]• Capacitor charging speed boosted up to [yellow]150%[].[]\n" +
-                                   " [white]• Gains [red]+2% Total Damage[] per 1% stored charge.[]\n" +
+                                   " [white]• Gains [red]+50% Total Damage[] per 1% stored charge.[]\n" +
                                    " [white]• Reinforced to [green]+5,707 Health[] and range expanded to [green]276.2 pixels[].[]\n" +
                                    " [white]• Activates dual curved sine-wave sub-lasers along the main axis.";
                 let b1D = b1.add(b1Text);
@@ -510,7 +510,7 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
                     if(core != null && core.items.get(Items.copper) >= reqMK2.copper && core.items.get(Items.graphite) >= reqMK2.graphite){
                         NexNet.take(core, Items.copper, reqMK2.copper); NexNet.take(core, Items.graphite, reqMK2.graphite);
                         NexNet.fx(Fx.upgradeCore, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
-                        NexNet.configure(this, new java.lang.Integer(2)); dialog.hide(); this.deselect();
+                        NexNet.configure(this, java.lang.Integer(2)); dialog.hide(); this.deselect();
                     } else {
                         Vars.ui.showInfoToast(vi ? "[red]Không đủ tài nguyên cho nhánh MK2![]" : "[red]Not enough resources for MK2 path![]", 2);
                     }
@@ -537,7 +537,7 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
                     if(core != null && core.items.get(Items.lead) >= reqMK3.lead && core.items.get(Items.silicon) >= reqMK3.silicon){
                         NexNet.take(core, Items.lead, reqMK3.lead); NexNet.take(core, Items.silicon, reqMK3.silicon);
                         NexNet.fx(Fx.bigShockwave, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
-                        NexNet.configure(this, new java.lang.Integer(3)); dialog.hide(); this.deselect();
+                        NexNet.configure(this, java.lang.Integer(3)); dialog.hide(); this.deselect();
                     } else {
                         Vars.ui.showInfoToast(vi ? "[red]Không đủ tài nguyên cho nhánh MK2B![]" : "[red]Not enough resources for MK2B path![]", 2);
                     }
@@ -590,7 +590,7 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
                                "Sát thương cơ bản:[] [white]115.50 hỏa lực/s[]\n\n" +
                                "[lime]⚡ CƠ CHẾ HOẠT ĐỘNG NHIỆT MẠCH:[]\n" +
                                "• [lightgray]Mạch hỏa tốc:[] Tốc độ sạc tụ năng lượng gia tốc vượt bậc đạt ngưỡng đỉnh [yellow]150%[].\n" +
-                               "• [lightgray]Xung lực hỏa lực:[] Cứ mỗi 1% điểm sạc tích lũy cộng trực tiếp [red]+2% sát thương[] tổng.\n" +
+                               "• [lightgray]Xung lực hỏa lực:[] Cứ mỗi 1% điểm sạc tích lũy cộng trực tiếp [red]+50% sát thương[] tổng.\n" +
                                "• [lightgray]Laser Helix:[] Kích hoạt thêm 2 tia sóng phụ uốn lượn hình sin bám dọc đối xứng hai bên trục chính.\n" +
                                "• [lightgray]Xả quá tải an toàn:[] Tự động đếm ngược và reset điểm về 0 sau khi duy trì đỉnh năng lượng."
                              : "[cyan]⚡ BASE SPECS (MK2) ⚡[]\n" +
@@ -599,7 +599,7 @@ flazerd.buildType = () => extend(PowerTurret.PowerTurretBuild, flazerd, {
                                "Base Damage:[] [white]115.50 DPS[]\n\n" +
                                "[lime]⚡ THERMAL CIRCUIT MECHANICS:[]\n" +
                                "• [lightgray]Rapid Fire Circuit:[] Capacitor charging speed greatly accelerated up to [yellow]150%[].\n" +
-                               "• [lightgray]Firepower Impulse:[] Adds [red]+2% total damage[] directly per 1% stored charge.\n" +
+                               "• [lightgray]Firepower Impulse:[] Adds [red]+50% total damage[] directly per 1% stored charge.\n" +
                                "• [lightgray]Laser Helix:[] Activates 2 sub-wave lasers curving symmetrically along the main axis.\n" +
                                "• [lightgray]Safe Overload Discharge:[] Automatically counts down and resets charge to 0 after holding max energy.";
             }

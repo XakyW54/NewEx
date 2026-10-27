@@ -4,8 +4,13 @@ const packCons2 = (func) => new Cons2({ get: func });
 const packRun = (func) => new java.lang.Runnable({ run: func });
 const packProv = (func) => new Prov({ get: func });
 
-const reqPerkA = { copper: 2000, lead: 2000, silicon: 2000 };
-const reqPerkB = { titanium: 1000, thorium: 1000, graphite: 1000 };
+const reqMK2 = { copper: 2000, lead: 2000, silicon: 2000 };
+const reqMK2B = { titanium: 1000, thorium: 1000, graphite: 1000 };
+const SLASH_DAMAGE = 1200.0;
+const BULLET_DAMAGE = 500.0;
+const BASE_RANGE = 210.0;
+const MK2_CRIT_CHANCE = 0.5;
+const MK2_CRIT_MULT = 2.45;
 
  function isEn() {
     let loc = "";
@@ -32,8 +37,8 @@ function t(viText, enText) {
 
  function checkExecute(unit, team) {
     if (unit != null && unit.team != team && !unit.dead) {
-        if (unit.health / unit.maxHealth <= 0.01) {
-            unit.damage(999999);
+        if (unit.health / unit.maxHealth <= 0.15) {
+            unit.damagePierce(unit.maxHealth);
         }
     }
 }
@@ -535,7 +540,7 @@ function triggerSlashArea(b) {
         dataObj.slashed = true;
 
         let mult = dataObj.mult !== undefined ? dataObj.mult : 1.0;
-        let slashDmg = mult * 19.0;
+        let slashDmg = mult * SLASH_DAMAGE;
         spaceRiftArcFx.at(b.x, b.y, b.rotation(), Color.white, { lod: riftDetail() });
         damageArc(b.team, b.x, b.y, b.rotation(), 240.0, 90.0, slashDmg, b.owner);
     } else if (b.data === true) {
@@ -543,13 +548,13 @@ function triggerSlashArea(b) {
     } else {
         b.data = { slashed: true, mult: 1.0 };
         spaceRiftArcFx.at(b.x, b.y, b.rotation(), Color.white, { lod: riftDetail() });
-        damageArc(b.team, b.x, b.y, b.rotation(), 240.0, 90.0, 19.0, b.owner);
+        damageArc(b.team, b.x, b.y, b.rotation(), 240.0, 90.0, SLASH_DAMAGE, b.owner);
     }
 }
 
  const swordoderBulletBase = extend(BasicBulletType, {
     speed: 6,
-    damage: 30,
+    damage: 500,
     width: 24,
     height: 24,
     hitEffect: vSlashHitFx,
@@ -595,33 +600,29 @@ function triggerSlashArea(b) {
     configurable: true
 });
 
-swordoder.health = 17000;
-swordoder.range = 105;
+swordoder.health = 867000;
+swordoder.range = 210;
 swordoder.reload = 120;
 swordoder.recoil = 8;
 
 swordoder.config(java.lang.Integer, packCons2((tile, value) => {
-    if (tile != null) {
-        let val = Number(value);
-        if (val >= 20) {
-            tile.setPerkB(val - 20);
-        } else if (val >= 10) {
-            tile.setPerkA(val - 10);
-        }
+    if (tile != null && tile.setTier !== undefined) {
+        tile.setTier(value);
     }
 }));
 
  swordoder.buildType = () => extend(ItemTurret.ItemTurretBuild, swordoder, {
     created() {
         this.super$created();
-        this.perkAState = 0;
-        this.perkBState = 0;
-        this.buff3BTimer = 0.0;
+        this.tierState = 0;
         this.subBulletTaskTimer = 0.0;
         this.pendingSubBullets = 0;
         this.customRecoil = 0.0;
         this.comboQueue = [];
         this.comboClock = 0.0;
+        this.lockedTargets = [];
+        this.mk2bTimer = 60.0;
+        this.mk2bScanTimer = 0.0;
         return this;
     },
 
@@ -645,10 +646,6 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
             this.customRecoil = Math.max(0, this.customRecoil - Time.delta * 0.15);
         }
 
-        if (this.buff3BTimer > 0) {
-            this.buff3BTimer -= Time.delta;
-        }
-
         if (this.pendingSubBullets > 0) {
             this.subBulletTaskTimer -= Time.delta;
             if (this.subBulletTaskTimer <= 0) {
@@ -657,9 +654,12 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
             }
         }
 
-        let perkA = this.getPerkA();
-        let baseReload = (perkA == 3) ? 60 : 120;
-        let currentReload = (this.buff3BTimer > 0) ? (baseReload / 2.2) : baseReload;
+        if (this.getTier() == 2) {
+            this.updateMk2bStrike();
+            return;
+        }
+
+        let currentReload = 120;
 
         if (this.hasAmmo()) {
             if (this.timer.get(0, currentReload)) {
@@ -696,93 +696,112 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
 
             Draw.rect(swordRegion, rx, ry, this.rotation - 90);
         }
+
+        if (this.getTier() == 2 && this.lockedTargets != null && this.lockedTargets.length > 0) {
+            Draw.z(Layer.effect);
+            Draw.color(Pal.remove);
+            Lines.stroke(1.5);
+            for (let i = 0; i < this.lockedTargets.length; i++) {
+                let lockU = this.lockedTargets[i];
+                if (lockU != null && lockU.isValid() && !lockU.dead) {
+                    Lines.circle(lockU.x, lockU.y, lockU.hitSize / 2 + 6);
+                }
+            }
+            Draw.reset();
+        }
     },
 
-    getPerkA() { return this.perkAState || 0; },
-    setPerkA(val) { this.perkAState = Number(val); },
-    getPerkB() { return this.perkBState || 0; },
-    setPerkB(val) { this.perkBState = Number(val); },
+    getTier() { return this.tierState || 0; },
+    setTier(val) {
+        let tierValue = Number(val);
+        if (tierValue == 1 || tierValue == 2) {
+            if (this.getTier() == 0) {
+                this.tierState = tierValue;
+                this.lockedTargets = [];
+                this.mk2bTimer = 60.0;
+            }
+        }
+    },
+
+    config() { return java.lang.Integer(this.getTier()); },
 
     range() {
-        let perkA = this.getPerkA();
-        let baseR = 105;
-        if (perkA == 1) baseR = 105 * 1.5;
-        if (perkA == 2) baseR = 105 * 1.2;
-        if (perkA == 3) baseR = 105 * 0.7;
-        return baseR;
+        if (this.getTier() == 2) return BASE_RANGE * 6.0;
+        return BASE_RANGE;
+    },
+
+    rollCrit() {
+        if (this.getTier() == 1 && Mathf.chance(MK2_CRIT_CHANCE)) return MK2_CRIT_MULT;
+        return 1.0;
     },
 
     handleSwordoderHit(bullet, target) {
-        let perkA = this.getPerkA();
+    },
 
-        if (perkA == 2 && target != null) {
-            Damage.damage(this.team, target.x, target.y, 10, 10, true, true);
-            if (target.health !== undefined) {
-                checkExecute(target, this.team);
+    updateMk2bStrike() {
+        if (!this.lockedTargets) this.lockedTargets = [];
+
+        this.mk2bTimer = Math.min(60.0, this.mk2bTimer + Time.delta);
+        this.mk2bScanTimer += Time.delta;
+
+        if (this.mk2bScanTimer >= 10.0) {
+            this.mk2bScanTimer = 0.0;
+            let rng = this.range();
+
+            for (let i = this.lockedTargets.length - 1; i >= 0; i--) {
+                let lockU = this.lockedTargets[i];
+                if (lockU == null || !lockU.isValid() || lockU.dead || !this.within(lockU, rng)) {
+                    this.lockedTargets.splice(i, 1);
+                }
+            }
+
+            if (this.lockedTargets.length < 3) {
+                let found = [];
+                Units.nearbyEnemies(this.team, this.x - rng, this.y - rng, rng * 2, rng * 2, cons(u => {
+                    if (u.isValid() && !u.dead && this.within(u, rng)) {
+                        let already = false;
+                        for (let i = 0; i < this.lockedTargets.length; i++) {
+                            if (this.lockedTargets[i].id == u.id) already = true;
+                        }
+                        if (!already) found.push(u);
+                    }
+                }));
+
+                found.sort((a, b) => this.dst2(a) - this.dst2(b));
+
+                for (let i = 0; i < found.length && this.lockedTargets.length < 3; i++) {
+                    this.lockedTargets.push(found[i]);
+                }
             }
         }
 
-        if (this.getPerkB() == 1 && Mathf.chance(0.15)) {
-            this.fireExtraSubBullets(10, 8.0);
+        if (this.lockedTargets.length > 0) {
+            this.turnToTarget(this.angleTo(this.lockedTargets[0]));
         }
 
-        if (this.getPerkB() == 3 && Mathf.chance(0.30)) {
-            this.buff3BTimer = 15 * 60;
-        }
-    },
+        if (this.mk2bTimer >= 60.0 && this.lockedTargets.length > 0 && this.hasAmmo()) {
+            this.mk2bTimer = 0.0;
+            this.customRecoil = 1.0;
+            this.useAmmo();
 
-    fireExtraSubBullets(count, spreadDeg) {
-        let currentRange = this.range();
-        let targetDist = Math.max(1.0, currentRange - 1.0);
-        let perkA = this.getPerkA();
-        let baseDmg = 30;
-        let slashMultiplier = 1.0;
-
-        if (perkA == 1) { baseDmg *= 1.5; slashMultiplier = 1.5; }
-        else if (perkA == 2) { baseDmg *= 1.2; slashMultiplier = 1.2; }
-        else if (perkA == 3) { baseDmg *= 3.0; slashMultiplier = 3.0; }
-
-        for (let i = 0; i < count; i++) {
-            let rndSpeed = Mathf.random(4.0, 10.0);
-            let calculatedLifetime = targetDist / rndSpeed;
-            let angle = this.rotation + Mathf.range(spreadDeg);
-
-            let b = swordoderBulletBase.create(this, this.team, this.x, this.y, angle);
-            if (b != null) {
-                b.data = { slashed: false, mult: slashMultiplier };
-                b.vel.setLength(rndSpeed);
-                b.lifetime = calculatedLifetime;
-                b.damage = baseDmg;
+            for (let i = 0; i < this.lockedTargets.length; i++) {
+                let lockU = this.lockedTargets[i];
+                if (lockU != null && lockU.isValid() && !lockU.dead) {
+                    this.executeSamuraiCut({
+                        x: lockU.x,
+                        y: lockU.y,
+                        ang: Mathf.random(0.0, 180.0),
+                        big: true,
+                        dmg: SLASH_DAMAGE
+                    });
+                }
             }
         }
     },
 
     fire1BSidePattern(angleOffset) {
-        let perkA = this.getPerkA();
-        let baseDmg = 30;
-        let bulletCount = 1;
-        let spreadDeg = 0.0;
         let currentRange = this.range();
-        let slashMultiplier = 1.0;
-
         let targetDist = Math.max(1.0, currentRange - 1.0);
-
-        if (perkA == 1) {
-            baseDmg *= 1.5;
-            slashMultiplier = 1.5;
-            bulletCount = 15;
-            spreadDeg = 12.0;
-        } else if (perkA == 2) {
-            baseDmg *= 1.2;
-            slashMultiplier = 1.2;
-            bulletCount = 8;
-            spreadDeg = 0.0;
-        } else if (perkA == 3) {
-            baseDmg *= 3.0;
-            slashMultiplier = 3.0;
-            bulletCount = 4;
-            spreadDeg = 0.0;
-        }
 
         if (this.targetPos != null && (this.target != null || this.isControlled())) {
             let distToTarget = Mathf.dst(this.x, this.y, this.targetPos.x, this.targetPos.y);
@@ -790,19 +809,16 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
         }
 
         let baseAngle = this.rotation + angleOffset;
+        let critMult = this.rollCrit();
+        let rndSpeed = 6.0;
+        let calculatedLifetime = targetDist / rndSpeed;
 
-        for (let i = 0; i < bulletCount; i++) {
-            let rndSpeed = (bulletCount == 1) ? 6.0 : Mathf.random(3.0, 9.0);
-            let calculatedLifetime = targetDist / rndSpeed;
-            let angle = baseAngle + (spreadDeg > 0 ? Mathf.range(spreadDeg) : 0);
-
-            let b = swordoderBulletBase.create(this, this.team, this.x, this.y, angle);
-            if (b != null) {
-                b.data = { slashed: false, mult: slashMultiplier };
-                b.vel.setLength(rndSpeed);
-                b.lifetime = calculatedLifetime;
-                b.damage = baseDmg;
-            }
+        let b = swordoderBulletBase.create(this, this.team, this.x, this.y, baseAngle);
+        if (b != null) {
+            b.data = { slashed: false, mult: critMult };
+            b.vel.setLength(rndSpeed);
+            b.lifetime = calculatedLifetime;
+            b.damage = BULLET_DAMAGE * critMult;
         }
     },
 
@@ -828,12 +844,6 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
         let cx = this.x + Angles.trnsx(aimAngle, dist);
         let cy = this.y + Angles.trnsy(aimAngle, dist);
 
-        let perkA = this.getPerkA();
-        let mult = 1.0;
-        if (perkA == 1) mult = 1.5;
-        else if (perkA == 2) mult = 1.2;
-        else if (perkA == 3) mult = 3.0;
-
         let baseAng = Mathf.random(0.0, 180.0);
         let travelDelay = dist / 6.0;
         let pattern = [
@@ -854,7 +864,7 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
                 y: cy + (step.big ? 0.0 : Mathf.range(14.0)),
                 ang: baseAng + step.da,
                 big: step.big === true,
-                dmg: mult * 19.0 * (step.big ? 3.0 : 1.0)
+                dmg: SLASH_DAMAGE * this.rollCrit() * (step.big ? 3.0 : 1.0)
             });
         }
     },
@@ -878,16 +888,16 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
     },
 
     shoot(type) {
-        this.customRecoil = 1.0;
+        let tier = this.getTier();
+        if (tier == 2) return;
 
-        let perkA = this.getPerkA();
-        let perkB = this.getPerkB();
+        this.customRecoil = 1.0;
 
         if (Mathf.chance(0.5)) {
             this.startSamuraiCombo();
         }
 
-        if (perkB == 1) {
+        if (tier == 1) {
             this.fire1BSidePattern(-30.0);
             this.pendingSubBullets = 1;
             this.subBulletTaskTimer = 12.0;
@@ -895,58 +905,23 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
             return;
         }
 
-        let baseDmg = 30;
-        let bulletCount = 1;
-        let spreadDeg = 0.0;
         let currentRange = this.range();
-        let slashMultiplier = 1.0;
-
         let targetDist = Math.max(1.0, currentRange - 1.0);
-
-        if (perkA == 1) {
-            baseDmg *= 1.5;
-            slashMultiplier = 1.5;
-            bulletCount = 15;
-            spreadDeg = 12.0;
-        } else if (perkA == 2) {
-            baseDmg *= 1.2;
-            slashMultiplier = 1.2;
-            bulletCount = 8;
-            spreadDeg = 0.0;
-        } else if (perkA == 3) {
-            baseDmg *= 3.0;
-            slashMultiplier = 3.0;
-            bulletCount = 4;
-            spreadDeg = 0.0;
-        }
-
-        if (perkB == 2 && Mathf.chance(0.50)) {
-            let healAmount = this.maxHealth;
-            let excess = (this.health + healAmount) - this.maxHealth;
-            this.health = Math.min(this.maxHealth, this.health + healAmount);
-
-            if (excess > 0) {
-                this.fireExtraSubBullets(20, 4.0);
-            }
-        }
 
         if (this.targetPos != null && (this.target != null || this.isControlled())) {
             let distToTarget = Mathf.dst(this.x, this.y, this.targetPos.x, this.targetPos.y);
             targetDist = Math.min(distToTarget, targetDist);
         }
 
-        for (let i = 0; i < bulletCount; i++) {
-            let rndSpeed = (bulletCount == 1) ? 6.0 : Mathf.random(3.0, 9.0);
-            let calculatedLifetime = targetDist / rndSpeed;
-            let angle = this.rotation + (spreadDeg > 0 ? Mathf.range(spreadDeg) : 0);
+        let rndSpeed = 6.0;
+        let calculatedLifetime = targetDist / rndSpeed;
 
-            let b = swordoderBulletBase.create(this, this.team, this.x, this.y, angle);
-            if (b != null) {
-                b.data = { slashed: false, mult: slashMultiplier };
-                b.vel.setLength(rndSpeed);
-                b.lifetime = calculatedLifetime;
-                b.damage = baseDmg;
-            }
+        let b = swordoderBulletBase.create(this, this.team, this.x, this.y, this.rotation);
+        if (b != null) {
+            b.data = { slashed: false, mult: 1.0 };
+            b.vel.setLength(rndSpeed);
+            b.lifetime = calculatedLifetime;
+            b.damage = BULLET_DAMAGE;
         }
 
         this.useAmmo();
@@ -970,24 +945,34 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
                 let cTho = core.items.get(Items.thorium);
                 let cGra = core.items.get(Items.graphite);
 
-                let colCop = cCop >= reqPerkA.copper ? "[green]" : "[red]";
-                let colLea = cLea >= reqPerkA.lead ? "[green]" : "[red]";
-                let colSil = cSil >= reqPerkA.silicon ? "[green]" : "[red]";
+                let colCop = cCop >= reqMK2.copper ? "[green]" : "[red]";
+                let colLea = cLea >= reqMK2.lead ? "[green]" : "[red]";
+                let colSil = cSil >= reqMK2.silicon ? "[green]" : "[red]";
 
-                let colTit = cTit >= reqPerkB.titanium ? "[green]" : "[red]";
-                let colTho = cTho >= reqPerkB.thorium ? "[green]" : "[red]";
-                let colGra = cGra >= reqPerkB.graphite ? "[green]" : "[red]";
+                let colTit = cTit >= reqMK2B.titanium ? "[green]" : "[red]";
+                let colTho = cTho >= reqMK2B.thorium ? "[green]" : "[red]";
+                let colGra = cGra >= reqMK2B.graphite ? "[green]" : "[red]";
 
                 return t(
-                    "[gold]YÊU CẦU TÀI NGUYÊN LÕI (CẤP MK1):[]\n" +
-                    "[yellow]★ ROLL PHÚC LỢI A:[] Đồng: " + colCop + cCop + "[]/2000 | Chì: " + colLea + cLea + "[]/2000 | Silicon: " + colSil + cSil + "[]/2000\n" +
-                    "[cyan]★ ROLL PHÚC LỢI B:[] Titan: " + colTit + cTit + "[]/1000 | Thorium: " + colTho + cTho + "[]/1000 | Than chì: " + colGra + cGra + "[]/1000\n" +
-                    "[gray](Tất cả cấp độ đều sở hữu Nội tại Tận diệt: Địch <= 1% máu sẽ nhận 999,999 sát thương)[]",
+                    "[yellow]YÊU CẦU TÀI NGUYÊN LÕI (CẤP MK1):[]\n" +
+                    "[cyan]Nhánh MK2:[]\n" +
+                    " • Đồng: " + colCop + cCop + "[] / " + reqMK2.copper + "\n" +
+                    " • Chì: " + colLea + cLea + "[] / " + reqMK2.lead + "\n" +
+                    " • Silicon: " + colSil + cSil + "[] / " + reqMK2.silicon + "\n" +
+                    "[cyan]Nhánh MK2B:[]\n" +
+                    " • Titan: " + colTit + cTit + "[] / " + reqMK2B.titanium + "\n" +
+                    " • Thorium: " + colTho + cTho + "[] / " + reqMK2B.thorium + "\n" +
+                    " • Than chì: " + colGra + cGra + "[] / " + reqMK2B.graphite,
 
-                    "[gold]CORE RESOURCE REQUIREMENTS (MK1 TIER):[]\n" +
-                    "[yellow]★ ROLL PERK A:[] Copper: " + colCop + cCop + "[]/2000 | Lead: " + colLea + cLea + "[]/2000 | Silicon: " + colSil + cSil + "[]/2000\n" +
-                    "[cyan]★ ROLL PERK B:[] Titanium: " + colTit + cTit + "[]/1000 | Thorium: " + colTho + cTho + "[]/1000 | Graphite: " + colGra + cGra + "[]/1000\n" +
-                    "[gray](All tiers feature Execute passive: Enemies <= 1% HP receive 999,999 damage)[]"
+                    "[yellow]CORE RESOURCE REQUIREMENTS (MK1 TIER):[]\n" +
+                    "[cyan]MK2 Branch:[]\n" +
+                    " • Copper: " + colCop + cCop + "[] / " + reqMK2.copper + "\n" +
+                    " • Lead: " + colLea + cLea + "[] / " + reqMK2.lead + "\n" +
+                    " • Silicon: " + colSil + cSil + "[] / " + reqMK2.silicon + "\n" +
+                    "[cyan]MK2B Branch:[]\n" +
+                    " • Titanium: " + colTit + cTit + "[] / " + reqMK2B.titanium + "\n" +
+                    " • Thorium: " + colTho + cTho + "[] / " + reqMK2B.thorium + "\n" +
+                    " • Graphite: " + colGra + cGra + "[] / " + reqMK2B.graphite
                 );
             })();
             let reqCell = dialog.cont.add(reqSnapshot.toString());
@@ -997,59 +982,62 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
             dialog.cont.row();
             dialog.cont.add().height(10).row();
 
+            let tryUpgrade = (targetTier, reqList) => {
+                let core = this.team.core();
+                let enough = core != null;
+                for (let i = 0; enough && i < reqList.length; i++) {
+                    if (core.items.get(reqList[i].item) < reqList[i].amount) enough = false;
+                }
+
+                if (enough && this.getTier() == 0) {
+                    for (let i = 0; i < reqList.length; i++) {
+                        NexNet.take(core, reqList[i].item, reqList[i].amount);
+                    }
+                    NexNet.configure(this, java.lang.Integer(targetTier));
+                    NexNet.fx(Fx.upgradeCore, this.x, this.y);
+                    NexNet.shake(4, 4, this.x, this.y);
+                    dialog.hide();
+                    this.deselect();
+                } else {
+                    Vars.ui.showInfo(t("[red]Không đủ tài nguyên để nâng cấp![]", "[red]Not enough resources to upgrade![]"));
+                }
+            };
+
             let mainTable = new Table();
+            let tier = this.getTier();
 
             let boxA = new Table();
             boxA.background(Styles.black6);
             boxA.margin(12);
-            boxA.add(t("[yellow]★ ROLL PHÚC LỢI A (NGẪU NHIÊN) ★[]", "[yellow]★ ROLL PERK A (RANDOM) ★[]")).row();
+            boxA.add(t("[yellow]===(MK2)===[]", "[yellow]===(MK2)===[]")).row();
 
-            let perkA = this.getPerkA();
-            if (perkA == 0) {
-                let txtADesc = boxA.add(t(
-                    "Kích hoạt giao thức nâng cấp ngẫu nhiên nhận 1 trong 3 phúc lợi A:\n" +
-                    " • [green]Phúc lợi 1A:[] +50% Sát thương (Đạn 45, Chém 28.5), Tầm bắn +50% (157.5px), Shotgun 15 viên.\n" +
-                    " • [green]Phúc lợi 2A:[] +20% Sát thương (Đạn 36, Chém 22.8), Tầm bắn +20% (126px), Bắn 8 viên +10 Dmg lan.\n" +
-                    " • [green]Phúc lợi 3A:[] +200% Sát thương (Đạn 90, Chém 57), Tầm bắn -30% (73.5px), Bắn liên tiếp 4 viên + Nạp nhanh (1s).",
+            let txtA = tier == 1 ? t("[green]✔ ĐÃ NÂNG CẤP MK2[]\n", "[green]✔ MK2 UPGRADED[]\n") : "";
+            txtA += t(
+                "Kiếm sĩ song hướng:\n" +
+                " [white]• Kiểu bắn mới: [green]2 bên góc 30°[] (30° trước, 30° sau [yellow]0.2s[])\n" +
+                " • Tỉ lệ bạo kích: [green]+50%[]\n" +
+                " • Sát thương bạo kích: [green]+145%[]\n" +
+                " • Áp dụng cho đạn và vệt chém[]",
 
-                    "Activate upgrade protocol to randomly get 1 of 3 Perk A choices:\n" +
-                    " • [green]Perk 1A:[] +50% Damage (Bullet 45, Slash 28.5), Range +50% (157.5px), Shotgun 15 count.\n" +
-                    " • [green]Perk 2A:[] +20% Damage (Bullet 36, Slash 22.8), Range +20% (126px), Fires 8 bullets +10 Splash Dmg.\n" +
-                    " • [green]Perk 3A:[] +200% Damage (Bullet 90, Slash 57), Range -30% (73.5px), Burst 4 bullets + Fast reload (1s)."
-                ));
-                txtADesc.width(340).get().setWrap(true);
-                txtADesc.get().setAlignment(Align.left);
-                boxA.row();
+                "Dual-side swordsman:\n" +
+                " [white]• New firing pattern: [green]both sides at 30°[] (30° front, 30° back after [yellow]0.2s[])\n" +
+                " • Crit chance: [green]+50%[]\n" +
+                " • Crit damage: [green]+145%[]\n" +
+                " • Applies to bullets and slashes[]"
+            );
+            let txtACell = boxA.add(txtA);
+            txtACell.width(340).get().setWrap(true);
+            txtACell.get().setAlignment(Align.left);
+            boxA.row();
 
-                boxA.button(t("[yellow]QUAY PHÚC LỢI A (2K Đồng/Chì/Silicon)[]", "[yellow]ROLL PERK A (2K Cop/Lead/Sil)[]"), packRun(() => {
-                    let core = this.team.core();
-                    if (core != null && core.items.get(Items.copper) >= 2000 && core.items.get(Items.lead) >= 2000 && core.items.get(Items.silicon) >= 2000) {
-                        NexNet.take(core, Items.copper, 2000);
-                        NexNet.take(core, Items.lead, 2000);
-                        NexNet.take(core, Items.silicon, 2000);
-
-                        let res = Math.floor(Mathf.random(1, 3.99));
-                        this.setPerkA(res);
-                        this.configure(java.lang.Integer(10 + res));
-
-                        NexNet.fx(Fx.upgradeCore, this.x, this.y);
-                        NexNet.shake(4, 4, this.x, this.y);
-                        Vars.ui.showInfo(t("[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[yellow]PHÚC LỢI " + res + "A[]", "[gold]YOU ROLLED:[]\n[yellow]PERK " + res + "A[]"));
-                        dialog.hide();
-                        this.deselect();
-                    } else {
-                        Vars.ui.showInfo(t("[red]Không đủ tài nguyên roll Phúc lợi A![]", "[red]Not enough resources to roll Perk A![]"));
-                    }
+            if (tier == 0) {
+                boxA.button(t("[yellow]NÂNG CẤP MK2[]", "[yellow]UPGRADE MK2[]"), packRun(() => {
+                    tryUpgrade(1, [
+                        { item: Items.copper, amount: reqMK2.copper },
+                        { item: Items.lead, amount: reqMK2.lead },
+                        { item: Items.silicon, amount: reqMK2.silicon }
+                    ]);
                 })).size(280, 40);
-            } else {
-                let txtA = "";
-                if (perkA == 1) txtA = t("[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1A\n• Sát thương Đạn +50% (45) | Chém +50% (28.5)\n• Tầm bắn +50% (157.5px)\n• Bắn Shotgun 15 viên[]", "[green]✔ ACTIVATED: PERK 1A\n• Bullet Dmg +50% (45) | Slash +50% (28.5)\n• Range +50% (157.5px)\n• Shotgun 15 Bullets[]");
-                if (perkA == 2) txtA = t("[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2A\n• Sát thương Đạn +20% (36) | Chém +20% (22.8)\n• Tầm bắn +20% (126px)\n• Bắn 8 viên + 10 Dmg lan[]", "[green]✔ ACTIVATED: PERK 2A\n• Bullet Dmg +20% (36) | Slash +20% (22.8)\n• Range +20% (126px)\n• Fires 8 Bullets + 10 Splash Dmg[]");
-                if (perkA == 3) txtA = t("[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3A\n• Sát thương Đạn +200% (90) | Chém +200% (57)\n• Tầm bắn -30% (73.5px)\n• Bắn liên tiếp 4 viên + Nạp đạn nhanh (1s)[]", "[green]✔ ACTIVATED: PERK 3A\n• Bullet Dmg +200% (90) | Slash +200% (57)\n• Range -30% (73.5px)\n• Burst 4 Bullets + Fast Reload (1s)[]");
-
-                let txtACell = boxA.add(txtA);
-                txtACell.width(340).get().setWrap(true);
-                txtACell.get().setAlignment(Align.left);
             }
 
             mainTable.add(boxA).width(360).row();
@@ -1058,54 +1046,35 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
             let boxB = new Table();
             boxB.background(Styles.black6);
             boxB.margin(12);
-            boxB.add(t("[cyan]★ ROLL PHÚC LỢI B (NGẪU NHIÊN) ★[]", "[cyan]★ ROLL PERK B (RANDOM) ★[]")).row();
+            boxB.add(t("[cyan]===(MK2B)===[]", "[cyan]===(MK2B)===[]")).row();
 
-            let perkB = this.getPerkB();
-            if (perkB == 0) {
-                let txtBDesc = boxB.add(t(
-                    "Kích hoạt giao thức nâng cấp ngẫu nhiên nhận 1 trong 3 phúc lợi B:\n" +
-                    " • [cyan]Phúc lợi 1B:[] Đổi hoàn toàn kiểu bắn sang 2 bên góc 30° (-30° trước, +30° sau 0.2s) + 15% Cơ hội bắn thêm 10 đạn phụ.\n" +
-                    " • [cyan]Phúc lợi 2B:[] 50% Cơ hội hồi 100% máu khi bắn (Hồi dư xả 20 đạn phụ).\n" +
-                    " • [cyan]Phúc lợi 3B:[] 30% Cơ hội tăng 120% Tốc độ bắn trong 15s khi trúng địch.",
+            let txtB = tier == 2 ? t("[green]✔ ĐÃ NÂNG CẤP MK2B[]\n", "[green]✔ MK2B UPGRADED[]\n") : "";
+            txtB += t(
+                "Trảm kiếm tầm xa:\n" +
+                " [white]• Tầm bắn: [green]+500%[] (1,260px)\n" +
+                " • Mục tiêu vào tầm bắn: lập tức [yellow]mỗi 1s[] tạo nhát chém ngay tại vị trí mục tiêu\n" +
+                " • Khóa tối đa [green]3 mục tiêu[]\n" +
+                " • Không còn bắn đạn thường[]",
 
-                    "Activate upgrade protocol to randomly get 1 of 3 Perk B choices:\n" +
-                    " • [cyan]Perk 1B:[] Switch pattern to dual 30° sides (-30° first, +30° after 0.2s) + 15% Chance to fire 10 sub-bullets.\n" +
-                    " • [cyan]Perk 2B:[] 50% Chance to heal 100% HP on fire (Overheal releases 20 sub-bullets).\n" +
-                    " • [cyan]Perk 3B:[] 30% Chance to gain +120% Fire Rate for 15s on hit."
-                ));
-                txtBDesc.width(340).get().setWrap(true);
-                txtBDesc.get().setAlignment(Align.left);
-                boxB.row();
+                "Long-range slayer:\n" +
+                " [white]• Range: [green]+500%[] (1,260px)\n" +
+                " • Target in range: instantly [yellow]every 1s[] creates a slash at the target position\n" +
+                " • Locks up to [green]3 targets[]\n" +
+                " • No longer fires normal bullets[]"
+            );
+            let txtBCell = boxB.add(txtB);
+            txtBCell.width(340).get().setWrap(true);
+            txtBCell.get().setAlignment(Align.left);
+            boxB.row();
 
-                boxB.button(t("[cyan]QUAY PHÚC LỢI B (1K Titan/Thorium/Graphite)[]", "[cyan]ROLL PERK B (1K Tit/Tho/Graph)[]"), packRun(() => {
-                    let core = this.team.core();
-                    if (core != null && core.items.get(Items.titanium) >= 1000 && core.items.get(Items.thorium) >= 1000 && core.items.get(Items.graphite) >= 1000) {
-                        NexNet.take(core, Items.titanium, 1000);
-                        NexNet.take(core, Items.thorium, 1000);
-                        NexNet.take(core, Items.graphite, 1000);
-
-                        let res = Math.floor(Mathf.random(1, 3.99));
-                        this.setPerkB(res);
-                        this.configure(java.lang.Integer(20 + res));
-
-                        NexNet.fx(Fx.upgradeCore, this.x, this.y);
-                        NexNet.shake(4, 4, this.x, this.y);
-                        Vars.ui.showInfo(t("[gold]BẠN ĐÃ ROLL TRÚNG:[]\n[cyan]PHÚC LỢI " + res + "B[]", "[gold]YOU ROLLED:[]\n[cyan]PERK " + res + "B[]"));
-                        dialog.hide();
-                        this.deselect();
-                    } else {
-                        Vars.ui.showInfo(t("[red]Không đủ tài nguyên roll Phúc lợi B![]", "[red]Not enough resources to roll Perk B![]"));
-                    }
+            if (tier == 0) {
+                boxB.button(t("[cyan]NÂNG CẤP MK2B[]", "[cyan]UPGRADE MK2B[]"), packRun(() => {
+                    tryUpgrade(2, [
+                        { item: Items.titanium, amount: reqMK2B.titanium },
+                        { item: Items.thorium, amount: reqMK2B.thorium },
+                        { item: Items.graphite, amount: reqMK2B.graphite }
+                    ]);
                 })).size(280, 40);
-            } else {
-                let txtB = "";
-                if (perkB == 1) txtB = t("[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 1B\n• Đổi kiểu bắn sang 2 bên góc 30° (-30° -> 0.2s -> +30°)\n• Bắn nguyên chùm đạn của Phúc lợi A theo góc nghiêng\n• 15% Tỉ lệ bắn thêm 10 đạn phụ (Độ lệch 8°)[]", "[green]✔ ACTIVATED: PERK 1B\n• Switch pattern to dual 30° sides (-30° -> 0.2s -> +30°)\n• Fires full Perk A burst angled\n• 15% Chance to fire 10 extra sub-bullets (8° spread)[]");
-                if (perkB == 2) txtB = t("[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 2B\n• 50% Tỉ lệ hồi 100% máu khi bắn\n• Nếu vượt Max HP: Bắn thêm 20 đạn phụ (Độ lệch 4°)[]", "[green]✔ ACTIVATED: PERK 2B\n• 50% Chance to heal 100% HP on fire\n• Overheal: Fires 20 extra sub-bullets (4° spread)[]");
-                if (perkB == 3) txtB = t("[green]✔ ĐÃ KÍCH HOẠT: PHÚC LỢI 3B\n• 30% Tỉ lệ tăng 120% tốc độ bắn trong 15s khi trúng mục tiêu[]", "[green]✔ ACTIVATED: PERK 3B\n• 30% Chance to gain +120% Fire Rate for 15s on hit[]");
-
-                let txtBCell = boxB.add(txtB);
-                txtBCell.width(340).get().setWrap(true);
-                txtBCell.get().setAlignment(Align.left);
             }
 
             mainTable.add(boxB).width(360);
@@ -1118,76 +1087,41 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
         })).size(50, 40).tooltip(t("Trung tâm nâng cấp pháo Swordoder", "Swordoder Turret Upgrade Center"));
 
         table.button(Icon.info, Styles.cleari, 40, packRun(() => {
-            let title = t(" Thông số pháo Swordoder Mk1 ", " Swordoder Mk1 Stats ");
+            let tier = this.getTier();
+            let tierName = tier == 2 ? "Mk2B" : (tier == 1 ? "Mk2" : "Mk1");
+            let title = t(" Thông số pháo Swordoder " + tierName + " ", " Swordoder " + tierName + " Stats ");
+
+            let rangePx = tier == 2 ? 1260 : 210;
+            let rangeTiles = (rangePx / 8).toFixed(1);
 
             let descStr = t(
-                "[gold]⚡ THÔNG SỐ CƠ BẢN PHÁO SWORDODER (MK1) ⚡[]\n" +
-                "• Máu: 17,000 | Tầm bắn: 105px (13.1 ô) | Sát thương gốc: 30.0 + 19 (Chém)\n" +
-                "• [red]Nội tại Tận diệt: Mục tiêu bị giảm còn <= 1% máu lập tức chịu 999,999 sát thương kết liễu![]\n" +
-                "• Cơ chế gốc: Bắn 1 viên đạn đơn. Khi đạn chạm/despawn tạo vệt chém gây 19 sát thương diện rộng.\n" +
-                "• Nâng cấp: Nâng cấp trực tiếp chỉ số và kỹ năng qua hệ thống Phúc lợi A & B.",
+                "[gold]⚡ THÔNG SỐ PHÁO SWORDODER (" + tierName.toUpperCase() + ") ⚡[]\n" +
+                "[lightgray]Máu:[] [green]867,000[]\n" +
+                "[lightgray]Tầm bắn:[] [green]" + rangePx + "px (" + rangeTiles + " ô)[]\n" +
+                "[lightgray]Sát thương gốc:[] [green]500[] (đạn) + [green]1,200[] (chém)\n" +
+                "[red]• Tận diệt:[] Mục tiêu còn [yellow]<= 15% máu[] chịu sát thương bằng [yellow]100% máu tối đa[]\n" +
+                "[white]• Khi đạn chạm hoặc hết tầm tạo vệt chém diện rộng[]",
 
-                "[gold]⚡ SWORDODER TURRET BASIC STATS (MK1) ⚡[]\n" +
-                "• Health: 17,000 | Range: 105px (13.1 tiles) | Base Damage: 30.0 + 19 (Slash)\n" +
-                "• [red]Execute Passive: Target drops to <= 1% HP instantly receives 999,999 lethal damage![]\n" +
-                "• Base Mechanism: Fires 1 bullet. On hit/despawn creates a slash arc dealing 19 AoE damage.\n" +
-                "• Upgrades: Directly upgrade stats and skills via Perk A & B system."
+                "[gold]⚡ SWORDODER TURRET STATS (" + tierName.toUpperCase() + ") ⚡[]\n" +
+                "[lightgray]Health:[] [green]867,000[]\n" +
+                "[lightgray]Range:[] [green]" + rangePx + "px (" + rangeTiles + " tiles)[]\n" +
+                "[lightgray]Base Damage:[] [green]500[] (bullet) + [green]1,200[] (slash)\n" +
+                "[red]• Execute:[] Targets at [yellow]<= 15% HP[] take damage equal to [yellow]100% max HP[]\n" +
+                "[white]• On hit or when range ends, bullets create an area slash[]"
             );
 
-            let perkA = this.getPerkA();
-            let perkB = this.getPerkB();
-
-            if (perkA > 0) {
-                descStr += t("\n\n[yellow]★ ĐÃ KÍCH HOẠT PHÚC LỢI A ★[]", "\n\n[yellow]★ PERK A ACTIVATED ★[]");
-                if (perkA == 1) {
-                    descStr += t(
-                        "\n[green]• Phúc lợi 1A: Sát thương Đạn +50% (45), Chém +50% (28.5), Tầm bắn +50% (157.5px), Shotgun 15 viên.[]",
-                        "\n[green]• Perk 1A: Bullet Dmg +50% (45), Slash +50% (28.5), Range +50% (157.5px), Shotgun 15 count.[]"
-                    );
-                }
-                if (perkA == 2) {
-                    descStr += t(
-                        "\n[green]• Phúc lợi 2A: Sát thương Đạn +20% (36), Chém +20% (22.8), Tầm bắn +20% (126px), Bắn 8 viên + 10 Dmg lan.[]",
-                        "\n[green]• Perk 2A: Bullet Dmg +20% (36), Slash +20% (22.8), Range +20% (126px), Fires 8 bullets + 10 Splash Dmg.[]"
-                    );
-                }
-                if (perkA == 3) {
-                    descStr += t(
-                        "\n[green]• Phúc lợi 3A: Sát thương Đạn +200% (90), Chém +200% (57), Tầm bắn -30% (73.5px), Bắn liên tiếp 4 viên + Nạp nhanh (1s).[]",
-                        "\n[green]• Perk 3A: Bullet Dmg +200% (90), Slash +200% (57), Range -30% (73.5px), Burst 4 bullets + Fast Reload (1s).[]"
-                    );
-                }
+            if (tier == 1) {
+                descStr += t(
+                    "\n\n[yellow]===(MK2)===[]\n[white]• Bắn 2 bên góc 30° (30° trước, 30° sau 0.2s)\n• Bạo kích: [green]50%[] tỉ lệ, [green]+145%[] sát thương[]",
+                    "\n\n[yellow]===(MK2)===[]\n[white]• Fires both sides at 30° (30° front, 30° back after 0.2s)\n• Crit: [green]50%[] chance, [green]+145%[] damage[]"
+                );
             }
 
-            if (perkB > 0) {
-                descStr += t("\n\n[cyan]★ ĐÃ KÍCH HOẠT PHÚC LỢI B ★[]", "\n\n[cyan]★ PERK B ACTIVATED ★[]");
-                if (perkB == 1) {
-                    descStr += t(
-                        "\n[green]• Phúc lợi 1B: Đổi kiểu bắn sang 2 bên góc 30° (-30° bắn trước, +30° bắn sau 0.2s). Ghi đè kiểu bắn của Phúc lợi A![]\n" +
-                        "[white]• 15% cơ hội bắn bổ sung loạt 10 đạn phụ phân tán khi trúng mục tiêu.[]",
-
-                        "\n[green]• Perk 1B: Switch pattern to dual 30° sides (-30° first, +30° after 0.2s). Overrides Perk A pattern![]\n" +
-                        "[white]• 15% chance to trigger extra 10 sub-bullets spread fire on hit.[]"
-                    );
-                }
-                if (perkB == 2) {
-                    descStr += t(
-                        "\n[green]• Phúc lợi 2B: Giữ nguyên các chỉ số cơ bản.[]\n" +
-                        "[white]• 50% cơ hội hồi 100% máu khi bắn. Nếu máu đã đầy, bắn xả thêm 20 đạn phụ.[]",
-
-                        "\n[green]• Perk 2B: Keeps base stats unchanged.[]\n" +
-                        "[white]• 50% chance to heal 100% HP when firing. Overheal releases 20 sub-bullets.[]"
-                    );
-                }
-                if (perkB == 3) {
-                    descStr += t(
-                        "\n[green]• Phúc lợi 3B: Tốc độ bắn buff +120% khi kích hoạt.[]\n" +
-                        "[white]• 30% cơ hội tự kích hoạt buff siêu tốc độ bắn duy trì trong 15s mỗi khi bắn trúng địch.[]",
-
-                        "\n[green]• Perk 3B: Fire rate buffed +120% when active.[]\n" +
-                        "[white]• 30% chance to trigger super fire rate buff for 15s upon hitting target.[]"
-                    );
-                }
+            if (tier == 2) {
+                descStr += t(
+                    "\n\n[cyan]===(MK2B)===[]\n[white]• Tầm bắn +500%\n• Mỗi 1s tạo nhát chém tại vị trí mục tiêu\n• Khóa tối đa 3 mục tiêu[]",
+                    "\n\n[cyan]===(MK2B)===[]\n[white]• Range +500%\n• Every 1s creates a slash at target position\n• Locks up to 3 targets[]"
+                );
             }
 
             let dialog = extend(BaseDialog, title, {});
@@ -1201,18 +1135,19 @@ swordoder.config(java.lang.Integer, packCons2((tile, value) => {
             dialog.cont.add(scroll).maxHeight(400);
             dialog.addCloseButton();
             dialog.show();
-        })).size(50, 40).tooltip(t("Xem thông số pháo Swordoder Mk1", "View Swordoder Mk1 Stats"));
+        })).size(50, 40).tooltip(t("Xem thông số pháo Swordoder", "View Swordoder Stats"));
     },
 
     write(write) {
         this.super$write(write);
-        write.b(this.getPerkA());
-        write.b(this.getPerkB());
+        write.b(100 + this.getTier());
+        write.b(0);
     },
 
     read(read, revision) {
         this.super$read(read, revision);
-        this.setPerkA(read.b());
-        this.setPerkB(read.b());
+        let storedTier = read.b();
+        read.b();
+        this.tierState = (storedTier >= 100 && storedTier <= 102) ? (storedTier - 100) : 0;
     }
 });

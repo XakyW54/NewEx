@@ -29,11 +29,11 @@ drawer: {
 }
 
 requirements: [
-  copper/550
-  lead/120
-  silicon/80
-  titanium/50
-  surge-alloy/120
+  copper/1650
+  lead/360
+  silicon/240
+  titanium/150
+  surge-alloy/360
 ]
 
 category: turret

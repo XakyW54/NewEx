@@ -44,7 +44,7 @@ function applyCritDamage(bullet, target, baseDamage, ownerBuild){
 
 const ironManBeam = extend(LaserBulletType, {
     damage: 45,
-    length: 280,
+    length: 700,
     width: 28,
     lifetime: 4,
     colors: [Color.valueOf("90caf9"), Color.valueOf("e3f2fd"), Color.white],
@@ -53,7 +53,7 @@ const ironManBeam = extend(LaserBulletType, {
     sideLength: 22,
     hitEffect: customHitEffect,
     despawnEffect: Fx.none,
-    drawSize: 300,
+    drawSize: 720,
     pierce: true,
 
     hitEntity(b, other, initialHealth){
@@ -82,7 +82,7 @@ const ironManBeam = extend(LaserBulletType, {
 
 const closeRangeBullet = extend(BasicBulletType, {
     absorbable: true,
-    lifetime: 40,
+    lifetime: 97,
     speed: 7,
     damage: 78,
     height: 20,
@@ -202,9 +202,9 @@ Events.on(ContentInitEvent, new Cons({
                     let realX = x * Vars.tilesize + this.offset;
                     let realY = y * Vars.tilesize + this.offset;
 
-                    dashCircle(realX, realY, 100, Pal.remove);
+                    Drawf.dashCircle(realX, realY, 100, Pal.remove);
 
-                    dashCircle(realX, realY, getDynamicRange(0), Pal.place);
+                    Drawf.dashCircle(realX, realY, erysidusBlock.range, Pal.place);
                 },
 
                 updateTile(){
@@ -212,8 +212,8 @@ Events.on(ContentInitEvent, new Cons({
 
                     let tier = this.getTier();
 
-                    let beamTarget = Units.bestTarget(this.team, this.x, this.y, 280, e => e.checkTarget(true, true), e => true, (a, b) => b.health - a.health);
-                    let hasTargetInBeamRange = (beamTarget != null) || (this.target != null && this.dst(this.target) <= 280);
+                    let beamTarget = Units.bestTarget(this.team, this.x, this.y, 700, e => e.checkTarget(true, true), e => true, (a, b) => b.health - a.health);
+                    let hasTargetInBeamRange = (beamTarget != null) || (this.target != null && this.dst(this.target) <= 700);
 
                     if(this.hasAmmo()){
                         if(this.beamDurationTimer <= 0){
@@ -244,7 +244,8 @@ Events.on(ContentInitEvent, new Cons({
 
                         this.rotation = Mathf.slerpDelta(this.rotation, targetAngle, 0.2);
 
-                        if(Mathf.mod(this.beamDurationTimer, 3) < Time.delta){
+                        if(!this.beamShot){
+                            this.beamShot = true;
                             let beamDmg = (tier === 2) ? 68 : 45;
                             let beam = ironManBeam.create(this, this.team, this.x, this.y, targetAngle, 1, 1);
                             if(beam != null) beam.damage = beamDmg;
@@ -253,10 +254,14 @@ Events.on(ContentInitEvent, new Cons({
                         }
                     }
 
+                    if(this.beamDurationTimer <= 0){
+                        this.beamShot = false;
+                    }
+
                     if(this.beamDurationTimer <= 0 && this.hasAmmo() && this.isShooting && this.target != null){
                         let dst = this.dst(this.target);
 
-                        if(dst <= 270){
+                        if(dst <= 675){
                             this.subGunTimer += Time.delta;
 
                             let delay = (tier === 1) ? 6 : 12;
@@ -299,7 +304,7 @@ Events.on(ContentInitEvent, new Cons({
 
                     Draw.color(PerfCore.color("90caf9"));
                     Lines.stroke(1.0);
-                    Lines.dashCircle(this.x, this.y, 280);
+                    Lines.dashCircle(this.x, this.y, 700);
                     Draw.reset();
                 },
 
@@ -393,7 +398,7 @@ Events.on(ContentInitEvent, new Cons({
                                     NexNet.fx(Fx.upgradeCore, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
 
                                     this.setTier(1);
-                                    NexNet.configure(this, java.lang.Integer.valueOf(1));
+                                    NexNet.configure(this, java.lang.Integer(1));
                                     dialog.hide(); this.deselect();
                                 } else { Vars.ui.showInfo(english ? "[red]Not enough resources for MK2 branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]"); }
                             })).size(180, 38);
@@ -417,7 +422,7 @@ Events.on(ContentInitEvent, new Cons({
                                     NexNet.fx(Fx.bigShockwave, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(5, 5, this.x, this.y);
 
                                     this.setTier(2);
-                                    NexNet.configure(this, java.lang.Integer.valueOf(2));
+                                    NexNet.configure(this, java.lang.Integer(2));
                                     dialog.hide(); this.deselect();
                                 } else { Vars.ui.showInfo(english ? "[red]Not enough resources for MK2B branch![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
                             })).size(180, 38);
@@ -501,7 +506,7 @@ Events.on(ContentInitEvent, new Cons({
                     })).size(50, 40).tooltip(english ? "View detailed system stats" : "Xem chi tiết thông số hệ thống");
                 },
 
-                config(){ return java.lang.Integer.valueOf(this.getTier()); },
+                config(){ return java.lang.Integer(this.getTier()); },
 
                 draw(){
                     this.super$draw();

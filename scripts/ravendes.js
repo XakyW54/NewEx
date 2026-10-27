@@ -332,7 +332,9 @@ Events.on(ContentInitEvent, () => {
 
             if (tier == 1) {
                 this.reloadCounter += Time.delta * 0.5;
-                this.rotation = Angles.moveToward(this.rotation, this.targetRotation, 4.0 * 1.5 * Time.delta);
+                if (this.target != null) {
+                    this.rotation = Angles.moveToward(this.rotation, this.angleTo(this.target), 4.0 * 1.5 * Time.delta);
+                }
             }
 
             if (tier == 2 && hasPower) {

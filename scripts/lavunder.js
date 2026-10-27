@@ -149,7 +149,7 @@ const lavunderLaserBullet = extend(BulletType, {
                 let chargeSpeedMultiplier = 1 + Math.pow(currentPoints / 50, 2);
                 let speedBonus = (tier == 2) ? 3.8 : 1.0;
 
-                currentPoints += (1 / 60) * chargeSpeedMultiplier * speedBonus;
+                currentPoints += (15 / 60) * chargeSpeedMultiplier * speedBonus;
 
                 if(tier == 1 || tier == 2){
                     if(currentPoints >= 100){

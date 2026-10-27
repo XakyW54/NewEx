@@ -658,6 +658,13 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
                     applyCeiBonus = true;
                 }
 
+                this.ceiAddTimer = (this.ceiAddTimer || 0) + Time.delta;
+                let addCeiStacks = false;
+                if (this.ceiAddTimer >= 60) {
+                    addCeiStacks = true;
+                    this.ceiAddTimer = 0;
+                }
+
                 Units.nearbyEnemies(this.team, bx, by, maxLen, packCons(u => {
                     if (u.checkTarget(true, true)) {
                         let hitTia1 = distToSegment(u.x, u.y, off1X, off1Y, e1X, e1Y) <= u.hitSize + 4;
@@ -669,6 +676,12 @@ plasanod.buildType = () => extend(ContinuousTurretBuildClass, plasanod, {
 
                             if (sta != null && sta.cei != null) {
                                 u.apply(sta.cei, 7200);
+                                if (addCeiStacks) {
+                                    global.ceiStacks[u.id] = (global.ceiStacks[u.id] || 0) + 20;
+                                    if (global.ceiLastAppliedTurret) {
+                                        global.ceiLastAppliedTurret[u.id] = this;
+                                    }
+                                }
                                 if (applyCeiBonus) {
                                     for (let i = 0; i < 3; i++) {
                                         u.apply(sta.cei, 7200);

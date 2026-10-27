@@ -157,7 +157,7 @@ function drawSwordShape(x, y, rot, baseSize, progress, isCrystal) {
 }
 
 const MicroSwordBullet1 = extend(BasicBulletType, {
-    speed: 15.4, damage: 140, width: 2.0, height: 7, shrinkX: 0, shrinkY: 0,
+    speed: 15.4, damage: (140) * 3, width: 2.0, height: 7, shrinkX: 0, shrinkY: 0,
     homingPower: 0.15, homingRange: 140,
     pierce: true, pierceBuilding: true, pierceCap: 5,
     frontColor: Color.valueOf(SWORD_LIGHT), backColor: Color.valueOf(SWORD_MAIN),
@@ -175,7 +175,7 @@ const MicroSwordBullet1 = extend(BasicBulletType, {
 });
 
 const MicroSwordBullet2 = extend(BasicBulletType, {
-    speed: 15.4, damage: 140, width: 2.0, height: 7, shrinkX: 0, shrinkY: 0,
+    speed: 15.4, damage: (140) * 3, width: 2.0, height: 7, shrinkX: 0, shrinkY: 0,
     homingPower: 0.18, homingRange: 150,
     pierce: true, pierceBuilding: true, pierceCap: 5,
     frontColor: Color.valueOf(SWORD_LIGHT), backColor: Color.valueOf(SWORD_MAIN),
@@ -193,7 +193,7 @@ const MicroSwordBullet2 = extend(BasicBulletType, {
 });
 
 const MicroSwordBulletCrystal1 = extend(BasicBulletType, {
-    speed: 15.4, damage: 140 * 4.8, width: 2.0, height: 7, shrinkX: 0, shrinkY: 0,
+    speed: 15.4, damage: (140 * 4.8) * 3, width: 2.0, height: 7, shrinkX: 0, shrinkY: 0,
     homingPower: 0.18, homingRange: 150,
     pierce: true, pierceBuilding: true, pierceCap: 5,
     frontColor: Color.valueOf(CRYSTAL_LIGHT), backColor: Color.valueOf(CRYSTAL_MAIN),
@@ -211,7 +211,7 @@ const MicroSwordBulletCrystal1 = extend(BasicBulletType, {
 });
 
 const MicroSwordBulletCrystal2 = extend(BasicBulletType, {
-    speed: 15.4, damage: 140 * 4.8, width: 2.0, height: 7, shrinkX: 0, shrinkY: 0,
+    speed: 15.4, damage: (140 * 4.8) * 3, width: 2.0, height: 7, shrinkX: 0, shrinkY: 0,
     homingPower: 0.2, homingRange: 160,
     pierce: true, pierceBuilding: true, pierceCap: 5,
     frontColor: Color.valueOf(CRYSTAL_LIGHT), backColor: Color.valueOf(CRYSTAL_MAIN),
@@ -229,7 +229,7 @@ const MicroSwordBulletCrystal2 = extend(BasicBulletType, {
 });
 
 const MiniSwordBullet = extend(BasicBulletType, {
-    speed: 4.2, damage: 126, width: 2.5, height: 10, shrinkX: 0, shrinkY: 0,
+    speed: 4.2, damage: (126) * 3, width: 2.5, height: 10, shrinkX: 0, shrinkY: 0,
     homingPower: 0.1, homingRange: 150,
     pierce: true, pierceBuilding: true, pierceCap: 5,
     frontColor: Color.valueOf(CRYSTAL_LIGHT), backColor: Color.valueOf(CRYSTAL_MAIN),
@@ -241,7 +241,7 @@ const MiniSwordBullet = extend(BasicBulletType, {
 });
 
 const FallingRainSword = extend(BasicBulletType, {
-    speed: 7.0, damage: 100, width: 2.5, height: 10, shrinkX: 0, shrinkY: 0,
+    speed: 7.0, damage: (100) * 3, width: 2.5, height: 10, shrinkX: 0, shrinkY: 0,
     homingPower: 0.0, pierce: true, pierceBuilding: true, pierceCap: 3,
     frontColor: Color.valueOf(SWORD_LIGHT), backColor: Color.valueOf(SWORD_MAIN),
     shootEffect: Fx.none, hitEffect: swordHitFx, despawnEffect: Fx.none,
@@ -252,7 +252,7 @@ const FallingRainSword = extend(BasicBulletType, {
 });
 
 const FallingRainCrystal = extend(BasicBulletType, {
-    speed: 7.0, damage: 155, width: 2.5, height: 10, shrinkX: 0, shrinkY: 0,
+    speed: 7.0, damage: (155) * 3, width: 2.5, height: 10, shrinkX: 0, shrinkY: 0,
     homingPower: 0.0, pierce: true, pierceBuilding: true, pierceCap: 3,
     frontColor: Color.valueOf(CRYSTAL_LIGHT), backColor: Color.valueOf(CRYSTAL_MAIN),
     shootEffect: Fx.none, hitEffect: swordHitFx, despawnEffect: Fx.none,
@@ -292,11 +292,11 @@ function triggerSwordRain(b, entity) {
 }
 
 const SwordBulletMK1 = extend(BasicBulletType, {
-    speed: 7.7, damage: 210, width: 3.2, height: 12, shrinkX: 0, shrinkY: 0,
+    speed: 7.7, damage: (210) * 3, width: 3.2, height: 12, shrinkX: 0, shrinkY: 0,
     homingPower: 0.05, homingRange: 150,
     pierce: true, pierceBuilding: true, pierceCap: 20,
     frontColor: Color.valueOf(SWORD_LIGHT), backColor: Color.valueOf(SWORD_MAIN),
-    splashDamage: 40, splashDamageRadius: 35,
+    splashDamage: 40 * 3, splashDamageRadius: 35,
     shootEffect: swordMuzzleFx, hitEffect: swordHitFx, despawnEffect: swordExplosionFx,
     status: StatusEffects.melting, statusDuration: 90,
 
@@ -323,11 +323,11 @@ const SwordBulletMK1 = extend(BasicBulletType, {
 });
 
 const SwordBulletMK2 = extend(BasicBulletType, {
-    speed: 11.55, damage: 273, width: 3.5, height: 14, shrinkX: 0, shrinkY: 0,
+    speed: 11.55, damage: (273) * 3, width: 3.5, height: 14, shrinkX: 0, shrinkY: 0,
     homingPower: 0.08, homingRange: 200,
     pierce: true, pierceBuilding: true, pierceCap: 30,
     frontColor: Color.valueOf(SWORD_LIGHT), backColor: Color.valueOf(SWORD_DARK),
-    splashDamage: 60, splashDamageRadius: 45,
+    splashDamage: 60 * 3, splashDamageRadius: 45,
     shootEffect: swordMuzzleFx, hitEffect: swordHitFx, despawnEffect: swordExplosionFx,
     status: StatusEffects.melting, statusDuration: 130,
 
@@ -354,11 +354,11 @@ const SwordBulletMK2 = extend(BasicBulletType, {
 });
 
 const SwordBulletMK3 = extend(BasicBulletType, {
-    speed: 16.94, damage: 462, width: 3.8, height: 16, shrinkX: 0, shrinkY: 0,
+    speed: 16.94, damage: (462) * 3, width: 3.8, height: 16, shrinkX: 0, shrinkY: 0,
     homingPower: 0.1, homingRange: 250,
     pierce: true, pierceBuilding: true, pierceCap: 40,
     frontColor: Color.valueOf(SWORD_LIGHT), backColor: Color.valueOf(SWORD_DARK),
-    splashDamage: 80, splashDamageRadius: 55,
+    splashDamage: 80 * 3, splashDamageRadius: 55,
     shootEffect: swordMuzzleFx, hitEffect: swordHitFx, despawnEffect: swordExplosionFx,
     status: StatusEffects.melting, statusDuration: 160,
 
@@ -387,11 +387,11 @@ const SwordBulletMK3 = extend(BasicBulletType, {
 });
 
 const SwordBulletCrystalMK1 = extend(BasicBulletType, {
-    speed: 8.4, damage: 210 * 4.8, width: 3.5, height: 14, shrinkX: 0, shrinkY: 0,
+    speed: 8.4, damage: (210 * 4.8) * 3, width: 3.5, height: 14, shrinkX: 0, shrinkY: 0,
     homingPower: 0.1, homingRange: 220,
     pierce: true, pierceBuilding: true, pierceCap: 35,
     frontColor: Color.valueOf(CRYSTAL_LIGHT), backColor: Color.valueOf(CRYSTAL_MAIN),
-    splashDamage: 80, splashDamageRadius: 50,
+    splashDamage: 80 * 3, splashDamageRadius: 50,
     shootEffect: crystalMuzzleFx, hitEffect: swordHitFx, despawnEffect: swordExplosionFx,
     status: StatusEffects.freezing, statusDuration: 150,
 
@@ -435,11 +435,11 @@ const SwordBulletCrystalMK1 = extend(BasicBulletType, {
 });
 
 const SwordBulletCrystalMK2 = extend(BasicBulletType, {
-    speed: 11.55, damage: 273 * 4.8, width: 3.6, height: 15, shrinkX: 0, shrinkY: 0,
+    speed: 11.55, damage: (273 * 4.8) * 3, width: 3.6, height: 15, shrinkX: 0, shrinkY: 0,
     homingPower: 0.12, homingRange: 230,
     pierce: true, pierceBuilding: true, pierceCap: 38,
     frontColor: Color.valueOf(CRYSTAL_LIGHT), backColor: Color.valueOf(CRYSTAL_MAIN),
-    splashDamage: 90, splashDamageRadius: 52,
+    splashDamage: 90 * 3, splashDamageRadius: 52,
     shootEffect: crystalMuzzleFx, hitEffect: swordHitFx, despawnEffect: swordExplosionFx,
     status: StatusEffects.freezing, statusDuration: 160,
 
@@ -483,11 +483,11 @@ const SwordBulletCrystalMK2 = extend(BasicBulletType, {
 });
 
 const SwordBulletCrystalMK3 = extend(BasicBulletType, {
-    speed: 16.94, damage: 462 * 4.8, width: 3.8, height: 16, shrinkX: 0, shrinkY: 0,
+    speed: 16.94, damage: (462 * 4.8) * 3, width: 3.8, height: 16, shrinkX: 0, shrinkY: 0,
     homingPower: 0.15, homingRange: 260,
     pierce: true, pierceBuilding: true, pierceCap: 45,
     frontColor: Color.valueOf(CRYSTAL_LIGHT), backColor: Color.valueOf(CRYSTAL_MAIN),
-    splashDamage: 110, splashDamageRadius: 60,
+    splashDamage: 110 * 3, splashDamageRadius: 60,
     shootEffect: crystalMuzzleFx, hitEffect: swordHitFx, despawnEffect: swordExplosionFx,
     status: StatusEffects.freezing, statusDuration: 180,
 
@@ -540,7 +540,7 @@ TyterYi.health = 3000;
 TyterYi.size = 3;
 TyterYi.reload = 34.0;
 TyterYi.inaccuracy = 1.0;
-TyterYi.range = 320.0;
+TyterYi.range = 1920.0;
 TyterYi.configurable = true;
 TyterYi.category = Category.turret;
 
@@ -571,9 +571,9 @@ TyterYi.buildType = () => extend(ItemTurret.ItemTurretBuild, TyterYi, {
 
     range(){
         let tier = this.getTier();
-        if(tier == 1) return 426.7;
-        if(tier == 2) return 704.0;
-        return 320.0;
+        if(tier == 1) return 2560.2;
+        if(tier == 2) return 4224.0;
+        return 1920.0;
     },
 
     drawSelect(){

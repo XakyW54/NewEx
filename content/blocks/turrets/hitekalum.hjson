@@ -4,7 +4,7 @@ description: "Pháo điện từ cao cấp. Roll phúc lợi ngẫu nhiên để
 size: 4
 health: 8500
 range: 320
-reload: 60
+reload: 28.57
 targetAir: true
 targetGround: true
 powerCapacity: 4000

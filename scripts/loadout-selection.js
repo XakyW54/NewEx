@@ -32,6 +32,7 @@ const NexNet = global.NexNet;
 
     let autoLowFpsSetting = true;
     let showWaveBtnSetting = true;
+    let hideOresSetting = false;
     let hpPerWavePercentSetting = 10;
     let fpsOptPercentSetting = 0;
 
@@ -41,6 +42,7 @@ const NexNet = global.NexNet;
     let countMeteor = 0;
     let countClearER = 0;
     let countDeleteOre = 0;
+    let countRandomSpawnE = 0;
 
     let targetCamX = -1;
     let targetCamY = -1;
@@ -48,6 +50,112 @@ const NexNet = global.NexNet;
     let panTimer = 1.0;
     let panStartX = 0;
     let panStartY = 0;
+
+    // --- ROBUST ORE HIDING & PERSISTENT MECHANISM ---
+    global.newexHiddenOres = global.newexHiddenOres || {};
+
+    function findOreBlockByItem(item) {
+        let vanillaOres = [
+            Blocks.oreCopper, Blocks.oreLead, Blocks.oreCoal,
+            Blocks.oreTitanium, Blocks.oreThorium, Blocks.oreScrap
+        ];
+        if (Blocks.oreBeryllium != null) vanillaOres.push(Blocks.oreBeryllium);
+        if (Blocks.oreTungsten != null) vanillaOres.push(Blocks.oreTungsten);
+
+        for (let i = 0; i < vanillaOres.length; i++) {
+            let ore = vanillaOres[i];
+            if (ore != null && ore.itemDrop === item) {
+                return ore;
+            }
+        }
+        let found = null;
+        Vars.content.blocks().each(b => {
+            if (b instanceof OreBlock && b.itemDrop === item) {
+                found = b;
+            }
+        });
+        return found || Blocks.oreCopper;
+    }
+
+    function saveHiddenOresToSettings(hiddenObj) {
+        let arr = [];
+        for (let key in hiddenObj) {
+            let item = hiddenObj[key];
+            if (item != null) {
+                arr.push(key + ":" + item.name);
+            }
+        }
+        Core.settings.put("newex-saved-hidden-ores", arr.join(";"));
+    }
+
+    function loadHiddenOresFromSettings() {
+        let hiddenObj = {};
+        let str = Core.settings.getString("newex-saved-hidden-ores", "");
+        if (str !== "") {
+            let pairs = str.split(";");
+            for (let i = 0; i < pairs.length; i++) {
+                let subParts = pairs[i].split(":");
+                if (subParts.length === 2) {
+                    let coord = subParts[0];
+                    let itemName = subParts[1];
+                    let item = Vars.content.item(itemName);
+                    if (item != null) {
+                        hiddenObj[coord] = item;
+                    }
+                }
+            }
+        }
+        return hiddenObj;
+    }
+
+    function applyOreHidingState(hide) {
+        if (Vars.state == null || !Vars.state.isGame() || Vars.world == null) return;
+
+        let width = Vars.world.width();
+        let height = Vars.world.height();
+
+        if (hide) {
+            global.newexHiddenOres = {};
+            let currentHidden = {};
+            for (let x = 0; x < width; x++) {
+                for (let y = 0; y < height; y++) {
+                    let t = Vars.world.tile(x, y);
+                    if (t != null && t.overlay() != null && t.overlay() !== Blocks.air) {
+                        let dropItem = t.drop();
+                        if (dropItem != null) {
+                            global.newexHiddenOres[t.x + "," + t.y] = dropItem;
+                            currentHidden[t.x + "," + t.y] = dropItem;
+                            NexNet.setOverlay(t, Blocks.air);
+                        }
+                    }
+                }
+            }
+            saveHiddenOresToSettings(currentHidden);
+        } else {
+            if (Object.keys(global.newexHiddenOres).length === 0) {
+                global.newexHiddenOres = loadHiddenOresFromSettings();
+            }
+
+            for (let key in global.newexHiddenOres) {
+                let parts = key.split(",");
+                if (parts.length === 2) {
+                    let tx = parseInt(parts[0]);
+                    let ty = parseInt(parts[1]);
+                    let item = global.newexHiddenOres[key];
+                    let t = Vars.world.tile(tx, ty);
+                    if (t != null && item != null) {
+                        let oreBlock = findOreBlockByItem(item);
+                        if (oreBlock != null) {
+                            NexNet.setOverlay(t, oreBlock);
+                        }
+                    }
+                }
+            }
+            global.newexHiddenOres = {};
+            Core.settings.put("newex-saved-hidden-ores", "");
+        }
+    }
+    // --------------------------------------------------
 
     function smoothPanTo(x, y) {
         targetCamX = x;
@@ -60,6 +168,7 @@ const NexNet = global.NexNet;
     function reloadCachedSettings() {
         autoLowFpsSetting = Core.settings.getBool("newex-auto-low-fps", true);
         showWaveBtnSetting = Core.settings.getBool("newex-show-wave-btn", true);
+        hideOresSetting = Core.settings.getBool("newex-hide-ores", false);
         hpPerWavePercentSetting = Core.settings.getInt("newex-hp-per-wave-percent", 10);
         fpsOptPercentSetting = Core.settings.getInt("newex-fps-opt-percent", 0);
     }
@@ -358,6 +467,89 @@ const NexNet = global.NexNet;
         if (Vars.state == null || !Vars.state.isGame()) return;
         NexNet.send("clearE", String(percent));
     }
+
+    // --- RANDOM SPAWN ENEMY MECHANISM WITH CAMERA PAN & DELAY ---
+    NexNet.on("randomspawnE", (player, payload) => {
+        if (Vars.state == null || !Vars.state.isGame() || Vars.world == null) return;
+
+        let a = payload.split("|");
+        let tx = parseFloat(a[0]);
+        let ty = parseFloat(a[1]);
+        if (isNaN(tx) || isNaN(ty)) return;
+
+        let enemyTeam = Vars.state.rules.waveTeam || Team.crux;
+        let targetTile = Vars.world.tileWorld(tx, ty);
+        if (targetTile == null) return;
+
+        let unitTypes = new Seq();
+        Vars.content.units().each(u => {
+            if (u != null && !u.internal) {
+                unitTypes.add(u);
+            }
+        });
+
+        if (unitTypes.isEmpty()) return;
+        unitTypes.shuffle();
+        let selectedUnitType = unitTypes.first();
+
+        // Chờ 1 giây (60 ticks) sau khi camera di chuyển đến nơi rồi mới spawn
+        Time.run(60, () => {
+            if (Vars.state == null || !Vars.state.isGame()) return;
+            let spawnedUnit = selectedUnitType.create(enemyTeam);
+            if (spawnedUnit != null) {
+                let wx = targetTile.worldx();
+                let wy = targetTile.worldy();
+                spawnedUnit.set(wx, wy);
+                spawnedUnit.add();
+
+                Fx.spawn.at(wx, wy);
+                Fx.teleportOut.at(wx, wy);
+                NexNet.fx(Fx.spawn, wx, wy);
+
+                NexNet.toastAll(isEn() ? "[orange]Random enemy spawned: " + selectedUnitType.name + "![]" : "[orange]Spawn ngẫu nhiên địch: " + selectedUnitType.localizedName + "![]", 2);
+            }
+        });
+    }, true, 500);
+
+    function triggerRandomSpawnEnemy(btnActor) {
+        if (Vars.state == null || !Vars.state.isGame() || Vars.world == null) return;
+
+        let validTiles = new Seq();
+        let width = Vars.world.width();
+        let height = Vars.world.height();
+
+        for (let x = 2; x < width - 2; x += 3) {
+            for (let y = 2; y < height - 2; y += 3) {
+                let t = Vars.world.tile(x, y);
+                if (t != null && !t.solid() && t.build == null && !t.floor().isLiquid) {
+                    validTiles.add(t);
+                }
+            }
+        }
+
+        if (validTiles.isEmpty()) {
+            Vars.ui.showInfoToast(isEn() ? "No valid open location to spawn enemy!" : "Không tìm thấy vị trí trống hợp lệ để spawn địch!", 2);
+            return;
+        }
+
+        validTiles.shuffle();
+        let spawnTile = validTiles.first();
+        let targetX = spawnTile.worldx();
+        let targetY = spawnTile.worldy();
+
+        // Lướt camera mượt tới vị trí spawn
+        smoothPanTo(targetX, targetY);
+
+        Vars.ui.showInfoToast(isEn() ? "[orange]Camera panning to enemy spawn target...[]" : "[orange]Đang di chuyển camera đến mục tiêu spawn địch...[]", 1.5);
+
+        NexNet.send("randomspawnE", targetX + "|" + targetY);
+
+        countRandomSpawnE++;
+        if (btnActor != null) {
+            btnActor.setText((isEn() ? "Random Spawn E" : "Spawn ngẫu nhiên E") + " (" + countRandomSpawnE + ")");
+        }
+    }
+    // -----------------------------------------------------------
 
     NexNet.on("delore", (player, payload) => {
         if (Vars.state == null || !Vars.state.isGame() || Vars.world == null) return;
@@ -713,6 +905,14 @@ const NexNet = global.NexNet;
             });
             expandTable.add(btnDeleteOre).size(150, 36).pad(2).row();
 
+            let btnRandomSpawnE = new TextButton(isEn() ? "Random Spawn E" : "Spawn ngẫu nhiên E", Styles.flatTogglet);
+            btnRandomSpawnE.getLabel().setFontScale(0.7);
+            btnRandomSpawnE.getLabel().setColor(Color.valueOf("da70d6"));
+            btnRandomSpawnE.clicked(() => {
+                triggerRandomSpawnEnemy(btnRandomSpawnE);
+            });
+            expandTable.add(btnRandomSpawnE).size(150, 36).pad(2).row();
+
             container.add(expandTable).padTop(2).row();
 
             let isDragging = false;
@@ -930,6 +1130,14 @@ const NexNet = global.NexNet;
         btnAllowClients.setChecked(Core.settings.getBool("newex-allow-client-actions", true));
         content.add(btnAllowClients).size(280, 54).pad(4).row();
 
+        // --- ORE HIDING SETTING TOGGLE ---
+        content.add(isEn() ? "[accent]-- ORE DISPLAY SETTINGS --[]" : "[accent]-- CÀI ĐẶT HIỂN THỊ MỎ KHOÁNG --[]").padTop(10).row();
+        let btnHideOres = new TextButton(isEn() ? "Hide Ore Deposits\n[gray](Beryi Drills can still scan & mine)[]" : "Ẩn bãi khoáng sản\n[gray](Khoan Beryi vẫn quét & đào được)[]", Styles.togglet);
+        btnHideOres.getLabel().setFontScale(0.8);
+        btnHideOres.setChecked(Core.settings.getBool("newex-hide-ores", false));
+        content.add(btnHideOres).size(280, 54).pad(4).row();
+        // ---------------------------------
+
         content.add(isEn() ? "[accent]-- TURRET LIMIT --[]" : "[accent]-- GIỚI HẠN THÁP PHÁO --[]").padTop(10).row();
         content.add(isEn() ? "Number of turrets selectable per match:" : "Số lượng tháp pháo chọn mỗi trận:").padBottom(5).row();
 
@@ -1020,6 +1228,14 @@ const NexNet = global.NexNet;
         content.button(isEn() ? "Save Settings" : "Lưu Cài Đặt", () => {
             Core.settings.put("newex-gacha-enabled", java.lang.Boolean(btnGachaEnabled.isChecked()));
             Core.settings.put("newex-allow-client-actions", java.lang.Boolean(btnAllowClients.isChecked()));
+
+            let oldHideOres = Core.settings.getBool("newex-hide-ores", false);
+            let newHideOres = btnHideOres.isChecked();
+            Core.settings.put("newex-hide-ores", java.lang.Boolean(newHideOres));
+
+            if (oldHideOres !== newHideOres) {
+                applyOreHidingState(newHideOres);
+            }
 
             let newValue = Math.floor(slider.getValue());
             Core.settings.put("newex-max-turrets", java.lang.Integer(newValue));
@@ -1200,6 +1416,15 @@ const NexNet = global.NexNet;
         }
 
         if (turretList.isEmpty()) loadTurretsFromFolder();
+
+        // Automatically handle ore hiding or restoring based on current settings
+        Time.run(10, () => {
+            if (Core.settings.getBool("newex-hide-ores", false)) {
+                applyOreHidingState(true);
+            } else {
+                applyOreHidingState(false);
+            }
+        });
 
         let isSandbox = Vars.state.rules != null && (Vars.state.rules.infiniteResources || Vars.state.rules.editor);
         let gachaEnabled = Core.settings.getBool("newex-gacha-enabled", true);

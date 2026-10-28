@@ -32,11 +32,15 @@ Events.on(ContentInitEvent, () => {
             copesBoostTime: 0,
             copesBoostIntensity: 1.0,
 
-            getTileDrop(t) {
+getTileDrop(t) {
                 if (t == null) return null;
 
                 let drop = t.drop();
                 if (drop != null) return drop;
+
+                 if (global.newexHiddenOres && global.newexHiddenOres[t.x + "," + t.y]) {
+                    return global.newexHiddenOres[t.x + "," + t.y];
+                }
 
                 if (t.block() != null) {
                     let name = t.block().name;

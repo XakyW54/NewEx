@@ -1,6 +1,6 @@
 
 
-
+require("cin");
 
 require("perf-core");
 require("net-sync");

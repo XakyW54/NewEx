@@ -1,8 +1,8 @@
 name: "Cin"
 type: "mech"
 speed: 0.30
-health: 60600
-armor: 15
+health: 69690
+armor: 17.25
 hitSize: 40
 lightRadius: 420
 rotateSpeed: 1.6
@@ -52,20 +52,19 @@ weapons: [
     shake: 5
     rotationLimit: 35
     shootSound: "shootBig"
-    
-    // Loạt bắn chính: 4 viên đạn nổ lớn
+
     shoot: {
       shots: 4
       shotDelay: 5
     }
-    
+
     bullet: {
       type: "BasicBulletType"
       sprite: "missile-large"
       width: 10
       height: 35
       speed: 7
-      lifetime: 90
+      lifetime: 60
       damage: 500
       splashDamage: 1000
       splashDamageRadius: 120
@@ -74,48 +73,33 @@ weapons: [
       shootEffect: "shootBig2"
       knockback: 2
 
-      // CƠ CHẾ BẮN KÈM 7 VIÊN ĐẠN MANG 7 TRẠNG THÁI CỦA RANGTATURS
-      fragBullets: 7
+      fragBullets: 5
       fragVelocityMin: 0.8
       fragVelocityMax: 1.2
       fragLifeMin: 0.8
       fragLifeMax: 1.1
       fragSpread: 45
-      
-      // Đạn con mang các trạng thái biến đổi ngẫu nhiên / phân tách
+
       fragBullet: {
         type: "BasicBulletType"
         width: 8
         height: 20
         speed: 6.5
         lifetime: 35
-        damage: 150
-        splashDamage: 200
+        damage: 210
+        splashDamage: 280
         splashDamageRadius: 32
         knockback: 1
-        statusDuration: 180
-        
-        // Cấu hình danh sách 7 đạn hiệu ứng tương đương Rangtaturs
-        intervalBullets: 1
-        bulletInterval: 5
-        
-        // Mặc định mang trạng thái nổ / bộc phát
         status: "blasted"
-        
-        // Các đạn con ngẫu nhiên tạo thêm vệt hiệu ứng
-        trailWidth: 2
-        trailLength: 6
-        trailColor: "ffab40"
+        statusDuration: 180
         frontColor: "ffffff"
         backColor: "ffab40"
-        
         hitEffect: "blastExplosion"
         despawnEffect: "blastExplosion"
       }
     }
   }
-  
-  // PHÁO PHỤ BẮN TRỰC TIẾP 7 TRẠNG THÁI KHÁC NHAU KHI XẢ ĐẠN (RANGTATURS VOLLEY)
+
   {
     name: "cin-weapon-a"
     x: 27.5
@@ -124,42 +108,39 @@ weapons: [
     shootCone: 360
     display: false
     mirror: true
+    inaccuracy: 15
     shootSound: "none"
-        layerOffset: -0.002
+    layerOffset: -0.002
+
     shoot: {
       shots: 7
       shotDelay: 2
-      inaccuracy: 15
     }
-    
+
     bullet: {
       type: "BasicBulletType"
       width: 7
       height: 18
       speed: 17.5
-      lifetime: 38
+      lifetime: 24
       damage: 100
       splashDamage: 150
       splashDamageRadius: 28
+      status: "corroded"
       statusDuration: 200
-      status: "corroded" // Mảnh axit corroded
       frontColor: "bef264"
       backColor: "4d7c0f"
-      trailColor: "4d7c0f"
-      trailWidth: 0.8
-      trailLength: 2
-      
-      fragBullets: 6
+
+      fragBullets: 4
       fragBullet: {
         type: "BasicBulletType"
         width: 7
         height: 18
         speed: 7
         lifetime: 30
-        damage: 80
-        statusDuration: 180
-        // Phân tách 6 hiệu ứng còn lại: burning, melting, freezing, shocked, wet, blasted
+        damage: 120
         status: "melting"
+        statusDuration: 180
         frontColor: "ffa726"
         backColor: "f57c00"
       }

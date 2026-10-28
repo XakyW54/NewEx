@@ -32,9 +32,16 @@ Events.on(ContentInitEvent, () => {
             getTileDrop(t) {
                 if (t == null) return null;
 
+                // 1. Kiểm tra tài nguyên thông thường trên tile (nếu đang hiện)
                 let drop = t.drop();
                 if (drop != null) return drop;
 
+                // 2. Kiểm tra tài nguyên đang bị ẩn bởi cơ chế ẩn ore (global.newexHiddenOres)
+                if (global.newexHiddenOres && global.newexHiddenOres[t.x + "," + t.y]) {
+                    return global.newexHiddenOres[t.x + "," + t.y];
+                }
+
+                // 3. Kiểm tra tường graphite đặc biệt
                 if (t.block() != null) {
                     let name = t.block().name;
                     if (name === "graphitic-wall" || name === "ore-wall-graphite" || name === "graphite-wall") {

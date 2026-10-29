@@ -1,0 +1,121 @@
+{
+  name: Cos
+  type: legs
+  drag: 0.08
+  speed: 1.2
+  hitSize: 52
+  health: 35000
+  armor: 18
+  rotateSpeed: 1.4
+
+  stepSound: walkerStep
+  stepSoundVolume: 1.3
+  stepSoundPitch: 0.8
+
+  legCount: 4
+  legLength: 36
+  legForwardScl: 1.8
+  legMoveSpace: 1.4
+  rippleScale: 1.5
+  stepShake: 0.8
+  legGroupSize: 1
+  legBaseOffset: 22
+  legStraightLength: 0.85
+  legMaxLength: 1.25
+
+  legSplashDamage: 45
+  legSplashRange: 35
+  drownTimeMultiplier: 0.4
+
+  hovering: true
+  shadowElevation: 0.5
+
+  targetAir: true
+  alwaysShootWhenMoving: false
+
+  weapons: [
+    {
+      name: cos-weapon-a
+      shootSound: shootBig
+      mirror: true
+      rotate: true
+      rotateSpeed: 4.0
+
+      x: 18
+      y: -4
+      shootY: 10
+      recoil: 3
+      reload: 5
+      shake: 1.5
+      inaccuracy: 8
+
+      bullet: {
+        type: BasicBulletType
+        speed: 7.5
+        damage: 48
+        rangeOverride: 420
+        lifetime: 56
+        width: 7
+        height: 33
+        shootEffect: shootBigColor
+        smokeEffect: shootSmokeSquareBig
+        frontColor: ffffff
+        backColor: 84f4ff
+        lightColor: 84f4ff
+        trailWidth: 2
+        trailLength: 8
+      }
+    }
+    {
+      name: cos-weapon-b
+      shootSound: shootCorvus
+      chargeSound: chargeCorvus
+      soundPitchMin: 1
+      top: false
+      mirror: true
+      shake: 16
+      shootY: 12
+      x: 24
+      y: -8
+      reload: 320
+      cooldownTime: 320
+      recoil: 0
+
+      shootStatusDuration: 140
+      shootStatus: unmoving
+      parentizeEffects: true
+
+      shoot: {
+        firstShotDelay: 45
+      }
+
+      bullet: {
+        type: LaserBulletType
+        length: 520
+        damage: 720
+        width: 85
+        lifetime: 65
+
+        lightningSpacing: 30
+        lightningLength: 6
+        lightningDelay: 1.1
+        lightningLengthRand: 18
+        lightningDamage: 65
+        lightningAngleRand: 45
+        largeHit: true
+
+        lightColor: 84f4ff
+        lightningColor: 84f4ff
+        chargeEffect: greenLaserCharge
+
+        healPercent: 30
+        collidesTeam: true
+
+        sideAngle: 15
+        sideWidth: 0
+        sideLength: 0
+        colors: [84f4ff66, 84f4ff, ffffffff]
+      }
+    }
+  ]
+}

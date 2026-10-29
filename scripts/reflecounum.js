@@ -18,6 +18,17 @@ const reqSpecial = { copper: 4000, lead: 4000, silicon: 4000 };
 const reflectorColor = Color.valueOf("#d000ff");
 const reflectorGlow = Color.valueOf("#00f0ff");
 
+// Khóa lưu cài đặt nút bật/tắt effect khiên tối ưu
+const OPT_FX_KEY = "reflecounum-opt-fx";
+
+const readOptFx = () => {
+    try {
+        if (Core.settings != null) return Core.settings.getBool(OPT_FX_KEY, true);
+    } catch (err) {
+    }
+    return true;
+};
+
 const perk4Bullet = extend(BasicBulletType, {
     speed: 8,
     damage: 30,
@@ -92,27 +103,84 @@ function drawHexClipped(x, y, r, others) {
     }
 }
 
+// Kiểm tra khiên có nằm trong khung hình camera không (không cấp phát bộ nhớ)
+function camVisible(x, y, r) {
+    let cam = Core.camera;
+    if (cam == null) return true;
+    let hw = cam.width / 2 + r;
+    let hh = cam.height / 2 + r;
+    return Math.abs(x - cam.position.x) <= hw && Math.abs(y - cam.position.y) <= hh;
+}
+
+// ====== Trạng thái dùng chung cho visit() để tránh tạo closure mỗi frame ======
+const V = {
+    s: null,
+    cb: null,
+    phase: 0,
+    R: 0,
+    sx: 0,
+    sy: 0,
+    seen: new Packages.arc.struct.IntSet()
+};
+
+const unitCons = cons(u => {
+    if (u == null || !u.isValid() || u.dead || V.seen.contains(u.id)) return;
+    let inDisk = Mathf.within(V.sx, V.sy, u.x, u.y, V.R + u.hitSize / 2);
+    if (V.phase == 0 ? !inDisk : inDisk) return;
+    V.seen.add(u.id);
+    V.cb(u, V.s, u.id, false, V.phase);
+});
+
+let collectArr = null;
+const boolAll = packBoolf(b => true);
+const collectCons = cons(b => {
+    if (b == null || !b.isValid()) return;
+    if (String(b.block.name).indexOf("build") == 0) return;
+    collectArr.push(b);
+});
+
 const NexReflect = {
     list: [],
     buffers: [],
+    bufN: 0,
     blockBuffers: [],
-    baseline: {},
+    blockBufN: 0,
+    baseline: new Packages.arc.struct.IntFloatMap(),
+    nextBaseline: new Packages.arc.struct.IntFloatMap(),
     lines: [],
+    lineShields: new Packages.arc.struct.IntSet(),
     lineCache: {},
     lineClasses: null,
     EXT: 320,
     hideFx: false,
+    optFx: readOptFx(),
     fpsLow: 0,
     fpsHigh: 0,
+    activeList: [],
+    activeAt: -1,
+    dirty: true,
+    blockVer: 0,
+
+    setOptFx(v) {
+        this.optFx = !!v;
+        try {
+            if (Core.settings != null) Core.settings.put(OPT_FX_KEY, this.optFx);
+        } catch (err) {
+        }
+    },
 
     register(build) {
         for (let i = 0; i < this.list.length; i++) {
             if (this.list[i].id == build.id) return;
         }
         this.list.push(build);
+        this.dirty = true;
     },
 
+    // Cache danh sách khiên đang hoạt động trong cùng 1 frame
     active() {
+        if (!this.dirty && this.activeAt === Time.time) return this.activeList;
+
         let out = [];
         for (let i = this.list.length - 1; i >= 0; i--) {
             let s = this.list[i];
@@ -122,6 +190,9 @@ const NexReflect = {
             }
             if (!s.isShieldBroken() && s.getShieldHp() > 0) out.push(s);
         }
+        this.activeList = out;
+        this.activeAt = Time.time;
+        this.dirty = false;
         return out;
     },
 
@@ -179,6 +250,7 @@ const NexReflect = {
 
     collectLines(shields) {
         let out = [];
+        this.lineShields.clear();
         let group = Groups.bullet;
         let n = group.size();
         for (let i = 0; i < n; i++) {
@@ -212,16 +284,14 @@ const NexReflect = {
                     half: info.half,
                     shield: s
                 });
+                this.lineShields.add(s.id);
             }
         }
         return out;
     },
 
     hasLines(s) {
-        for (let i = 0; i < this.lines.length; i++) {
-            if (this.lines[i].shield.id == s.id) return true;
-        }
-        return false;
+        return this.lineShields.contains(s.id);
     },
 
     segDist(px, py, ax, ay, bx, by) {
@@ -252,10 +322,28 @@ const NexReflect = {
         return false;
     },
 
+    // Cache danh sách block quanh khiên, chỉ quét lại khi map đổi hoặc hết hạn
+    blocksOf(s, phase, query) {
+        let ck = phase == 0 ? "_cb0" : "_cb1";
+        let c = s[ck];
+        let now = Time.time;
+        if (c === undefined || c.ver !== this.blockVer || c.q !== query || now - c.at > 90 || now < c.at) {
+            let arr = [];
+            collectArr = arr;
+            Vars.indexer.eachBlock(s.team, s.x, s.y, query, boolAll, collectCons);
+            collectArr = null;
+            c = { arr: arr, ver: this.blockVer, q: query, at: now };
+            s[ck] = c;
+        }
+        return c.arr;
+    },
+
     visit(cb, ringOnlyWithLines) {
         let shields = this.active();
         if (shields.length == 0) return;
-        let seen = {};
+        let seen = V.seen;
+        seen.clear();
+        V.cb = cb;
 
         for (let phase = 0; phase < 2; phase++) {
             for (let i = 0; i < shields.length; i++) {
@@ -266,39 +354,75 @@ const NexReflect = {
                 let sy = s.y;
                 let query = phase == 0 ? R : R + this.EXT;
 
-                Units.nearby(s.team, sx, sy, query, cons(u => {
-                    if (u == null || !u.isValid() || u.dead || seen[u.id] === true) return;
-                    let inDisk = Mathf.within(sx, sy, u.x, u.y, R + u.hitSize / 2);
-                    if (phase == 0 ? !inDisk : inDisk) return;
-                    seen[u.id] = true;
-                    cb(u, s, u.id, false, phase);
-                }));
+                V.s = s;
+                V.phase = phase;
+                V.R = R;
+                V.sx = sx;
+                V.sy = sy;
 
-                Vars.indexer.eachBlock(s.team, sx, sy, query, packBoolf(b => true), cons(b => {
-                    if (b == null || !b.isValid() || seen[b.id] === true) return;
-                    if (String(b.block.name).indexOf("build") == 0) return;
+                Units.nearby(s.team, sx, sy, query, unitCons);
+
+                let arr = this.blocksOf(s, phase, query);
+                for (let k = 0; k < arr.length; k++) {
+                    let b = arr[k];
+                    if (!b.isValid() || seen.contains(b.id)) continue;
                     let inDisk = Mathf.within(sx, sy, b.x, b.y, R + b.block.size * 4);
-                    if (phase == 0 ? !inDisk : inDisk) return;
-                    seen[b.id] = true;
+                    if (phase == 0 ? !inDisk : inDisk) continue;
+                    seen.add(b.id);
                     cb(b, s, b.id, true, phase);
-                }));
+                }
             }
         }
+
+        V.cb = null;
+        V.s = null;
+    },
+
+    addBuf(unit, shield, base, buf) {
+        let r = this.buffers[this.bufN];
+        if (r === undefined) {
+            r = {};
+            this.buffers[this.bufN] = r;
+        }
+        r.unit = unit;
+        r.shield = shield;
+        r.base = base;
+        r.buf = buf;
+        this.bufN++;
+    },
+
+    addBlockBuf(build, shield, base, pre) {
+        let r = this.blockBuffers[this.blockBufN];
+        if (r === undefined) {
+            r = {};
+            this.blockBuffers[this.blockBufN] = r;
+        }
+        r.build = build;
+        r.shield = shield;
+        r.base = base;
+        r.pre = pre;
+        this.blockBufN++;
     },
 
     strip() {
-        let recs = this.buffers;
-        this.buffers = [];
-        for (let i = 0; i < recs.length; i++) {
-            let u = recs[i].unit;
-            if (u != null && u.isValid() && !u.dead) u.shield = recs[i].base;
+        let n = this.bufN;
+        this.bufN = 0;
+        for (let i = 0; i < n; i++) {
+            let r = this.buffers[i];
+            let u = r.unit;
+            if (u != null && u.isValid() && !u.dead) u.shield = r.base;
+            r.unit = null;
+            r.shield = null;
         }
 
-        let brecs = this.blockBuffers;
-        this.blockBuffers = [];
-        for (let i = 0; i < brecs.length; i++) {
-            let b = brecs[i].build;
-            if (b != null && b.isValid()) b.health = brecs[i].base;
+        let bn = this.blockBufN;
+        this.blockBufN = 0;
+        for (let i = 0; i < bn; i++) {
+            let r = this.blockBuffers[i];
+            let b = r.build;
+            if (b != null && b.isValid()) b.health = r.base;
+            r.build = null;
+            r.shield = null;
         }
     },
 
@@ -316,7 +440,7 @@ const NexReflect = {
             if (!isB) {
                 let base = e.shield;
                 e.shield = base + cap;
-                this.buffers.push({ unit: e, shield: s, base: base, buf: cap });
+                this.addBuf(e, s, base, cap);
                 return;
             }
 
@@ -325,7 +449,7 @@ const NexReflect = {
             let target = base >= max - 0.05 ? base + cap : Math.min(base + cap, max * 0.75);
             if (target <= base) return;
             e.health = target;
-            this.blockBuffers.push({ build: e, shield: s, base: base, pre: target });
+            this.addBlockBuf(e, s, base, target);
         }, true);
     },
 
@@ -347,19 +471,20 @@ const NexReflect = {
 
     settle() {
         if (Vars.net.client()) {
-            this.buffers = [];
-            this.blockBuffers = [];
-            this.baseline = {};
+            this.bufN = 0;
+            this.blockBufN = 0;
+            this.baseline.clear();
             this.lines = [];
+            this.lineShields.clear();
             return;
         }
 
-        let recs = this.buffers;
-        this.buffers = [];
-        let excess = {};
+        let n = this.bufN;
+        this.bufN = 0;
+        let excess = null;
 
-        for (let i = 0; i < recs.length; i++) {
-            let r = recs[i];
+        for (let i = 0; i < n; i++) {
+            let r = this.buffers[i];
             let u = r.unit;
             if (u == null || !u.isValid() || u.dead) continue;
 
@@ -370,15 +495,24 @@ const NexReflect = {
 
             if (fromBuf > 0.001) {
                 let paid = this.pay(r.shield, fromBuf);
-                if (fromBuf - paid > 0.001) excess[u.id] = fromBuf - paid;
+                if (fromBuf - paid > 0.001) {
+                    if (excess === null) excess = {};
+                    excess[u.id] = fromBuf - paid;
+                }
             }
         }
 
-        let brecs = this.blockBuffers;
-        this.blockBuffers = [];
+        for (let i = 0; i < n; i++) {
+            let r = this.buffers[i];
+            r.unit = null;
+            r.shield = null;
+        }
 
-        for (let i = 0; i < brecs.length; i++) {
-            let r = brecs[i];
+        let bn = this.blockBufN;
+        this.blockBufN = 0;
+
+        for (let i = 0; i < bn; i++) {
+            let r = this.blockBuffers[i];
             let b = r.build;
             if (b == null || !b.isValid()) continue;
 
@@ -406,16 +540,29 @@ const NexReflect = {
             }
         }
 
+        for (let i = 0; i < bn; i++) {
+            let r = this.blockBuffers[i];
+            r.build = null;
+            r.shield = null;
+        }
+
         let shields = this.active();
-        this.lines = shields.length > 0 ? this.collectLines(shields) : [];
+        if (shields.length > 0) {
+            this.lines = this.collectLines(shields);
+        } else {
+            this.lines = [];
+            this.lineShields.clear();
+        }
 
-        let nextBase = {};
+        let nb = this.nextBaseline;
+        let excessMap = excess;
 
+        // Vòng ngoài chỉ được quét khi thật sự có tia laser (tránh lag khi xây nhiều)
         this.visit((e, s, id, isB, phase) => {
-            let prev = this.baseline[id];
+            let prev = this.baseline.get(id, -1e30);
             let cur = e.health;
 
-            if (prev !== undefined && cur < prev - 0.01 && !s.isShieldBroken()) {
+            if (prev > -1e29 && cur < prev - 0.01 && !s.isShieldBroken()) {
                 if (phase == 0 || this.inCorridor(e.x, e.y, this.sizeOf(e, isB), s)) {
                     let paid = this.pay(s, prev - cur);
                     if (paid > 0.01) {
@@ -425,18 +572,33 @@ const NexReflect = {
                 }
             }
 
-            if (!isB && excess[id] !== undefined) {
-                e.damagePierce(excess[id]);
+            if (!isB && excessMap !== null && excessMap[id] !== undefined) {
+                e.damagePierce(excessMap[id]);
             }
 
-            nextBase[id] = e.health;
-        });
+            nb.put(id, e.health);
+        }, true);
 
-        this.baseline = nextBase;
+        let t = this.baseline;
+        this.baseline = nb;
+        this.nextBaseline = t;
+        t.clear();
     }
 };
 
 global.NexReflect = NexReflect;
+
+// Khi map thay đổi (xây / phá block) thì đánh dấu để cache block quét lại
+if (typeof TileChangeEvent !== "undefined") {
+    Events.on(TileChangeEvent, cons(e => {
+        NexReflect.blockVer++;
+    }));
+}
+if (typeof BlockBuildEndEvent !== "undefined") {
+    Events.on(BlockBuildEndEvent, cons(e => {
+        NexReflect.blockVer++;
+    }));
+}
 
 Events.run(Trigger.update, () => {
     if (Core.graphics == null || !Vars.state.isGame() || Time.time % 30 > Time.delta) return;
@@ -524,6 +686,11 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
 
         this.updateMaxShield();
         this._shieldHp = this._maxShieldHp;
+
+        // Closure xử lý đạn chỉ tạo 1 lần cho mỗi khối
+        let self = this;
+        this._bulletCons = cons(b => self.onBullet(b));
+
         NexReflect.register(this);
         this._registered = true;
     },
@@ -574,11 +741,12 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
             this._shieldHp = 0;
             this._shieldBroken = true;
             this._cooldownTimer = 0;
+            NexReflect.dirty = true;
             Fx.shieldBreak.at(this.x, this.y, this.getShieldRadius(), reflectorColor);
         }
     },
 
-    getShieldRadius() {
+    calcRadius() {
         let baseRadius = (reflecounum.size * Vars.tilesize) / 2 + 8;
         let perkMult = 3.0;
         let p = this.getPerkTier();
@@ -591,6 +759,12 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
         else if (p === 6) perkMult += 2.00;
 
         return baseRadius * perkMult;
+    },
+
+    // Bán kính được cache, chỉ tính lại khi đổi tier / perk
+    getShieldRadius() {
+        if (this._radius === undefined) this._radius = this.calcRadius();
+        return this._radius;
     },
 
     updateMaxShield() {
@@ -610,6 +784,7 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
 
         let oldMax = this._maxShieldHp || baseMax;
         this._maxShieldHp = baseMax * perkMult;
+        this._radius = this.calcRadius();
 
         if (this._shieldHp === undefined) {
             this._shieldHp = this._maxShieldHp;
@@ -630,6 +805,88 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
         if (t === 1) return 0.75;
         if (t === 2) return 1.00;
         return 0.60;
+    },
+
+    // Xử lý 1 viên đạn đi vào khiên (được gọi từ closure dùng chung)
+    onBullet(b) {
+        if (this.isShieldBroken()) return;
+        if (b == null || b.team == this.team || b.type == null) return;
+
+        let currentRadius = this.getShieldRadius();
+        if (!Mathf.within(this.x, this.y, b.x, b.y, currentRadius)) return;
+
+        let perk = this.getPerkTier();
+
+        this._hitTimer = 25;
+        let rawDamage = b.damage;
+        let absorbRatio = this.getAbsorbRatio();
+        let absorbed = rawDamage * absorbRatio;
+
+        this.damageShield(absorbed);
+
+        if (this.isShieldBroken()) return;
+
+        if (perk === 3 && (this._absorbedDamage || 0) >= 1000) {
+            shockwaveFx.at(this.x, this.y);
+            Units.nearbyEnemies(this.team, this.x, this.y, 200, cons(enemy => {
+                if (enemy != null && enemy.isValid()) enemy.damage(100);
+            }));
+            Units.nearby(this.team, this.x, this.y, 200, cons(ally => {
+                if (ally != null && ally.isValid()) ally.heal(100);
+            }));
+            Vars.indexer.eachBlock(this.team, this.x, this.y, 200, packBoolf(bb => true), cons(build => {
+                if (build != null && build.isValid()) build.heal(100);
+            }));
+        }
+
+        if (perk === 6) {
+            this._perk6Absorbed = (this._perk6Absorbed || 0) + absorbed;
+            if (this._perk6Absorbed >= 100 && this._orbitingBullets.length < 8) {
+                this._orbitingBullets.push(true);
+                this._perk6Absorbed -= 100;
+            }
+
+            if ((this._absorbedDamage || 0) >= 1000 && this._orbitingBullets.length >= 8) {
+                let target = Units.bestTarget(this.team, this.x, this.y, 600, e => true, bb => true, (unit, x, y) => -unit.maxHealth);
+                let targetX = target ? target.x : this.x + 100;
+                let targetY = target ? target.y : this.y + 100;
+
+                for (let i = 0; i < 8; i++) {
+                    let angle = (i / 8) * 360;
+                    let bx = this.x + Mathf.cosDeg(angle) * 20;
+                    let by = this.y + Mathf.sinDeg(angle) * 20;
+                    perk6Bullet.create(this, this.team, bx, by, Angles.angle(bx, by, targetX, targetY));
+                }
+                this._orbitingBullets = [];
+            }
+        }
+
+        if ((this._absorbedDamage || 0) >= 1000) {
+            this._absorbedDamage -= 1000;
+        }
+
+        if (Mathf.chance(this.getReflectingChance())) {
+            let oldX = b.x;
+            let oldY = b.y;
+            let oldRot = b.rotation();
+
+            if (perk === 4) {
+                b.remove();
+                let target = Units.closestEnemy(this.team, oldX, oldY, 300, e => true);
+                let targetAngle = target ? Angles.angle(oldX, oldY, target.x, target.y) : oldRot + 180;
+
+                perk4Bullet.damage = rawDamage;
+                perk4Bullet.create(this, this.team, oldX, oldY, targetAngle);
+            } else {
+                b.team = this.team;
+                b.rotation(oldRot + 180);
+                b.vel.trns(oldRot + 180, b.vel.len());
+            }
+
+            reflectEffect.at(oldX, oldY, oldRot);
+        } else {
+            b.remove();
+        }
     },
 
     updateTile() {
@@ -653,6 +910,7 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
                 this._shieldBroken = false;
                 this._shieldHp = this.getMaxShieldHp();
                 this._cooldownTimer = 0;
+                NexReflect.dirty = true;
                 Fx.shieldWave.at(this.x, this.y, this.getShieldRadius(), reflectorColor);
             }
             return;
@@ -749,85 +1007,13 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
             }
         }
 
-        if (!this.isShieldBroken() && Groups.bullet != null && Groups.bullet.size() > 0) {
+        if (Groups.bullet != null && Groups.bullet.size() > 0) {
             try {
-                Groups.bullet.intersect(this.x - currentRadius, this.y - currentRadius, currentRadius * 2, currentRadius * 2, cons(b => {
-                    if (this.isShieldBroken()) return;
-
-                    if (b != null && b.team != this.team && b.type != null && Mathf.within(this.x, this.y, b.x, b.y, currentRadius)) {
-
-                        this._hitTimer = 25;
-                        let rawDamage = b.damage;
-                        let absorbRatio = this.getAbsorbRatio();
-                        let absorbed = rawDamage * absorbRatio;
-
-                        this.damageShield(absorbed);
-
-                        if (this.isShieldBroken()) return;
-
-                        if (perk === 3 && (this._absorbedDamage || 0) >= 1000) {
-                            shockwaveFx.at(this.x, this.y);
-                            Units.nearbyEnemies(this.team, this.x, this.y, 200, cons(enemy => {
-                                if (enemy != null && enemy.isValid()) enemy.damage(100);
-                            }));
-                            Units.nearby(this.team, this.x, this.y, 200, cons(ally => {
-                                if (ally != null && ally.isValid()) ally.heal(100);
-                            }));
-                            Vars.indexer.eachBlock(this.team, this.x, this.y, 200, packBoolf(b => true), cons(build => {
-                                if (build != null && build.isValid()) build.heal(100);
-                            }));
-                        }
-
-                        if (perk === 6) {
-                            this._perk6Absorbed = (this._perk6Absorbed || 0) + absorbed;
-                            if (this._perk6Absorbed >= 100 && this._orbitingBullets.length < 8) {
-                                this._orbitingBullets.push(true);
-                                this._perk6Absorbed -= 100;
-                            }
-
-                            if ((this._absorbedDamage || 0) >= 1000 && this._orbitingBullets.length >= 8) {
-                                let target = Units.bestTarget(this.team, this.x, this.y, 600, e => true, b => true, (unit, x, y) => -unit.maxHealth);
-                                let targetX = target ? target.x : this.x + 100;
-                                let targetY = target ? target.y : this.y + 100;
-
-                                for (let i = 0; i < 8; i++) {
-                                    let angle = (i / 8) * 360;
-                                    let bx = this.x + Mathf.cosDeg(angle) * 20;
-                                    let by = this.y + Mathf.sinDeg(angle) * 20;
-                                    perk6Bullet.create(this, this.team, bx, by, Angles.angle(bx, by, targetX, targetY));
-                                }
-                                this._orbitingBullets = [];
-                            }
-                        }
-
-                        if ((this._absorbedDamage || 0) >= 1000) {
-                            this._absorbedDamage -= 1000;
-                        }
-
-                        if (Mathf.chance(this.getReflectingChance())) {
-                            let oldX = b.x;
-                            let oldY = b.y;
-                            let oldRot = b.rotation();
-
-                            if (perk === 4) {
-                                b.remove();
-                                let target = Units.closestEnemy(this.team, oldX, oldY, 300, e => true);
-                                let targetAngle = target ? Angles.angle(oldX, oldY, target.x, target.y) : oldRot + 180;
-
-                                perk4Bullet.damage = rawDamage;
-                                perk4Bullet.create(this, this.team, oldX, oldY, targetAngle);
-                            } else {
-                                b.team = this.team;
-                                b.rotation(oldRot + 180);
-                                b.vel.trns(oldRot + 180, b.vel.len());
-                            }
-
-                            reflectEffect.at(oldX, oldY, oldRot);
-                        } else {
-                            b.remove();
-                        }
-                    }
-                }));
+                if (this._bulletCons === undefined) {
+                    let self = this;
+                    this._bulletCons = cons(b => self.onBullet(b));
+                }
+                Groups.bullet.intersect(this.x - currentRadius, this.y - currentRadius, currentRadius * 2, currentRadius * 2, this._bulletCons);
             } catch (err) {
             }
         }
@@ -850,80 +1036,131 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
         return this._ov;
     },
 
+    // Phần hiệu ứng khi trúng đạn + đạn năng lượng quay quanh (dùng chung 2 chế độ)
+    drawShieldExtras(currentRadius, isHit, hitFactor) {
+        if (isHit) {
+            Draw.color(reflectorGlow, hitFactor);
+            Lines.stroke(1.2);
+
+            let innerRad = currentRadius * 0.65;
+            Lines.poly(this.x, this.y, 6, innerRad);
+
+            for (let i = 0; i < 6; i++) {
+                let a1 = i * 60;
+                let a2 = (i + 1) * 60;
+                Lines.line(
+                    this.x + Mathf.cosDeg(a1) * innerRad,
+                    this.y + Mathf.sinDeg(a1) * innerRad,
+                    this.x + Mathf.cosDeg(a2) * currentRadius,
+                    this.y + Mathf.sinDeg(a2) * currentRadius
+                );
+            }
+        }
+
+        if (this.getPerkTier() === 6 && this._orbitingBullets.length > 0) {
+            Draw.color(reflectorGlow);
+            for (let i = 0; i < this._orbitingBullets.length; i++) {
+                let angle = (i / 8) * 360 + Time.time * 2;
+                let bx = this.x + Mathf.cosDeg(angle) * 20;
+                let by = this.y + Mathf.sinDeg(angle) * 20;
+                Fill.circle(bx, by, 3.5);
+            }
+        }
+    },
+
+    // ===== Effect khiên CŨ (chưa tối ưu) - dùng khi nút tối ưu đang TẮT =====
+    drawShieldLegacy(currentRadius) {
+        if (global.PerfCore != null && !global.PerfCore.onScreen(this.x, this.y, currentRadius + 16)) return;
+
+        let isHit = this._hitTimer > 0;
+        let hitFactor = isHit ? (this._hitTimer / 25) : 0;
+        let animated = Vars.renderer != null && Vars.renderer.animateShields;
+
+        if (animated) {
+            Draw.z(Layer.shields + 0.001 * hitFactor);
+            Draw.color(reflectorColor, Color.white, hitFactor);
+            Fill.poly(this.x, this.y, 6, currentRadius);
+            Draw.z(Layer.shields + 2);
+        } else {
+            Draw.z(Layer.shields);
+
+            let others = this.getOverlaps(currentRadius);
+
+            let coreAlpha = 0.08 + (hitFactor * 0.25);
+            Draw.color(isHit ? reflectorGlow : reflectorColor, coreAlpha);
+            Fill.poly(this.x, this.y, 6, currentRadius);
+
+            Lines.stroke(isHit ? 2.8 : 1.5);
+            Draw.color(isHit ? Color.white : reflectorColor, 0.8 + (hitFactor * 0.2));
+            if (others.length == 0) {
+                Lines.poly(this.x, this.y, 6, currentRadius);
+            } else {
+                drawHexClipped(this.x, this.y, currentRadius, others);
+            }
+
+            Draw.color(reflectorGlow, 0.5 + (hitFactor * 0.5));
+            Lines.stroke(1.0);
+            if (others.length == 0) {
+                Lines.poly(this.x, this.y, 6, currentRadius - 3);
+            } else {
+                drawHexClipped(this.x, this.y, currentRadius - 3, others);
+            }
+        }
+
+        this.drawShieldExtras(currentRadius, isHit, hitFactor);
+        Draw.reset();
+    },
+
+    // ===== Effect khiên TỐI ƯU - dùng khi nút tối ưu đang BẬT =====
+    drawShieldOpt(currentRadius) {
+        if (!camVisible(this.x, this.y, currentRadius + 16)) return;
+
+        let isHit = this._hitTimer > 0;
+        let hitFactor = isHit ? (this._hitTimer / 25) : 0;
+        let animated = Vars.renderer != null && Vars.renderer.animateShields;
+
+        if (animated) {
+            Draw.z(Layer.shields + 0.001 * hitFactor);
+            Draw.color(reflectorColor, Color.white, hitFactor);
+            Fill.poly(this.x, this.y, 6, currentRadius);
+            Draw.z(Layer.shields + 2);
+        } else {
+            Draw.z(Layer.shields);
+
+            let coreAlpha = 0.08 + (hitFactor * 0.25);
+            Draw.color(isHit ? reflectorGlow : reflectorColor, coreAlpha);
+            Fill.poly(this.x, this.y, 6, currentRadius);
+
+            // Không tính cắt viền khi khiên chồng nhau, chỉ vẽ 1 viền ngoài
+            Lines.stroke(isHit ? 2.8 : 1.5);
+            Draw.color(isHit ? Color.white : reflectorColor, 0.8 + (hitFactor * 0.2));
+            Lines.poly(this.x, this.y, 6, currentRadius);
+
+            // Viền trong chỉ vẽ khi zoom đủ gần
+            let scale = Vars.renderer != null ? Vars.renderer.getScale() : 1;
+            if (scale >= 0.9) {
+                Draw.color(reflectorGlow, 0.5 + (hitFactor * 0.5));
+                Lines.stroke(1.0);
+                Lines.poly(this.x, this.y, 6, currentRadius - 3);
+            }
+        }
+
+        this.drawShieldExtras(currentRadius, isHit, hitFactor);
+        Draw.reset();
+    },
+
     draw() {
         this.super$draw();
 
+        if (this.isShieldBroken() || this.getShieldHp() <= 0) return;
+        if (NexReflect.hideFx) return;
+
         let currentRadius = this.getShieldRadius();
 
-        if (!this.isShieldBroken() && this.getShieldHp() > 0) {
-            if (NexReflect.hideFx) return;
-            if (global.PerfCore != null && !global.PerfCore.onScreen(this.x, this.y, currentRadius + 16)) return;
-
-            let isHit = this._hitTimer > 0;
-            let hitFactor = isHit ? (this._hitTimer / 25) : 0;
-            let animated = Vars.renderer != null && Vars.renderer.animateShields;
-
-            if (animated) {
-                Draw.z(Layer.shields + 0.001 * hitFactor);
-                Draw.color(reflectorColor, Color.white, hitFactor);
-                Fill.poly(this.x, this.y, 6, currentRadius);
-                Draw.z(Layer.shields + 2);
-            } else {
-                Draw.z(Layer.shields);
-
-                let others = this.getOverlaps(currentRadius);
-
-                let coreAlpha = 0.08 + (hitFactor * 0.25);
-                Draw.color(isHit ? reflectorGlow : reflectorColor, coreAlpha);
-                Fill.poly(this.x, this.y, 6, currentRadius);
-
-                Lines.stroke(isHit ? 2.8 : 1.5);
-                Draw.color(isHit ? Color.white : reflectorColor, 0.8 + (hitFactor * 0.2));
-                if (others.length == 0) {
-                    Lines.poly(this.x, this.y, 6, currentRadius);
-                } else {
-                    drawHexClipped(this.x, this.y, currentRadius, others);
-                }
-
-                Draw.color(reflectorGlow, 0.5 + (hitFactor * 0.5));
-                Lines.stroke(1.0);
-                if (others.length == 0) {
-                    Lines.poly(this.x, this.y, 6, currentRadius - 3);
-                } else {
-                    drawHexClipped(this.x, this.y, currentRadius - 3, others);
-                }
-            }
-
-            if (isHit) {
-                Draw.color(reflectorGlow, hitFactor);
-                Lines.stroke(1.2);
-
-                let innerRad = currentRadius * 0.65;
-                Lines.poly(this.x, this.y, 6, innerRad);
-
-                for (let i = 0; i < 6; i++) {
-                    let a1 = i * 60;
-                    let a2 = (i + 1) * 60;
-                    Lines.line(
-                        this.x + Mathf.cosDeg(a1) * innerRad,
-                        this.y + Mathf.sinDeg(a1) * innerRad,
-                        this.x + Mathf.cosDeg(a2) * currentRadius,
-                        this.y + Mathf.sinDeg(a2) * currentRadius
-                    );
-                }
-            }
-
-            if (this.getPerkTier() === 6 && this._orbitingBullets.length > 0) {
-                Draw.color(reflectorGlow);
-                for (let i = 0; i < this._orbitingBullets.length; i++) {
-                    let angle = (i / 8) * 360 + Time.time * 2;
-                    let bx = this.x + Mathf.cosDeg(angle) * 20;
-                    let by = this.y + Mathf.sinDeg(angle) * 20;
-                    Fill.circle(bx, by, 3.5);
-                }
-            }
-
-            Draw.reset();
+        if (NexReflect.optFx) {
+            this.drawShieldOpt(currentRadius);
+        } else {
+            this.drawShieldLegacy(currentRadius);
         }
     },
 
@@ -1221,6 +1458,20 @@ reflecounum.buildType = () => extend(Turret.TurretBuild, reflecounum, {
             dialog.cont.add(scroll).maxHeight(400);
             dialog.addCloseButton(); dialog.show();
         })).size(50, 40).tooltip(packProv(() => isEn() ? "View Detailed Turret Stats" : "Xem thông số chi tiết pháo"));
+
+        // Nút bật/tắt effect khiên tối ưu (áp dụng cho mọi khối Reflecounum, được lưu lại)
+        table.button(Icon.eye, Styles.clearTogglei, 40, packRun(() => {
+            let on = !NexReflect.optFx;
+            NexReflect.setOptFx(on);
+            if (isEn()) {
+                Vars.ui.showInfoToast(on ? "[green]Optimized shield effect: ON[]" : "[orange]Optimized shield effect: OFF (old effect)[]", 2);
+            } else {
+                Vars.ui.showInfoToast(on ? "[green]Effect khiên tối ưu: BẬT[]" : "[orange]Effect khiên tối ưu: TẮT (effect cũ)[]", 2);
+            }
+        })).size(50, 40).update(cons(b => b.setChecked(NexReflect.optFx))).tooltip(packProv(() => {
+            if (isEn()) return NexReflect.optFx ? "Optimized shield effect: ON (click to turn off)" : "Optimized shield effect: OFF (click to turn on)";
+            return NexReflect.optFx ? "Effect khiên tối ưu: BẬT (bấm để tắt)" : "Effect khiên tối ưu: TẮT (bấm để bật)";
+        }));
     },
 
     write(write) {
@@ -1275,19 +1526,17 @@ reflecounum.addBar("shield", packFunc(e => {
     );
 }));
 
+// Chia sẻ sát thương Perk 5: chỉ duyệt danh sách Reflecounum thay vì quét mọi block mỗi lần có sát thương
 Events.on(UnitDamageEvent, cons(e => {
     let unit = e.unit;
     if (unit == null || !unit.isValid()) return;
 
-    let range = 250;
-    Vars.indexer.eachBlock(unit.team, unit.x, unit.y, range, packBoolf(b => true), cons(build => {
-        if (build != null && build.isValid()) {
-            if (typeof build.damageShield === "function" && typeof build.getPerkTier === "function" && typeof build.isShieldBroken === "function") {
-                if (build.getPerkTier() === 5 && !build.isShieldBroken()) {
-                    let sharedDmg = e.amount * 0.50;
-                    build.damageShield(sharedDmg);
-                }
-            }
-        }
-    }));
+    let list = NexReflect.list;
+    for (let i = 0; i < list.length; i++) {
+        let build = list[i];
+        if (build == null || !build.isValid() || build.team != unit.team) continue;
+        if (build.getPerkTier() !== 5 || build.isShieldBroken()) continue;
+        if (!Mathf.within(build.x, build.y, unit.x, unit.y, 250)) continue;
+        build.damageShield(e.amount * 0.50);
+    }
 }));

@@ -1,6 +1,7 @@
 
 
 require("cin");
+require("cos");
 
 require("perf-core");
 require("net-sync");

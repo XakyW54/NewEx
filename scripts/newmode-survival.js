@@ -1,5 +1,5 @@
 // =====================================================================
-//  NewMode - SURVIVAL (map: newmodesurvival.msav) - Multiplayer Support
+//  NewMode - SURVIVAL (map: newmodesurvival.msav) - Rhino Compatible
 // =====================================================================
 (function() {
     const KILL_GOAL = 1000;
@@ -13,7 +13,9 @@
     const TAG_ACTIVE = "newex-survival";
     const TAG_KILLS = "newex-survival-kills";
 
-    const isEn = () => String(Core.settings.getString("locale")).startsWith("en");
+    function isEn() {
+        return String(Core.settings.getString("locale")).startsWith("en");
+    }
     let winning = false;
 
     function getTags() {
@@ -39,9 +41,8 @@
         if (tags != null) tags.put(TAG_KILLS, String(n));
     }
 
-    // --- ĐỒNG BỘ MẠNG QUA NexNet ---
     if (global.NexNet != null) {
-        global.NexNet.on("newex-survival-sync-kills", (player, payload) => {
+        global.NexNet.on("newex-survival-sync-kills", function(player, payload) {
             let k = parseInt(payload) || 0;
             setKills(k);
         }, true, 100);
@@ -153,20 +154,24 @@
         let total = 0;
         let missed = 0;
 
-        rules.spawns.each(g => {
-            if (g == null || g.type == null) return;
-            let n = g.getSpawned(waveIndex);
-            for (let i = 0; i < n; i++) {
-                if (spawnOne(g, waveIndex, team, cores, minDist)) total++;
-                else missed++;
+        rules.spawns.each(new Cons({
+            get: function(g) {
+                if (g == null || g.type == null) return;
+                let n = g.getSpawned(waveIndex);
+                for (let i = 0; i < n; i++) {
+                    if (spawnOne(g, waveIndex, team, cores, minDist)) total++;
+                    else missed++;
+                }
             }
-        });
+        }));
     }
 
-    Events.on(WaveEvent, e => {
-        if (Vars.net.client() || !isActive() || Vars.state.gameOver) return;
-        spawnWave(Vars.state.wave - 2);
-    });
+    Events.on(WaveEvent, new Cons({
+        get: function(e) {
+            if (Vars.net.client() || !isActive() || Vars.state.gameOver) return;
+            spawnWave(Vars.state.wave - 2);
+        }
+    }));
 
     function formatTime() {
         try {
@@ -185,7 +190,7 @@
             time: formatTime()
         };
 
-        Time.run(5, () => {
+        Time.run(5, function() {
             let team = Vars.state.rules.defaultTeam;
             try {
                 Vars.logic.gameOver(team);
@@ -196,24 +201,28 @@
         });
     }
 
-    Events.on(UnitDestroyEvent, e => {
-        if (Vars.net.client() || !isActive() || Vars.state.gameOver || winning) return;
-        let u = e.unit;
-        if (u == null || u.team != Vars.state.rules.waveTeam) return;
+    Events.on(UnitDestroyEvent, new Cons({
+        get: function(e) {
+            if (Vars.net.client() || !isActive() || Vars.state.gameOver || winning) return;
+            let u = e.unit;
+            if (u == null || u.team != Vars.state.rules.waveTeam) return;
 
-        let k = getKills() + 1;
-        setKills(k);
+            let k = getKills() + 1;
+            setKills(k);
 
-        if (global.NexNet != null) {
-            global.NexNet.send("newex-survival-sync-kills", String(k));
+            if (global.NexNet != null) {
+                global.NexNet.send("newex-survival-sync-kills", String(k));
+            }
+
+            if (k >= KILL_GOAL) win();
         }
+    }));
 
-        if (k >= KILL_GOAL) win();
-    });
-
-    Events.on(WorldLoadEvent, e => {
-        winning = false;
-    });
+    Events.on(WorldLoadEvent, new Cons({
+        get: function(e) {
+            winning = false;
+        }
+    }));
 
     const HUD_W = 150;
     const SKILL_BTN_H = 28;
@@ -253,78 +262,82 @@
         return Math.max(0, Math.min(1, info.exp / info.need));
     }
 
-    Events.on(ClientLoadEvent, e => {
-        if (Vars.headless) return;
+    Events.on(ClientLoadEvent, new Cons({
+        get: function(e) {
+            if (Vars.headless) return;
 
-        let hasSavedPos = Core.settings.has("newex-survival-hud-x") && Core.settings.has("newex-survival-hud-y");
-        let hudX = Core.settings.getFloat("newex-survival-hud-x", -1);
-        let hudY = Core.settings.getFloat("newex-survival-hud-y", -1);
+            let hasSavedPos = Core.settings.has("newex-survival-hud-x") && Core.settings.has("newex-survival-hud-y");
+            let hudX = Core.settings.getFloat("newex-survival-hud-x", -1);
+            let hudY = Core.settings.getFloat("newex-survival-hud-y", -1);
 
-        let t = new Table(Styles.black6);
-        t.margin(4);
-        t.name = "newex-survival-hud";
-        t.touchable = Touchable.enabled;
-        t.table(cons(r => {
-            r.left();
-            r.label(() => hudLine1()).width(HUD_W).left().get().setFontScale(0.8);
-        })).left();
-        t.row();
-        t.add(new Bar(
-            new Prov({ get: function() { return expText(); } }),
-            new Prov({ get: function() { return Pal.accent; } }),
-            new Floatp({ get: function() { return expFrac(); } })
-        )).size(HUD_W, 14).padTop(2);
-        t.row();
-        let skillIcon = Icon.list || Icon.book || Icon.info;
-        let sb = t.button(isEn() ? "Skills" : "Kĩ năng", skillIcon, () => openSkillList()).size(HUD_W, SKILL_BTN_H).padTop(3).get();
-        sb.getLabel().setFontScale(0.8);
-        t.visibility = () => isActive() && Vars.ui.hudfrag.shown;
-        t.pack();
-
-        if (!hasSavedPos) {
-            hudX = Core.graphics.getWidth() / 2 - t.getWidth() / 2;
-            hudY = Core.graphics.getHeight() - t.getHeight() - 70;
-        }
-        t.setPosition(hudX, hudY);
-
-        let isDragging = false;
-        let dragOffsetX = 0;
-        let dragOffsetY = 0;
-
-        t.addListener(extend(InputListener, {
-            touchDown(event, x, y, pointer, button) {
-                isDragging = false;
-                dragOffsetX = x;
-                dragOffsetY = y;
-                return true;
-            },
-            touchDragged(event, x, y, pointer) {
-                if (Math.abs(x - dragOffsetX) > 5 || Math.abs(y - dragOffsetY) > 5) {
-                    isDragging = true;
+            let t = new Table(Styles.black6);
+            t.margin(4);
+            t.name = "newex-survival-hud";
+            t.touchable = Touchable.enabled;
+            t.table(new Cons({
+                get: function(r) {
+                    r.left();
+                    r.label(new Prov({ get: function() { return hudLine1(); } })).width(HUD_W).left().get().setFontScale(0.8);
                 }
-                if (isDragging) {
-                    let rawX = t.x + x - dragOffsetX;
-                    let rawY = t.y + y - dragOffsetY;
+            })).left();
+            t.row();
+            t.add(new Bar(
+                new Prov({ get: function() { return expText(); } }),
+                new Prov({ get: function() { return Pal.accent; } }),
+                new Floatp({ get: function() { return expFrac(); } })
+            )).size(HUD_W, 14).padTop(2);
+            t.row();
+            let skillIcon = Icon.list || Icon.book || Icon.info;
+            let sb = t.button(isEn() ? "Skills" : "Kĩ năng", skillIcon, new Runnable({ run: function() { openSkillList(); } })).size(HUD_W, SKILL_BTN_H).padTop(3).get();
+            sb.getLabel().setFontScale(0.8);
+            t.visibility = new Boolp({ get: function() { return isActive() && Vars.ui.hudfrag.shown; } });
+            t.pack();
 
-                    let maxX = Math.max(0, Core.graphics.getWidth() - t.getWidth());
-                    let maxY = Math.max(0, Core.graphics.getHeight() - t.getHeight());
-
-                    hudX = Mathf.clamp(rawX, 0, maxX);
-                    hudY = Mathf.clamp(rawY, 0, maxY);
-
-                    t.setPosition(hudX, hudY);
-
-                    Core.settings.put("newex-survival-hud-x", java.lang.Float(hudX));
-                    Core.settings.put("newex-survival-hud-y", java.lang.Float(hudY));
-                }
-            },
-            touchUp(event, x, y, pointer, button) {
-                isDragging = false;
+            if (!hasSavedPos) {
+                hudX = Core.graphics.getWidth() / 2 - t.getWidth() / 2;
+                hudY = Core.graphics.getHeight() - t.getHeight() - 70;
             }
-        }));
+            t.setPosition(hudX, hudY);
 
-        Vars.ui.hudGroup.addChild(t);
-    });
+            let isDragging = false;
+            let dragOffsetX = 0;
+            let dragOffsetY = 0;
+
+            t.addListener(extend(InputListener, {
+                touchDown: function(event, x, y, pointer, button) {
+                    isDragging = false;
+                    dragOffsetX = x;
+                    dragOffsetY = y;
+                    return true;
+                },
+                touchDragged: function(event, x, y, pointer) {
+                    if (Math.abs(x - dragOffsetX) > 5 || Math.abs(y - dragOffsetY) > 5) {
+                        isDragging = true;
+                    }
+                    if (isDragging) {
+                        let rawX = t.x + x - dragOffsetX;
+                        let rawY = t.y + y - dragOffsetY;
+
+                        let maxX = Math.max(0, Core.graphics.getWidth() - t.getWidth());
+                        let maxY = Math.max(0, Core.graphics.getHeight() - t.getHeight());
+
+                        hudX = Mathf.clamp(rawX, 0, maxX);
+                        hudY = Mathf.clamp(rawY, 0, maxY);
+
+                        t.setPosition(hudX, hudY);
+
+                        Core.settings.put("newex-survival-hud-x", java.lang.Float(hudX));
+                        Core.settings.put("newex-survival-hud-y", java.lang.Float(hudY));
+                    }
+                },
+                touchUp: function(event, x, y, pointer, button) {
+                    isDragging = false;
+                }
+            }));
+
+            Vars.ui.hudGroup.addChild(t);
+        }
+    }));
 
     const api = {
         MAP_ID: "newmodesurvival",

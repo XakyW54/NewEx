@@ -1,8 +1,10 @@
 // =====================================================================
-//  NewMode SURVIVAL - Kĩ năng khi lên cấp (Hỗ trợ Multiplayer)
+//  NewMode SURVIVAL - Kĩ năng khi lên cấp (Rhino Compatible)
 // =====================================================================
 (function() {
-    const isEn = () => String(Core.settings.getString("locale")).startsWith("en");
+    function isEn() {
+        return String(Core.settings.getString("locale")).startsWith("en");
+    }
 
     const KEY_MAX_LEVEL = "newex-survival-max-level";
     const KEY_EXP_PERCENT = "newex-survival-exp-percent";
@@ -264,11 +266,11 @@
         let reach = Infinity;
         let list = src.variants != null ? src.variants : [{}];
         try {
-            list.forEach(v => {
-                let o = merge(src, v);
+            for (let i = 0; i < list.length; i++) {
+                let o = merge(src, list[i]);
                 def.bullets.push(buildBullet(o));
                 reach = Math.min(reach, reachOf(o));
-            });
+            }
         } catch (err) {
             def.bullets = [fallbackBullet(src)];
             reach = 8 * 36 * 0.95;
@@ -299,13 +301,14 @@
     function buildSkillPool() {
         if (skillPool != null) return skillPool;
         skillPool = [];
-        SKILL_SRC.forEach(src => {
+        for (let i = 0; i < SKILL_SRC.length; i++) {
+            let src = SKILL_SRC[i];
             try {
                 let block = Vars.content.getByName(ContentType.block, "newex-" + src.id);
-                if (block == null) return;
+                if (block == null) continue;
                 skillPool.push(buildDef(src, block));
             } catch (err) {}
-        });
+        }
         return skillPool;
     }
 
@@ -381,7 +384,9 @@
         sk.hookT = 10;
         let r = 400;
         try { r = b.range(); } catch (err) {}
-        let t = Units.closestEnemy(unit.team, sk.px, sk.py, r, e => e != null && !e.dead);
+        let t = Units.closestEnemy(unit.team, sk.px, sk.py, r, new Boolf({
+            get: function(e) { return e != null && !e.dead; }
+        }));
         if (t != null) {
             b.targetX = t.x;
             b.targetY = t.y;
@@ -466,7 +471,11 @@
         noBodyDrawer = null;
         try { noBodyDrawer = new Packages.mindustry.world.draw.DrawMulti(); } catch (err) {}
         if (noBodyDrawer == null) {
-            try { noBodyDrawer = extend(Packages.mindustry.world.draw.DrawBlock, { draw(build) {} }); } catch (err) {}
+            try {
+                noBodyDrawer = extend(Packages.mindustry.world.draw.DrawBlock, {
+                    draw: function(build) {}
+                });
+            } catch (err) {}
         }
         return noBodyDrawer;
     }
@@ -541,10 +550,14 @@
     function rollSkillChoices(state) {
         let pool = buildSkillPool();
         if (pool.length === 0) return [];
-        let open = pool.filter(d => {
+        let open = [];
+        for (let i = 0; i < pool.length; i++) {
+            let d = pool[i];
             let ex = findSkill(state, d.name);
-            return ex == null || ex.tier < MAX_TIER_SHOTS;
-        });
+            if (ex == null || ex.tier < MAX_TIER_SHOTS) {
+                open.push(d);
+            }
+        }
         let src = open.length >= SKILL_CHOICE_COUNT ? open : pool;
         let want = Math.min(SKILL_CHOICE_COUNT, src.length);
         let picks = [];
@@ -585,14 +598,15 @@
 
         let row = new Table();
         let finished = false;
-        let finish = () => {
+        let finish = function() {
             if (finished) return;
             finished = true;
             dialog.hide();
             if (onDone) onDone();
         };
 
-        choices.forEach(c => {
+        for (let i = 0; i < choices.length; i++) {
+            let c = choices[i];
             let card = new Table(Styles.black6);
             card.margin(8);
             card.add(new Image(c.block.uiIcon)).size(40).pad(4).row();
@@ -614,12 +628,14 @@
             tagLabel.setFontScale(0.85);
             card.row();
 
-            card.button(isEn() ? "Choose" : "Chọn", () => {
-                applySkill(player, state, c);
-                finish();
-            }).size(130, 42).pad(4);
+            card.button(isEn() ? "Choose" : "Chọn", new Runnable({
+                run: function() {
+                    applySkill(player, state, c);
+                    finish();
+                }
+            })).size(130, 42).pad(4);
             row.add(card).size(180, 270).pad(6);
-        });
+        }
 
         dialog.cont.add(row).row();
         dialog.show();
@@ -629,7 +645,7 @@
         if (dialogShowing || dialogQueue.length === 0) return;
         dialogShowing = true;
         let item = dialogQueue.shift();
-        showSkillDialog(item.player, item.state, item.choices, () => {
+        showSkillDialog(item.player, item.state, item.choices, function() {
             dialogShowing = false;
             tryShowNextDialog();
         });
@@ -659,9 +675,8 @@
         }
     }
 
-    // --- ĐỒNG BỘ EXP QUA MẠNG ---
     if (global.NexNet != null) {
-        global.NexNet.on("newex-survival-grant-exp", (player, payload) => {
+        global.NexNet.on("newex-survival-grant-exp", function(player, payload) {
             let amt = parseFloat(payload) || 0;
             if (Vars.player != null) {
                 grantExp(Vars.player, amt);
@@ -669,36 +684,42 @@
         }, true, 50);
     }
 
-    Events.on(UnitDestroyEvent, e => {
-        if (Vars.net.client() || !isSurvivalActive() || Vars.state.gameOver) return;
-        let u = e.unit;
-        if (u == null || u.team != Vars.state.rules.waveTeam) return;
-        let gained = expForKill(u);
-        let rx = u.x, ry = u.y;
+    Events.on(UnitDestroyEvent, new Cons({
+        get: function(e) {
+            if (Vars.net.client() || !isSurvivalActive() || Vars.state.gameOver) return;
+            let u = e.unit;
+            if (u == null || u.team != Vars.state.rules.waveTeam) return;
+            let gained = expForKill(u);
+            let rx = u.x, ry = u.y;
 
-        Groups.player.each(pl => {
-            let pu = pl.unit();
-            if (pu == null || !pu.isValid() || pu.dead) return;
-            let st = playerStates[getPlayerId(pl)];
-            let rad = Math.min(MAX_CREDIT_RADIUS, Math.max(KILL_CREDIT_RADIUS, st != null ? st.maxRange : 0));
-            let dx = pu.x - rx, dy = pu.y - ry;
-            if (dx * dx + dy * dy <= rad * rad) {
-                if (pl === Vars.player || Vars.headless) {
-                    grantExp(pl, gained);
-                } else if (global.NexNet != null) {
-                    global.NexNet.send("newex-survival-grant-exp", String(gained));
+            Groups.player.each(new Cons({
+                get: function(pl) {
+                    let pu = pl.unit();
+                    if (pu == null || !pu.isValid() || pu.dead) return;
+                    let st = playerStates[getPlayerId(pl)];
+                    let rad = Math.min(MAX_CREDIT_RADIUS, Math.max(KILL_CREDIT_RADIUS, st != null ? st.maxRange : 0));
+                    let dx = pu.x - rx, dy = pu.y - ry;
+                    if (dx * dx + dy * dy <= rad * rad) {
+                        if (pl === Vars.player || Vars.headless) {
+                            grantExp(pl, gained);
+                        } else if (global.NexNet != null) {
+                            global.NexNet.send("newex-survival-grant-exp", String(gained));
+                        }
+                    }
                 }
-            }
-        });
-    });
+            }));
+        }
+    }));
 
-    Events.on(WorldLoadEvent, e => {
-        disposeAll(playerStates);
-        playerStates = {};
-        dialogQueue = [];
-        dialogShowing = false;
-        if (listDialog != null) { try { listDialog.hide(); } catch (err) {} listDialog = null; }
-    });
+    Events.on(WorldLoadEvent, new Cons({
+        get: function(e) {
+            disposeAll(playerStates);
+            playerStates = {};
+            dialogQueue = [];
+            dialogShowing = false;
+            if (listDialog != null) { try { listDialog.hide(); } catch (err) {} listDialog = null; }
+        }
+    }));
 
     function pickBullet(def, sk) {
         let n = def.bullets.length;
@@ -726,7 +747,9 @@
     function updateSimple(unit, sk) {
         sk.timer -= Time.delta;
         if (sk.timer > 0) return;
-        let target = Units.closestEnemy(unit.team, sk.px, sk.py, sk.def.range, t => t != null && !t.dead);
+        let target = Units.closestEnemy(unit.team, sk.px, sk.py, sk.def.range, new Boolf({
+            get: function(t) { return t != null && !t.dead; }
+        }));
         if (target != null) {
             let angle = Angles.angle(sk.px, sk.py, target.x, target.y);
             sk.aim = angle;
@@ -856,18 +879,21 @@
         state.maxRange = maxRange;
     }
 
-    // ĐÃ CHO PHÉP CLIENT CẬP NHẬT DRONE CỦA CHÍNH MÌNH
-    Events.run(Trigger.update, () => {
-        if (!isSurvivalActive() || Vars.state.gameOver || Vars.state.isPaused()) return;
-        Groups.player.each(pl => {
-            if (pl !== Vars.player && !Vars.net.server() && !Vars.headless) return;
-            let u = pl.unit();
-            if (u == null || !u.isValid() || u.dead) return;
-            let state = playerStates[getPlayerId(pl)];
-            if (state == null || state.skills.length === 0) return;
-            updateOrbiters(pl, u, state);
-        });
-    });
+    Events.run(Trigger.update, new Runnable({
+        run: function() {
+            if (!isSurvivalActive() || Vars.state.gameOver || Vars.state.isPaused()) return;
+            Groups.player.each(new Cons({
+                get: function(pl) {
+                    if (pl !== Vars.player && !Vars.net.server() && !Vars.headless) return;
+                    let u = pl.unit();
+                    if (u == null || !u.isValid() || u.dead) return;
+                    let state = playerStates[getPlayerId(pl)];
+                    if (state == null || state.skills.length === 0) return;
+                    updateOrbiters(pl, u, state);
+                }
+            }));
+        }
+    }));
 
     function fillStar4(x, y, outer, inner, rot) {
         for (let i = 0; i < 4; i++) {
@@ -882,66 +908,74 @@
         }
     }
 
-    // ĐÃ CHO PHÉP CLIENT VẼ DRONE CỦA CHÍNH MÌNH
-    Events.run(Trigger.draw, () => {
-        if (Vars.headless || !isSurvivalActive()) return;
-        Groups.player.each(pl => {
-            if (pl !== Vars.player && !Vars.net.server()) return;
-            let u = pl.unit();
-            if (u == null || !u.isValid() || u.dead) return;
-            let state = playerStates[getPlayerId(pl)];
-            if (state == null || state.skills.length === 0) return;
-            for (let i = 0; i < state.skills.length; i++) {
-                let sk = state.skills[i];
-                if (!sk.inited) continue;
+    Events.run(Trigger.draw, new Runnable({
+        run: function() {
+            if (Vars.headless || !isSurvivalActive()) return;
+            Groups.player.each(new Cons({
+                get: function(pl) {
+                    if (pl !== Vars.player && !Vars.net.server()) return;
+                    let u = pl.unit();
+                    if (u == null || !u.isValid() || u.dead) return;
+                    let state = playerStates[getPlayerId(pl)];
+                    if (state == null || state.skills.length === 0) return;
+                    for (let i = 0; i < state.skills.length; i++) {
+                        let sk = state.skills[i];
+                        if (!sk.inited) continue;
 
-                if (sk.mode === "real") drawReal(sk);
+                        if (sk.mode === "real") drawReal(sk);
 
-                Draw.z(Layer.flyingUnit + 1);
-                let col = sk.def.color;
-                let tier = Math.min(MAX_TIER_SHOTS, sk.tier);
-                let outer = 5 + tier * 1.3;
-                let inner = outer * 0.34;
-                let bob = Mathf.sin(Time.time * 0.08 + i * 1.7) * 0.8;
-                let x = sk.px;
-                let y = sk.py + bob;
-                let spin = Time.time * 1.6 + i * 37;
+                        Draw.z(Layer.flyingUnit + 1);
+                        let col = sk.def.color;
+                        let tier = Math.min(MAX_TIER_SHOTS, sk.tier);
+                        let outer = 5 + tier * 1.3;
+                        let inner = outer * 0.34;
+                        let bob = Mathf.sin(Time.time * 0.08 + i * 1.7) * 0.8;
+                        let x = sk.px;
+                        let y = sk.py + bob;
+                        let spin = Time.time * 1.6 + i * 37;
 
-                let n = sk.trail.length;
-                for (let j = 0; j < n; j++) {
-                    let f = (j + 1) / (n + 1);
-                    Draw.color(col, f * 0.3);
-                    Fill.circle(sk.trail[j].x, sk.trail[j].y, outer * 0.22 * f);
+                        let n = sk.trail.length;
+                        for (let j = 0; j < n; j++) {
+                            let f = (j + 1) / (n + 1);
+                            Draw.color(col, f * 0.3);
+                            Fill.circle(sk.trail[j].x, sk.trail[j].y, outer * 0.22 * f);
+                        }
+
+                        Draw.color(Color.black, 0.22);
+                        fillStar4(x + 3, y - 5, outer * 0.9, inner * 0.9, spin);
+
+                        Draw.color(col, 0.2);
+                        Fill.circle(x, y, outer * 1.15);
+                        Draw.color(col);
+                        fillStar4(x, y, outer, inner, spin);
+                        Draw.color(Color.white, 0.9);
+                        fillStar4(x, y, outer * 0.55, inner * 0.55, spin);
+                        Draw.color(Color.white);
+                        Fill.circle(x, y, outer * 0.14);
+                    }
+                    Draw.reset();
                 }
-
-                Draw.color(Color.black, 0.22);
-                fillStar4(x + 3, y - 5, outer * 0.9, inner * 0.9, spin);
-
-                Draw.color(col, 0.2);
-                Fill.circle(x, y, outer * 1.15);
-                Draw.color(col);
-                fillStar4(x, y, outer, inner, spin);
-                Draw.color(Color.white, 0.9);
-                fillStar4(x, y, outer * 0.55, inner * 0.55, spin);
-                Draw.color(Color.white);
-                Fill.circle(x, y, outer * 0.14);
-            }
-            Draw.reset();
-        });
-    });
+            }));
+        }
+    }));
 
     function getLocalSkills() {
         if (Vars.player == null || !isSurvivalActive()) return [];
         let s = playerStates[getPlayerId(Vars.player)];
         if (s == null) return [];
-        return s.skills.map(sk => ({
-            name: sk.name,
-            block: sk.def.block,
-            tier: Math.min(MAX_TIER_SHOTS, sk.tier),
-            maxTier: MAX_TIER_SHOTS,
-            desc: descOf(sk.def),
-            simple: sk.mode !== "real"
-        }));
+        let res = [];
+        for (let i = 0; i < s.skills.length; i++) {
+            let sk = s.skills[i];
+            res.push({
+                name: sk.name,
+                block: sk.def.block,
+                tier: Math.min(MAX_TIER_SHOTS, sk.tier),
+                maxTier: MAX_TIER_SHOTS,
+                desc: descOf(sk.def),
+                simple: sk.mode !== "real"
+            });
+        }
+        return res;
     }
 
     function showSkillList() {
@@ -967,14 +1001,51 @@
         if (list.length === 0) {
             dialog.cont.add("[lightgray]" + (isEn() ? "No skills yet. Kill enemies to level up!" : "Chưa có kĩ năng nào. Diệt quái để lên cấp!")).pad(14).row();
         } else {
-            dialog.cont.pane(p => {
-                p.margin(4);
-                list.forEach(s => {
-                    let row = new Table(Styles.black6);
-                    row.margin(8);
-                    row.add(new Image(s.block.uiIcon)).size(38).padRight(10).top();
+            dialog.cont.pane(new Cons({
+                get: function(p) {
+                    p.margin(4);
+                    for (let i = 0; i < list.length; i++) {
+                        let s = list[i];
+                        let row = new Table(Styles.black6);
+                        row.margin(8);
+                        row.add(new Image(s.block.uiIcon)).size(38).padRight(10).top();
 
-                    let col = new Table();
-                    col.left();
-                    let simpleTag = s.simple ? "   [scarlet]" + (isEn() ? "(simplified fallback)" : "(bản rút gọn)") + "[]" : "";
-                    col.add("[accent]" + s.block.localizedName + "[]   [lightgray]Lv " + s.tier + "/" + s.maxTier + "[]" + simpleTag).left().row();
+                        let col = new Table();
+                        col.left();
+                        let simpleTag = s.simple ? "   [scarlet]" + (isEn() ? "(simplified fallback)" : "(bản rút gọn)") + "[]" : "";
+                        col.add("[accent]" + s.block.localizedName + "[]   [lightgray]Lv " + s.tier + "/" + s.maxTier + "[]" + simpleTag).left().row();
+                        let d = col.add("[lightgray]" + s.desc + "[]").left().growX().get();
+                        d.setWrap(true);
+                        d.setFontScale(0.9);
+                        row.add(col).growX().width(300);
+
+                        p.add(row).width(390).pad(3).row();
+                    }
+                }
+            })).scrollX(false).maxHeight(Core.graphics.getHeight() * 0.65);
+        }
+        dialog.show();
+    }
+
+    global.NexSkills = {
+        getMaxLevel: getMaxLevel,
+        getLocalLevelInfo: function() {
+            if (Vars.player == null || !isSurvivalActive()) return null;
+            let maxLv = getMaxLevel();
+            let s = playerStates[getPlayerId(Vars.player)];
+            if (s == null) return { level: 0, maxLevel: maxLv, exp: 0, need: levelCost(1) };
+            let need = s.level < maxLv ? levelCost(s.level + 1) : 0;
+            return { level: s.level, maxLevel: maxLv, exp: Math.floor(s.exp), need: need };
+        },
+        getLocalSkills: getLocalSkills,
+        showSkillList: showSkillList,
+        listSkills: function() {
+            let pool = buildSkillPool();
+            let res = [];
+            for (let i = 0; i < pool.length; i++) {
+                res.push(pool[i].name);
+            }
+            return res;
+        }
+    };
+})();

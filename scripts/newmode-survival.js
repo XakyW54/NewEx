@@ -1,35 +1,23 @@
 // =====================================================================
-//  NewMode - SURVIVAL (map: newmodesurvival.msav)
-//
-//  Luật chơi:
-//   - Thắng khi tiêu diệt đủ KILL_GOAL kẻ địch (team waveTeam).
-//   - Địch vẫn ra theo ĐỢT (dùng đúng danh sách spawn group trong luật của map),
-//     nhưng KHÔNG ra ở điểm spawn: mỗi con xuất hiện ở một ô ngẫu nhiên trên
-//     bản đồ, với điều kiện:
-//        + không có tường địa hình / công trình (kể cả vùng đệm quanh con đó)
-//        + cách mọi lõi của người chơi ít nhất "bán kính bảo vệ lõi".
-//
-//  Chế độ được bật bằng cờ trong rules.tags nên đi theo file save
-//  (số kill cũng nằm trong rules.tags => tự lưu/tự load cùng save).
+//  NewMode - SURVIVAL (map: newmodesurvival.msav) - Rhino Compatible
 // =====================================================================
 (function() {
-    // ------------------------- CẤU HÌNH ------------------------------
-    const KILL_GOAL = 1000;          // số địch cần diệt để thắng
-    const REWARD_POINTS = 100;       // điểm Gacha nhận khi thắng
-    const WAVE_SPACING_SEC = 0;      // giây giữa 2 đợt. 0 = giữ nguyên luật của map
-    const SAFE_RADIUS_TILES = 0;     // bán kính cấm spawn quanh lõi (ô). 0 = lấy rules.enemyCoreBuildRadius
-    const DEFAULT_SAFE_TILES = 50;   // dùng khi luật map đặt enemyCoreBuildRadius <= 0
-    const EDGE_MARGIN_TILES = 3;     // không spawn sát mép bản đồ
-    const MAX_TRIES = 80;            // số lần thử chọn ô cho mỗi con địch (mỗi pass)
+    const KILL_GOAL = 1000;
+    const REWARD_POINTS = 100;
+    const WAVE_SPACING_SEC = 0;
+    const SAFE_RADIUS_TILES = 0;
+    const DEFAULT_SAFE_TILES = 50;
+    const EDGE_MARGIN_TILES = 3;
+    const MAX_TRIES = 80;
 
     const TAG_ACTIVE = "newex-survival";
     const TAG_KILLS = "newex-survival-kills";
 
-    const isEn = () => String(Core.settings.getString("locale")).startsWith("en");
-
+    function isEn() {
+        return String(Core.settings.getString("locale")).startsWith("en");
+    }
     let winning = false;
 
-    // ------------------------- TRẠNG THÁI ----------------------------
     function getTags() {
         let r = Vars.state != null ? Vars.state.rules : null;
         return (r != null && r.tags != null) ? r.tags : null;
@@ -53,7 +41,13 @@
         if (tags != null) tags.put(TAG_KILLS, String(n));
     }
 
-    // ------------------------- CHỌN VỊ TRÍ SPAWN ---------------------
+    if (global.NexNet != null) {
+        global.NexNet.on("newex-survival-sync-kills", function(player, payload) {
+            let k = parseInt(payload) || 0;
+            setKills(k);
+        }, true, 100);
+    }
+
     function safeRadiusWorld() {
         let ts = Vars.tilesize;
         if (SAFE_RADIUS_TILES > 0) return SAFE_RADIUS_TILES * ts;
@@ -82,8 +76,6 @@
         return false;
     }
 
-    // Ô (tx,ty) có đứng được không: không tường địa hình, không công trình,
-    // và cả vùng đệm bán kính "clear" ô xung quanh cũng thoáng.
     function isSpawnable(tx, ty, type, clear) {
         for (let dx = -clear; dx <= clear; dx++) {
             for (let dy = -clear; dy <= clear; dy++) {
@@ -107,7 +99,6 @@
         let ts = Vars.tilesize;
         let clear = Math.min(4, Math.max(1, Math.ceil(type.hitSize / (2 * ts))));
 
-        // pass 0: vùng đệm theo kích thước con địch; pass 1: nới còn 1 ô
         for (let pass = 0; pass < 2; pass++) {
             let cr = pass === 0 ? clear : 1;
             for (let i = 0; i < MAX_TRIES; i++) {
@@ -134,7 +125,6 @@
         return Math.atan2(best.y - wy, best.x - wx) * 180 / Math.PI;
     }
 
-    // ------------------------- SPAWN THEO ĐỢT ------------------------
     function spawnOne(g, waveIndex, team, cores, minDist) {
         let pos = pickSpawnPos(g.type, cores, minDist);
         if (pos == null) return false;
@@ -146,12 +136,10 @@
         unit.set(pos.x, pos.y);
         unit.rotation = facingCore(pos.x, pos.y, cores);
 
-        // giống spawner của vanilla: đứng yên + bất tử một lúc cho khỏi chết oan
         unit.apply(StatusEffects.unmoving, 30);
         unit.apply(StatusEffects.invincible, 60);
         unit.add();
 
-        // buff-enemies.js nghe sự kiện này để tăng máu theo đợt => phải bắn ra
         Events.fire(new UnitSpawnEvent(unit));
         Fx.spawn.at(pos.x, pos.y);
         return true;
@@ -166,28 +154,25 @@
         let total = 0;
         let missed = 0;
 
-        rules.spawns.each(g => {
-            if (g == null || g.type == null) return;
-            let n = g.getSpawned(waveIndex);
-            for (let i = 0; i < n; i++) {
-                if (spawnOne(g, waveIndex, team, cores, minDist)) total++;
-                else missed++;
+        rules.spawns.each(new Cons({
+            get: function(g) {
+                if (g == null || g.type == null) return;
+                let n = g.getSpawned(waveIndex);
+                for (let i = 0; i < n; i++) {
+                    if (spawnOne(g, waveIndex, team, cores, minDist)) total++;
+                    else missed++;
+                }
             }
-        });
-
-        if (missed > 0) {
-            Log.warn("[NewMode Survival] Đợt " + (waveIndex + 1) + ": không tìm được chỗ spawn cho " + missed + " địch (đã spawn " + total + ").");
-        }
+        }));
     }
 
-    // vanilla gọi spawner.spawnEnemies() rồi mới wave++ và bắn WaveEvent,
-    // nên đợt vừa chạy có chỉ số (state.wave - 2).
-    Events.on(WaveEvent, e => {
-        if (Vars.net.client() || !isActive() || Vars.state.gameOver) return;
-        spawnWave(Vars.state.wave - 2);
-    });
+    Events.on(WaveEvent, new Cons({
+        get: function(e) {
+            if (Vars.net.client() || !isActive() || Vars.state.gameOver) return;
+            spawnWave(Vars.state.wave - 2);
+        }
+    }));
 
-    // ------------------------- ĐẾM KILL / THẮNG ----------------------
     function formatTime() {
         try {
             if (global.matchTimer != null) return String(global.matchTimer.format(global.matchTimer.getSeconds()));
@@ -205,7 +190,7 @@
             time: formatTime()
         };
 
-        Time.run(5, () => {
+        Time.run(5, function() {
             let team = Vars.state.rules.defaultTeam;
             try {
                 Vars.logic.gameOver(team);
@@ -216,33 +201,36 @@
         });
     }
 
-    Events.on(UnitDestroyEvent, e => {
-        if (Vars.net.client() || !isActive() || Vars.state.gameOver || winning) return;
-        let u = e.unit;
-        if (u == null || u.team != Vars.state.rules.waveTeam) return;
+    Events.on(UnitDestroyEvent, new Cons({
+        get: function(e) {
+            if (Vars.net.client() || !isActive() || Vars.state.gameOver || winning) return;
+            let u = e.unit;
+            if (u == null || u.team != Vars.state.rules.waveTeam) return;
 
-        let k = getKills() + 1;
-        setKills(k);
-        if (k >= KILL_GOAL) win();
-    });
+            let k = getKills() + 1;
+            setKills(k);
 
-    Events.on(WorldLoadEvent, e => {
-        winning = false;
-    });
+            if (global.NexNet != null) {
+                global.NexNet.send("newex-survival-sync-kills", String(k));
+            }
 
-    // ------------------------- HUD (gọn) -----------------------------
-    //  Dòng 1: Diệt 123/1000  Đợt 5
-    //  Dòng 2: thanh EXP nhỏ  "Cấp 3  45/110"
-    //  Dòng 3: nút [Kĩ năng] -> bấm để mở bảng kĩ năng pháo đã chọn (không dùng phím tắt)
+            if (k >= KILL_GOAL) win();
+        }
+    }));
+
+    Events.on(WorldLoadEvent, new Cons({
+        get: function(e) {
+            winning = false;
+        }
+    }));
+
     const HUD_W = 150;
     const SKILL_BTN_H = 28;
 
     function openSkillList() {
         try {
             if (global.NexSkills != null && global.NexSkills.showSkillList != null) global.NexSkills.showSkillList();
-        } catch (err) {
-            Log.err("[NewMode Survival] Không mở được bảng kĩ năng: " + err);
-        }
+        } catch (err) {}
     }
 
     function hudLine1() {
@@ -274,81 +262,83 @@
         return Math.max(0, Math.min(1, info.exp / info.need));
     }
 
-    Events.on(ClientLoadEvent, e => {
-        if (Vars.headless) return;
+    Events.on(ClientLoadEvent, new Cons({
+        get: function(e) {
+            if (Vars.headless) return;
 
-        let hasSavedPos = Core.settings.has("newex-survival-hud-x") && Core.settings.has("newex-survival-hud-y");
-        let hudX = Core.settings.getFloat("newex-survival-hud-x", -1);
-        let hudY = Core.settings.getFloat("newex-survival-hud-y", -1);
+            let hasSavedPos = Core.settings.has("newex-survival-hud-x") && Core.settings.has("newex-survival-hud-y");
+            let hudX = Core.settings.getFloat("newex-survival-hud-x", -1);
+            let hudY = Core.settings.getFloat("newex-survival-hud-y", -1);
 
-        let t = new Table(Styles.black6);
-        t.margin(4);
-        t.name = "newex-survival-hud";
-        t.touchable = Touchable.enabled;
-        t.table(cons(r => {
-            r.left();
-            r.label(() => hudLine1()).width(HUD_W).left().get().setFontScale(0.8);
-        })).left();
-        t.row();
-        t.add(new Bar(
-            new Prov({ get: function() { return expText(); } }),
-            new Prov({ get: function() { return Pal.accent; } }),
-            new Floatp({ get: function() { return expFrac(); } })
-        )).size(HUD_W, 14).padTop(2);
-        t.row();
-        // nút mở bảng kĩ năng đã trang bị (bấm lần nữa để đóng)
-        let skillIcon = Icon.list || Icon.book || Icon.info;
-        let sb = t.button(isEn() ? "Skills" : "Kĩ năng", skillIcon, () => openSkillList()).size(HUD_W, SKILL_BTN_H).padTop(3).get();
-        sb.getLabel().setFontScale(0.8);
-        t.visibility = () => isActive() && Vars.ui.hudfrag.shown;
-        t.pack();
-
-        if (!hasSavedPos) {
-            hudX = Core.graphics.getWidth() / 2 - t.getWidth() / 2;
-            hudY = Core.graphics.getHeight() - t.getHeight() - 70;
-        }
-        t.setPosition(hudX, hudY);
-
-        let isDragging = false;
-        let dragOffsetX = 0;
-        let dragOffsetY = 0;
-
-        t.addListener(extend(InputListener, {
-            touchDown(event, x, y, pointer, button) {
-                isDragging = false;
-                dragOffsetX = x;
-                dragOffsetY = y;
-                return true;
-            },
-            touchDragged(event, x, y, pointer) {
-                if (Math.abs(x - dragOffsetX) > 5 || Math.abs(y - dragOffsetY) > 5) {
-                    isDragging = true;
+            let t = new Table(Styles.black6);
+            t.margin(4);
+            t.name = "newex-survival-hud";
+            t.touchable = Touchable.enabled;
+            t.table(new Cons({
+                get: function(r) {
+                    r.left();
+                    r.label(new Prov({ get: function() { return hudLine1(); } })).width(HUD_W).left().get().setFontScale(0.8);
                 }
-                if (isDragging) {
-                    let rawX = t.x + x - dragOffsetX;
-                    let rawY = t.y + y - dragOffsetY;
+            })).left();
+            t.row();
+            t.add(new Bar(
+                new Prov({ get: function() { return expText(); } }),
+                new Prov({ get: function() { return Pal.accent; } }),
+                new Floatp({ get: function() { return expFrac(); } })
+            )).size(HUD_W, 14).padTop(2);
+            t.row();
+            let skillIcon = Icon.list || Icon.book || Icon.info;
+            let sb = t.button(isEn() ? "Skills" : "Kĩ năng", skillIcon, new Runnable({ run: function() { openSkillList(); } })).size(HUD_W, SKILL_BTN_H).padTop(3).get();
+            sb.getLabel().setFontScale(0.8);
+            t.visibility = new Boolp({ get: function() { return isActive() && Vars.ui.hudfrag.shown; } });
+            t.pack();
 
-                    let maxX = Math.max(0, Core.graphics.getWidth() - t.getWidth());
-                    let maxY = Math.max(0, Core.graphics.getHeight() - t.getHeight());
-
-                    hudX = Mathf.clamp(rawX, 0, maxX);
-                    hudY = Mathf.clamp(rawY, 0, maxY);
-
-                    t.setPosition(hudX, hudY);
-
-                    Core.settings.put("newex-survival-hud-x", java.lang.Float(hudX));
-                    Core.settings.put("newex-survival-hud-y", java.lang.Float(hudY));
-                }
-            },
-            touchUp(event, x, y, pointer, button) {
-                isDragging = false;
+            if (!hasSavedPos) {
+                hudX = Core.graphics.getWidth() / 2 - t.getWidth() / 2;
+                hudY = Core.graphics.getHeight() - t.getHeight() - 70;
             }
-        }));
+            t.setPosition(hudX, hudY);
 
-        Vars.ui.hudGroup.addChild(t);
-    });
+            let isDragging = false;
+            let dragOffsetX = 0;
+            let dragOffsetY = 0;
 
-    // ------------------------- API CHO newmode.js --------------------
+            t.addListener(extend(InputListener, {
+                touchDown: function(event, x, y, pointer, button) {
+                    isDragging = false;
+                    dragOffsetX = x;
+                    dragOffsetY = y;
+                    return true;
+                },
+                touchDragged: function(event, x, y, pointer) {
+                    if (Math.abs(x - dragOffsetX) > 5 || Math.abs(y - dragOffsetY) > 5) {
+                        isDragging = true;
+                    }
+                    if (isDragging) {
+                        let rawX = t.x + x - dragOffsetX;
+                        let rawY = t.y + y - dragOffsetY;
+
+                        let maxX = Math.max(0, Core.graphics.getWidth() - t.getWidth());
+                        let maxY = Math.max(0, Core.graphics.getHeight() - t.getHeight());
+
+                        hudX = Mathf.clamp(rawX, 0, maxX);
+                        hudY = Mathf.clamp(rawY, 0, maxY);
+
+                        t.setPosition(hudX, hudY);
+
+                        Core.settings.put("newex-survival-hud-x", java.lang.Float(hudX));
+                        Core.settings.put("newex-survival-hud-y", java.lang.Float(hudY));
+                    }
+                },
+                touchUp: function(event, x, y, pointer, button) {
+                    isDragging = false;
+                }
+            }));
+
+            Vars.ui.hudGroup.addChild(t);
+        }
+    }));
+
     const api = {
         MAP_ID: "newmodesurvival",
         KILL_GOAL: KILL_GOAL,
@@ -357,7 +347,6 @@
         isActive: isActive,
         getKills: getKills,
 
-        // gọi khi vừa tạo màn mới (sau logic.play(), trước khi save lần đầu)
         onBegin: function() {
             winning = false;
             api.lastResult = null;
@@ -374,15 +363,8 @@
                 r.waveSpacing = WAVE_SPACING_SEC * 60;
                 Vars.state.wavetime = r.waveSpacing;
             }
-
-            try {
-                if (Vars.spawner.countSpawns() > 0) {
-                    Log.warn("[NewMode Survival] Map có điểm spawn => vanilla sẽ spawn thêm bên cạnh spawn ngẫu nhiên. Hãy xóa spawn khỏi map.");
-                }
-            } catch (err) {}
         },
 
-        // gọi khi tiếp tục từ file save
         onResume: function() {
             winning = false;
             api.lastResult = null;

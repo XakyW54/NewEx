@@ -1,0 +1,1216 @@
+// =====================================================================
+//  NewMode SURVIVAL - Kĩ năng khi lên cấp (drone phụ tá mang pháo THẬT)
+//
+//  - Mỗi kĩ năng là một DRONE nhỏ hình NGÔI SAO 4 CÁNH bay lơ lửng ngẫu nhiên quanh
+//    người chơi như drone phụ tá: chọn điểm ngẫu nhiên, bay tới bằng lò xo + lực cản,
+//    đổi điểm liên tục, đuổi theo khi người chơi di chuyển.
+//
+//  - Kĩ năng dùng 100% pháo thật của NewEx: mỗi drone giữ một building thật của
+//    pháo đó (class do file .js dựng + thông số .hjson), không đặt lên bản đồ.
+//    Mỗi tick building được dời tới vị trí drone rồi chạy ĐÚNG hàm update() của game
+//    (gồm cả update()/updateTile() riêng của file .js) => pháo tự tìm mục tiêu, xoay,
+//    bắn và chạy mọi cơ chế riêng (tích năng lượng, laser, nội tại, triệu hồi drone,
+//    khiên...). Mỗi frame gọi draw() thật của pháo (thân pháo bị ẩn, nhưng khiên,
+//    tia laser, hiệu ứng nạp... do file .js vẽ vẫn hiện). Đạn vô hạn, không tốn điện.
+//    Cấp kĩ năng (1-4) chỉ tăng tốc độ bắn (+20%/cấp).
+//
+//  - Dự phòng: khối không phải pháo (sonicor, leolyr-spawner) hoặc pháo nào bị lỗi
+//    liên tục sẽ tự chuyển sang "bản rút gọn" (bảng SKILL_SRC bên dưới) để game
+//    không bao giờ bị crash / kĩ năng không bị đứng im. Kĩ năng nào đang chạy bản
+//    rút gọn sẽ có nhãn riêng trong bảng kĩ năng để dễ nhận ra.
+//
+//  - Nút "Kĩ năng" trên HUD (newmode-survival.js) mở bảng kĩ năng đã trang bị.
+//
+//  - Cài đặt trong bảng "Cài Đặt Mod Newex" (loadout-selection.js):
+//      newex-survival-max-level   : cấp tối đa (mặc định 10)
+//      newex-survival-exp-percent : % EXP nhận vào (mặc định 100)
+//      newex-survival-exp-by-hp   : bật = EXP tăng theo máu tối đa của địch (mặc định tắt)
+//
+//  Tham số trong SKILL_SRC (chỉ dùng cho bản rút gọn):
+//    kind     : "bullet" (mặc định) | "missile" | "laser" | "lightning"
+//    dmg, speed, life(ticks), w, h, front, back(màu hex)
+//    pierce   : số mục tiêu xuyên qua      homing : lực tự dẫn
+//    splash/radius : nổ diện rộng          status/statusTime : hiệu ứng
+//    knock    : đẩy lùi                    lightning/lightningLen/lightningDmg
+//    len      : độ dài laser / sét         mid : màu giữa của laser
+//    pellets  : số viên mỗi lượt (nhân theo cấp kĩ năng)    spread : độ tản (độ)
+//    variants : danh sách đạn khác nhau (random, hoặc cycle:true = luân phiên)
+//    reload   : ticks giữa 2 lần bắn       range  : tầm tìm địch
+//    vi / en  : ghi chú dự phòng (mô tả chính nằm ở bảng DESC)
+// =====================================================================
+(function() {
+    const isEn = () => String(Core.settings.getString("locale")).startsWith("en");
+
+    // ---- cấp độ / EXP (có thể chỉnh trong "Cài Đặt Mod Newex") ----
+    const KEY_MAX_LEVEL = "newex-survival-max-level";
+    const KEY_EXP_PERCENT = "newex-survival-exp-percent";
+    const KEY_EXP_BY_HP = "newex-survival-exp-by-hp";
+    const DEFAULT_MAX_LEVEL = 10;
+    const DEFAULT_EXP_PERCENT = 100;
+    const LIMIT_MAX_LEVEL = 999;
+    const LIMIT_EXP_PERCENT = 1000;
+    const HP_EXP_REF = 130;            // máu tham chiếu (hệ số x1): địch có máu <= mức này không được cộng thêm
+    const HP_EXP_MAX_MULT = 50;        // trần hệ số EXP khi bật "tăng EXP theo máu"
+
+    // EXP cần để lên cấp n (n = 1..): 35, 55, 80, 110, 145, ... (tăng dần, không giới hạn cấp)
+    function levelCost(n) {
+        if (n <= 0) return 0;
+        return Math.round(35 + 20 * (n - 1) + 2.5 * (n - 1) * (n - 2));
+    }
+
+    function getMaxLevel() {
+        let v = DEFAULT_MAX_LEVEL;
+        try { v = Core.settings.getInt(KEY_MAX_LEVEL, DEFAULT_MAX_LEVEL); } catch (err) {}
+        if (!(v >= 1)) v = DEFAULT_MAX_LEVEL;
+        return Math.min(LIMIT_MAX_LEVEL, Math.floor(v));
+    }
+
+    function getExpPercent() {
+        let v = DEFAULT_EXP_PERCENT;
+        try { v = Core.settings.getInt(KEY_EXP_PERCENT, DEFAULT_EXP_PERCENT); } catch (err) {}
+        if (!(v >= 0)) v = DEFAULT_EXP_PERCENT;
+        return Math.min(LIMIT_EXP_PERCENT, v);
+    }
+
+    function isExpByHp() {
+        try { return Core.settings.getBool(KEY_EXP_BY_HP, false); } catch (err) {}
+        return false;
+    }
+    const KILL_CREDIT_RADIUS = 260;
+    const ORBIT_RADIUS_BASE = 26;
+    const ORBIT_RADIUS_STEP = 9;
+    const ORBIT_SPIN_SPEED = 1.35;
+    const SKILL_CHOICE_COUNT = 3;
+    const MAX_TIER_SHOTS = 4;      // cấp kĩ năng tối đa
+    const MAX_BULLETS_PER_VOLLEY = 12;
+    const MIN_RELOAD = 6;
+
+    // ---- drone phụ tá bay quanh người chơi ----
+    const DRONE_R_MIN = 22;            // bán kính lang thang nhỏ nhất quanh player (px)
+    const DRONE_R_MAX = 66;            // bán kính lang thang lớn nhất
+    const DRONE_WANDER_MIN = 45;       // ticks trước khi đổi điểm bay mới (nhỏ nhất)
+    const DRONE_WANDER_MAX = 140;      // ... (lớn nhất)
+    const DRONE_SPRING = 0.012;        // lực kéo về điểm đến
+    const DRONE_DRAG = 0.92;           // lực cản mỗi tick (nhỏ hơn = đầm hơn)
+    const DRONE_MAX_SPEED = 4.2;       // tốc độ bay tối đa (px/tick)
+    const DRONE_LEASH = 150;           // xa hơn mức này thì bay nhanh hơn để đuổi kịp
+    const DRONE_TELEPORT = 520;        // xa hơn mức này thì dịch chuyển về cạnh player
+    const DRONE_SEPARATION = 16;       // khoảng cách tối thiểu giữa 2 drone
+
+    // ---- pháo thật ----
+    const REAL_TURRETS = true;         // false = quay lại hoàn toàn bản đạn rút gọn
+    const TIER_SPEED_BONUS = 0.2;      // mỗi cấp kĩ năng tăng tốc độ bắn thêm 20%
+    const MAX_CREDIT_RADIUS = 2000;    // trần bán kính nhận exp khi pháo có tầm bắn rất xa
+
+    // ------------------------- BẢNG KĨ NĂNG -------------------------
+    const SKILL_SRC = [
+        { id: "nucleytor", vi: "Đạn xuyên 3 mục tiêu", en: "Pierces 3 targets",
+          speed: 8, dmg: 24, life: 55, w: 9, h: 14, front: "ffffff", back: "ffef9e", pierce: 3, knock: 0.5, reload: 22, range: 440 },
+
+        { id: "emperfum", vi: "Đạn nặng nổ diện rộng, chậm", en: "Heavy slow shell, big blast",
+          speed: 6, dmg: 40, life: 75, w: 12, h: 12, front: "ffffff", back: "c77dff", splash: 90, radius: 44, homing: 0.03, reload: 75, range: 430 },
+
+        { id: "galaxvorram", vi: "Laser lớn, sát thương cao", en: "Big laser, high damage",
+          kind: "laser", dmg: 85, len: 330, w: 16, back: "ff4444", mid: "ff8866", spread: 3, reload: 110, range: 320 },
+
+        { id: "dor", vi: "Đạn nhanh, hơi tự dẫn", en: "Fast shots, slight homing",
+          speed: 7, dmg: 16, life: 45, w: 7, h: 18, front: "e0f7fa", back: "00bcd4", homing: 0.05, reload: 16, range: 300 },
+
+        { id: "flazerd", vi: "Laser mảnh bắn dồn dập", en: "Rapid thin laser",
+          kind: "laser", dmg: 14, len: 250, w: 6, back: "ff9d3a", mid: "ffd27f", spread: 3, reload: 12, range: 240 },
+
+        { id: "erysidus", vi: "Tên lửa tự dẫn tầm xa", en: "Long-range homing missile",
+          kind: "missile", speed: 5, dmg: 22, life: 100, w: 8, h: 12, front: "e3f2fd", back: "90caf9",
+          splash: 30, radius: 28, homing: 0.09, homingRange: 200, reload: 40, range: 480 },
+
+        { id: "blixalum", vi: "Đạn điện nổ lan, gây giật", en: "Shock blast, area damage",
+          speed: 8, dmg: 14, life: 50, w: 10, h: 14, front: "ffffff", back: "a1ff9a",
+          splash: 34, radius: 36, status: "shocked", statusTime: 60, reload: 24, range: 380 },
+
+        { id: "heliyron", vi: "Đạn nặng tự dẫn mạnh", en: "Heavy homing shots",
+          speed: 12, dmg: 38, life: 36, w: 7, h: 30, front: "e0f7fa", back: "d47c00", homing: 0.1, homingRange: 150, reload: 26, range: 410 },
+
+        { id: "persefer", vi: "Gatling bắn cực nhanh", en: "Very fast gatling",
+          speed: 14, dmg: 8, life: 28, w: 5, h: 12, front: "ffd27f", back: "ff5a3a", pierce: 2, reload: 7, range: 370 },
+
+        { id: "tankani2k", vi: "Phát đạn mạnh, xuyên 2", en: "Strong shot, pierces 2",
+          speed: 15, dmg: 105, life: 30, w: 10, h: 33, front: "e0ea87", back: "e5ff00", pierce: 2, reload: 70, range: 420 },
+
+        { id: "zoj", vi: "Đạn nhẹ tự dẫn, bắn dày", en: "Light homing, rapid fire",
+          speed: 10, dmg: 8, life: 28, w: 4, h: 12, front: "e0ea87", back: "e5ff00", homing: 0.25, homingRange: 200, reload: 9, range: 260 },
+
+        { id: "reflecounum", vi: "Đạn phản chiếu xuyên 4", en: "Reflected shot, pierces 4",
+          speed: 8, dmg: 20, life: 45, w: 8, h: 12, front: "ffffff", back: "7ee9ff", pierce: 4, homing: 0.1, reload: 26, range: 330 },
+
+        { id: "swordoder", vi: "Nhát chém xuyên, sát thương lớn", en: "Piercing slash, heavy damage",
+          speed: 7, dmg: 60, life: 30, w: 22, h: 22, front: "ffffff", back: "ff4d4d", pierce: 5, reload: 55, range: 195 },
+
+        { id: "buffetles", vi: "Đạn xuyên 2, bắn đều", en: "Steady shots, pierce 2",
+          speed: 9, dmg: 26, life: 45, w: 5, h: 15, front: "dae1ee", back: "7d89d8", pierce: 2, reload: 22, range: 370 },
+
+        { id: "maxitoner", vi: "Đạn thủy tinh làm chậm", en: "Glass shots slow enemies",
+          speed: 7, dmg: 14, life: 50, w: 8, h: 12, front: "e2f3f5", back: "22d1ee", status: "slow", statusTime: 90, reload: 28, range: 320 },
+
+        { id: "xylaon", vi: "Đạn nóng, gây cháy", en: "Hot shots, burn enemies",
+          speed: 11, dmg: 9, life: 32, w: 4, h: 12, front: "ffe2a8", back: "feb380", status: "burning", statusTime: 120, reload: 8, range: 320 },
+
+        { id: "lyvervon", vi: "Sét hồ quang liên hoàn", en: "Chain arc lightning",
+          kind: "lightning", dmg: 20, len: 40, back: "9be7ff", reload: 24, range: 140 },
+
+        { id: "vendicum", vi: "Đạn xuyên 3, rất mạnh", en: "Strong shot, pierces 3",
+          speed: 9, dmg: 72, life: 45, w: 11, h: 16, front: "ffffff", back: "e0b080", pierce: 3, knock: 1, reload: 55, range: 380 },
+
+        { id: "drone-launcher", vi: "Đạn drone đuổi theo địch", en: "Drone shots chase enemies",
+          speed: 5, dmg: 11, life: 110, w: 6, h: 6, front: "ffffff", back: "9fd7ff", homing: 0.3, homingRange: 350, reload: 12, range: 500 },
+
+        { id: "holyder", vi: "Đạn cực nhanh, xuyên 4", en: "Ultra-fast, pierces 4",
+          speed: 28, dmg: 46, life: 18, w: 12, h: 16, front: "ffffff", back: "7ad0ff", pierce: 4, reload: 40, range: 470 },
+
+        { id: "plasanod", vi: "Plasma xuyên, làm nóng chảy", en: "Plasma pierce + melt",
+          speed: 9, dmg: 30, life: 40, w: 12, h: 22, front: "ffcc66", back: "e67e22",
+          pierce: 5, splash: 20, radius: 20, status: "melting", statusTime: 90, reload: 26, range: 340 },
+
+        { id: "tankani4k", vi: "Pháo nặng, nổ lan", en: "Heavy shell, area blast",
+          speed: 14, dmg: 120, life: 34, w: 10, h: 33, front: "e0ea87", back: "00ff4c", splash: 100, radius: 46, reload: 80, range: 440 },
+
+        { id: "therdum", vi: "Shotgun tầm gần", en: "Close-range shotgun",
+          speed: 9, dmg: 10, life: 14, w: 6, h: 10, front: "ffaa00", back: "ff5500", pellets: 3, spread: 16, reload: 38, range: 115 },
+
+        { id: "lazash", vi: "Laser đỏ, sát thương vừa", en: "Red laser, steady damage",
+          kind: "laser", dmg: 24, len: 270, w: 8, back: "ff4444", mid: "ff8866", spread: 3, reload: 30, range: 260 },
+
+        { id: "forstarsilum", vi: "Kiếm sao xuyên 5 mục tiêu", en: "Star sword, pierces 5",
+          speed: 10, dmg: 40, life: 45, w: 14, h: 34, front: "bbdefb", back: "90caf9", pierce: 5, reload: 50, range: 420 },
+
+        { id: "hitekalum", vi: "Đạn điện kèm tia sét", en: "Shock shot + lightning",
+          speed: 9, dmg: 18, life: 42, w: 8, h: 12, front: "ffffff", back: "ff5a5a",
+          status: "shocked", statusTime: 60, lightning: 2, lightningLen: 6, lightningDmg: 12, reload: 26, range: 350 },
+
+        { id: "reguilater", vi: "Laser sát thương ngẫu nhiên", en: "Laser, random damage",
+          kind: "laser", len: 220, back: "ff3333", mid: "ff8080", spread: 3, reload: 28, range: 215,
+          variants: [ { dmg: 20, w: 6 }, { dmg: 40, w: 8 }, { dmg: 75, w: 12 } ] },
+
+        { id: "lavunder", vi: "Đạn photon nổ quang phổ", en: "Photon blast shots",
+          speed: 8, dmg: 14, life: 40, w: 10, h: 10, front: "ffffff", back: "c7a0ff", splash: 46, radius: 38, homing: 0.03, reload: 26, range: 300 },
+
+        { id: "blaw", vi: "Luân phiên đạn Băng / Hỏa", en: "Alternates Ice / Fire", cycle: true,
+          speed: 6, life: 60, w: 9, h: 22, front: "ffffff", reload: 20, range: 340,
+          variants: [
+              { dmg: 20, back: "6fa8ff", status: "freezing", statusTime: 120, pierce: 2 },
+              { dmg: 16, back: "ff5a2a", splash: 40, radius: 30, status: "burning", statusTime: 100 }
+          ] },
+
+        { id: "dtg-soldern", vi: "Chùm 3 đạn tản nhẹ", en: "3-shot light spread",
+          speed: 8, dmg: 13, life: 40, w: 4, h: 10, front: "e0f7fa", back: "00bcd4", pellets: 3, spread: 9, reload: 22, range: 300 },
+
+        { id: "indeniter", vi: "Đạn xuyên, nổ lan", en: "Piercing shot, splash",
+          speed: 11, dmg: 20, life: 34, w: 10, h: 14, front: "00ffff", back: "0088ff", pierce: 6, splash: 24, radius: 28, reload: 26, range: 350 },
+
+        { id: "rangtaturs", vi: "Đạn mảnh 7 hiệu ứng ngẫu nhiên", en: "Random 7-effect shards",
+          speed: 7, dmg: 12, life: 45, w: 5, h: 12, front: "ffffff", splash: 14, radius: 24, pellets: 2, spread: 14, reload: 16, range: 290,
+          variants: [
+              { back: "ffab40", status: "blasted", statusTime: 80 },
+              { back: "ff6d00", status: "burning", statusTime: 120 },
+              { back: "8fd0ff", status: "freezing", statusTime: 120 },
+              { back: "fff27a", status: "shocked", statusTime: 80 },
+              { back: "4d9aff", status: "wet", statusTime: 120 },
+              { back: "a6ff6a", status: "corroded", statusTime: 120 },
+              { back: "ffa726", status: "melting", statusTime: 90 }
+          ] },
+
+        { id: "tyber", vi: "3 tên lửa tầm nhiệt", en: "3 heat-seeking missiles",
+          kind: "missile", speed: 4.5, dmg: 14, life: 90, w: 8, h: 12, front: "ffffff", back: "ffb74d",
+          splash: 40, radius: 34, homing: 0.12, homingRange: 220, pellets: 3, spread: 12, reload: 60, range: 380 },
+
+        { id: "endyr", vi: "Chùm 4 đạn năng lượng nổ", en: "4 energy blasts",
+          speed: 6, dmg: 8, life: 55, w: 8, h: 8, front: "ffffff", back: "9be7ff", splash: 30, radius: 30, pellets: 4, spread: 24, reload: 55, range: 310 },
+
+        { id: "sonicor", vi: "Sóng âm xuyên, đẩy lùi", en: "Sonic wave, knockback",
+          speed: 10, dmg: 7, life: 30, w: 14, h: 4, front: "ffffff", back: "cfe9ff", pierce: 6, knock: 5, reload: 20, range: 280 },
+
+        { id: "leolyr-spawner", vi: "Mảnh tinh thể tự dẫn", en: "Homing crystal shards",
+          speed: 3.5, dmg: 16, life: 130, w: 7, h: 7, front: "ffffff", back: "c8ff7a", homing: 0.22, homingRange: 260, pellets: 2, spread: 40, reload: 28, range: 400 }
+    ];
+
+    // ------------------------- MÔ TẢ NGẮN (hiện ở thẻ chọn + bảng kĩ năng) -
+    //  [vi, en] - mô tả đúng theo pháo thật (rút gọn từ file .hjson / .js).
+    const DESC = {
+        "nucleytor": ["Bắn tích năng lượng, đầy 100% thì quá tải: tăng tốc bắn", "Charges up while firing; at 100% it overloads for big buffs"],
+        "emperfum": ["Pháo hạng nặng bắn chậm, đạn cực mạnh", "Heavy slow-firing cannon, very strong shells"],
+        "galaxvorram": ["Pháo khổng lồ bắn đạn hủy diệt, nhiều loại đạn", "Huge cannon with devastating multi-type shots"],
+        "dor": ["Pháo đầu tay: bắn thường xen loạt chùm, đủ loạt vào Cuồng Bạo", "Starter gun: normal shots + burst volleys, enters Frenzy"],
+        "flazerd": ["Laser khóa mục tiêu, bắn càng lâu càng mạnh", "Locked-on laser, grows stronger the longer it fires"],
+        "erysidus": ["Tên lửa quét mục tiêu, đủ năng lượng tung chưởng Repulsor", "Scanning missiles; charged Repulsor blast (+200% vs air)"],
+        "blixalum": ["Đạn điện từ nổ diện rộng, địch càng đông bắn càng nhanh", "Electromagnetic area blasts, fires faster vs crowds"],
+        "heliyron": ["Mất máu càng nhiều càng mạnh, bắn mưa đạn truy đuổi", "Stronger as it loses HP; homing bullet rain"],
+        "persefer": ["Gatling 6 nòng, bắn càng lâu càng nhanh", "6-barrel gatling that spins up the longer it fires"],
+        "tankani2k": ["Bắn chính xác 1.115 sát thương, trúng liên tục thì sạc thêm", "Precise 1,115-dmg shots, charges up on consecutive hits"],
+        "zoj": ["Pháo làm vội: bắn trúng nhận Copper cho lõi", "Cheap turret: each hit gives Copper to the core"],
+        "reflecounum": ["Dựng khiên năng lượng chặn và phản đạn địch", "Energy shield that blocks and reflects enemy bullets"],
+        "swordoder": ["Pháo kiếm: bắn đạn và chém, tận diệt mục tiêu dưới 15% máu", "Sword turret: shots + slashes, executes targets under 15% HP"],
+        "buffetles": ["Dùng nhiều loại đạn, có thể bùng nổ sức mạnh trong chốc lát", "Multi-ammo turret with a short burst of power"],
+        "maxitoner": ["Đạn thủy tinh tích tầng Nitoui, đủ tầng nổ diện rộng", "Glass shots stack Nitoui; full stacks explode in an area"],
+        "xylaon": ["Bắn càng lâu càng nóng, tốc bắn tối đa +350%", "Heats up while firing, up to +350% fire rate"],
+        "lyvervon": ["Cột thu lôi: hồ quang chính xác, bắn liên tục", "Lightning rod: precise arc strikes, constant fire"],
+        "vendicum": ["Đầy năng lượng: +1000% sát thương, +250% tốc bắn", "At full charge: +1000% damage, +250% fire rate"],
+        "drone-launcher": ["Triệu hồi drone chiến đấu, tự hủy sau 10 giây", "Launches combat drones that self-destruct after 10s"],
+        "holyder": ["Tự sạc tăng sát thương, dựng khiên chặn đạn", "Self-charging heavy energy cannon with a bullet shield"],
+        "plasanod": ["Hai tia laser quét liên tục, ngắm lâu gọi sét nổ", "Twin sweeping lasers; long aim calls blast lightning"],
+        "tankani4k": ["Bản tối thượng Tankani, 1.673 sát thương, sạc đầy xuyên giáp", "Ultimate Tankani, 1,673 dmg, armor-piercing when fully charged"],
+        "therdum": ["Shotgun tầm ngắn", "Close-range shotgun"],
+        "lazash": ["Chiếu laser vào mục tiêu", "Beam laser on targets"],
+        "forstarsilum": ["Đạn Starsword chính xác, bắn liên tục tích buff", "Accurate Starsword shots; sustained fire stacks buffs"],
+        "hitekalum": ["Pháo điện từ cao cấp, sát thương rất lớn", "Advanced electromagnetic cannon, very high damage"],
+        "reguilater": ["Ngắm tích sức rồi bắn laser mạnh, sát thương ngẫu nhiên", "Charges its aim, then fires a strong random-damage laser"],
+        "lavunder": ["Laser Photon mạnh dần, đầy năng lượng nổ quang phổ lớn", "Photon laser that strengthens; big blast at full charge"],
+        "blaw": ["Luân phiên đạn Băng / Hỏa, làm chậm và nổ diện rộng", "Alternates Ice / Fire shells: slow + area damage"],
+        "dtg-soldern": ["Đạn đơn khi địch ở xa, shotgun khi địch tới gần", "Single shots at range, shotgun up close"],
+        "indeniter": ["Tầm xa nổ lớn, tích tầng Bemod rồi phát nổ lan", "Long-range blasts; Bemod stacks detonate and spread"],
+        "rangtaturs": ["Shotgun đạn mảnh 7 hiệu ứng ngẫu nhiên, có Cuồng Nộ", "Shotgun of random 7-effect shards, with Rage mode"],
+        "tyber": ["Tên lửa 3 nòng, tự bắn tầm nhiệt và nổ xung kích", "3-barrel missiles, extra heat-seekers and shock pulses"],
+        "endyr": ["Xả đạn năng lượng / laser diện rộng vào vùng mục tiêu", "Area energy and laser barrages on a target zone"],
+        // 2 mục dưới KHÔNG phải pháo (khối thường) nên chạy bản rút gọn
+        "sonicor": ["Sóng âm xuyên, đẩy lùi mục tiêu (bản rút gọn)", "Piercing sonic wave with knockback (simplified)"],
+        "leolyr-spawner": ["Mảnh tinh thể tự dẫn (bản rút gọn)", "Homing crystal shards (simplified)"]
+    };
+
+    function descOf(def) {
+        let d = DESC[def.name];
+        if (d != null) return isEn() ? d[1] : d[0];
+        return isEn() ? def.en : def.vi;
+    }
+
+    let skillPool = null;
+    let playerStates = {};
+    let dialogQueue = [];
+    let dialogShowing = false;
+    let listDialog = null;
+
+    const TileClass = (typeof Tile !== "undefined") ? Tile : Packages.mindustry.world.Tile;
+
+    function isSurvivalActive() {
+        return global.NexSurvival != null && global.NexSurvival.isActive();
+    }
+
+    function C(hex) { return Color.valueOf(hex); }
+
+    function colorFromName(name) {
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) & 0xffffff;
+        let r = 0.35 + ((hash & 0xff) / 255) * 0.65;
+        let g = 0.35 + (((hash >> 8) & 0xff) / 255) * 0.65;
+        let b = 0.35 + (((hash >> 16) & 0xff) / 255) * 0.65;
+        return new Color(r, g, b, 1);
+    }
+
+    // ------------------------- ĐẠN RÚT GỌN (chỉ dùng khi dự phòng) ---
+    //  Pháo thật chạy bằng building thật nên KHÔNG dùng phần này.
+    //  Chỉ dùng cho: khối không phải pháo (sonicor, leolyr-spawner) hoặc khi
+    //  một pháo bị lỗi liên tục => tự chuyển sang đạn rút gọn để không crash.
+    function merge(a, b) {
+        let o = {};
+        for (let k in a) o[k] = a[k];
+        for (let k in b) o[k] = b[k];
+        return o;
+    }
+
+    function decorate(b, o) {
+        if (o.pierce) { b.pierce = true; b.pierceCap = o.pierce; }
+        if (o.homing) { b.homingPower = o.homing; b.homingRange = o.homingRange || 160; }
+        if (o.splash) { b.splashDamage = o.splash; b.splashDamageRadius = o.radius || 30; }
+        if (o.knock) b.knockback = o.knock;
+        if (o.status) {
+            let st = StatusEffects[o.status];
+            if (st != null) { b.status = st; b.statusDuration = o.statusTime || 90; }
+        }
+        if (o.lightning) {
+            b.lightning = o.lightning;
+            b.lightningLength = o.lightningLen || 6;
+            b.lightningDamage = o.lightningDmg || Math.max(1, (o.dmg || 10) * 0.6);
+            b.lightningColor = C(o.back);
+        }
+        return b;
+    }
+
+    function mkBullet(o) {
+        let b = (o.kind === "missile") ? new MissileBulletType(o.speed, o.dmg) : new BasicBulletType(o.speed, o.dmg);
+        b.lifetime = o.life;
+        b.width = o.w || 7;
+        b.height = o.h || 10;
+        b.frontColor = C(o.front || "ffffff");
+        b.backColor = C(o.back);
+        b.hitColor = C(o.back);
+        b.trailColor = C(o.back);
+        b.hitEffect = Fx.hitBulletColor;
+        b.despawnEffect = Fx.hitBulletColor;
+        b.shootEffect = Fx.none;
+        b.smokeEffect = Fx.none;
+        return decorate(b, o);
+    }
+
+    function mkLaser(o) {
+        let b = new LaserBulletType(o.dmg);
+        b.length = o.len;
+        b.width = o.w || 10;
+        try { b.colors = [C(o.back), C(o.mid || o.back), C("ffffff")]; } catch (err) {}
+        b.shootEffect = Fx.none;
+        b.smokeEffect = Fx.none;
+        return decorate(b, o);
+    }
+
+    function mkLightning(o) {
+        let b = new LightningBulletType();
+        b.damage = o.dmg;
+        b.lightningLength = o.len;
+        b.lightningLengthRand = Math.floor(o.len / 4);
+        b.lightningColor = C(o.back);
+        b.shootEffect = Fx.none;
+        b.smokeEffect = Fx.none;
+        if (o.status) {
+            let st = StatusEffects[o.status];
+            if (st != null) { b.status = st; b.statusDuration = o.statusTime || 90; }
+        }
+        return b;
+    }
+
+    // QUAN TRỌNG: đạn tạo lúc đang chơi (không phải lúc game nạp content) sẽ không được
+    // game tự gọi init()/load() => backRegion/frontRegion = null => crash khi vẽ đạn
+    // (NullPointerException ở BasicBulletType.draw). Phải tự gọi ở đây.
+    function prep(b) {
+        try { b.init(); } catch (err) { Log.err("[NexSkills] init đạn lỗi: " + err); }
+        try { b.load(); } catch (err) { Log.err("[NexSkills] load đạn lỗi: " + err); }
+        // chốt chặn cuối: nếu vẫn thiếu texture thì gán thủ công để không bao giờ crash
+        try {
+            if (b.backRegion !== undefined && b.backRegion == null) b.backRegion = Core.atlas.find("bullet-back");
+            if (b.frontRegion !== undefined && b.frontRegion == null) b.frontRegion = Core.atlas.find("bullet");
+        } catch (err) {}
+        return b;
+    }
+
+    function buildBullet(o) {
+        if (o.kind === "laser") return prep(mkLaser(o));
+        if (o.kind === "lightning") return prep(mkLightning(o));
+        return prep(mkBullet(o));
+    }
+
+    // đạn dự phòng: luôn bắn được dù kiểu đạn đặc biệt bị lỗi
+    function fallbackBullet(src) {
+        return prep(mkBullet({ speed: 8, dmg: src.dmg || 15, life: 36, w: 7, h: 10, front: "ffffff", back: src.back || "ffd37f" }));
+    }
+
+    // quãng bay của đạn thường = speed * life => tầm tìm địch không được vượt quá
+    function reachOf(o) {
+        if (o.kind === "laser" || o.kind === "lightning") return Infinity;
+        return o.speed * o.life * 0.95;
+    }
+
+    // Chỉ tạo đạn rút gọn khi thật sự cần (lazy) => pháo thật không tốn bộ nhớ/thời gian nạp.
+    function ensureSimpleBullets(def) {
+        if (def.bullets != null) return;
+        let src = def.src;
+        def.bullets = [];
+        let reach = Infinity;
+        let list = src.variants != null ? src.variants : [{}];
+        try {
+            list.forEach(v => {
+                let o = merge(src, v);
+                def.bullets.push(buildBullet(o));
+                reach = Math.min(reach, reachOf(o));
+            });
+        } catch (err) {
+            Log.err("[NexSkills] Lỗi tạo đạn rút gọn '" + src.id + "' => dùng đạn dự phòng: " + err);
+            def.bullets = [fallbackBullet(src)];
+            reach = 8 * 36 * 0.95;
+        }
+        def.range = Math.min(src.range, reach);
+    }
+
+    function buildDef(src, block) {
+        return {
+            name: src.id,
+            src: src,
+            block: block,
+            vi: src.vi,
+            en: src.en,
+            color: colorFromName(src.id),
+            reload: src.reload,
+            pellets: src.pellets || 1,
+            spread: src.spread != null ? src.spread : 4,
+            cycle: src.cycle === true,
+            range: src.range,
+            bullets: null,                       // đạn rút gọn: tạo khi cần
+            isTurret: block instanceof Turret,   // pháo thật => chạy building thật
+            isItem: block instanceof ItemTurret,
+            ammoItem: undefined
+        };
+    }
+
+    function buildSkillPool() {
+        if (skillPool != null) return skillPool;
+        skillPool = [];
+        SKILL_SRC.forEach(src => {
+            try {
+                let block = Vars.content.getByName(ContentType.block, "newex-" + src.id);
+                if (block == null) return;
+                skillPool.push(buildDef(src, block));
+            } catch (err) {
+                Log.err("[NexSkills] Bỏ qua kĩ năng '" + src.id + "': " + err);
+            }
+        });
+        return skillPool;
+    }
+
+    // ------------------------- PHÁO THẬT (building ảo) ---------------
+    //  Mỗi kĩ năng giữ MỘT building thật của pháo (cùng class do file .js dựng,
+    //  cùng thông số .hjson) nhưng không đặt lên bản đồ. Mỗi tick ta đặt nó vào
+    //  vị trí drone rồi gọi updateTile() => pháo tự tìm mục tiêu, tự xoay, tự bắn
+    //  và chạy toàn bộ cơ chế riêng (tích năng lượng, nâng cấp nội tại, laser, drone...)
+    //  y hệt pháo đặt ngoài bản đồ.
+
+    // gán field an toàn: bỏ qua nếu building không có field đó
+    function setf(o, k, v) {
+        try { o[k] = v; } catch (err) {}
+    }
+
+    function isDummyBullet(bt) {
+        try { return bt.speed === 0 && bt.lifetime === 0 && bt.damage === 0; } catch (err) { return false; }
+    }
+
+    // chọn vật phẩm đạn: ưu tiên loại có đạn thật (bỏ đạn "giả" speed/lifetime/damage = 0)
+    function ammoItemFor(block) {
+        let best = null;
+        try {
+            let it = block.ammoTypes.keys();
+            while (it.hasNext()) {
+                let item = it.next();
+                let bt = block.ammoTypes.get(item);
+                if (bt == null) continue;
+                if (best == null) best = item;
+                if (!isDummyBullet(bt)) { best = item; break; }
+            }
+        } catch (err) {}
+        return best;
+    }
+
+    function createVirtual(def, team, x, y) {
+        let block = def.block;
+        let b = block.newBuilding();
+        b.create(block, team);
+        let tile = new TileClass(0, 0);   // ô riêng, không thuộc bản đồ
+        tile.build = b;                   // để b.isValid() = true
+        b.init(tile, team, false, 0);     // shouldAdd = false: không thêm vào Groups.build
+        b.set(x, y);
+        return b;
+    }
+
+    // Gỡ building ảo: một số pháo (vd reflecounum) tự đăng ký building vào danh sách riêng
+    // và chỉ bỏ ra khi isValid() = false => phải ngắt liên kết tile, nếu không khiên cũ
+    // sẽ nằm lại trên bản đồ mãi mãi. Đồng thời tắt âm thanh lặp của khối.
+    function disposeVirtual(b) {
+        if (b == null) return;
+        try { if (b.sound != null) b.sound.stop(); } catch (err) {}
+        try { if (b.tile != null && b.tile.build === b) b.tile.build = null; } catch (err) {}
+    }
+
+    function disposeAll(states) {
+        try {
+            for (let pid in states) {
+                let st = states[pid];
+                if (st == null || st.skills == null) continue;
+                for (let i = 0; i < st.skills.length; i++) {
+                    disposeVirtual(st.skills[i].virt);
+                    st.skills[i].virt = null;
+                }
+            }
+        } catch (err) {}
+    }
+
+    // nạp đạn vô hạn (pháo item) - không lấy từ lõi
+    function feedAmmo(b, def) {
+        if (!def.isItem || def.ammoItem == null) return;
+        let max = def.block.maxAmmo;
+        let guard = 0;
+        while (b.totalAmmo < max * 0.7 && guard < 6) {
+            guard++;
+            let before = b.totalAmmo;
+            b.handleItem(b, def.ammoItem);
+            if (b.totalAmmo <= before) break;
+        }
+    }
+
+    // pháo "chỉ định tay" (endyr): tự đặt điểm ngắm vào địch gần nhất trong tầm
+    function autoAim(b, sk, unit) {
+        if (b.hasTargetSet === undefined || b.selectingTarget === undefined) return;
+        sk.hookT -= Time.delta;
+        if (sk.hookT > 0) return;
+        sk.hookT = 10;
+        let r = 400;
+        try { r = b.range(); } catch (err) {}
+        let t = Units.closestEnemy(unit.team, sk.px, sk.py, r, e => e != null && !e.dead);
+        if (t != null) {
+            b.targetX = t.x;
+            b.targetY = t.y;
+            b.hasTargetSet = true;
+        } else {
+            b.hasTargetSet = false;
+        }
+    }
+
+    function driveReal(sk, unit, tier) {
+        let def = sk.def;
+        if (sk.virt == null) {
+            if (def.ammoItem === undefined) def.ammoItem = ammoItemFor(def.block);
+            sk.virt = createVirtual(def, unit.team, sk.px, sk.py);
+            sk.noAmmo = 0;
+            sk.zeroEff = 0;
+        }
+        let b = sk.virt;
+        b.set(sk.px, sk.py);
+
+        // pháo điện / laser: luôn đủ điện
+        setf(b, "enabled", true);
+        setf(b, "wasVisible", true);
+        try { if (b.power != null) b.power.status = 1; } catch (err) {}
+
+        // cấp kĩ năng chỉ tăng tốc độ bắn; mọi thứ khác giữ nguyên 100% như pháo.
+        // update() của game tự reset timeScale về 1 khi hết timeScaleDuration => gia hạn mỗi tick.
+        setf(b, "timeScale", 1 + TIER_SPEED_BONUS * (tier - 1));
+        setf(b, "timeScaleDuration", 5);
+
+        // chặn các cơ chế tự hủy của pháo (giới hạn số lượng, zoj bắn 100 phát thì nổ...)
+        if (b.limitCheck !== undefined) b.limitCheck = -1000000;
+        if (b.shotsFired !== undefined && b.shotsFired > 50) b.shotsFired = 0;
+
+        feedAmmo(b, def);
+        autoAim(b, sk, unit);
+
+        if (sk.forceEff) {
+            // phương án B (chỉ khi phương án A không chạy được): ép hiệu suất = 1 rồi chạy updateTile()
+            setf(b, "efficiency", 1);
+            setf(b, "optionalEfficiency", 1);
+            setf(b, "potentialEfficiency", 1);
+            b.updateTile();
+        } else {
+            // phương án A: chạy đúng update() của game => gồm update() riêng của file .js
+            // (vd xylaon tính độ nóng ở đây), tiêu thụ/hiệu suất, âm thanh, rồi updateTile().
+            b.update();
+
+            // pháo có mục tiêu mà hiệu suất vẫn 0 kéo dài (khối đòi tài nguyên mà drone không có)
+            // => chuyển sang phương án B để không bị đứng im
+            let eff = 1;
+            try { eff = b.efficiency; } catch (err) {}
+            if (b.target != null && !(eff > 0.001)) {
+                sk.zeroEff += Time.delta;
+                if (sk.zeroEff > 60) {
+                    sk.forceEff = true;
+                    Log.warn("[NexSkills] '" + sk.name + "': hiệu suất = 0 khi có mục tiêu => ép hiệu suất = 1.");
+                }
+            } else {
+                sk.zeroEff = 0;
+            }
+        }
+
+        // hồi máu nếu sắp chết (một số pháo tự trừ máu bản thân)
+        if (b.health < def.block.health * 0.01) b.health = def.block.health;
+
+        if (b.target != null) {
+            sk.aim = b.rotation;
+            sk.noTargetTicks = 0;
+        }
+        try { sk.rangeNow = b.range(); } catch (err) {}
+
+        if (!b.isValid()) {
+            // bị kill (do cơ chế riêng) => dựng lại, nếu lặp lại nhiều lần thì dùng bản rút gọn
+            disposeVirtual(b);
+            sk.virt = null;
+            sk.deaths++;
+            if (sk.deaths >= 3) throw new Error("building bị hủy " + sk.deaths + " lần");
+            return;
+        }
+
+        // chỉ pháo dùng vật phẩm làm đạn mới cần kiểm tra: nếu không nạp được đạn thì không bao giờ bắn
+        if (def.isItem) {
+            if (!b.hasAmmo()) {
+                sk.noAmmo += Time.delta;
+                if (sk.noAmmo > 180) throw new Error("không nạp được đạn cho pháo");
+            } else {
+                sk.noAmmo = 0;
+            }
+        }
+    }
+
+    // ---- vẽ pháo thật ----
+    //  Gọi draw() thật của building để khiên, tia laser, hiệu ứng nạp... do file .js vẽ vẫn hiện.
+    //  Thân pháo (sprite to) bị ẩn bằng cách tạm thay block.drawer bằng một drawer rỗng
+    //  trong đúng lúc gọi draw() (đồng bộ, khôi phục ngay), để drone chỉ hiện ngôi sao.
+    let noBodyDrawer = undefined;
+
+    function getNoBodyDrawer() {
+        if (noBodyDrawer !== undefined) return noBodyDrawer;
+        noBodyDrawer = null;
+        try { noBodyDrawer = new Packages.mindustry.world.draw.DrawMulti(); } catch (err) {}
+        if (noBodyDrawer == null) {
+            try { noBodyDrawer = extend(Packages.mindustry.world.draw.DrawBlock, { draw(build) {} }); } catch (err) {}
+        }
+        if (noBodyDrawer == null) Log.warn("[NexSkills] Không tạo được drawer rỗng => không vẽ hiệu ứng pháo thật.");
+        return noBodyDrawer;
+    }
+
+    function drawReal(sk) {
+        let b = sk.virt;
+        if (b == null || sk.drawErr >= 3) return;
+        let drawer = getNoBodyDrawer();
+        if (drawer == null) return;
+        let blk = sk.def.block;
+        let old = null;
+        let swapped = false;
+        try {
+            old = blk.drawer;
+            blk.drawer = drawer;
+            swapped = true;
+            b.set(sk.px, sk.py);
+            b.draw();
+        } catch (err) {
+            sk.drawErr++;
+            if (sk.drawErr === 1) Log.err("[NexSkills] Lỗi vẽ pháo thật '" + sk.name + "': " + err);
+        }
+        if (swapped) {
+            try { blk.drawer = old; } catch (err) { Log.err("[NexSkills] Không khôi phục được drawer '" + sk.name + "': " + err); }
+        }
+        Draw.reset();
+    }
+
+    function switchToSimple(sk, why) {
+        Log.warn("[NexSkills] '" + sk.name + "' chuyển sang bản rút gọn: " + why);
+        sk.mode = "simple";
+        disposeVirtual(sk.virt);
+        sk.virt = null;
+        sk.timer = 0;
+        ensureSimpleBullets(sk.def);
+    }
+
+    // ------------------------- TRẠNG THÁI ----------------------------
+    function getPlayerId(player) {
+        try {
+            let u = String(player.uuid());
+            if (u != null && u.length > 0) return u;
+        } catch (err) {}
+        return "id:" + player.id;
+    }
+
+    function getState(player) {
+        let pid = getPlayerId(player);
+        let s = playerStates[pid];
+        if (s == null) {
+            s = { level: 0, exp: 0, skills: [], maxRange: 0 };
+            playerStates[pid] = s;
+        }
+        return s;
+    }
+
+    // EXP nhận được khi diệt 1 địch: gốc theo đợt, nhân với % trong cài đặt,
+    // và (nếu bật) nhân thêm hệ số theo máu tối đa của địch (đã gồm phần máu cộng theo wave).
+    function expForKill(u) {
+        let base = 6 + Math.floor(Vars.state.wave / 8);
+        let mult = getExpPercent() / 100;
+        if (isExpByHp() && u != null) {
+            let hp = 0;
+            try { hp = u.maxHealth; } catch (err) {}
+            if (hp > 0) mult *= Math.max(1, Math.min(HP_EXP_MAX_MULT, Math.sqrt(hp / HP_EXP_REF)));
+        }
+        return base * mult;
+    }
+
+    function findSkill(state, name) {
+        for (let i = 0; i < state.skills.length; i++) {
+            if (state.skills[i].name === name) return state.skills[i];
+        }
+        return null;
+    }
+
+    // ưu tiên kĩ năng chưa max; nếu không đủ 3 mới lấy cả loại đã max
+    function rollSkillChoices(state) {
+        let pool = buildSkillPool();
+        if (pool.length === 0) return [];
+        let open = pool.filter(d => {
+            let ex = findSkill(state, d.name);
+            return ex == null || ex.tier < MAX_TIER_SHOTS;
+        });
+        let src = open.length >= SKILL_CHOICE_COUNT ? open : pool;
+        let want = Math.min(SKILL_CHOICE_COUNT, src.length);
+        let picks = [];
+        let tries = 0;
+        while (picks.length < want && tries < 60) {
+            tries++;
+            let cand = src[Math.floor(Math.random() * src.length)];
+            if (picks.indexOf(cand) === -1) picks.push(cand);
+        }
+        return picks;
+    }
+
+    function applySkill(player, state, def) {
+        let existing = findSkill(state, def.name);
+        if (existing != null) {
+            existing.tier = Math.min(MAX_TIER_SHOTS, existing.tier + 1);
+        } else {
+            let real = REAL_TURRETS && def.isTurret;
+            if (!real) ensureSimpleBullets(def);
+            state.skills.push({
+                name: def.name, def: def, tier: 1,
+                mode: real ? "real" : "simple",
+                timer: Math.random() * def.reload, shot: 0,
+                // drone
+                inited: false, px: 0, py: 0, vx: 0, vy: 0,
+                offA: 0, offR: 30, wanderT: 0, aim: 0, aimDraw: 0, trail: [], trailT: 0, noTargetTicks: 999,
+                // pháo thật
+                virt: null, errs: 0, errRun: 0, deaths: 0, noAmmo: 0, hookT: 0, rangeNow: 0, zeroEff: 0, forceEff: false, drawErr: 0
+            });
+        }
+        if (global.NexNet != null) {
+            global.NexNet.toastTo(player, (isEn() ? "[accent]Skill: " : "[accent]Kĩ năng: ") + def.block.localizedName, 2.5);
+        }
+    }
+
+    // ------------------------- HỘP THOẠI CHỌN ------------------------
+    function showSkillDialog(player, state, choices, onDone) {
+        let dialog = new BaseDialog(isEn() ? "Level Up!" : "Lên Cấp!");
+        dialog.cont.clear();
+        dialog.cont.add(isEn() ? "Choose a skill - Level " + state.level + "/" + getMaxLevel() : "Chọn một kĩ năng - Cấp " + state.level + "/" + getMaxLevel()).pad(8).row();
+
+        let row = new Table();
+        let finished = false;
+        let finish = () => {
+            if (finished) return;
+            finished = true;
+            dialog.hide();
+            if (onDone) onDone();
+        };
+
+        choices.forEach(c => {
+            let card = new Table(Styles.black6);
+            card.margin(8);
+            card.add(new Image(c.block.uiIcon)).size(40).pad(4).row();
+
+            let nameLabel = card.add(c.block.localizedName).wrap().width(150).pad(2).get();
+            nameLabel.setAlignment(Align.center);
+            card.row();
+
+            // mô tả ngắn của kĩ năng
+            let noteLabel = card.add("[lightgray]" + descOf(c) + "[]").wrap().width(150).pad(2).get();
+            noteLabel.setAlignment(Align.center);
+            noteLabel.setFontScale(0.85);
+            card.row();
+
+            // mới hay nâng cấp
+            let ex = findSkill(state, c.name);
+            let tag = ex == null
+                ? (isEn() ? "[accent]New" : "[accent]Mới")
+                : "[accent]Lv " + ex.tier + " > " + Math.min(MAX_TIER_SHOTS, ex.tier + 1);
+            let tagLabel = card.add(tag).pad(2).get();
+            tagLabel.setFontScale(0.85);
+            card.row();
+
+            card.button(isEn() ? "Choose" : "Chọn", () => {
+                applySkill(player, state, c);
+                finish();
+            }).size(130, 42).pad(4);
+            row.add(card).size(180, 270).pad(6);
+        });
+
+        dialog.cont.add(row).row();
+        dialog.show();
+    }
+
+    function tryShowNextDialog() {
+        if (dialogShowing || dialogQueue.length === 0) return;
+        dialogShowing = true;
+        let item = dialogQueue.shift();
+        showSkillDialog(item.player, item.state, item.choices, () => {
+            dialogShowing = false;
+            tryShowNextDialog();
+        });
+    }
+
+    function onLevelUp(player, state) {
+        let choices = rollSkillChoices(state);
+        if (choices.length === 0) return;
+        if (!Vars.headless && player === Vars.player) {
+            dialogQueue.push({ player: player, state: state, choices: choices });
+            tryShowNextDialog();
+        } else {
+            applySkill(player, state, choices[Math.floor(Math.random() * choices.length)]);
+        }
+    }
+
+    function grantExp(player, amount) {
+        if (player == null) return;
+        let state = getState(player);
+        let maxLv = getMaxLevel();
+        if (state.level >= maxLv) return;
+        state.exp += amount;
+        while (state.level < maxLv && state.exp >= levelCost(state.level + 1)) {
+            state.exp -= levelCost(state.level + 1);
+            state.level++;
+            onLevelUp(player, state);
+        }
+    }
+
+    Events.on(UnitDestroyEvent, e => {
+        if (Vars.net.client() || !isSurvivalActive() || Vars.state.gameOver) return;
+        let u = e.unit;
+        if (u == null || u.team != Vars.state.rules.waveTeam) return;
+        let gained = expForKill(u);
+        let rx = u.x, ry = u.y;
+        Groups.player.each(pl => {
+            let pu = pl.unit();
+            if (pu == null || !pu.isValid() || pu.dead) return;
+            let st = playerStates[getPlayerId(pl)];
+            // pháo thật có tầm bắn rất khác nhau => bán kính nhận exp theo tầm xa nhất đang có
+            let rad = Math.min(MAX_CREDIT_RADIUS, Math.max(KILL_CREDIT_RADIUS, st != null ? st.maxRange : 0));
+            let dx = pu.x - rx, dy = pu.y - ry;
+            if (dx * dx + dy * dy <= rad * rad) grantExp(pl, gained);
+        });
+    });
+
+    Events.on(WorldLoadEvent, e => {
+        disposeAll(playerStates);
+        playerStates = {};
+        dialogQueue = [];
+        dialogShowing = false;
+        if (listDialog != null) { try { listDialog.hide(); } catch (err) {} listDialog = null; }
+    });
+
+    // ------------------------- BẮN (bản rút gọn) ---------------------
+    function pickBullet(def, sk, perBullet) {
+        let n = def.bullets.length;
+        if (n === 1) return def.bullets[0];
+        if (def.cycle) return def.bullets[sk.shot % n];
+        return def.bullets[Math.floor(Math.random() * n)];
+    }
+
+    function fireSkill(unit, sk, ox, oy, angle) {
+        let def = sk.def;
+        let tier = Math.min(MAX_TIER_SHOTS, sk.tier);
+        let count = Math.min(MAX_BULLETS_PER_VOLLEY, def.pellets * tier);
+        try {
+            for (let s = 0; s < count; s++) {
+                let b = pickBullet(def, sk);
+                b.create(unit, unit.team, ox, oy, angle + Mathf.range(def.spread));
+            }
+            sk.shot++;
+        } catch (err) {
+            // đạn đặc biệt bị lỗi lúc bắn => chuyển sang đạn dự phòng để kĩ năng không "đứng im"
+            Log.err("[NexSkills] Lỗi bắn '" + def.name + "': " + err);
+            try {
+                def.bullets = [fallbackBullet(def.src != null ? def.src : {})];
+                def.range = Math.min(def.range, 280);
+            } catch (err2) {}
+        }
+    }
+
+    function updateSimple(unit, sk) {
+        sk.timer -= Time.delta;
+        if (sk.timer > 0) return;
+        let target = Units.closestEnemy(unit.team, sk.px, sk.py, sk.def.range, t => t != null && !t.dead);
+        if (target != null) {
+            let angle = Angles.angle(sk.px, sk.py, target.x, target.y);
+            sk.aim = angle;
+            sk.noTargetTicks = 0;
+            fireSkill(unit, sk, sk.px, sk.py, angle);
+            sk.timer = Math.max(MIN_RELOAD, sk.def.reload * (1 - (sk.tier - 1) * 0.12));
+        } else {
+            sk.timer = 12;
+        }
+    }
+
+    // ------------------------- DRONE PHỤ TÁ --------------------------
+    //  Mỗi drone chọn một điểm ngẫu nhiên quanh player (bán kính DRONE_R_MIN..MAX),
+    //  bay tới đó bằng lò xo + lực cản (nên có quán tính, hơi lắc lư), được một lúc
+    //  lại chọn điểm mới. Player chạy thì drone đuổi theo, kẹt quá xa thì dịch chuyển.
+    function pickWander(sk) {
+        sk.offA = Math.random() * 360;
+        sk.offR = DRONE_R_MIN + Math.random() * (DRONE_R_MAX - DRONE_R_MIN);
+        sk.wanderT = DRONE_WANDER_MIN + Math.random() * (DRONE_WANDER_MAX - DRONE_WANDER_MIN);
+    }
+
+    function initDrone(sk, unit) {
+        let a = Math.random() * 360;
+        sk.px = unit.x + Mathf.cosDeg(a) * 14;
+        sk.py = unit.y + Mathf.sinDeg(a) * 14;
+        sk.vx = 0;
+        sk.vy = 0;
+        sk.aim = a;
+        sk.aimDraw = a;
+        pickWander(sk);
+        sk.inited = true;
+    }
+
+    function moveDrone(sk, unit, all) {
+        let dt = Time.delta;
+        sk.wanderT -= dt;
+        sk.noTargetTicks += dt;
+        if (sk.wanderT <= 0) pickWander(sk);
+
+        // điểm đến = quanh player (+ hơi dẫn đầu theo hướng player đang chạy)
+        let tx = unit.x + Mathf.cosDeg(sk.offA) * sk.offR + unit.vel.x * 10;
+        let ty = unit.y + Mathf.sinDeg(sk.offA) * sk.offR + unit.vel.y * 10;
+        let dx = tx - sk.px;
+        let dy = ty - sk.py;
+
+        let pdx = sk.px - unit.x;
+        let pdy = sk.py - unit.y;
+        let pd = Math.sqrt(pdx * pdx + pdy * pdy);
+        if (pd > DRONE_TELEPORT) {
+            initDrone(sk, unit);
+            return;
+        }
+
+        let k = DRONE_SPRING * (pd > DRONE_LEASH ? 3 : 1);
+        sk.vx += dx * k * dt;
+        sk.vy += dy * k * dt;
+
+        // lắc nhẹ cho giống drone đang lơ lửng
+        sk.vx += (Math.random() - 0.5) * 0.07 * dt;
+        sk.vy += (Math.random() - 0.5) * 0.07 * dt;
+
+        // tránh đè lên drone khác
+        for (let i = 0; i < all.length; i++) {
+            let o = all[i];
+            if (o === sk || !o.inited) continue;
+            let sx = sk.px - o.px;
+            let sy = sk.py - o.py;
+            let sd = Math.sqrt(sx * sx + sy * sy);
+            if (sd < DRONE_SEPARATION) {
+                if (sd < 0.01) { sx = Math.random() - 0.5; sy = Math.random() - 0.5; sd = 0.7; }
+                let push = (DRONE_SEPARATION - sd) * 0.03 * dt;
+                sk.vx += (sx / sd) * push;
+                sk.vy += (sy / sd) * push;
+            }
+        }
+
+        // đừng chui vào đúng tâm người chơi
+        if (pd < 14) {
+            let nx = pd > 0.01 ? pdx / pd : 1;
+            let ny = pd > 0.01 ? pdy / pd : 0;
+            let push = (14 - pd) * 0.05 * dt;
+            sk.vx += nx * push;
+            sk.vy += ny * push;
+        }
+
+        let drag = Math.pow(DRONE_DRAG, dt);
+        sk.vx *= drag;
+        sk.vy *= drag;
+
+        let sp = Math.sqrt(sk.vx * sk.vx + sk.vy * sk.vy);
+        let maxSp = DRONE_MAX_SPEED * (pd > DRONE_LEASH ? 2.2 : 1);
+        if (sp > maxSp) {
+            sk.vx *= maxSp / sp;
+            sk.vy *= maxSp / sp;
+        }
+
+        sk.px += sk.vx * dt;
+        sk.py += sk.vy * dt;
+
+        // hướng nhìn: về phía địch nếu đang bắn, không thì theo hướng bay
+        if (sp > 0.6 && sk.noTargetTicks > 20) sk.aim = Math.atan2(sk.vy, sk.vx) * 180 / Math.PI;
+
+        // vệt bay
+        sk.trailT -= dt;
+        if (sk.trailT <= 0) {
+            sk.trailT = 3;
+            sk.trail.push({ x: sk.px, y: sk.py });
+            if (sk.trail.length > 7) sk.trail.shift();
+        }
+    }
+
+    function updateOrbiters(player, unit, state) {
+        let skills = state.skills;
+        let maxRange = 0;
+        for (let i = 0; i < skills.length; i++) {
+            let sk = skills[i];
+            if (!sk.inited) initDrone(sk, unit);
+            moveDrone(sk, unit, skills);
+
+            if (sk.mode === "real") {
+                try {
+                    driveReal(sk, unit, Math.min(MAX_TIER_SHOTS, sk.tier));
+                    sk.errRun = 0;
+                    if (sk.rangeNow > maxRange) maxRange = sk.rangeNow;
+                } catch (err) {
+                    sk.errs++;
+                    sk.errRun++;
+                    if (sk.errs === 1) Log.err("[NexSkills] Pháo thật '" + sk.name + "' lỗi: " + err);
+                    if (sk.errRun >= 3 || sk.errs >= 20 || String(err).indexOf("bị hủy") >= 0 || String(err).indexOf("nạp được đạn") >= 0) {
+                        switchToSimple(sk, String(err));
+                    }
+                }
+            } else {
+                updateSimple(unit, sk);
+                if (sk.def.range > maxRange) maxRange = sk.def.range;
+            }
+        }
+        state.maxRange = maxRange;
+    }
+
+    Events.run(Trigger.update, () => {
+        if (Vars.net.client() || !isSurvivalActive() || Vars.state.gameOver || Vars.state.isPaused()) return;
+        Groups.player.each(pl => {
+            let u = pl.unit();
+            if (u == null || !u.isValid() || u.dead) return;
+            let state = playerStates[getPlayerId(pl)];
+            if (state == null || state.skills.length === 0) return;
+            updateOrbiters(pl, u, state);
+        });
+    });
+
+    // ------------------------- VẼ DRONE ------------------------------
+    //  Drone = ngôi sao 4 cánh (xoay chậm), màu theo kĩ năng, to dần theo cấp kĩ năng.
+    //  Với pháo thật: vẽ thêm phần draw() thật của pháo (khiên, laser...) ngay tại drone.
+
+    // sao 4 cánh = 8 tam giác từ tâm: 4 đỉnh dài (outer) xen kẽ 4 đỉnh lõm (inner)
+    function fillStar4(x, y, outer, inner, rot) {
+        for (let i = 0; i < 4; i++) {
+            let a0 = rot + i * 90;
+            let a1 = a0 + 45;
+            let a2 = a0 + 90;
+            let tx0 = x + Mathf.cosDeg(a0) * outer, ty0 = y + Mathf.sinDeg(a0) * outer;
+            let vx = x + Mathf.cosDeg(a1) * inner, vy = y + Mathf.sinDeg(a1) * inner;
+            let tx1 = x + Mathf.cosDeg(a2) * outer, ty1 = y + Mathf.sinDeg(a2) * outer;
+            Fill.tri(x, y, tx0, ty0, vx, vy);
+            Fill.tri(x, y, vx, vy, tx1, ty1);
+        }
+    }
+
+    Events.run(Trigger.draw, () => {
+        if (Vars.headless || !isSurvivalActive()) return;
+        Groups.player.each(pl => {
+            let u = pl.unit();
+            if (u == null || !u.isValid() || u.dead) return;
+            let state = playerStates[getPlayerId(pl)];
+            if (state == null || state.skills.length === 0) return;
+            for (let i = 0; i < state.skills.length; i++) {
+                let sk = state.skills[i];
+                if (!sk.inited) continue;
+
+                // phần vẽ thật của pháo (khiên, tia laser, hiệu ứng nạp...) - thân pháo đã bị ẩn
+                if (sk.mode === "real") drawReal(sk);
+
+                Draw.z(Layer.flyingUnit + 1);
+                let col = sk.def.color;
+                let tier = Math.min(MAX_TIER_SHOTS, sk.tier);
+                let outer = 5 + tier * 1.3;
+                let inner = outer * 0.34;
+                let bob = Mathf.sin(Time.time * 0.08 + i * 1.7) * 0.8;
+                let x = sk.px;
+                let y = sk.py + bob;
+                let spin = Time.time * 1.6 + i * 37;
+
+                // vệt bay mờ dần
+                let n = sk.trail.length;
+                for (let j = 0; j < n; j++) {
+                    let f = (j + 1) / (n + 1);
+                    Draw.color(col, f * 0.3);
+                    Fill.circle(sk.trail[j].x, sk.trail[j].y, outer * 0.22 * f);
+                }
+
+                // bóng đổ
+                Draw.color(Color.black, 0.22);
+                fillStar4(x + 3, y - 5, outer * 0.9, inner * 0.9, spin);
+
+                // quầng sáng + thân sao + lõi sáng
+                Draw.color(col, 0.2);
+                Fill.circle(x, y, outer * 1.15);
+                Draw.color(col);
+                fillStar4(x, y, outer, inner, spin);
+                Draw.color(Color.white, 0.9);
+                fillStar4(x, y, outer * 0.55, inner * 0.55, spin);
+                Draw.color(Color.white);
+                Fill.circle(x, y, outer * 0.14);
+            }
+            Draw.reset();
+        });
+    });
+
+    // ------------------------- BẢNG KĨ NĂNG ĐÃ TRANG BỊ (nút "Kĩ năng" trên HUD) ---
+    function getLocalSkills() {
+        if (Vars.player == null || !isSurvivalActive()) return [];
+        let s = playerStates[getPlayerId(Vars.player)];
+        if (s == null) return [];
+        return s.skills.map(sk => ({
+            name: sk.name,
+            block: sk.def.block,
+            tier: Math.min(MAX_TIER_SHOTS, sk.tier),
+            maxTier: MAX_TIER_SHOTS,
+            desc: descOf(sk.def),
+            simple: sk.mode !== "real"
+        }));
+    }
+
+    function showSkillList() {
+        if (Vars.headless || !isSurvivalActive()) return;
+        if (listDialog != null && listDialog.isShown()) {
+            listDialog.hide();
+            return;
+        }
+        // đang mở hộp thoại khác (vd chọn kĩ năng) thì không chen vào
+        if (Core.scene.hasDialog()) return;
+
+        let dialog = new BaseDialog(isEn() ? "Equipped skills" : "Kĩ năng đã trang bị");
+        dialog.addCloseButton();
+        listDialog = dialog;
+
+        let info = global.NexSkills.getLocalLevelInfo();
+        if (info != null) {
+            let head = (isEn() ? "Level " : "Cấp ") + info.level + "/" + info.maxLevel +
+                (info.need > 0 ? "   EXP " + info.exp + "/" + info.need : "   MAX");
+            dialog.cont.add("[accent]" + head).pad(6).row();
+        }
+
+        let list = getLocalSkills();
+        if (list.length === 0) {
+            dialog.cont.add("[lightgray]" + (isEn() ? "No skills yet. Kill enemies to level up!" : "Chưa có kĩ năng nào. Diệt quái để lên cấp!")).pad(14).row();
+        } else {
+            dialog.cont.pane(p => {
+                p.margin(4);
+                list.forEach(s => {
+                    let row = new Table(Styles.black6);
+                    row.margin(8);
+                    row.add(new Image(s.block.uiIcon)).size(38).padRight(10).top();
+
+                    let col = new Table();
+                    col.left();
+                    let simpleTag = s.simple ? "   [scarlet]" + (isEn() ? "(simplified fallback)" : "(bản rút gọn)") + "[]" : "";
+                    col.add("[accent]" + s.block.localizedName + "[]   [lightgray]Lv " + s.tier + "/" + s.maxTier + "[]" + simpleTag).left().row();
+                    let d = col.add("[lightgray]" + s.desc + "[]").left().growX().get();
+                    d.setWrap(true);
+                    d.setFontScale(0.9);
+                    row.add(col).growX().width(300);
+
+                    p.add(row).width(390).pad(3).row();
+                });
+            }).scrollX(false).maxHeight(Core.graphics.getHeight() * 0.65);
+        }
+        dialog.show();
+    }
+
+    global.NexSkills = {
+        getMaxLevel: getMaxLevel,
+        getLocalLevelInfo: function() {
+            if (Vars.player == null || !isSurvivalActive()) return null;
+            let maxLv = getMaxLevel();
+            let s = playerStates[getPlayerId(Vars.player)];
+            if (s == null) return { level: 0, maxLevel: maxLv, exp: 0, need: levelCost(1) };
+            let need = s.level < maxLv ? levelCost(s.level + 1) : 0;
+            // EXP có thể lẻ (do % EXP / hệ số máu) => làm tròn xuống để hiển thị
+            return { level: s.level, maxLevel: maxLv, exp: Math.floor(s.exp), need: need };
+        },
+        // danh sách kĩ năng người chơi đang trang bị (dùng cho UI)
+        getLocalSkills: getLocalSkills,
+        // mở / đóng bảng kĩ năng (nút "Kĩ năng" trên HUD)
+        showSkillList: showSkillList,
+        // dùng để kiểm tra/debug: danh sách kĩ năng đã nạp được
+        listSkills: function() {
+            return buildSkillPool().map(d => d.name);
+        }
+    };
+})();

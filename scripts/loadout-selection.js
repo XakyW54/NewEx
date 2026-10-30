@@ -651,12 +651,12 @@ const NexNet = global.NexNet;
     }
 
     function getMaxSelectCount() {
-        return Core.settings.getInt("newex-max-turrets", 5);
+        return Core.settings.getInt("newex-max-turrets", 9999);
     }
 
     function applyTurretVisibility(allowedNamesSeq) {
         let isSandbox = Vars.state.rules != null && (Vars.state.rules.infiniteResources || Vars.state.rules.editor);
-        let gachaEnabled = Core.settings.getBool("newex-gacha-enabled", true);
+        let gachaEnabled = Core.settings.getBool("newex-gacha-enabled", false);
 
         if (isSandbox) {
             turretList.each(block => {
@@ -1031,7 +1031,7 @@ const NexNet = global.NexNet;
         let cols = 0;
 
         let unlockedSeq = shop.getUnlockedTurrets(turretList);
-        let gachaEnabled = Core.settings.getBool("newex-gacha-enabled", true);
+        let gachaEnabled = Core.settings.getBool("newex-gacha-enabled", false);
 
         turretList.each(block => {
             let isUnlocked = gachaEnabled ? unlockedSeq.contains(block.name) : true;
@@ -1122,7 +1122,7 @@ const NexNet = global.NexNet;
         content.add(isEn() ? "[accent]-- GACHA SYSTEM --[]" : "[accent]-- CƠ CHẾ GACHA --[]").row();
         let btnGachaEnabled = new TextButton(isEn() ? "Enable/Disable Gacha\n[gray](When disabled: Don't hide locked turrets)[]" : "Bật/Tắt cơ chế Gacha\n[gray](Khi tắt: Không ẩn pháo chưa mở khóa)[]", Styles.togglet);
         btnGachaEnabled.getLabel().setFontScale(0.8);
-        btnGachaEnabled.setChecked(Core.settings.getBool("newex-gacha-enabled", true));
+        btnGachaEnabled.setChecked(Core.settings.getBool("newex-gacha-enabled", false));
         content.add(btnGachaEnabled).size(280, 54).pad(4).row();
 
         let btnAllowClients = new TextButton(isEn() ? "Let other players use Wave/Meteor/Del Ore buttons\n[gray](Applies when you host a server)[]" : "Cho phép người chơi khác dùng nút Wave/TT rơi/Xóa mỏ\n[gray](Áp dụng khi bạn làm chủ server)[]", Styles.togglet);
@@ -1189,6 +1189,30 @@ const NexNet = global.NexNet;
         hpFieldTable.add(isEn() ? "% / Wave" : "% / Wave").padLeft(8);
         content.add(hpFieldTable).pad(5).row();
 
+        // --- SURVIVAL: CẤP ĐỘ / EXP ---
+        content.add(isEn() ? "[accent]-- SURVIVAL LEVELING --[]" : "[accent]-- CẤP ĐỘ & EXP CHẾ ĐỘ SURVIVAL --[]").padTop(10).row();
+
+        content.add(isEn() ? "Max level:" : "Level tối đa:").padBottom(4).row();
+        let maxLvTable = new Table();
+        let maxLvField = maxLvTable.field(String(Core.settings.getInt("newex-survival-max-level", 10)), text => {}).width(120).get();
+        maxLvField.setFilter(TextField.TextFieldFilter.digitsOnly);
+        maxLvField.setMaxLength(3);
+        maxLvTable.add(isEn() ? "levels (1 - 999)" : "cấp (1 - 999)").padLeft(8);
+        content.add(maxLvTable).pad(5).row();
+
+        content.add(isEn() ? "EXP received (%):" : "% EXP nhận vào:").padBottom(4).row();
+        let expPctTable = new Table();
+        let expPctField = expPctTable.field(String(Core.settings.getInt("newex-survival-exp-percent", 100)), text => {}).width(120).get();
+        expPctField.setFilter(TextField.TextFieldFilter.digitsOnly);
+        expPctField.setMaxLength(4);
+        expPctTable.add(isEn() ? "% (100 = normal)" : "% (100 = bình thường)").padLeft(8);
+        content.add(expPctTable).pad(5).row();
+
+        let btnExpByHp = new TextButton(isEn() ? "EXP scales with target HP\n[gray](Tougher enemies give more EXP)[]" : "Tăng EXP theo máu mục tiêu\n[gray](Địch càng nhiều máu càng cho nhiều EXP)[]", Styles.togglet);
+        btnExpByHp.getLabel().setFontScale(0.8);
+        btnExpByHp.setChecked(Core.settings.getBool("newex-survival-exp-by-hp", false));
+        content.add(btnExpByHp).size(280, 54).pad(4).row();
+
         content.add(isEn() ? "[accent]-- HP BAR DISPLAY MODE --[]" : "[accent]-- CHẾ ĐỘ HIỂN THỊ THANH MÁU (HP) --[]").padTop(10).row();
 
         let currentHpStyle = Core.settings.getString("newex-hp-style", "show-hp");
@@ -1250,6 +1274,18 @@ const NexNet = global.NexNet;
             if (parsedHp > 999) parsedHp = 999;
             if (parsedHp < 0) parsedHp = 0;
             Core.settings.put("newex-hp-per-wave-percent", java.lang.Integer(parsedHp));
+
+            let parsedMaxLv = parseInt(maxLvField.getText());
+            if (isNaN(parsedMaxLv) || parsedMaxLv < 1) parsedMaxLv = 1;
+            if (parsedMaxLv > 999) parsedMaxLv = 999;
+            Core.settings.put("newex-survival-max-level", java.lang.Integer(parsedMaxLv));
+
+            let parsedExpPct = parseInt(expPctField.getText());
+            if (isNaN(parsedExpPct) || parsedExpPct < 0) parsedExpPct = 100;
+            if (parsedExpPct > 1000) parsedExpPct = 1000;
+            Core.settings.put("newex-survival-exp-percent", java.lang.Integer(parsedExpPct));
+
+            Core.settings.put("newex-survival-exp-by-hp", java.lang.Boolean(btnExpByHp.isChecked()));
 
             let selectedStyle = "off";
             if (btnShowHp.isChecked()) selectedStyle = "show-hp";
@@ -1427,7 +1463,7 @@ const NexNet = global.NexNet;
         });
 
         let isSandbox = Vars.state.rules != null && (Vars.state.rules.infiniteResources || Vars.state.rules.editor);
-        let gachaEnabled = Core.settings.getBool("newex-gacha-enabled", true);
+        let gachaEnabled = Core.settings.getBool("newex-gacha-enabled", false);
 
         if (isSandbox) {
             turretList.each(block => {

@@ -2,6 +2,8 @@
     const CURRENT_MOD_NAME = "newex";
     const GACHA_POINTS_KEY = "newex-gacha-points";
 
+    const SURVIVAL_ID = "newmodesurvival";
+
     let activeMapName = null;
     let isPlayingNewMode = false;
     let pendingGachaReward = 0;
@@ -13,7 +15,8 @@
         { id: "sentyderd", displayName: "Sentyderd" },
         { id: "defxy1", displayName: "Def Xy-1" },
         { id: "defxy2", displayName: "Def Xy-2" },
-        { id: "rock", displayName: "Rocks" }
+        { id: "rock", displayName: "Rocks" },
+        { id: SURVIVAL_ID, displayName: "Survival (Diệt 1000 địch)" }
     ];
 
     function getNewModeSlot(mapId) {
@@ -45,6 +48,9 @@
             mapCard.margin(12);
 
             mapCard.add("[white]Map: " + mapInfo.displayName + "[]").left().row();
+            if (mapInfo.id === SURVIVAL_ID && global.NexSurvival) {
+                mapCard.add("[lightgray]Tiêu diệt đủ " + global.NexSurvival.KILL_GOAL + " địch để thắng. Địch xuất hiện ngẫu nhiên khắp bản đồ theo từng đợt.[]").left().padBottom(4).row();
+            }
             if (hasSave) {
                 let titleText = "Save File";
                 try {
@@ -101,6 +107,7 @@
                 slot.load();
                 Vars.state.set(GameState.State.playing);
                 Vars.ui.showInfoToast("Đã tải lại trận đấu NewMode thành công!", 2);
+                if (mapName === SURVIVAL_ID && global.NexSurvival) global.NexSurvival.onResume();
                 return;
             } catch (e) {
                 Log.err("Lỗi load save NewMode, tạo lại trận mới: " + e);
@@ -117,6 +124,8 @@
                 Vars.world.loadMap(map);
                 Vars.state.rules = map.applyRules(Gamemode.survival);
                 Vars.logic.play();
+
+                if (mapName === SURVIVAL_ID && global.NexSurvival) global.NexSurvival.onBegin();
 
                 let newSlot = Vars.control.saves.addSave(slotName);
                 newSlot.save();
@@ -160,7 +169,9 @@
         if (isPlayingNewMode) {
             if (event.winner != null && event.winner == Vars.state.rules.defaultTeam) {
                 hasWonPending = true;
-                pendingGachaReward = (activeMapName === "Newbie") ? 20 : 50;
+                if (activeMapName === "Newbie") pendingGachaReward = 20;
+                else if (activeMapName === SURVIVAL_ID && global.NexSurvival) pendingGachaReward = global.NexSurvival.REWARD_POINTS;
+                else pendingGachaReward = 50;
             }
             deleteNewModeSave();
         }
@@ -172,7 +183,12 @@
                 if (hasWonPending) {
                     let currentPts = Core.settings.getInt(GACHA_POINTS_KEY, 0) + pendingGachaReward;
                     Core.settings.put(GACHA_POINTS_KEY, java.lang.Integer(currentPts));
-                    Vars.ui.showInfo("[accent]🎉 CHIẾN THẮNG NEWMODE! 🎉\n\n[white]Bạn đã vượt qua bản đồ [cyan]" + activeMapName + "[white] và nhận được [yellow]+" + pendingGachaReward + " điểm Gacha[white]!\n\nTổng số điểm hiện tại: [yellow]" + currentPts + " điểm[]");
+                    let extra = "";
+                    let res = (activeMapName === SURVIVAL_ID && global.NexSurvival) ? global.NexSurvival.lastResult : null;
+                    if (res != null) {
+                        extra = "\n\n[white]Đã diệt [scarlet]" + res.kills + "[white] địch • Đợt [cyan]" + res.wave + "[white] • Thời gian [cyan]" + res.time + "[]";
+                    }
+                    Vars.ui.showInfo("[accent]🎉 CHIẾN THẮNG NEWMODE! 🎉\n\n[white]Bạn đã vượt qua bản đồ [cyan]" + activeMapName + "[white] và nhận được [yellow]+" + pendingGachaReward + " điểm Gacha[white]!\n\nTổng số điểm hiện tại: [yellow]" + currentPts + " điểm[]" + extra);
                 } else {
                     saveNewModeGame();
                 }

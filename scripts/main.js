@@ -1,4 +1,20 @@
 
+const NEX_DEFAULTS_VERSION = "beta0.8.11xyak";
+const NEX_DEFAULTS_KEY = "newex-defaults-applied-version";
+
+function applyNexDefaultsIfNeeded() {
+    let applied = String(Core.settings.getString(NEX_DEFAULTS_KEY, ""));
+    if (applied === NEX_DEFAULTS_VERSION) return;
+    Core.settings.put("newex-gacha-enabled", java.lang.Boolean(false));
+    Core.settings.put("newex-max-turrets", java.lang.Integer(9999));
+    Core.settings.put("newex-hp-per-wave-percent", java.lang.Integer(10));
+    Core.settings.put(NEX_DEFAULTS_KEY, NEX_DEFAULTS_VERSION);
+    Core.settings.forceSave();
+}
+
+Events.on(ClientLoadEvent, applyNexDefaultsIfNeeded);
+Events.on(ServerLoadEvent, applyNexDefaultsIfNeeded);
+
 require("match_timer");
 
 require("cin");
@@ -135,6 +151,8 @@ require("thermion");
 require("beryi-drills");
 
 require("loadout-selection");
+require("newmode-survival");
+require("survivor-skills");
 require("newmode");
 require("shop");
 

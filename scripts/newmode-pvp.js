@@ -2807,17 +2807,42 @@
         return Core.graphics.getHeight() / uiScale();
     }
 
+    function shortScreen() {
+        return screenH() < 500;
+    }
+
+    function narrowScreen() {
+        return screenW() < 520;
+    }
+
     function panelW() {
-        return Math.max(280, Math.min(screenW() - 40, 640));
+        let w = Math.max(220, Math.min(screenW() - (shortScreen() ? 24 : 40), 640));
+        return Math.min(w, Math.max(160, screenW() - 12));
     }
 
     function btnH() {
-        return Vars.mobile ? 52 : 38;
+        if (!Vars.mobile) return 38;
+        return shortScreen() ? 44 : 52;
     }
 
-    function listH() {
+    function headH() {
+        return (shortScreen() ? 58 : 80) + btnH() + 16;
+    }
+
+    function listH(extra) {
         let sh = screenH();
-        return Math.max(150, Math.min(sh - (Vars.mobile ? 230 : 270), sh * 0.72));
+        let reserve = (shortScreen() ? 40 : 56) + (shortScreen() ? 52 : 72) + 24 + (extra === undefined ? headH() : extra);
+        return Math.max(100, Math.min(sh - reserve, sh * 0.8));
+    }
+
+    function addClose(d) {
+        if (!shortScreen()) {
+            d.addCloseButton();
+            return;
+        }
+        d.buttons.defaults().size(160, 44);
+        d.buttons.button("@back", Icon.left, new Runnable({ run: function() { d.hide(); } }));
+        d.closeOnBack();
     }
 
     function gridCols() {
@@ -2832,16 +2857,17 @@
         let ut = tierType(t);
         let row = new Table(Styles.black6);
         row.margin(8);
-        row.add(new Image(ut.uiIcon)).size(40).padRight(10);
+        let selW = narrowScreen() ? 84 : 110;
+        row.add(new Image(ut.uiIcon)).size(narrowScreen() ? 32 : 40).padRight(narrowScreen() ? 6 : 10);
         let col = new Table();
         col.left();
         col.add("[white]" + ut.localizedName + "[]").left().row();
         col.add("[lightgray]" + tr("Bậc ", "Tier ") + t + "[]").left();
         row.add(col).growX().left();
         if (t === cur) {
-            row.add("[accent]" + tr("Đang dùng", "In use") + "[]").width(110).center();
+            row.add("[accent]" + tr("Đang dùng", "In use") + "[]").width(selW).center();
         } else {
-            row.button(tr("Chọn", "Select"), new Runnable({ run: function() { send(REQ_UNIT, String(t)); } })).size(110, btnH());
+            row.button(tr("Chọn", "Select"), new Runnable({ run: function() { send(REQ_UNIT, String(t)); } })).size(selW, btnH());
         }
         p.add(row).width(w).pad(4).row();
     }
@@ -2855,7 +2881,7 @@
         col.add("[white]" + tr(STATS[i].vi, STATS[i].en) + "[]   [lightgray]" + lv + "/" + statMax(i) + "[]").left().wrap().growX().row();
         col.add("[lightgray]" + STATS[i].f(lv) + (lv < statMax(i) ? "  >  " + STATS[i].f(lv + 1) : "  MAX") + "[]").left().wrap().growX();
         row.add(col).growX().left();
-        let btn = row.button("+", new Runnable({ run: function() { send(REQ_UP, String(i)); } })).size(64, btnH()).padLeft(8).get();
+        let btn = row.button("+", new Runnable({ run: function() { send(REQ_UP, String(i)); } })).size(narrowScreen() ? 52 : 64, btnH()).padLeft(narrowScreen() ? 4 : 8).get();
         btn.setDisabled(st.pts < 1 || lv >= statMax(i));
         p.add(row).width(w).pad(4).row();
     }
@@ -2888,7 +2914,7 @@
     }
 
     function turretCard(st, def, cw) {
-        let inner = Math.max(200, cw - 20);
+        let inner = Math.max(140, cw - 20);
         let owned = [];
         for (let j = 0; j < st.d.length; j++) {
             if (st.d[j] === def.id) owned.push(j);
@@ -2902,7 +2928,7 @@
         let canCore = coreCount(st) < coreSlots(st);
         let afford = st.pts >= def.cost;
         let tabStyle = Styles.togglet != null ? Styles.togglet : Styles.defaultt;
-        let iconSz = Vars.mobile ? 44 : 36;
+        let iconSz = narrowScreen() ? 32 : (Vars.mobile ? 44 : 36);
 
         let top = new Table();
         top.left();
@@ -2943,7 +2969,7 @@
 
             let hdr = new Table();
             hdr.add("[accent]#" + (n + 1) + "[]  [lightgray]" + curName + "[]").left().growX();
-            hdr.button(tr("Bán", "Sell"), new Runnable({ run: function() { send(REQ_SELL, String(j)); } })).width(Vars.mobile ? 88 : 72).height(btnH());
+            hdr.button(tr("Bán", "Sell"), new Runnable({ run: function() { send(REQ_SELL, String(j)); } })).width(narrowScreen() ? 64 : (Vars.mobile ? 88 : 72)).height(btnH());
             card.add(hdr).width(inner).row();
 
             let row = new Table();
@@ -3028,7 +3054,7 @@
 
     function statDetailDialog(st) {
         let dialog = new BaseDialog(tr("Chi tiết chỉ số", "Stat details"));
-        dialog.addCloseButton();
+        addClose(dialog);
         let W2 = Math.min(480, panelW());
         function fill() {
             dialog.cont.clear();
@@ -3048,7 +3074,7 @@
                         p.add("[white]" + lines[i][1] + "[]").left().wrap().growX().padBottom(8).row();
                     }
                 }
-            })).width(W2).maxHeight(listH());
+            })).width(W2).maxHeight(listH(btnH() + 12)).scrollX(false);
         }
         fill();
         dialog.show();
@@ -3067,7 +3093,7 @@
         let defs = droneDefs();
 
         let head = new Table(Styles.black6);
-        head.margin(8);
+        head.margin(shortScreen() ? 4 : 8);
         head.add("[accent]" + tr("Cấp ", "Level ") + st.lv + "/" + MAX_LEVEL + "[]").left();
         head.add("[white]" + tierType(activeTier(st)).localizedName + "[]").expandX().center();
         head.add("[yellow]" + tr("Điểm: ", "Points: ") + st.pts + "[]").right();
@@ -3076,7 +3102,7 @@
             new Prov({ get: function() { return "EXP " + expText(); } }),
             new Prov({ get: function() { return Pal.accent; } }),
             new Floatp({ get: function() { return expFrac(); } })
-        )).growX().height(Vars.mobile ? 26 : 20).colspan(3).padTop(6);
+        )).growX().height(shortScreen() ? 16 : (Vars.mobile ? 26 : 20)).colspan(3).padTop(shortScreen() ? 2 : 6);
         c.add(head).width(W).pad(4).row();
 
         if (upTab < 0 || upTab > 3) upTab = 0;
@@ -3144,7 +3170,7 @@
             return;
         }
         let dialog = new BaseDialog(tr("Nâng cấp PvP", "PvP Upgrades"));
-        dialog.addCloseButton();
+        addClose(dialog);
         let lastVer = -1;
         let lastTab = -1;
         let lastW = -1;
@@ -3228,16 +3254,14 @@
 
     function hudCenter() {
         if (hudPanel == null) return;
-        let w = Core.graphics.getWidth();
-        let h = Core.graphics.getHeight();
-        hudPanel.setPosition((w - hudPanel.getWidth()) / 2, (h - hudPanel.getHeight()) / 2);
+        hudPanel.setPosition((screenW() - hudPanel.getWidth()) / 2, screenH() - hudPanel.getHeight() - (Vars.mobile ? 90 : 70));
         hudSavePos();
     }
 
     function hudClamp() {
         if (hudPanel == null) return;
-        let mx = Math.max(0, Core.graphics.getWidth() - hudPanel.getWidth());
-        let my = Math.max(0, Core.graphics.getHeight() - hudPanel.getHeight());
+        let mx = Math.max(0, screenW() - hudPanel.getWidth());
+        let my = Math.max(0, screenH() - hudPanel.getHeight());
         hudPanel.setPosition(Mathf.clamp(hudPanel.x, 0, mx), Mathf.clamp(hudPanel.y, 0, my));
         hudSavePos();
     }
@@ -3251,7 +3275,7 @@
             } catch (err) {
                 Log.err("[NexPvp] cannot add HUD setting: " + err);
             }
-            const W = 170;
+            const W = Vars.mobile ? 150 : 170;
             let t = new Table(Styles.black6);
             hudPanel = t;
             t.margin(4);
@@ -3265,7 +3289,7 @@
                 new Floatp({ get: function() { return expFrac(); } })
             )).size(W, 14).padTop(2);
             t.row();
-            let ub = t.button(tr("Nâng cấp", "Upgrade"), Icon.up || Icon.add, new Runnable({ run: function() { openUpgrade(); } })).size(W, 28).padTop(3).get();
+            let ub = t.button(tr("Nâng cấp", "Upgrade"), Icon.up || Icon.add, new Runnable({ run: function() { openUpgrade(); } })).size(W, Vars.mobile ? 36 : 28).padTop(3).get();
             ub.getLabel().setFontScale(0.8);
             t.visibility = new Boolp({ get: function() { return isActive() && Vars.ui.hudfrag.shown && hudVisible(); } });
             t.pack();
@@ -3273,7 +3297,7 @@
                 t.setPosition(Core.settings.getFloat(KEY_HUD_X, 0), Core.settings.getFloat(KEY_HUD_Y, 0));
                 hudClamp();
             } else {
-                t.setPosition(screenW() / 2 - t.getWidth() / 2, screenH() - t.getHeight() - 70);
+                hudCenter();
             }
 
             let dragging = false;
@@ -3289,8 +3313,8 @@
                 touchDragged(event, x, y, pointer) {
                     if (Math.abs(x - offX) > 5 || Math.abs(y - offY) > 5) dragging = true;
                     if (dragging) {
-                        let mx = Math.max(0, Core.graphics.getWidth() - t.getWidth());
-                        let my = Math.max(0, Core.graphics.getHeight() - t.getHeight());
+                        let mx = Math.max(0, screenW() - t.getWidth());
+                        let my = Math.max(0, screenH() - t.getHeight());
                         t.setPosition(Mathf.clamp(t.x + x - offX, 0, mx), Mathf.clamp(t.y + y - offY, 0, my));
                         hudSavePos();
                     }
@@ -3314,8 +3338,7 @@
                 if (w !== hudLastW || h !== hudLastH) {
                     hudLastW = w;
                     hudLastH = h;
-                    if (Vars.mobile) hudCenter();
-                    else hudClamp();
+                    hudClamp();
                 }
                 if (!isActive()) return;
                 try {

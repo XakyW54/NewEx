@@ -100,6 +100,41 @@
         { id: "leolyr-spawner", vi: "Mảnh tinh thể tự dẫn", en: "Homing crystal shards", speed: 3.5, dmg: 16, life: 130, w: 7, h: 7, front: "ffffff", back: "c8ff7a", homing: 0.22, homingRange: 260, pellets: 2, spread: 40, reload: 28, range: 400 }
     ];
 
+    // ---- Stat-boost picks (thay cho hệ thống nâng cấp lv của pháo) ----
+    const STAT_PER_POINT = {
+        hp:        0.06,   // +6% máu player / điểm
+        armor:     1.2,    // +1.2 giáp player / điểm
+        build:     0.08,   // +8% tốc độ xây / điểm
+        dmg:       0.08,   // +8% sát thương pháo kĩ năng / điểm
+        firerate:  0.07,   // +7% tốc độ bắn pháo kĩ năng / điểm
+        range:     0.06,   // +6% tầm bắn pháo kĩ năng / điểm
+        critChance:0.04,   // +4% tỉ lệ bạo kích / điểm
+        critDmg:   0.15,   // +15% sát thương bạo kích / điểm
+        shred:     1.0     // +1.0 giảm giáp mục tiêu / điểm
+    };
+    const STAT_SRC = [
+        { id: "stat-hp", stat: "hp", icon: "hp", vi: "Máu", en: "Health",
+            vid: "Tăng [green]6%[] máu tối đa của unit", end: "Increases unit max health by [green]6%[]" },
+        { id: "stat-armor", stat: "armor", icon: "armor", vi: "Giáp", en: "Armor",
+            vid: "Tăng [green]+1.2[] giáp cho unit", end: "Increases unit armor by [green]+1.2[]" },
+        { id: "stat-build", stat: "build", icon: "build", vi: "Tốc độ xây", en: "Build Speed",
+            vid: "Tăng [green]8%[] tốc độ xây dựng", end: "Increases build speed by [green]8%[]" },
+        { id: "stat-dmg", stat: "dmg", icon: "dmg", vi: "Sát thương", en: "Damage",
+            vid: "Tăng [green]8%[] sát thương các pháo kĩ năng", end: "Increases skill-cannon damage by [green]8%[]" },
+        { id: "stat-firerate", stat: "firerate", icon: "firerate", vi: "Tốc độ bắn", en: "Fire Rate",
+            vid: "Tăng [green]7%[] tốc độ bắn các pháo kĩ năng", end: "Increases skill-cannon fire rate by [green]7%[]" },
+        { id: "stat-range", stat: "range", icon: "range", vi: "Phạm vi bắn", en: "Range",
+            vid: "Tăng [green]6%[] tầm bắn các pháo kĩ năng", end: "Increases skill-cannon range by [green]6%[]" },
+        { id: "stat-crit-chance", stat: "critChance", icon: "crit", vi: "Tỉ lệ bạo kích", en: "Crit Chance",
+            vid: "Tăng [green]4%[] tỉ lệ bạo kích", end: "Increases crit chance by [green]4%[]" },
+        { id: "stat-crit-dmg", stat: "critDmg", icon: "critdmg", vi: "Sát thương bạo kích", en: "Crit Damage",
+            vid: "Tăng [green]15%[] sát thương khi bạo kích", end: "Increases crit damage bonus by [green]15%[]" },
+        { id: "stat-shred", stat: "shred", icon: "shred", vi: "Giảm giáp mục tiêu", en: "Armor Shred",
+            vid: "Giảm [green]1.0[] giáp của mục tiêu bị bắn trúng", end: "Reduces target armor by [green]1.0[] on hit" }
+    ];
+    function statDesc(s) { return isEn() ? s.end : s.vid; }
+    function statName(s) { return isEn() ? s.en : s.vi; }
+
     const DESC = {
         "nucleytor": ["Bắn tích năng lượng, đầy 100% thì quá tải: tăng tốc bắn", "Charges up while firing; at 100% it overloads for big buffs"],
         "emperfum": ["Pháo hạng nặng bắn chậm, đạn cực mạnh", "Heavy slow-firing cannon, very strong shells"],
@@ -411,7 +446,8 @@
         setf(b, "wasVisible", true);
         try { if (b.power != null) b.power.status = 1; } catch (err) {}
 
-        setf(b, "timeScale", 1 + TIER_SPEED_BONUS * (tier - 1));
+        let fireRateMult = statMult(sk.ownerState, "firerate");
+        setf(b, "timeScale", fireRateMult);
         setf(b, "timeScaleDuration", 5);
 
         if (b.limitCheck !== undefined) b.limitCheck = -1000000;
@@ -523,7 +559,11 @@
         let pid = getPlayerId(player);
         let s = playerStates[pid];
         if (s == null) {
-            s = { level: 0, exp: 0, skills: [], maxRange: 0 };
+            s = {
+                level: 0, exp: 0, skills: [], maxRange: 0, rerollPts: 0,
+                stats: { hp: 0, armor: 0, build: 0, dmg: 0, firerate: 0, range: 0, critChance: 0, critDmg: 0, shred: 0 },
+                baseMaxHealth: 0
+            };
             playerStates[pid] = s;
         }
         return s;
@@ -547,45 +587,106 @@
         return null;
     }
 
+    function randomStatPick() {
+        let s = STAT_SRC[Math.floor(Math.random() * STAT_SRC.length)];
+        return { name: s.id, stat: s.stat, vi: s.vi, en: s.en, srcStat: s };
+    }
+
+    // Không còn hệ thống tier/lv cho pháo kĩ năng: mỗi pháo chỉ chọn được 1 lần.
+    // Sau khi đã sở hữu hết pháo (hoặc để lấp chỗ trống), các lựa chọn còn lại
+    // là các nút CỘNG CHỈ SỐ (máu/giáp/tốc xây/sát thương/tốc bắn/tầm bắn/crit/giảm giáp).
     function rollSkillChoices(state) {
         let pool = buildSkillPool();
-        if (pool.length === 0) return [];
         let open = [];
         for (let i = 0; i < pool.length; i++) {
             let d = pool[i];
-            let ex = findSkill(state, d.name);
-            if (ex == null || ex.tier < MAX_TIER_SHOTS) {
-                open.push(d);
-            }
+            if (findSkill(state, d.name) == null) open.push(d);
         }
-        let src = open.length >= SKILL_CHOICE_COUNT ? open : pool;
-        let want = Math.min(SKILL_CHOICE_COUNT, src.length);
+
+        let want = SKILL_CHOICE_COUNT;
         let picks = [];
+        let cannonWant = Math.min(want, open.length);
         let tries = 0;
-        while (picks.length < want && tries < 60) {
+        while (picks.length < cannonWant && tries < 60) {
             tries++;
-            let cand = src[Math.floor(Math.random() * src.length)];
+            let cand = open[Math.floor(Math.random() * open.length)];
             if (picks.indexOf(cand) === -1) picks.push(cand);
+        }
+        while (picks.length < want) {
+            picks.push(randomStatPick());
+        }
+        // trộn ngẫu nhiên vị trí hiển thị
+        for (let i = picks.length - 1; i > 0; i--) {
+            let j = Math.floor(Math.random() * (i + 1));
+            let tmp = picks[i]; picks[i] = picks[j]; picks[j] = tmp;
         }
         return picks;
     }
 
-    function applySkill(player, state, def) {
-        let existing = findSkill(state, def.name);
-        if (existing != null) {
-            existing.tier = Math.min(MAX_TIER_SHOTS, existing.tier + 1);
-        } else {
-            let real = REAL_TURRETS && def.isTurret;
-            if (!real) ensureSimpleBullets(def);
-            state.skills.push({
-                name: def.name, def: def, tier: 1,
-                mode: real ? "real" : "simple",
-                timer: Math.random() * def.reload, shot: 0,
-                inited: false, px: 0, py: 0, vx: 0, vy: 0,
-                offA: 0, offR: 30, wanderT: 0, aim: 0, aimDraw: 0, trail: [], trailT: 0, noTargetTicks: 999,
-                virt: null, errs: 0, errRun: 0, deaths: 0, noAmmo: 0, hookT: 0, rangeNow: 0, zeroEff: 0, forceEff: false, drawErr: 0
-            });
+    // id dùng để truyền qua mạng: pháo dùng def.name, chỉ số dùng "stat:<key>"
+    function pickId(c) {
+        return c.stat ? ("stat:" + c.stat) : c.name;
+    }
+
+    function resolvePickById(id) {
+        if (id == null) return null;
+        if (id.indexOf("stat:") === 0) {
+            let key = id.substring(5);
+            for (let i = 0; i < STAT_SRC.length; i++) {
+                if (STAT_SRC[i].stat === key) {
+                    let s = STAT_SRC[i];
+                    return { name: s.id, stat: s.stat, vi: s.vi, en: s.en, srcStat: s };
+                }
+            }
+            return null;
         }
+        let pool = buildSkillPool();
+        for (let i = 0; i < pool.length; i++) {
+            if (pool[i].name === id) return pool[i];
+        }
+        return null;
+    }
+
+    function applyStatPick(player, state, pick) {
+        let k = pick.stat;
+        if (state.stats[k] === undefined) state.stats[k] = 0;
+        state.stats[k] += STAT_PER_POINT[k] !== undefined ? 1 : 1;
+        if (global.NexNet != null) {
+            global.NexNet.toastTo(player, (isEn() ? "[accent]Stat: " : "[accent]Chỉ số: ") + statName(pick.srcStat), 2.5);
+        }
+    }
+
+    // true khi hàm applySkill này đang chạy vì SERVER vừa nhận được lựa chọn thật từ 1 client
+    // (để tránh gửi lại message vô ích / tránh vòng lặp).
+    function applySkill(player, state, def, fromNetwork) {
+        if (def.stat) { applyStatPick(player, state, def); } else {
+            let existing = findSkill(state, def.name);
+            if (existing != null) {
+                // Pháo kĩ năng không còn hệ thống lv - nếu bằng cách nào đó bị chọn lại, bỏ qua.
+                return;
+            }
+            applyCannonSkill(player, state, def);
+        }
+        // Nếu đây là lựa chọn do CHÍNH client này (bạn bè) vừa chọn cục bộ (không phải do server
+        // áp lại sau khi nhận mạng), báo cho server biết để server lưu đúng lựa chọn thật của họ -
+        // đây là lý do trước đây server tự chọn NGẪU NHIÊN hộ bạn bè thay vì để họ tự chọn.
+        if (!fromNetwork && Vars.net.client() && global.NexNet != null) {
+            global.NexNet.send("newex-survival-pick", pickId(def));
+        }
+    }
+
+    function applyCannonSkill(player, state, def) {
+        let real = REAL_TURRETS && def.isTurret;
+        if (!real) ensureSimpleBullets(def);
+        state.skills.push({
+            name: def.name, def: def, tier: 1,
+            mode: real ? "real" : "simple",
+            timer: Math.random() * def.reload, shot: 0,
+            inited: false, px: 0, py: 0, vx: 0, vy: 0,
+            offA: 0, offR: 30, wanderT: 0, aim: 0, aimDraw: 0, trail: [], trailT: 0, noTargetTicks: 999,
+            virt: null, errs: 0, errRun: 0, deaths: 0, noAmmo: 0, hookT: 0, rangeNow: 0, zeroEff: 0, forceEff: false, drawErr: 0,
+            ownerState: state
+        });
         if (global.NexNet != null) {
             global.NexNet.toastTo(player, (isEn() ? "[accent]Skill: " : "[accent]Kĩ năng: ") + def.block.localizedName, 2.5);
         }
@@ -594,7 +695,7 @@
     function showSkillDialog(player, state, choices, onDone) {
         let dialog = new BaseDialog(isEn() ? "Level Up!" : "Lên Cấp!");
         dialog.cont.clear();
-        dialog.cont.add(isEn() ? "Choose a skill - Level " + state.level + "/" + getMaxLevel() : "Chọn một kĩ năng - Cấp " + state.level + "/" + getMaxLevel()).pad(8).row();
+        dialog.cont.add(isEn() ? "Choose one - Level " + state.level + "/" + getMaxLevel() : "Chọn một - Cấp " + state.level + "/" + getMaxLevel()).pad(8).row();
 
         let row = new Table();
         let finished = false;
@@ -609,24 +710,29 @@
             let c = choices[i];
             let card = new Table(Styles.black6);
             card.margin(8);
-            card.add(new Image(c.block.uiIcon)).size(40).pad(4).row();
 
-            let nameLabel = card.add(c.block.localizedName).wrap().width(150).pad(2).get();
-            nameLabel.setAlignment(Align.center);
-            card.row();
-
-            let noteLabel = card.add("[lightgray]" + descOf(c) + "[]").wrap().width(150).pad(2).get();
-            noteLabel.setAlignment(Align.center);
-            noteLabel.setFontScale(0.85);
-            card.row();
-
-            let ex = findSkill(state, c.name);
-            let tag = ex == null
-                ? (isEn() ? "[accent]New" : "[accent]Mới")
-                : "[accent]Lv " + ex.tier + " > " + Math.min(MAX_TIER_SHOTS, ex.tier + 1);
-            let tagLabel = card.add(tag).pad(2).get();
-            tagLabel.setFontScale(0.85);
-            card.row();
+            if (c.stat) {
+                card.add(isEn() ? "[accent]STAT" : "[accent]CHỈ SỐ").pad(4).row();
+                let nameLabel = card.add(statName(c.srcStat)).wrap().width(150).pad(2).get();
+                nameLabel.setAlignment(Align.center);
+                card.row();
+                let noteLabel = card.add("[lightgray]" + statDesc(c.srcStat) + "[]").wrap().width(150).pad(2).get();
+                noteLabel.setAlignment(Align.center);
+                noteLabel.setFontScale(0.85);
+                card.row();
+                let have = state.stats[c.stat] || 0;
+                card.add(isEn() ? "[accent]Owned: " + have : "[accent]Đã có: " + have).pad(2).row();
+            } else {
+                card.add(new Image(c.block.uiIcon)).size(40).pad(4).row();
+                let nameLabel = card.add(c.block.localizedName).wrap().width(150).pad(2).get();
+                nameLabel.setAlignment(Align.center);
+                card.row();
+                let noteLabel = card.add("[lightgray]" + descOf(c) + "[]").wrap().width(150).pad(2).get();
+                noteLabel.setAlignment(Align.center);
+                noteLabel.setFontScale(0.85);
+                card.row();
+                card.add(isEn() ? "[accent]New Cannon" : "[accent]Pháo mới").pad(2).row();
+            }
 
             card.button(isEn() ? "Choose" : "Chọn", new Runnable({
                 run: function() {
@@ -634,10 +740,24 @@
                     finish();
                 }
             })).size(130, 42).pad(4);
-            row.add(card).size(180, 270).pad(6);
+            row.add(card).size(180, 280).pad(6);
         }
 
         dialog.cont.add(row).row();
+
+        let rerollRow = new Table();
+        let rerollLabel = rerollRow.add((isEn() ? "Reroll points: " : "Điểm đổi: ") + state.rerollPts).pad(6).get();
+        rerollRow.button(isEn() ? "Reroll choices" : "Đổi lựa chọn", new Runnable({
+            run: function() {
+                if (state.rerollPts <= 0 || finished) return;
+                state.rerollPts--;
+                let newChoices = rollSkillChoices(state);
+                finished = true;
+                dialog.hide();
+                showSkillDialog(player, state, newChoices, onDone);
+            }
+        })).size(170, 42).pad(6);
+        dialog.cont.add(rerollRow).row();
         dialog.show();
     }
 
@@ -652,14 +772,20 @@
     }
 
     function onLevelUp(player, state) {
+        state.rerollPts = (state.rerollPts || 0) + 1;
         let choices = rollSkillChoices(state);
         if (choices.length === 0) return;
         if (!Vars.headless && player === Vars.player) {
+            // Người chơi local (dù là host hay bạn bè, xét trên chính máy của họ) -> hiện bảng chọn.
             dialogQueue.push({ player: player, state: state, choices: choices });
             tryShowNextDialog();
-        } else {
-            applySkill(player, state, choices[Math.floor(Math.random() * choices.length)]);
+        } else if (Vars.headless || global.NexNet == null || !Vars.net.active()) {
+            // Server dedicated không có người chơi local nào / không có mạng -> random hộ (fallback cũ).
+            applySkill(player, state, choices[Math.floor(Math.random() * choices.length)], true);
         }
+        // Còn lại: đây là 1 người bạn đang chơi qua mạng (ta đang là host nhìn thấy họ) ->
+        // KHÔNG tự chọn hộ nữa. Client của chính bạn đó sẽ tự hiện bảng chọn (nhánh ở trên, chạy
+        // trên máy của họ) rồi gửi lựa chọn thật về qua "newex-survival-pick".
     }
 
     function grantExp(player, amount) {
@@ -676,12 +802,20 @@
     }
 
     if (global.NexNet != null) {
-        global.NexNet.on("newex-survival-grant-exp", function(player, payload) {
-            let amt = parseFloat(payload) || 0;
-            if (Vars.player != null) {
-                grantExp(Vars.player, amt);
-            }
+        // Server nhận lựa chọn kĩ năng/chỉ số THẬT từ 1 client và áp đúng cho player đó.
+        global.NexNet.on("newex-survival-pick", function(player, payload) {
+            if (player == null || Vars.net.client()) return;
+            let state = getState(player);
+            let def = resolvePickById(payload);
+            if (def != null) applySkill(player, state, def, true);
         }, true, 50);
+
+        // Client nhận thông báo "bạn vừa được cộng exp" riêng từ server (unicast, không bị
+        // nhầm sang người khác như cách gửi cũ).
+        global.NexNet.onClient("newex-survival-grant-exp", function(payload) {
+            let amt = parseFloat(payload) || 0;
+            if (Vars.player != null) grantExp(Vars.player, amt);
+        });
     }
 
     Events.on(UnitDestroyEvent, new Cons({
@@ -703,7 +837,9 @@
                         if (pl === Vars.player || Vars.headless) {
                             grantExp(pl, gained);
                         } else if (global.NexNet != null) {
-                            global.NexNet.send("newex-survival-grant-exp", String(gained));
+                            // Gửi đích danh đúng client đó (trước đây dùng send() nên bị gửi
+                            // nhầm lại cho host, khiến bạn bè không bao giờ nhận được exp).
+                            global.NexNet.sendTo(pl, "newex-survival-grant-exp", String(gained));
                         }
                     }
                 }
@@ -715,11 +851,44 @@
         get: function(e) {
             disposeAll(playerStates);
             playerStates = {};
+            remoteGhosts = {};
+            syncTimer = 0;
             dialogQueue = [];
             dialogShowing = false;
             if (listDialog != null) { try { listDialog.hide(); } catch (err) {} listDialog = null; }
         }
     }));
+
+    function statMult(state, key) {
+        if (state == null || state.stats == null) return 1;
+        let pts = state.stats[key] || 0;
+        let per = STAT_PER_POINT[key] || 0;
+        return 1 + pts * per;
+    }
+
+    // Áp các chỉ số (máu/giáp/tốc xây) lên chính unit người chơi mỗi tick.
+    function applyPlayerStats(pl, unit, state) {
+        if (state == null) return;
+        try {
+            if (state.baseMaxHealth <= 0) state.baseMaxHealth = unit.maxHealth;
+            let hpMult = statMult(state, "hp");
+            let newMax = state.baseMaxHealth * hpMult;
+            if (unit.maxHealth < newMax) {
+                let diff = newMax - unit.maxHealth;
+                unit.maxHealth = newMax;
+                unit.health += diff;
+            } else if (unit.maxHealth !== newMax) {
+                unit.maxHealth = newMax;
+            }
+        } catch (err) {}
+        try {
+            if (state.baseArmor === undefined) state.baseArmor = unit.armor || 0;
+            unit.armor = state.baseArmor + (state.stats.armor || 0) * STAT_PER_POINT.armor;
+        } catch (err) {}
+        try {
+            unit.buildSpeedMultiplier = statMult(state, "build");
+        } catch (err) {}
+    }
 
     function pickBullet(def, sk) {
         let n = def.bullets.length;
@@ -728,14 +897,30 @@
         return def.bullets[Math.floor(Math.random() * n)];
     }
 
-    function fireSkill(unit, sk, ox, oy, angle) {
+    function fireSkill(unit, sk, ox, oy, angle, target) {
         let def = sk.def;
         let tier = Math.min(MAX_TIER_SHOTS, sk.tier);
         let count = Math.min(MAX_BULLETS_PER_VOLLEY, def.pellets * tier);
+        let state = sk.ownerState;
+        let dmgMult = statMult(state, "dmg");
+        let critChance = state != null ? (state.stats.critChance || 0) * STAT_PER_POINT.critChance : 0;
+        let critMult = 1 + (state != null ? (state.stats.critDmg || 0) * STAT_PER_POINT.critDmg : 0);
+        let shred = state != null ? (state.stats.shred || 0) * STAT_PER_POINT.shred : 0;
         try {
             for (let s = 0; s < count; s++) {
                 let b = pickBullet(def, sk);
-                b.create(unit, unit.team, ox, oy, angle + Mathf.range(def.spread));
+                let bullet = b.create(unit, unit.team, ox, oy, angle + Mathf.range(def.spread));
+                try {
+                    if (bullet != null && bullet.damage !== undefined && dmgMult !== 1) {
+                        bullet.damage = bullet.damage * dmgMult;
+                    }
+                    if (bullet != null && critChance > 0 && Math.random() < critChance && bullet.damage !== undefined) {
+                        bullet.damage = bullet.damage * critMult;
+                    }
+                } catch (err2) {}
+            }
+            if (shred > 0 && target != null) {
+                try { target.armor = Math.max(0, target.armor - shred); } catch (err3) {}
             }
             sk.shot++;
         } catch (err) {
@@ -747,15 +932,19 @@
     function updateSimple(unit, sk) {
         sk.timer -= Time.delta;
         if (sk.timer > 0) return;
-        let target = Units.closestEnemy(unit.team, sk.px, sk.py, sk.def.range, new Boolf({
+        let state = sk.ownerState;
+        let rangeMult = statMult(state, "range");
+        let range = sk.def.range * rangeMult;
+        let target = Units.closestEnemy(unit.team, sk.px, sk.py, range, new Boolf({
             get: function(t) { return t != null && !t.dead; }
         }));
         if (target != null) {
             let angle = Angles.angle(sk.px, sk.py, target.x, target.y);
             sk.aim = angle;
             sk.noTargetTicks = 0;
-            fireSkill(unit, sk, sk.px, sk.py, angle);
-            sk.timer = Math.max(MIN_RELOAD, sk.def.reload * (1 - (sk.tier - 1) * 0.12));
+            fireSkill(unit, sk, sk.px, sk.py, angle, target);
+            let fireRateMult = statMult(state, "firerate");
+            sk.timer = Math.max(MIN_RELOAD, (sk.def.reload * (1 - (sk.tier - 1) * 0.12)) / fireRateMult);
         } else {
             sk.timer = 12;
         }
@@ -879,6 +1068,52 @@
         state.maxRange = maxRange;
     }
 
+    // ---- Đồng bộ drone cho mọi người cùng thấy nhau (server -> tất cả client) ----
+    const SYNC_INTERVAL = 8; // ticks
+    let syncTimer = 0;
+    let remoteGhosts = {}; // pid -> { skills: [{id, px, py, aim}] }, nhận từ server để vẽ drone người khác
+
+    function broadcastDroneSync() {
+        if (global.NexNet == null || !Vars.net.active() || !Vars.net.server()) return;
+        let parts = [];
+        for (let pid in playerStates) {
+            let st = playerStates[pid];
+            if (st == null || st.skills.length === 0) continue;
+            let sp = [];
+            for (let i = 0; i < st.skills.length; i++) {
+                let sk = st.skills[i];
+                if (!sk.inited) continue;
+                sp.push(sk.name + ":" + Math.round(sk.px) + ":" + Math.round(sk.py) + ":" + Math.round(sk.aim));
+            }
+            if (sp.length === 0) continue;
+            parts.push(pid + "^" + sp.join(","));
+        }
+        global.NexNet.broadcast("newex-survival-sync", parts.join("|"));
+    }
+
+    if (global.NexNet != null) {
+        global.NexNet.onBroadcast("newex-survival-sync", function(payload) {
+            let ghosts = {};
+            if (payload != null && payload.length > 0) {
+                let parts = payload.split("|");
+                for (let i = 0; i < parts.length; i++) {
+                    let seg = parts[i].split("^");
+                    if (seg.length < 2) continue;
+                    let pid = seg[0];
+                    let sp = seg[1].split(",");
+                    let sks = [];
+                    for (let j = 0; j < sp.length; j++) {
+                        let f = sp[j].split(":");
+                        if (f.length < 4) continue;
+                        sks.push({ id: f[0], px: parseFloat(f[1]), py: parseFloat(f[2]), aim: parseFloat(f[3]) });
+                    }
+                    ghosts[pid] = sks;
+                }
+            }
+            remoteGhosts = ghosts;
+        });
+    }
+
     Events.run(Trigger.update, new Runnable({
         run: function() {
             if (!isSurvivalActive() || Vars.state.gameOver || Vars.state.isPaused()) return;
@@ -888,10 +1123,19 @@
                     let u = pl.unit();
                     if (u == null || !u.isValid() || u.dead) return;
                     let state = playerStates[getPlayerId(pl)];
-                    if (state == null || state.skills.length === 0) return;
+                    if (state == null) return;
+                    applyPlayerStats(pl, u, state);
+                    if (state.skills.length === 0) return;
                     updateOrbiters(pl, u, state);
                 }
             }));
+            if (Vars.net.active() && Vars.net.server()) {
+                syncTimer -= Time.delta;
+                if (syncTimer <= 0) {
+                    syncTimer = SYNC_INTERVAL;
+                    broadcastDroneSync();
+                }
+            }
         }
     }));
 
@@ -956,6 +1200,33 @@
                     Draw.reset();
                 }
             }));
+
+            // Vẽ drone của NGƯỜI CHƠI KHÁC (bạn bè) nhận được qua đồng bộ mạng - chỉ cần cho
+            // các client thường; host đã tự vẽ đầy đủ mọi người ở vòng lặp phía trên rồi.
+            if (!Vars.net.server()) {
+                let myPid = Vars.player != null ? getPlayerId(Vars.player) : null;
+                let pool = buildSkillPool();
+                for (let pid in remoteGhosts) {
+                    if (pid === myPid) continue;
+                    let sks = remoteGhosts[pid];
+                    for (let i = 0; i < sks.length; i++) {
+                        let g = sks[i];
+                        let col = null;
+                        for (let k = 0; k < pool.length; k++) {
+                            if (pool[k].name === g.id) { col = pool[k].color; break; }
+                        }
+                        if (col == null) col = colorFromName(g.id);
+                        Draw.z(Layer.flyingUnit + 1);
+                        Draw.color(col, 0.25);
+                        Fill.circle(g.px, g.py, 7.5);
+                        Draw.color(col);
+                        Fill.circle(g.px, g.py, 4.6);
+                        Draw.color(Color.white, 0.85);
+                        Fill.circle(g.px, g.py, 1.6);
+                        Draw.reset();
+                    }
+                }
+            }
         }
     }));
 
@@ -991,10 +1262,24 @@
         listDialog = dialog;
 
         let info = global.NexSkills.getLocalLevelInfo();
+        let state = Vars.player != null ? playerStates[getPlayerId(Vars.player)] : null;
         if (info != null) {
             let head = (isEn() ? "Level " : "Cấp ") + info.level + "/" + info.maxLevel +
-                (info.need > 0 ? "   EXP " + info.exp + "/" + info.need : "   MAX");
+                (info.need > 0 ? "   EXP " + info.exp + "/" + info.need : "   MAX") +
+                (state != null ? "   " + (isEn() ? "Reroll pts: " : "Điểm đổi: ") + (state.rerollPts || 0) : "");
             dialog.cont.add("[accent]" + head).pad(6).row();
+        }
+
+        if (state != null) {
+            let statsLine = [];
+            for (let i = 0; i < STAT_SRC.length; i++) {
+                let s = STAT_SRC[i];
+                let v = state.stats[s.stat] || 0;
+                if (v > 0) statsLine.push(statName(s) + " +" + v);
+            }
+            if (statsLine.length > 0) {
+                dialog.cont.add("[lightgray]" + statsLine.join("   ")).wrap().width(380).pad(6).row();
+            }
         }
 
         let list = getLocalSkills();
@@ -1013,7 +1298,7 @@
                         let col = new Table();
                         col.left();
                         let simpleTag = s.simple ? "   [scarlet]" + (isEn() ? "(simplified fallback)" : "(bản rút gọn)") + "[]" : "";
-                        col.add("[accent]" + s.block.localizedName + "[]   [lightgray]Lv " + s.tier + "/" + s.maxTier + "[]" + simpleTag).left().row();
+                        col.add("[accent]" + s.block.localizedName + "[]" + simpleTag).left().row();
                         let d = col.add("[lightgray]" + s.desc + "[]").left().growX().get();
                         d.setWrap(true);
                         d.setFontScale(0.9);

@@ -1213,6 +1213,8 @@ const NexNet = global.NexNet;
         btnExpByHp.setChecked(Core.settings.getBool("newex-survival-exp-by-hp", false));
         content.add(btnExpByHp).size(280, 54).pad(4).row();
 
+        let pvpSettingsSave = global.NexPvp != null ? global.NexPvp.addSettings(content) : null;
+
         content.add(isEn() ? "[accent]-- HP BAR DISPLAY MODE --[]" : "[accent]-- CHẾ ĐỘ HIỂN THỊ THANH MÁU (HP) --[]").padTop(10).row();
 
         let currentHpStyle = Core.settings.getString("newex-hp-style", "show-hp");
@@ -1286,6 +1288,8 @@ const NexNet = global.NexNet;
             Core.settings.put("newex-survival-exp-percent", java.lang.Integer(parsedExpPct));
 
             Core.settings.put("newex-survival-exp-by-hp", java.lang.Boolean(btnExpByHp.isChecked()));
+
+            if (pvpSettingsSave != null) pvpSettingsSave();
 
             let selectedStyle = "off";
             if (btnShowHp.isChecked()) selectedStyle = "show-hp";

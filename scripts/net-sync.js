@@ -3,10 +3,14 @@
     const TOAST = "newex-toast";
     const SHAKE = "newex-shake";
     const CFG = "newex-cfg";
+    const RPC = "newex-rpc";        // server -> 1 client (unicast)
+    const BCAST = "newex-bcast";    // server -> all clients (broadcast)
 
     const handlers = {};
     const cooldowns = {};
     const lastUse = {};
+    const clientHandlers = {};
+    const broadcastHandlers = {};
     let registered = false;
 
     function isHostPlayer(player) {
@@ -48,6 +52,58 @@
             Call.serverPacketReliable(REQ, body);
         } else {
             dispatch(Vars.player, body);
+        }
+    }
+
+    // ---- server -> 1 cụ thể client (unicast RPC), dùng cho exp riêng / xác nhận chọn kĩ năng ----
+    function splitKind(content) {
+        let s = String(content);
+        let i = s.indexOf("|");
+        return { kind: i < 0 ? s : s.substring(0, i), payload: i < 0 ? "" : s.substring(i + 1) };
+    }
+
+    function clientDispatch(content) {
+        let p = splitKind(content);
+        let fn = clientHandlers[p.kind];
+        if (fn == null) return;
+        try { fn(p.payload); } catch (err) { Log.err("[NexNet] rpc " + p.kind + ": " + err); }
+    }
+
+    function onClient(kind, fn) {
+        clientHandlers[kind] = fn;
+    }
+
+    // Gửi 1 message riêng từ server tới đúng 1 client (vd: báo exp/kĩ năng cho đúng người).
+    function sendTo(player, kind, payload) {
+        let body = kind + "|" + (payload == null ? "" : String(payload));
+        if (Vars.net.client()) return; // chỉ server mới được gọi hàm này
+        if (isHostPlayer(player)) {
+            clientDispatch(body);
+            return;
+        }
+        if (player != null && player.con != null) {
+            Call.clientPacketReliable(player.con, RPC, body);
+        }
+    }
+
+    // ---- server -> TẤT CẢ client (broadcast), dùng để đồng bộ drone/kĩ năng cho mọi người thấy nhau ----
+    function broadcastDispatch(content) {
+        let p = splitKind(content);
+        let fn = broadcastHandlers[p.kind];
+        if (fn == null) return;
+        try { fn(p.payload); } catch (err) { Log.err("[NexNet] bcast " + p.kind + ": " + err); }
+    }
+
+    function onBroadcast(kind, fn) {
+        broadcastHandlers[kind] = fn;
+    }
+
+    function broadcast(kind, payload) {
+        if (Vars.net.client()) return; // chỉ server mới được gọi hàm này
+        let body = kind + "|" + (payload == null ? "" : String(payload));
+        broadcastDispatch(body); // host cũng tự nhận được (host vừa là server vừa là client hiển thị)
+        if (Vars.net.server()) {
+            Call.clientPacketReliable(BCAST, body);
         }
     }
 
@@ -220,6 +276,14 @@
                 }
             }));
 
+            Vars.netClient.addPacketHandler(RPC, new Cons({
+                get: (content) => clientDispatch(content)
+            }));
+
+            Vars.netClient.addPacketHandler(BCAST, new Cons({
+                get: (content) => broadcastDispatch(content)
+            }));
+
             registered = true;
         } catch (err) {
             Log.err("[NexNet] register failed: " + err);
@@ -243,6 +307,10 @@
         toastAll: toastAll,
         setOverlay: setOverlay,
         setBlock: setBlock,
-        isHostPlayer: isHostPlayer
+        isHostPlayer: isHostPlayer,
+        sendTo: sendTo,
+        onClient: onClient,
+        broadcast: broadcast,
+        onBroadcast: onBroadcast
     };
 })();

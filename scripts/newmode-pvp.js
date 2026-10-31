@@ -14,6 +14,12 @@
     const TAG_ASSIGN = "newex-pvp-assign";
     const KEY_EXP = "newex-pvp-exp-percent";
     const KEY_DRONES = "newex-pvp-max-drones";
+    const KEY_STORE = "newex-pvp-store";
+    const KEY_HUD = "newex-pvp-hud";
+    const KEY_HUD_X = "newex-pvp-hud-x";
+    const KEY_HUD_Y = "newex-pvp-hud-y";
+    const RESPAWN_SEC = [2, 4, 6, 9, 12];
+    const CORE_MOUNT = -2;
     const DEFAULT_EXP = 100;
     const DEFAULT_DRONES = 3;
     const LIMIT_EXP = 1000;
@@ -41,6 +47,7 @@
     const EXP_HP_BONUS_MAX = 1.5;
     const CREDIT_RADIUS = 420;
     const NEAR_CORE = 240;
+    const AURA_BURN_TICKS = 600;
     const WAVE_SPACING = 2400;
     const FIRST_WAVE = 1200;
     const WAVE_UNIT_CAP = 1000;
@@ -83,6 +90,26 @@
         return Math.min(ARM_CUT_MAX, l * ARM_CUT);
     }
 
+    const REGEN_PCT = 0.25;
+    const REGEN_THRESHOLD = 0.99;
+    const DMG_PER_HP = 0.00025;
+    const DMG_PER_ARMOR = 0.01;
+    const KNOCK_PER = 1.0;
+
+    const TURRET_OVERRIDES = {
+        scatter: { spread: 8, rapidMul: 0.4 },
+        parallax: { equip: true, beam: true, pull: true, beamDps: 24, pullForce: 0.6 },
+        salvo: { equip: true, rail: true, rangeTiles: 33, railPct: 150, railLen: 33, railWidth: 9, railInterval: 120 },
+        meltdown: { equip: true, blast: true, rangeTiles: 20, blastPct: 100, blastRadius: 3, blastInterval: 60 },
+        sublimate: { liquidAmmo: "hydrogen" },
+        scorch: { aura: true, auraRange: 15, auraAtkPct: 50, auraArmorPct: 50 },
+        lustre: { equip: false },
+        scathe: { equip: false },
+        malign: { costMul: 2 }
+    };
+
+    let shredMap = new Map();
+
     const STATS = [
         { vi: "Máu", en: "Health", f: function(l) { return "+" + (l * HP_PCT) + "%  +" + (l * HP_FLAT) + " " + tr("máu", "HP"); } },
         { vi: "Giáp", en: "Armor", f: function(l) { return "+" + (l * ARM_FLAT) + " " + tr("giáp", "armor") + "  -" + armorCut(l).toFixed(1) + "% " + tr("sát thương nhận", "damage taken"); } },
@@ -92,7 +119,11 @@
         { vi: "Tỉ lệ bạo kích", en: "Crit chance", f: function(l) { return (l * 2) + "%"; } },
         { vi: "Sát thương bạo kích", en: "Crit damage", f: function(l) { return (150 + l * 12) + "%"; } },
         { vi: "Xuyên giáp", en: "Armor pierce", f: function(l) { return (l * 5) + "%"; } },
-        { vi: "Sát thương % máu tối đa", en: "Max HP damage", mx: 9, f: function(l) { return ((l + 1) / 10).toFixed(1) + "%"; } }
+        { vi: "Sát thương % máu tối đa", en: "Max HP damage", mx: 9, f: function(l) { return ((l + 1) / 10).toFixed(1) + "%"; } },
+        { vi: "Hồi máu", en: "Regeneration", f: function(l) { return "+" + (l * REGEN_PCT).toFixed(2) + tr("% máu tối đa mỗi giây (khi máu dưới 99%)", "% max HP per second (when below 99% HP)"); } },
+        { vi: "Sát thương theo máu", en: "HP-based damage", f: function(l) { return "+" + (l * DMG_PER_HP * 1000).toFixed(1) + "% " + tr("mỗi 1000 máu hiện tại", "per 1000 current HP"); } },
+        { vi: "Sát thương theo giáp", en: "Armor-based damage", f: function(l) { return "+" + (l * DMG_PER_ARMOR * 10).toFixed(1) + "% " + tr("mỗi 10 giáp hiện tại", "per 10 current armor"); } },
+        { vi: "Đẩy lùi", en: "Knockback", f: function(l) { return "+" + (l * KNOCK_PER).toFixed(2) + " " + tr("lực đẩy lùi", "knockback"); } }
     ];
 
     function statMax(i) {
@@ -109,11 +140,24 @@
     let defsCache = null;
     let equipCd = {};
     let equipAng = {};
+    let equipBeam = {};
+    let equipRail = {};
+    let hostOwner = {};
+    let auraSeen = {};
+    let respawnLock = {};
+    let coreT = 0;
+    let deathOk = null;
+    let hudPanel = null;
+    let hudLastW = 0;
+    let hudLastH = 0;
+    let swapPending = {};
+    let burstState = {};
     let logged = {};
     let passiveT = PASSIVE_INTERVAL;
     let ver = 0;
     let dirty = false;
     let syncT = 0;
+    let saveT = 0;
     let winT = 0;
     let orphanT = 0;
     let turretT = 0;
@@ -151,6 +195,13 @@
             }
         } catch (err) {}
         try { Fx.spawn.at(x, y); } catch (err) {}
+    }
+
+    function spawnFx(x, y) {
+        fx(x, y);
+        try {
+            if (!Vars.net.client()) Call.effect(Fx.spawn, x, y, 90, Color.white);
+        } catch (err) {}
     }
 
     function syncRules() {
@@ -228,7 +279,7 @@
     }
 
     function newState() {
-        return { lv: 1, exp: 0, pts: START_POINTS, u: 0, s: [0, 0, 0, 0, 0, 0, 0, 0, 0], d: [], p: [], b: 0 };
+        return { lv: 1, exp: 0, pts: START_POINTS, u: 0, s: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], d: [], p: [], b: 0 };
     }
 
     function getUid(pl) {
@@ -239,32 +290,69 @@
         return "id:" + pl.id;
     }
 
-    function loadStore() {
-        store = {};
-        let tags = getTags();
-        if (tags == null) return;
+    function normState(s) {
+        if (s == null || s.s == null || s.d == null) return null;
+        if (typeof s.lv !== "number" || typeof s.exp !== "number" || typeof s.pts !== "number") return null;
+        if (typeof s.u !== "number") s.u = 0;
+        if (typeof s.b !== "number") s.b = 0;
+        while (s.s.length < STATS.length) s.s.push(0);
+        if (s.p == null || s.p.length !== s.d.length) {
+            s.d = [];
+            s.p = [];
+        }
+        return s;
+    }
+
+    function progress(s) {
+        return s.lv * 1000000 + s.exp;
+    }
+
+    function readJson(str, into) {
         try {
-            let o = JSON.parse(String(tags.get(TAG_DATA, "{}")));
+            let o = JSON.parse(String(str));
             for (let k in o) {
-                let s = o[k];
-                if (s != null && s.s != null && s.d != null) {
-                    if (typeof s.u !== "number") s.u = 0;
-                    if (typeof s.b !== "number") s.b = 0;
-                    while (s.s.length < STATS.length) s.s.push(0);
-                    if (s.p == null || s.p.length !== s.d.length) {
-                        s.d = [];
-                        s.p = [];
-                    }
-                    store[k] = s;
-                }
+                let s = normState(o[k]);
+                if (s == null) continue;
+                let cur = into[k];
+                if (cur == null || progress(s) > progress(cur)) into[k] = s;
             }
         } catch (err) {}
     }
 
-    function saveStore() {
+    function loadStore() {
+        store = {};
         let tags = getTags();
-        if (tags == null) return;
-        try { tags.put(TAG_DATA, JSON.stringify(store)); } catch (err) {}
+        if (tags != null) readJson(tags.get(TAG_DATA, "{}"), store);
+        if (!Vars.net.client()) {
+            try { readJson(Core.settings.getString(KEY_STORE, "{}"), store); } catch (err) {}
+        }
+    }
+
+    let lastForce = 0;
+
+    function saveStore(force) {
+        let tags = getTags();
+        let json = "{}";
+        try { json = JSON.stringify(store); } catch (err) { return; }
+        if (tags != null && isActive()) {
+            try { tags.put(TAG_DATA, json); } catch (err) {}
+        }
+        if (Vars.net.client()) return;
+        try {
+            let old = {};
+            readJson(Core.settings.getString(KEY_STORE, "{}"), old);
+            for (let k in old) {
+                if (store[k] == null) store[k] = old[k];
+            }
+            Core.settings.put(KEY_STORE, JSON.stringify(store));
+            let now = Time.millis();
+            if (force === true || now - lastForce > 15000) {
+                lastForce = now;
+                Core.settings.forceSave();
+            }
+        } catch (err) {
+            logOnce("savefail", "cannot persist player data: " + err);
+        }
     }
 
     function bind(pl) {
@@ -284,7 +372,7 @@
     function changed() {
         dirty = true;
         ver++;
-        saveStore();
+        saveStore(false);
     }
 
     function tierType(lv) {
@@ -437,12 +525,32 @@
                 Log.warn("[NexPvp] DRONE_IDS: không tìm thấy pháo \"" + id + "\" (newex-" + id + " hoặc " + id + "), bỏ qua");
                 continue;
             }
-            let d = { id: id, block: blk, cost: costOf(blk), equip: equippable(blk) };
+            let ov = TURRET_OVERRIDES[id] || {};
+            let eq = ov.equip !== undefined ? ov.equip : equippable(blk);
+            let cost = costOf(blk);
+            if (ov.costMul) cost = Math.max(1, Math.round(cost * ov.costMul));
+            let d = { id: id, block: blk, cost: cost, equip: eq, ov: ov };
             list.push(d);
             map[d.id] = d;
         }
         defsCache = { list: list, map: map };
+        patchTurrets(list);
         return defsCache;
+    }
+
+    let patchedTurrets = false;
+
+    function patchTurrets(list) {
+        if (patchedTurrets) return;
+        patchedTurrets = true;
+        for (let i = 0; i < list.length; i++) {
+            let d = list[i];
+            if (d.ov.ground) setf(d.block, "targetGround", true);
+            if (d.ov.spread !== undefined) setf(d.block, "inaccuracy", d.ov.spread);
+            if (d.ov.rapidMul) {
+                try { d.block.reload = Math.max(1, d.block.reload * d.ov.rapidMul); } catch (err) {}
+            }
+        }
     }
 
     function setf(o, k, v) {
@@ -458,17 +566,6 @@
         let map = null;
         try { map = blk.ammoTypes; } catch (err) { logOnce("amr:" + blk.name, "cannot read ammoTypes of " + blk.name + ": " + err); }
         if (map == null) return out;
-        try {
-            let it = map.keys();
-            while (it.hasNext()) {
-                let k = it.next();
-                let v = map.get(k);
-                if (v != null) out.push({ k: k, v: v });
-            }
-        } catch (err) {
-            logOnce("ami:" + blk.name, "ammoTypes iteration failed for " + blk.name + ": " + err);
-        }
-        if (out.length > 0) return out;
         let pools = [];
         try { pools.push(Vars.content.items()); } catch (err) {}
         try { pools.push(Vars.content.liquids()); } catch (err) {}
@@ -504,6 +601,16 @@
 
     function fillAmmo(b, def) {
         let blk = def.block;
+        if (def.ov && def.ov.liquidAmmo && b.liquids != null) {
+            try {
+                let liq = Liquids[def.ov.liquidAmmo];
+                if (liq != null) {
+                    let cap = blk.liquidCapacity > 0 ? blk.liquidCapacity : 30;
+                    let room = cap - b.liquids.currentAmount();
+                    if (room > 0.1) b.liquids.add(liq, room);
+                }
+            } catch (err) {}
+        }
         if (blk instanceof ItemTurret) {
             if (def.ammoItem === undefined) def.ammoItem = ammoItemFor(blk);
             let item = def.ammoItem;
@@ -526,9 +633,9 @@
         }
         try {
             if (typeof LiquidTurret !== "undefined" && blk instanceof LiquidTurret) {
-                let it = blk.ammoTypes.keys();
-                if (it.hasNext()) {
-                    let liq = it.next();
+                let lp = ammoPairs(blk);
+                if (lp.length > 0) {
+                    let liq = lp[0].k;
                     let room = blk.liquidCapacity - b.liquids.currentAmount();
                     if (room > 0.1) b.liquids.add(liq, room);
                 }
@@ -746,14 +853,79 @@
         let out = [];
         if (st == null || st.p.length !== st.d.length) return out;
         for (let i = 0; i < st.d.length; i++) {
-            if (!(st.p[i] < 0)) continue;
+            if (st.p[i] !== EQUIPPED) continue;
             let def = defs.map[st.d[i]];
             if (def != null && def.equip) out.push(def);
         }
         return out;
     }
 
+    function coreList(st, defs) {
+        let out = [];
+        if (st == null || st.p.length !== st.d.length) return out;
+        for (let i = 0; i < st.d.length; i++) {
+            if (st.p[i] !== CORE_MOUNT) continue;
+            let def = defs.map[st.d[i]];
+            if (def != null && def.equip) out.push(def);
+        }
+        return out;
+    }
+
+    function coreHost(pl, st) {
+        try {
+            if (st == null || coreCount(st) === 0) return null;
+            let core = pl.team().core();
+            if (core == null || !core.isValid()) return null;
+            return {
+                isCoreHost: true,
+                build: core,
+                x: core.x,
+                y: core.y,
+                hitSize: core.block.size * Vars.tilesize * 1.4,
+                rotation: 0,
+                team: core.team,
+                reloadMultiplier: 1 + (st.s[4] || 0) * 0.06
+            };
+        } catch (err) {}
+        return null;
+    }
+
+    function hostAim(h, pl) {
+        if (h.isCoreHost === true) return { shoot: false, x: 0, y: 0 };
+        return aimState(h, pl);
+    }
+
+    let weaponCache = {};
+
+    function weaponMounts(type) {
+        let c = weaponCache[type.id];
+        if (c === undefined) {
+            c = [];
+            try {
+                let ws = type.weapons;
+                for (let i = 0; i < ws.size; i++) {
+                    let w = ws.get(i);
+                    if (w == null || w.bullet == null) continue;
+                    if (w.controllable === false) continue;
+                    c.push({ x: w.x, y: w.y });
+                }
+            } catch (err) {}
+            weaponCache[type.id] = c;
+        }
+        return c;
+    }
+
     function mountPos(u, k, n) {
+        if (u.isCoreHost !== true) {
+            try {
+                let wm = weaponMounts(u.type);
+                if (wm.length > 0) {
+                    let m = wm[k % wm.length];
+                    let rot = u.rotation - 90;
+                    return { x: u.x + Angles.trnsx(rot, m.x, m.y), y: u.y + Angles.trnsy(rot, m.x, m.y), w: true };
+                }
+            } catch (err) {}
+        }
         if (n <= 1) return { x: u.x, y: u.y };
         let inner = Math.min(n, 6);
         let ring = k < inner ? 0 : 1;
@@ -777,9 +949,11 @@
         let ta = true;
         let tg = true;
         try { ta = blk.targetAir !== false; tg = blk.targetGround !== false; } catch (err) {}
+        if (def.ov && def.ov.ground) tg = true;
         let range = 0;
         try { range = blk.range; } catch (err) {}
         if (!(range > 0)) range = 160;
+        if (def.ov && def.ov.rangeTiles) range = def.ov.rangeTiles * Vars.tilesize;
         let team = u.team;
         let best = null;
         let bd = 1e9;
@@ -828,6 +1002,7 @@
 
     function fireEquip(u, def, bt, mp, tx, ty) {
         let blk = def.block;
+        let own = u.isCoreHost === true ? u.build : u;
         let ang = Angles.angle(mp.x, mp.y, tx, ty);
         let shots = 1;
         let spread = 0;
@@ -835,9 +1010,10 @@
             shots = Math.min(12, Math.max(1, blk.shoot.shots));
             if (className(blk.shoot) === "ShootSpread") spread = blk.shoot.spread;
         } catch (err) {}
+        if (def.ov && def.ov.shots) shots = def.ov.shots;
         let inacc = 0;
         try { inacc = blk.inaccuracy; } catch (err) {}
-        let off = Math.min(blk.size * Vars.tilesize * 0.5, u.hitSize * 0.5);
+        let off = mp.w === true ? 0 : Math.min(blk.size * Vars.tilesize * 0.5, u.hitSize * 0.5);
         let x = mp.x + Mathf.cosDeg(ang) * off;
         let y = mp.y + Mathf.sinDeg(ang) * off;
 
@@ -852,10 +1028,10 @@
         for (let k = 0; k < shots; k++) {
             let a = ang + (k - (shots - 1) / 2) * spread + (Math.random() - 0.5) * 2 * inacc;
             try {
-                bt.create(u, u.team, x, y, a, -1, 1, ls, null);
+                bt.create(own, u.team, x, y, a, -1, 1, ls, null);
             } catch (err) {
                 try {
-                    bt.create(u, u.team, x, y, a);
+                    bt.create(own, u.team, x, y, a);
                 } catch (err2) {
                     logOnce("create:" + def.id, "bullet create failed for " + def.id + ": " + err2);
                 }
@@ -868,15 +1044,129 @@
         return true;
     }
 
-    function equipFire(pl, st, u) {
-        let defs = droneDefs();
-        let list = equipList(st, defs);
+    function mountFire(pl, list, u, pfx) {
         let n = list.length;
         if (n === 0) return;
         let ast = null;
+        if (u.isCoreHost === true && u.build != null) hostOwner[u.build.id] = pl.id;
         for (let k = 0; k < n; k++) {
             let def = list[k];
-            let key = pl.id + ":" + def.id;
+            let key = pl.id + ":" + pfx + k + ":" + def.id;
+            if (def.ov && def.ov.aura) {
+                let acd = equipCd[key];
+                if (acd === undefined) acd = 0;
+                acd -= Time.delta * Math.max(0.1, u.reloadMultiplier);
+                if (acd <= 0) {
+                    auraTick(pl, u, def);
+                    acd = 60;
+                }
+                equipCd[key] = acd;
+                continue;
+            }
+            if (def.ov && def.ov.rail) {
+                let rmp = mountPos(u, k, n);
+                let rcd = equipCd[key];
+                if (rcd === undefined) rcd = 0;
+                rcd -= Time.delta * Math.max(0.1, u.reloadMultiplier);
+                if (rcd <= 0) {
+                    let rt = findTarget(u, def, rmp);
+                    if (rt != null) {
+                        equipAng[key] = Angles.angle(rmp.x, rmp.y, rt.x, rt.y);
+                        railFire(pl, u, def, rmp, rt, key);
+                        rcd = def.ov.railInterval || 120;
+                    } else {
+                        rcd = 0;
+                    }
+                }
+                equipCd[key] = rcd;
+                continue;
+            }
+            if (def.ov && def.ov.blast) {
+                let bmp = mountPos(u, k, n);
+                let bcd2 = equipCd[key];
+                if (bcd2 === undefined) bcd2 = 0;
+                bcd2 -= Time.delta * Math.max(0.1, u.reloadMultiplier);
+                if (bcd2 <= 0) {
+                    let bt2 = findTarget(u, def, bmp);
+                    if (bt2 != null) {
+                        equipAng[key] = Angles.angle(bmp.x, bmp.y, bt2.x, bt2.y);
+                        blastAt(pl, u, def, bt2);
+                        bcd2 = def.ov.blastInterval || 60;
+                    } else {
+                        bcd2 = 0;
+                    }
+                }
+                equipCd[key] = bcd2;
+                continue;
+            }
+            if (def.ov && def.ov.beam) {
+                let mp = mountPos(u, k, n);
+                if (ast == null) ast = hostAim(u, pl);
+                let tx = null;
+                let ty = null;
+                let t = null;
+                if (ast.shoot) {
+                    tx = ast.x;
+                    ty = ast.y;
+                } else {
+                    t = findTarget(u, def, mp);
+                    if (t != null) { tx = t.x; ty = t.y; }
+                }
+                if (tx != null) {
+                    let range = def.block.range > 0 ? def.block.range : 200;
+                    if (t == null) t = findTarget(u, def, mp);
+                    if (t != null && Mathf.dst(mp.x, mp.y, t.x, t.y) <= range) {
+                        let dmg = (def.ov.beamDps || 36) * Time.delta / 60 * Math.max(0.1, u.reloadMultiplier);
+                        try { t.damagePierce(dmg); } catch (err) { t.damage(dmg); }
+                        if (def.ov.pull) {
+                            try {
+                                let dx = u.x - t.x;
+                                let dy = u.y - t.y;
+                                let dist = Math.sqrt(dx * dx + dy * dy);
+                                if (dist > u.hitSize / 2 + t.hitSize / 2 + 16) {
+                                    let f = (def.ov.pullForce || 0.6) * Time.delta;
+                                    t.vel.add(dx / dist * f, dy / dist * f);
+                                }
+                            } catch (err) {}
+                        }
+                        equipAng[key] = Angles.angle(mp.x, mp.y, t.x, t.y);
+                        equipBeam[key] = { x: t.x, y: t.y };
+                    } else {
+                        delete equipBeam[key];
+                    }
+                } else {
+                    delete equipBeam[key];
+                }
+                continue;
+            }
+            if (def.ov && def.ov.burstCount) {
+                let bs = burstState[key];
+                if (bs === undefined) bs = { left: 0, t: 0 };
+                if (bs.left > 0) {
+                    bs.t -= Time.delta;
+                    if (bs.t <= 0) {
+                        fireBurstShot(u, pl, def, k, n, key);
+                        bs.left--;
+                        bs.t = def.ov.burstGap || 72;
+                    }
+                    burstState[key] = bs;
+                    continue;
+                }
+                let bcd = equipCd[key];
+                if (bcd === undefined) bcd = 0;
+                bcd -= Time.delta * Math.max(0.1, u.reloadMultiplier);
+                if (bcd < 0) bcd = 0;
+                if (bcd <= 0) {
+                    if (fireBurstShot(u, pl, def, k, n, key)) {
+                        bs.left = def.ov.burstCount - 1;
+                        bs.t = def.ov.burstGap || 72;
+                        bcd = Math.max(5, def.block.reload);
+                    }
+                }
+                burstState[key] = bs;
+                equipCd[key] = bcd;
+                continue;
+            }
             let cd = equipCd[key];
             if (cd === undefined) cd = 0;
             cd -= Time.delta * Math.max(0.1, u.reloadMultiplier);
@@ -887,7 +1177,7 @@
                 let mp = mountPos(u, k, n);
                 let tx = null;
                 let ty = null;
-                if (ast == null) ast = aimState(u, pl);
+                if (ast == null) ast = hostAim(u, pl);
                 if (ast.shoot) {
                     tx = ast.x;
                     ty = ast.y;
@@ -901,7 +1191,11 @@
                 }
                 if (bt != null && tx != null) {
                     equipAng[key] = Angles.angle(mp.x, mp.y, tx, ty);
-                    if (fireEquip(u, def, bt, mp, tx, ty)) cd = Math.max(5, def.block.reload);
+                    if (fireEquip(u, def, bt, mp, tx, ty)) {
+                        let reload = def.block.reload;
+                        if (def.ov && def.ov.reloadMul) reload *= def.ov.reloadMul;
+                        cd = Math.max(5, reload);
+                    }
                 } else {
                     equipAng[key] = u.rotation;
                 }
@@ -910,23 +1204,347 @@
         }
     }
 
+    function ownerOf(pl, u) {
+        if (u.isCoreHost !== true) return u;
+        try {
+            let pu = pl.unit();
+            if (pu != null && pu.isValid() && !pu.dead) return pu;
+        } catch (err) {}
+        return null;
+    }
+
+    function baseAttack(type) {
+        let best = 0;
+        try {
+            let ws = type.weapons;
+            for (let i = 0; i < ws.size; i++) {
+                let bt = ws.get(i).bullet;
+                if (bt == null) continue;
+                let d = Math.max(bt.damage, bt.splashDamage);
+                if (d > best) best = d;
+            }
+        } catch (err) {}
+        return best > 0 ? best : 20;
+    }
+
+    function attackPower(pl, u) {
+        let o = ownerOf(pl, u);
+        let st = byId[pl.id];
+        let s = st != null ? st.s : null;
+        let flat = s != null ? s[2] * ATK_FLAT : 0;
+        if (o != null) return (baseAttack(o.type) + flat) * Math.max(0.1, o.damageMultiplier);
+        return (20 + flat) * (1 + (s != null ? s[2] * ATK_PCT / 100 : 0));
+    }
+
+    function armorPower(pl, u) {
+        let o = ownerOf(pl, u);
+        if (o != null) return Math.max(0, o.armor);
+        let st = byId[pl.id];
+        return st != null ? st.s[1] * ARM_FLAT : 0;
+    }
+
+    function knockUnit(pl, e, fx, fy) {
+        let st = byId[pl.id];
+        if (st == null || !(st.s[12] > 0)) return;
+        try {
+            let dx = e.x - fx;
+            let dy = e.y - fy;
+            let d = Math.sqrt(dx * dx + dy * dy);
+            if (d < 0.01) return;
+            let f = st.s[12] * KNOCK_PER * 80;
+            e.impulse(dx / d * f, dy / d * f);
+        } catch (err) {}
+    }
+
+    let knockCache = {};
+
+    function knockType(t, lv) {
+        let key = t.id + ":" + lv + (t.pierceArmor ? "p" : "");
+        let c = knockCache[key];
+        if (c === undefined) {
+            try {
+                c = t.copy();
+                c.knockback = t.knockback + lv * KNOCK_PER;
+            } catch (err) {
+                c = null;
+            }
+            knockCache[key] = c;
+        }
+        return c;
+    }
+
+    function railFire(pl, u, def, mp, t, key) {
+        let ang = Angles.angle(mp.x, mp.y, t.x, t.y);
+        let len = (def.ov.railLen || 33) * Vars.tilesize;
+        let wid = def.ov.railWidth || 9;
+        let cx = Mathf.cosDeg(ang);
+        let cy = Mathf.sinDeg(ang);
+        let x0 = mp.x;
+        let y0 = mp.y;
+        if (!Vars.net.client()) {
+            let dmg = attackPower(pl, u) * (def.ov.railPct || 150) / 100;
+            let team = u.team;
+            let inLine = function(x, y, hs) {
+                let dx = x - x0;
+                let dy = y - y0;
+                let along = dx * cx + dy * cy;
+                if (along < -hs || along > len + hs) return false;
+                return Math.abs(-dx * cy + dy * cx) <= wid / 2 + hs;
+            };
+            try {
+                Groups.unit.each(new Cons({
+                    get: function(e) {
+                        if (e == null || e.team == team || e.team == Team.derelict || e.dead || !e.isValid()) return;
+                        if (!inLine(e.x, e.y, e.hitSize / 2)) return;
+                        try { e.damagePierce(dmg); } catch (err) { e.damage(dmg); }
+                        knockUnit(pl, e, x0, y0);
+                    }
+                }));
+            } catch (err) {}
+            try {
+                Vars.indexer.eachBlock(null, x0 + cx * len / 2, y0 + cy * len / 2, len / 2 + 24,
+                    new Boolf({ get: function(b) { return b != null && b.team != team && b.team != Team.derelict && b.isValid() && inLine(b.x, b.y, b.block.size * Vars.tilesize / 2); } }),
+                    new Cons({ get: function(b) { try { b.damagePierce(dmg); } catch (err) { b.damage(dmg); } } }));
+            } catch (err) {}
+        }
+        equipRail[key] = { x1: x0, y1: y0, x2: x0 + cx * len, y2: y0 + cy * len, w: wid, t: Time.time };
+        if (!Vars.headless) {
+            try { Sounds.railgun.at(x0, y0, 0.9 + Math.random() * 0.2); } catch (err) {}
+        }
+    }
+
+    function blastFx(x, y) {
+        try {
+            if (!Vars.net.client()) {
+                Call.effect(Fx.blastExplosion, x, y, 0, Pal.lancerLaser);
+                return;
+            }
+        } catch (err) {}
+        try { Fx.blastExplosion.at(x, y); } catch (err) {}
+    }
+
+    function blastAt(pl, u, def, t) {
+        let dmg = attackPower(pl, u) * (def.ov.blastPct || 100) / 100;
+        let rad = (def.ov.blastRadius || 3) * Vars.tilesize;
+        let x = t.x;
+        let y = t.y;
+        let team = u.team;
+        if (!Vars.net.client()) {
+            try { t.damagePierce(dmg); } catch (err) { try { t.damage(dmg); } catch (err2) {} }
+            knockUnit(pl, t, u.x, u.y);
+            try {
+                Groups.unit.each(new Cons({
+                    get: function(e) {
+                        if (e == null || e === t || e.team == team || e.team == Team.derelict || e.dead || !e.isValid()) return;
+                        if (Mathf.dst(x, y, e.x, e.y) - e.hitSize / 2 > rad) return;
+                        try { e.damagePierce(dmg); } catch (err) { e.damage(dmg); }
+                        knockUnit(pl, e, x, y);
+                    }
+                }));
+            } catch (err) {}
+        }
+        blastFx(x, y);
+    }
+
+    function auraTick(pl, u, def) {
+        let rng = (def.ov.auraRange || 15) * Vars.tilesize;
+        let dps = (def.ov.auraAtkPct || 0) / 100 * attackPower(pl, u) + (def.ov.auraArmorPct || 0) / 100 * armorPower(pl, u);
+        if (!(dps > 0)) dps = 1;
+        try {
+            Groups.unit.each(new Cons({
+                get: function(e) {
+                    if (e == null || e.team == u.team || e.team == Team.derelict || e.dead || !e.isValid()) return;
+                    if (Mathf.dst(u.x, u.y, e.x, e.y) > rng) return;
+                    try { e.damagePierce(dps); } catch (err) { e.damage(dps); }
+                    knockUnit(pl, e, u.x, u.y);
+                    try { e.apply(StatusEffects.burning, AURA_BURN_TICKS); } catch (err) {}
+                }
+            }));
+        } catch (err) {}
+    }
+
+    function burstBullet(def) {
+        if (def.ov.burstBt !== undefined) return def.ov.burstBt;
+        let bt = equipBullet(def);
+        let out = bt;
+        if (bt != null && def.ov.pierceCap) {
+            try {
+                let c = bt.copy();
+                c.pierceCap = def.ov.pierceCap;
+                c.pierce = true;
+                out = c;
+                if (def.ov.shredPct) shredMap.set(c, def.ov.shredPct);
+            } catch (err) {}
+        }
+        def.ov.burstBt = out;
+        return out;
+    }
+
+    function fireBurstShot(u, pl, def, k, n, key) {
+        let bt = burstBullet(def);
+        if (bt == null) return false;
+        let mp = mountPos(u, k, n);
+        let ast = hostAim(u, pl);
+        let tx = null;
+        let ty = null;
+        if (ast.shoot) {
+            tx = ast.x;
+            ty = ast.y;
+        } else {
+            let t = findTarget(u, def, mp);
+            if (t != null) {
+                let lp = leadPos(mp, t, bt);
+                tx = lp.x;
+                ty = lp.y;
+            }
+        }
+        if (tx == null) return false;
+        equipAng[key] = Angles.angle(mp.x, mp.y, tx, ty);
+        return fireEquip(u, def, bt, mp, tx, ty);
+    }
+
     const eachEquip = new Cons({
         get: function(pl) {
             let st = byId[pl.id];
-            if (st == null || st.d.length === 0) return;
+            if (st == null || st.d.length === 0 || st.p.length !== st.d.length) return;
+            let defs = droneDefs();
             let u = pl.unit();
-            if (u == null || !u.isValid() || u.dead) return;
-            equipFire(pl, st, u);
+            if (u != null && u.isValid() && !u.dead) mountFire(pl, equipList(st, defs), u, "u");
+            let ch = coreHost(pl, st);
+            if (ch != null) mountFire(pl, coreList(st, defs), ch, "c");
         }
     });
+
+    function auraState(u, rng, key) {
+        let c = auraSeen[key];
+        if (c === undefined) {
+            c = { t: -100, v: false, i: 0 };
+            auraSeen[key] = c;
+        }
+        if (Time.time - c.t > 6) {
+            c.t = Time.time;
+            let found = false;
+            try {
+                Groups.unit.each(new Cons({
+                    get: function(e) {
+                        if (found || e == null || e.team == u.team || e.team == Team.derelict || e.dead || !e.isValid()) return;
+                        if (Mathf.dst(u.x, u.y, e.x, e.y) <= rng) found = true;
+                    }
+                }));
+            } catch (err) {}
+            c.v = found;
+        }
+        c.i = Mathf.lerpDelta(c.i, c.v ? 1 : 0, 0.07);
+        return c;
+    }
+
+    let heatCore = null;
+    let heatMid = null;
+    let heatEdge = null;
+    let heatClear = null;
+
+    function drawFireZone(u, def, key) {
+        let rng = (def.ov.auraRange || 15) * Vars.tilesize;
+        let c = auraState(u, rng, key);
+        let I = c.i;
+        let T = Time.time;
+        if (heatCore == null) {
+            heatCore = new Color(1, 0.86, 0.5, 1);
+            heatMid = new Color(1, 0.45, 0.1, 1);
+            heatEdge = new Color(0.8, 0.14, 0.02, 0);
+            heatClear = new Color(1, 0.4, 0.05, 0);
+        }
+        try {
+            Draw.z(Layer.flyingUnit + 1);
+            Draw.color(Pal.lightFlame, 0.25 + 0.2 * I);
+            Lines.stroke(1.2 + I);
+            try { Lines.dashCircle(u.x, u.y, rng); } catch (err) { Lines.circle(u.x, u.y, rng); }
+            Draw.reset();
+        } catch (err) {}
+        if (I < 0.02) return;
+        try {
+            let breathe = 1 + Mathf.sin(T, 26, 0.03);
+
+            Draw.z(Layer.groundUnit - 1);
+            Draw.blend(Blending.additive);
+            heatMid.a = 0.24 * I;
+            Fill.light(u.x, u.y, 56, rng * breathe, heatMid, heatEdge);
+            heatCore.a = 0.34 * I;
+            heatClear.a = 0;
+            Fill.light(u.x, u.y, 40, rng * 0.5 * (1 + Mathf.sin(T, 11, 0.06)), heatCore, heatClear);
+
+            Draw.z(Layer.flyingUnit + 1);
+            for (let k = 0; k < 4; k++) {
+                let ph = (T * 0.006 + k / 4) % 1;
+                let r = rng * (0.06 + 0.94 * ph);
+                let fade = Math.min(1, ph * 6) * Math.pow(1 - ph, 1.3);
+                Draw.color(Pal.lightFlame, Pal.darkFlame, ph);
+                Draw.alpha(0.5 * fade * I);
+                Lines.stroke(1.2 + 2.2 * (1 - ph));
+                let seg = 28;
+                let px = 0;
+                let py = 0;
+                for (let q = 0; q <= seg; q++) {
+                    let a = q / seg * 6.2832;
+                    let rr = r * (1 + 0.02 * Math.sin(a * 5 + T * 0.08 + k * 2));
+                    let x2 = u.x + Math.cos(a) * rr;
+                    let y2 = u.y + Math.sin(a) * rr;
+                    if (q > 0) Lines.line(px, py, x2, y2);
+                    px = x2;
+                    py = y2;
+                }
+            }
+
+            for (let j = 0; j < 10; j++) {
+                let rr = rng * (0.2 + 0.75 * ((j * 0.381966) % 1));
+                let dir = j % 2 === 0 ? 1 : -1;
+                Draw.color(Pal.lightFlame, 0.16 * I * (0.6 + 0.4 * Math.sin(T * 0.05 + j)));
+                Lines.stroke(1);
+                Lines.arc(u.x, u.y, rr, 0.07 + 0.03 * (j % 3), T * 0.12 * dir + j * 37);
+            }
+
+            for (let j = 0; j < 64; j++) {
+                let rd = (T * 0.0035 * (0.7 + (j % 5) * 0.12) + j * 0.6180339) % 1;
+                let r = rng * (0.05 + 0.93 * rd);
+                let a = j * 2.39996 + Math.sin(T * 0.02 + j) * 0.2;
+                let mx = u.x + Math.cos(a) * r;
+                let my = u.y + Math.sin(a) * r;
+                let fade = Math.sin(rd * Math.PI);
+                let sz = (0.7 + (j % 3) * 0.45) * (1.1 - rd * 0.5);
+                Draw.color(Pal.lightFlame, Pal.darkFlame, rd);
+                Draw.alpha(0.75 * fade * I);
+                Fill.circle(mx, my, sz);
+                Draw.alpha(0.12 * fade * I);
+                Fill.circle(mx, my, sz * 3);
+            }
+
+            Draw.z(Layer.flyingUnit + 0.5);
+            heatCore.a = 0.45 * I;
+            heatClear.a = 0;
+            Fill.light(u.x, u.y, 28, u.hitSize * (0.95 + 0.06 * Math.sin(T * 0.13)), heatCore, heatClear);
+
+            Draw.blend();
+            Draw.reset();
+            try { Drawf.light(u.x, u.y, rng * 1.25, Pal.lightFlame, 0.45 * I); } catch (err) {}
+        } catch (err) {
+            Draw.blend();
+            Draw.reset();
+            logOnce("firezone", "fire zone draw failed: " + err);
+        }
+    }
 
     const eachDrawEquip = new Cons({
         get: function(pl) {
             let st = byId[pl.id];
             if (st == null || st.d.length === 0 || st.p.length !== st.d.length) return;
             let u = pl.unit();
-            if (u == null || !u.isValid()) return;
-            let list = equipList(st, droneDefs());
+            if (u != null && u.isValid()) drawMounts(pl, u, equipList(st, droneDefs()), "u");
+            let ch = coreHost(pl, st);
+            if (ch != null) drawMounts(pl, ch, coreList(st, droneDefs()), "c");
+        }
+    });
+
+    function drawMounts(pl, u, list, pfx) {
             let n = list.length;
             if (n === 0) return;
             let scl = 0.25;
@@ -934,9 +1552,48 @@
             for (let k = 0; k < n; k++) {
                 let def = list[k];
                 let blk = def.block;
+                let key = pl.id + ":" + pfx + k + ":" + def.id;
+                Draw.reset();
+                let rl = equipRail[key];
+                if (rl !== undefined) {
+                    let age = Time.time - rl.t;
+                    if (age < 20) {
+                        let fade = 1 - age / 20;
+                        try {
+                            Draw.z(Layer.flyingUnit + 2);
+                            Draw.color(Pal.lancerLaser, fade);
+                            Lines.stroke(rl.w * fade);
+                            Lines.line(rl.x1, rl.y1, rl.x2, rl.y2);
+                            Draw.color(Color.white, fade);
+                            Lines.stroke(rl.w * 0.4 * fade);
+                            Lines.line(rl.x1, rl.y1, rl.x2, rl.y2);
+                            Draw.reset();
+                        } catch (err) { Draw.reset(); }
+                    } else {
+                        delete equipRail[key];
+                    }
+                }
+                if (def.ov && def.ov.aura) {
+                    drawFireZone(u, def, key);
+                    continue;
+                }
+                if (def.ov && def.ov.beam) {
+                    let bp = equipBeam[key];
+                    if (bp != null) {
+                        try {
+                            Draw.z(Layer.flyingUnit + 1);
+                            Draw.color(Pal.lancerLaser);
+                            Lines.stroke(3 * scl);
+                            Lines.line(u.x, u.y, bp.x, bp.y);
+                            Draw.reset();
+                        } catch (err) {}
+                    }
+                    continue;
+                }
+                if (u.isCoreHost !== true) continue;
                 let mp = mountPos(u, k, n);
                 let sc = mountScale(u, def, n);
-                let ang = equipAng[pl.id + ":" + def.id];
+                let ang = equipAng[key];
                 if (ang === undefined) ang = u.rotation;
                 Draw.z(Layer.flyingUnit + 1);
                 Draw.color();
@@ -954,8 +1611,7 @@
                     }
                 } catch (err) {}
             }
-        }
-    });
+    }
 
     if (!Vars.headless) {
         try {
@@ -1008,6 +1664,11 @@
         let base = Math.max(0.1, unit.type.speed);
         unit.speedMultiplier *= (1 + s[3] * SPD_PCT / 100) * (1 + s[3] * SPD_FLAT / base);
         unit.reloadMultiplier *= 1 + s[4] * 0.06;
+        if (s[9] > 0 && !Vars.net.client() && unit.health > 0 && unit.health < unit.maxHealth * REGEN_THRESHOLD) {
+            unit.health = Math.min(unit.maxHealth, unit.health + unit.maxHealth * s[9] * REGEN_PCT / 100 * Time.delta / 60);
+        }
+        if (s[10] > 0) unit.damageMultiplier *= 1 + s[10] * DMG_PER_HP * unit.health;
+        if (s[11] > 0) unit.damageMultiplier *= 1 + s[11] * DMG_PER_ARMOR * unit.armor;
     }
 
     const buffStatus = extend(StatusEffect, "pvp-buff", {
@@ -1028,7 +1689,7 @@
         if (st == null || st.d.length === 0 || st.p.length !== st.d.length) return false;
         let defs = droneDefs();
         for (let i = 0; i < st.d.length; i++) {
-            if (st.p[i] < 0 && defs.map[st.d[i]] != null && defs.map[st.d[i]].equip) return true;
+            if (st.p[i] === EQUIPPED && defs.map[st.d[i]] != null && defs.map[st.d[i]].equip) return true;
         }
         return false;
     }
@@ -1050,9 +1711,17 @@
     const eachBullet = new Cons({
         get: function(b) {
             let o = b.owner;
-            if (o == null || typeof o.getPlayer !== "function") return;
+            if (o == null) return;
             if (b.time > 3 || rolled[b.id] === 1) return;
-            let s = statsOf(o);
+            let s = null;
+            if (typeof o.getPlayer === "function") {
+                s = statsOf(o);
+            } else {
+                let hp = hostOwner[o.id];
+                if (hp === undefined) return;
+                let hst = byId[hp];
+                s = hst != null ? hst.s : null;
+            }
             if (s == null) return;
             rolled[b.id] = 1;
             rolledN++;
@@ -1065,13 +1734,19 @@
                     try { b.type = c; } catch (err) {}
                 }
             }
+            if (s[12] > 0) {
+                let kt = knockType(b.type, s[12]);
+                if (kt != null) {
+                    try { b.type = kt; } catch (err) {}
+                }
+            }
         }
     });
 
     function anyBulletStat() {
         for (let id in byId) {
             let s = byId[id].s;
-            if (s[2] > 0 || s[7] > 0) return true;
+            if (s[2] > 0 || s[7] > 0 || s[12] > 0) return true;
         }
         return false;
     }
@@ -1114,7 +1789,7 @@
         nu.add();
         nu.health = nu.maxHealth * frac;
         pl.unit(nu);
-        fx(x, y);
+        spawnFx(x, y);
     }
 
     function isPvpTeam(t) {
@@ -1332,16 +2007,120 @@
         }
     });
 
+    function holdDeath(pl) {
+        if (deathOk !== false) {
+            try {
+                pl.deathTimer = 0;
+                deathOk = true;
+                return;
+            } catch (err) {
+                deathOk = false;
+                logOnce("deathtimer", "cannot hold player deathTimer, using despawn fallback: " + err);
+            }
+        }
+        try {
+            let u = pl.unit();
+            if (u != null && u.isValid()) {
+                try { Call.unitDespawn(u); } catch (err) { u.remove(); }
+            }
+        } catch (err) {}
+    }
+
+    function startRespawnLock(pl) {
+        let st = bind(pl);
+        let tier = activeTier(st);
+        let sec = RESPAWN_SEC[Math.min(RESPAWN_SEC.length, Math.max(1, tier)) - 1];
+        let ticks = Math.max(0, sec * 60 - 60);
+        if (ticks <= 0) return;
+        respawnLock[pl.id] = ticks;
+        toast(pl, tr("[scarlet]Hồi sinh sau ", "[scarlet]Respawn in ") + sec + tr(" giây", " s"));
+    }
+
     const eachPlayerServer = new Cons({
         get: function(pl) {
             assignTeam(pl);
             let st = bind(pl);
+            let lk = respawnLock[pl.id];
+            if (lk !== undefined) {
+                lk -= Time.delta;
+                if (lk <= 0) delete respawnLock[pl.id];
+                else {
+                    respawnLock[pl.id] = lk;
+                    holdDeath(pl);
+                    return;
+                }
+            }
             let u = pl.unit();
             if (u == null || !u.isValid()) return;
             let want = tierType(activeTier(st));
-            if (u.type !== want || u.team != pl.team()) swapUnit(pl, u, want);
+            if (u.type === want && u.team == pl.team()) {
+                delete swapPending[pl.id];
+                return;
+            }
+            let isTier = false;
+            for (let lv = 1; lv <= 5; lv++) {
+                if (u.type === tierType(lv)) { isTier = true; break; }
+            }
+            let isCoreUnit = false;
+            try {
+                let cr = pl.team().core();
+                isCoreUnit = cr != null && u.type === cr.block.unitType;
+            } catch (err) {}
+            if (!isTier && !isCoreUnit) {
+                delete swapPending[pl.id];
+                return;
+            }
+            let pend = swapPending[pl.id];
+            if (pend != null && pend.want === want) {
+                pend.t -= Time.delta;
+                if (pend.t > 0) return;
+            }
+            swapPending[pl.id] = { want: want, t: 10 };
+            swapUnit(pl, u, want);
         }
     });
+
+    function coreStatsTick(dt) {
+        let best = {};
+        Groups.player.each(new Cons({
+            get: function(pl) {
+                let st = byId[pl.id];
+                if (st == null) return;
+                let tm = pl.team();
+                if (tm == null || tm == Team.derelict) return;
+                let b = best[tm.id];
+                if (b === undefined) {
+                    best[tm.id] = st.s.slice();
+                } else {
+                    for (let i = 0; i < st.s.length; i++) {
+                        if (st.s[i] > b[i]) b[i] = st.s[i];
+                    }
+                }
+            }
+        }));
+        for (let tid in best) {
+            try {
+                let team = Team.get(parseInt(tid));
+                let sv = best[tid];
+                let rule = Vars.state.rules.teams.get(team);
+                let hpMul = (1 + sv[0] * HP_PCT / 100) / (1 - armorCut(sv[1]) / 100);
+                rule.blockHealthMultiplier = hpMul;
+                rule.blockDamageMultiplier = 1 + sv[2] * ATK_PCT / 100;
+                if (sv[9] > 0) {
+                    let cores = team.cores();
+                    for (let i = 0; i < cores.size; i++) {
+                        let cb = cores.get(i);
+                        if (cb == null || !cb.isValid()) continue;
+                        let mh = cb.block.health;
+                        try { mh = cb.maxHealth(); } catch (err2) {}
+                        if (cb.health < mh * REGEN_THRESHOLD) cb.heal(mh * sv[9] * REGEN_PCT / 100 * dt / 60);
+                    }
+                }
+            } catch (err) {
+                logOnce("corestats", "core stats failed: " + err);
+            }
+        }
+    }
 
     const eachPassiveExp = new Cons({
         get: function(pl) { addExp(pl, PASSIVE_EXP); }
@@ -1385,6 +2164,18 @@
         }
         for (let key2 in equipAng) {
             if (present[key2.split(":")[0]] !== true) delete equipAng[key2];
+        }
+        for (let key5 in equipRail) {
+            if (present[key5.split(":")[0]] !== true) delete equipRail[key5];
+        }
+        for (let key3 in equipBeam) {
+            if (present[key3.split(":")[0]] !== true) delete equipBeam[key3];
+        }
+        for (let sid3 in swapPending) {
+            if (present[sid3] !== true) delete swapPending[sid3];
+        }
+        for (let key4 in burstState) {
+            if (present[key4.split(":")[0]] !== true) delete burstState[key4];
         }
         for (let sid2 in soldiers) {
             if (present[sid2] !== true) {
@@ -1439,7 +2230,7 @@
         nu.add();
         soldierOwner[nu.id] = pl.id;
         nu.apply(buffStatus, 1);
-        fx(pos.x, pos.y);
+        spawnFx(pos.x, pos.y);
         return nu;
     }
 
@@ -1522,9 +2313,19 @@
                     dirty = false;
                     syncT = 20;
                     broadcast();
+                    saveT -= 20;
+                    if (saveT <= 0) {
+                        saveT = 600;
+                        saveStore(false);
+                    }
                 } else if (syncT < -300) {
                     syncT = 20;
                     broadcast();
+                }
+                coreT -= Time.delta;
+                if (coreT <= 0) {
+                    coreT = 30;
+                    coreStatsTick(30);
                 }
                 passiveT -= Time.delta;
                 if (passiveT <= 0) {
@@ -1661,11 +2462,20 @@
         }
     }
 
+    if (typeof PlayerLeave !== "undefined") {
+        Events.on(PlayerLeave, new Cons({
+            get: function(e) {
+                if (Vars.net.client()) return;
+                try { if (Object.keys(store).length > 0) saveStore(true); } catch (err) {}
+            }
+        }));
+    }
+
     Events.on(WaveEvent, new Cons({
         get: function(e) {
             if (Vars.net.client() || !isActive() || Vars.state.gameOver) return;
             spawnWave(Vars.state.wave - 1);
-            saveStore();
+            saveStore(true);
         }
     }));
 
@@ -1676,6 +2486,12 @@
                 let b = e.bullet;
                 let tgt = e.unit;
                 if (b == null || tgt == null || tgt.dead || !tgt.isValid()) return;
+                let shred = shredMap.get(b.type);
+                if (shred) {
+                    try { tgt.damagePierce(b.damage * shred); } catch (err) {
+                        try { tgt.damage(b.damage * shred); } catch (err2) {}
+                    }
+                }
                 let o = b.owner;
                 if (o == null || typeof o.getPlayer !== "function" || o.team == tgt.team) return;
                 let ss = statsOf(o);
@@ -1700,18 +2516,35 @@
         get: function(e) {
             if (Vars.net.client() || !isActive() || Vars.state.gameOver) return;
             let u = e.unit;
-            if (u == null || u.team != Vars.state.rules.waveTeam) return;
-            let gained = killExp(u);
-            if (!(gained > 0)) return;
-            let rx = u.x;
-            let ry = u.y;
+            if (u == null) return;
+            try {
+                let dp = u.getPlayer();
+                if (dp != null && isPvpTeam(u.team)) startRespawnLock(dp);
+            } catch (err) {}
+            if (u.team == Vars.state.rules.waveTeam) {
+                let gained = killExp(u);
+                if (!(gained > 0)) return;
+                let rx = u.x;
+                let ry = u.y;
+                Groups.player.each(new Cons({
+                    get: function(pl) {
+                        let pu = pl.unit();
+                        if (pu == null || !pu.isValid()) return;
+                        let dx = pu.x - rx;
+                        let dy = pu.y - ry;
+                        if (dx * dx + dy * dy <= CREDIT_RADIUS * CREDIT_RADIUS) addExp(pl, gained);
+                    }
+                }));
+                return;
+            }
+            let pid = soldierOwner[u.id];
+            if (pid === undefined) return;
+            delete soldierOwner[u.id];
+            let sg = killExp(u);
+            if (!(sg > 0)) return;
             Groups.player.each(new Cons({
-                get: function(pl) {
-                    let pu = pl.unit();
-                    if (pu == null || !pu.isValid()) return;
-                    let dx = pu.x - rx;
-                    let dy = pu.y - ry;
-                    if (dx * dx + dy * dy <= CREDIT_RADIUS * CREDIT_RADIUS) addExp(pl, gained);
+                get: function(pl2) {
+                    if (pl2.id === pid) addExp(pl2, sg);
                 }
             }));
         }
@@ -1719,6 +2552,7 @@
 
     Events.on(WorldLoadEvent, new Cons({
         get: function(e) {
+            try { if (!Vars.net.client() && Object.keys(store).length > 0) saveStore(true); } catch (err) {}
             byId = {};
             teamsCache = null;
             assignCache = null;
@@ -1726,6 +2560,12 @@
             defsCache = null;
             equipCd = {};
             equipAng = {};
+            equipBeam = {};
+            equipRail = {};
+            auraSeen = {};
+            respawnLock = {};
+            swapPending = {};
+            burstState = {};
             barrackT = {};
             soldiers = {};
             soldierOwner = {};
@@ -1800,20 +2640,24 @@
             let parts = String(payload).split("|");
             let mode = parts.length > 1 ? parts[1] : "b";
             let d = droneDefs().map[parts[0]];
-            if (d == null || st.d.indexOf(d.id) >= 0) return;
+            if (d == null) return;
             if (st.pts < d.cost) return;
-            if (mode === "e" ? equipCount(st) >= equipSlots(st) : builtCount(st) >= maxDrones()) {
-                toast(player, tr("[scarlet]Hết ô cho loại này!", "[scarlet]No free slot for this type!"));
-                return;
-            }
             let pos;
-            if (mode === "e") {
+            if (mode === "e" || mode === "c") {
                 if (!d.equip) {
-                    toast(player, tr("[scarlet]Pháo này không thể gắn lên unit!", "[scarlet]This turret cannot be equipped on a unit!"));
+                    toast(player, tr("[scarlet]Pháo này không thể gắn lên unit/lõi!", "[scarlet]This turret cannot be mounted!"));
                     return;
                 }
-                pos = EQUIPPED;
+                if (mode === "e" ? equipCount(st) >= equipSlots(st) : coreCount(st) >= coreSlots(st)) {
+                    toast(player, tr("[scarlet]Hết ô gắn!", "[scarlet]No free mount slot!"));
+                    return;
+                }
+                pos = mode === "e" ? EQUIPPED : CORE_MOUNT;
             } else {
+                if (builtCount(st) >= maxDrones()) {
+                    toast(player, tr("[scarlet]Đã đạt giới hạn pháo xây!", "[scarlet]Built turret limit reached!"));
+                    return;
+                }
                 pos = placeTurret(player, d);
                 if (pos < 0) {
                     toast(player, tr("[scarlet]Không còn chỗ trống gần lõi để xây pháo này!", "[scarlet]No free space near the core for this turret!"));
@@ -1829,10 +2673,16 @@
         global.NexNet.on(REQ_MODE, function(player, payload) {
             let st = reqState(player);
             if (st == null) return;
-            let d = droneDefs().map[String(payload)];
-            let idx = d != null ? st.d.indexOf(d.id) : -1;
-            if (idx < 0) return;
-            if (st.p[idx] < 0) {
+            let parts = String(payload).split("|");
+            let idx = parseInt(parts[0]);
+            let mode = parts.length > 1 ? parts[1] : "b";
+            if (!(idx >= 0 && idx < st.d.length)) return;
+            let d = droneDefs().map[st.d[idx]];
+            if (d == null) return;
+            let curP = st.p[idx];
+            let cur = curP >= 0 ? "b" : (curP === EQUIPPED ? "e" : "c");
+            if (cur === mode) return;
+            if (mode === "b") {
                 if (builtCount(st) >= maxDrones()) {
                     toast(player, tr("[scarlet]Đã đạt giới hạn pháo xây!", "[scarlet]Built turret limit reached!"));
                     return;
@@ -1845,15 +2695,15 @@
                 st.p[idx] = pos;
             } else {
                 if (!d.equip) {
-                    toast(player, tr("[scarlet]Pháo này không thể gắn lên unit!", "[scarlet]This turret cannot be equipped on a unit!"));
+                    toast(player, tr("[scarlet]Pháo này không thể gắn lên unit/lõi!", "[scarlet]This turret cannot be mounted!"));
                     return;
                 }
-                if (equipCount(st) >= equipSlots(st)) {
-                    toast(player, tr("[scarlet]Hết ô lắp pháo trên unit!", "[scarlet]No free turret slot on your unit!"));
+                if (mode === "e" ? equipCount(st) >= equipSlots(st) : coreCount(st) >= coreSlots(st)) {
+                    toast(player, tr("[scarlet]Hết ô gắn!", "[scarlet]No free mount slot!"));
                     return;
                 }
-                removeTurret(st.p[idx], d);
-                st.p[idx] = EQUIPPED;
+                removeTurret(curP, d);
+                st.p[idx] = mode === "e" ? EQUIPPED : CORE_MOUNT;
             }
             changed();
         }, false, 60);
@@ -1874,9 +2724,10 @@
         global.NexNet.on(REQ_SELL, function(player, payload) {
             let st = reqState(player);
             if (st == null) return;
-            let d = droneDefs().map[String(payload)];
-            let idx = d != null ? st.d.indexOf(d.id) : -1;
-            if (idx < 0) return;
+            let idx = parseInt(String(payload));
+            if (!(idx >= 0 && idx < st.d.length)) return;
+            let d = droneDefs().map[st.d[idx]];
+            if (d == null) return;
             removeTurret(st.p[idx], d);
             st.d.splice(idx, 1);
             st.p.splice(idx, 1);
@@ -1896,9 +2747,21 @@
     function equipCount(st) {
         let n = 0;
         for (let i = 0; i < st.p.length; i++) {
-            if (st.p[i] < 0) n++;
+            if (st.p[i] === EQUIPPED) n++;
         }
         return n;
+    }
+
+    function coreCount(st) {
+        let n = 0;
+        for (let i = 0; i < st.p.length; i++) {
+            if (st.p[i] === CORE_MOUNT) n++;
+        }
+        return n;
+    }
+
+    function coreSlots(st) {
+        return Math.min(EQUIP_SLOT_CAP, Math.max(1, st.lv));
     }
 
     function equipSlots(st) {
@@ -1962,7 +2825,7 @@
     }
 
     function cardW() {
-        return (panelW() - 16) / gridCols() - 8;
+        return Math.floor((panelW() - 36) / gridCols()) - 8;
     }
 
     function unitRow(p, st, t, cur, w) {
@@ -1997,44 +2860,105 @@
         p.add(row).width(w).pad(4).row();
     }
 
-    function turretCard(st, def) {
-        let idx = st.d.indexOf(def.id);
-        let owned = idx >= 0;
-        let equipped = owned && st.p[idx] < 0;
-        let card = new Table(Styles.black6);
-        card.margin(8);
+    function turretDesc(def) {
+        let ov = def.ov || {};
+        if (ov.aura) return tr("Toả vùng " + (ov.auraRange || 15) + " ô, mỗi giây gây " + (ov.auraAtkPct || 0) + "% tấn công + " + (ov.auraArmorPct || 0) + "% giáp, đốt cháy mục tiêu",
+            "Aura of " + (ov.auraRange || 15) + " tiles, deals " + (ov.auraAtkPct || 0) + "% attack + " + (ov.auraArmorPct || 0) + "% armor per second, burns targets");
+        if (ov.rail) return tr("Mục tiêu trong " + ov.rangeTiles + " ô: mỗi " + ((ov.railInterval || 120) / 60) + "s bắn 1 tia railgun xuyên mọi mục tiêu, gây " + (ov.railPct || 150) + "% tấn công (dài " + (ov.railLen || 33) + ", rộng " + (ov.railWidth || 9) + ")",
+            "Target within " + ov.rangeTiles + " tiles: every " + ((ov.railInterval || 120) / 60) + "s fires a piercing railgun shot dealing " + (ov.railPct || 150) + "% attack (length " + (ov.railLen || 33) + ", width " + (ov.railWidth || 9) + ")");
+        if (ov.blast) return tr("Mục tiêu vào " + ov.rangeTiles + " ô: mỗi giây tạo 1 vụ nổ gây " + (ov.blastPct || 100) + "% tấn công",
+            "Target within " + ov.rangeTiles + " tiles: 1 explosion per second dealing " + (ov.blastPct || 100) + "% attack");
+        if (ov.pull) return tr("Tia kéo: gây sát thương và kéo mục tiêu trên không lại gần", "Tractor beam: damages and pulls air targets closer");
+        if (ov.beam) return tr("Bắn tia laser liên tục vào mục tiêu", "Fires a continuous laser at the target");
+        let parts = [];
+        try { if (def.block.targetGround !== false) parts.push(tr("bộ binh", "ground")); } catch (err) {}
+        try { if (def.block.targetAir !== false) parts.push(tr("máy bay", "air")); } catch (err) {}
+        return parts.length > 0 ? tr("Bắn: ", "Targets: ") + parts.join(", ") : tr("Pháo tiêu chuẩn", "Standard turret");
+    }
 
-        let top = new Table();
-        top.left();
-        top.add(new Image(def.block.uiIcon)).size(40).padRight(10);
-        let col = new Table();
-        col.left();
-        col.add("[white]" + def.block.localizedName + "[]").left().row();
-        col.add("[yellow]" + tr("Giá: ", "Cost: ") + def.cost + tr(" điểm", " pt") + "[]").left().row();
-        if (owned) {
-            col.add("[accent]" + (equipped ? tr("Đang gắn trên unit", "Equipped on unit") : tr("Đang xây gần lõi", "Built near core")) + "[]").left();
-        } else if (!def.equip) {
-            col.add("[lightgray]" + tr("Chỉ xây được", "Build only") + "[]").left();
+    function turretDmg(def) {
+        try {
+            if (!def.equip) return 0;
+            if (def.ov && (def.ov.aura || def.ov.blast || def.ov.rail)) return 0;
+            if (def.ov && def.ov.beam) return Math.round(def.ov.beamDps || 36);
+            let bt = equipBullet(def);
+            if (bt != null && bt.damage > 0) return Math.round(bt.damage);
+        } catch (err) {}
+        return 0;
+    }
+
+    function turretCard(st, def, cw) {
+        let inner = Math.max(200, cw - 20);
+        let owned = [];
+        for (let j = 0; j < st.d.length; j++) {
+            if (st.d[j] === def.id) owned.push(j);
         }
-        top.add(col).growX().left();
-        card.add(top).growX().row();
+        let card = new Table(Styles.black6);
+        card.margin(10);
+        card.top().left();
 
         let canBuild = builtCount(st) < maxDrones();
         let canEquip = equipCount(st) < equipSlots(st);
-        let acts = new Table();
-        if (owned) {
-            acts.button(tr("Bán", "Sell"), new Runnable({ run: function() { send(REQ_SELL, def.id); } })).growX().height(btnH()).pad(2);
-            let label = equipped ? tr("Chuyển xây", "Build it") : tr("Gắn lên unit", "Equip");
-            let mb = acts.button(label, new Runnable({ run: function() { send(REQ_MODE, def.id); } })).growX().height(btnH()).pad(2).get();
-            mb.setDisabled(equipped ? !canBuild : (!def.equip || !canEquip));
-        } else {
-            let afford = st.pts >= def.cost;
-            let bb = acts.button(tr("Mua & xây", "Buy & build"), new Runnable({ run: function() { send(REQ_BUY, def.id + "|b"); } })).growX().height(btnH()).pad(2).get();
-            bb.setDisabled(!afford || !canBuild);
-            let be = acts.button(tr("Mua & gắn", "Buy & equip"), new Runnable({ run: function() { send(REQ_BUY, def.id + "|e"); } })).growX().height(btnH()).pad(2).get();
-            be.setDisabled(!afford || !def.equip || !canEquip);
+        let canCore = coreCount(st) < coreSlots(st);
+        let afford = st.pts >= def.cost;
+        let tabStyle = Styles.togglet != null ? Styles.togglet : Styles.defaultt;
+        let iconSz = Vars.mobile ? 44 : 36;
+
+        let top = new Table();
+        top.left();
+        top.add(new Image(def.block.uiIcon)).size(iconSz).padRight(10).top();
+        let col = new Table();
+        col.left();
+        col.add("[white]" + def.block.localizedName + "[]").left().row();
+        col.add("[yellow]" + tr("Giá: ", "Cost: ") + def.cost + tr(" điểm", " pt") + "[]").left();
+        top.add(col).left().growX();
+        let tag = owned.length > 0 ? "[accent]x" + owned.length + "[]" : (!def.equip ? "[lightgray]" + tr("Chỉ xây", "Build only") + "[]" : "");
+        if (tag.length > 0) top.add(tag).right().padLeft(6);
+        card.add(top).width(inner).left().row();
+
+        let dmg = turretDmg(def);
+        let desc = turretDesc(def) + (dmg > 0 ? "\n[scarlet]" + tr("Sát thương: ", "Damage: ") + dmg + "[]" : "");
+        card.add("[lightgray]" + desc + "[]").width(inner).left().wrap().padTop(6).row();
+
+        card.image().color(Pal.gray).width(inner).height(2).padTop(8).padBottom(6).row();
+
+        card.add("[lightgray]" + tr("Mua", "Buy") + "[]").left().row();
+        let buy = new Table();
+        buy.defaults().growX().uniformX().height(btnH()).pad(2).minWidth(0);
+        let b1 = buy.button(tr("Xây", "Build"), new Runnable({ run: function() { send(REQ_BUY, def.id + "|b"); } })).get();
+        b1.setDisabled(!afford || !canBuild);
+        let b2 = buy.button("Unit", new Runnable({ run: function() { send(REQ_BUY, def.id + "|e"); } })).get();
+        b2.setDisabled(!afford || !def.equip || !canEquip);
+        let b3 = buy.button(tr("Lõi", "Core"), new Runnable({ run: function() { send(REQ_BUY, def.id + "|c"); } })).get();
+        b3.setDisabled(!afford || !def.equip || !canCore);
+        card.add(buy).width(inner).row();
+
+        for (let n = 0; n < owned.length; n++) {
+            let j = owned[n];
+            let pp = st.p[j];
+            let cur = pp >= 0 ? "b" : (pp === EQUIPPED ? "e" : "c");
+            let curName = cur === "b" ? tr("Xây", "Build") : (cur === "e" ? "Unit" : tr("Lõi", "Core"));
+
+            card.image().color(Pal.gray).width(inner).height(1).padTop(8).padBottom(4).row();
+
+            let hdr = new Table();
+            hdr.add("[accent]#" + (n + 1) + "[]  [lightgray]" + curName + "[]").left().growX();
+            hdr.button(tr("Bán", "Sell"), new Runnable({ run: function() { send(REQ_SELL, String(j)); } })).width(Vars.mobile ? 88 : 72).height(btnH());
+            card.add(hdr).width(inner).row();
+
+            let row = new Table();
+            row.defaults().growX().uniformX().height(btnH()).pad(2).minWidth(0);
+            let m1 = row.button(tr("Xây", "Build"), tabStyle, new Runnable({ run: function() { send(REQ_MODE, j + "|b"); } })).get();
+            m1.setChecked(cur === "b");
+            m1.setDisabled(cur === "b" || !canBuild);
+            let m2 = row.button("Unit", tabStyle, new Runnable({ run: function() { send(REQ_MODE, j + "|e"); } })).get();
+            m2.setChecked(cur === "e");
+            m2.setDisabled(cur === "e" || !def.equip || !canEquip);
+            let m3 = row.button(tr("Lõi", "Core"), tabStyle, new Runnable({ run: function() { send(REQ_MODE, j + "|c"); } })).get();
+            m3.setChecked(cur === "c");
+            m3.setDisabled(cur === "c" || !def.equip || !canCore);
+            card.add(row).width(inner).row();
         }
-        card.add(acts).growX().padTop(6);
         return card;
     }
 
@@ -2075,6 +2999,61 @@
         p.add(list).width(w).pad(4).row();
     }
 
+    function scanLines(st) {
+        let out = [];
+        let u = null;
+        try { u = Vars.player.unit(); } catch (err) {}
+        if (u == null || !u.isValid()) return null;
+        let ut = u.type;
+        let s = st.s;
+        let f1 = function(v) { return (Math.round(v * 100) / 100).toString(); };
+        out.push([tr("Unit đang điều khiển", "Controlled unit"), "[accent]" + ut.localizedName + "[]  " + tr("(cấp ", "(tier ") + activeTier(st) + ")"]);
+        out.push([tr("Máu", "Health"), Math.round(u.health) + " / " + Math.round(u.maxHealth) + "  [lightgray]" + tr("(gốc ", "(base ") + Math.round(ut.health) + ")[]"]);
+        let hm = u.healthMultiplier > 0 ? u.healthMultiplier : 1;
+        out.push([tr("Giáp", "Armor"), f1(u.armor) + "  [lightgray]" + tr("(gốc ", "(base ") + f1(ut.armor) + ")[]  " + tr("giảm sát thương nhận ", "damage taken reduced ") + f1((1 - 1 / hm) * 100) + "%"]);
+        out.push([tr("Tấn công", "Attack"), "x" + f1(u.damageMultiplier)]);
+        out.push([tr("Tốc độ di chuyển", "Move speed"), f1(ut.speed * u.speedMultiplier) + "  [lightgray]" + tr("(gốc ", "(base ") + f1(ut.speed) + ")  x" + f1(u.speedMultiplier) + "[]"]);
+        out.push([tr("Tốc độ bắn", "Fire rate"), "x" + f1(u.reloadMultiplier)]);
+        out.push([tr("Tỉ lệ bạo kích", "Crit chance"), (s[5] * 2) + "%"]);
+        out.push([tr("Sát thương bạo kích", "Crit damage"), (150 + s[6] * 12) + "%"]);
+        out.push([tr("Xuyên giáp", "Armor pierce"), (s[7] * 5) + "%"]);
+        out.push([tr("Sát thương % máu tối đa", "Max HP damage"), ((s[8] + 1) / 10).toFixed(1) + "%"]);
+        out.push([tr("Hồi máu", "Regeneration"), f1(u.maxHealth * s[9] * REGEN_PCT / 100) + tr(" máu/giây (khi dưới 99%)", " HP/s (below 99%)")]);
+        out.push([tr("Sát thương theo máu", "HP-based damage"), "+" + f1(s[10] * DMG_PER_HP * u.health * 100) + "%"]);
+        out.push([tr("Sát thương theo giáp", "Armor-based damage"), "+" + f1(s[11] * DMG_PER_ARMOR * u.armor * 100) + "%"]);
+        out.push([tr("Đẩy lùi", "Knockback"), "+" + f1(s[12] * KNOCK_PER)]);
+        out.push([tr("Pháo gắn", "Mounted turrets"), tr("unit ", "unit ") + equipCount(st) + "/" + equipSlots(st) + tr(", lõi ", ", core ") + coreCount(st) + "/" + coreSlots(st)]);
+        return out;
+    }
+
+    function statDetailDialog(st) {
+        let dialog = new BaseDialog(tr("Chi tiết chỉ số", "Stat details"));
+        dialog.addCloseButton();
+        let W2 = Math.min(480, panelW());
+        function fill() {
+            dialog.cont.clear();
+            let cur = localState();
+            let lines = cur != null ? scanLines(cur) : null;
+            dialog.cont.button(tr("Quét lại unit", "Rescan unit"), new Runnable({ run: function() { fill(); } })).width(W2).height(btnH()).pad(4).row();
+            dialog.cont.pane(new Cons({
+                get: function(p) {
+                    p.margin(10);
+                    p.top();
+                    if (lines == null) {
+                        p.add("[scarlet]" + tr("Không quét được: bạn chưa điều khiển unit nào.", "Scan failed: you are not controlling a unit.") + "[]").left().wrap().growX().row();
+                        return;
+                    }
+                    for (let i = 0; i < lines.length; i++) {
+                        p.add("[lightgray]" + lines[i][0] + "[]").left().wrap().growX().row();
+                        p.add("[white]" + lines[i][1] + "[]").left().wrap().growX().padBottom(8).row();
+                    }
+                }
+            })).width(W2).maxHeight(listH());
+        }
+        fill();
+        dialog.show();
+    }
+
     function buildDialog(d) {
         let c = d.cont;
         c.clear();
@@ -2104,7 +3083,7 @@
         let names = [
             tr("Unit", "Unit"),
             tr("Chỉ số", "Stats"),
-            tr("Pháo ", "Turrets ") + equipCount(st) + "/" + equipSlots(st),
+            tr("Pháo", "Turrets"),
             tr("Lính", "Army")
         ];
         let tabStyle = Styles.togglet != null ? Styles.togglet : Styles.defaultt;
@@ -2131,11 +3110,19 @@
                     let cur = activeTier(st);
                     for (let t = 1; t <= 5; t++) unitRow(p, st, t, cur, W - 24);
                 } else if (tab === 1) {
+                    p.button(tr("Xem chi tiết chỉ số", "View stat details"), new Runnable({ run: function() { statDetailDialog(st); } })).width(W - 24).height(btnH()).pad(4).row();
                     for (let i = 0; i < STATS.length; i++) statRow(p, st, i, W - 24);
                 } else if (tab === 2) {
-                    p.add("[lightgray]" + tr("Ô gắn: ", "Mounted: ") + equipCount(st) + "/" + equipSlots(st) + tr("  (mỗi cấp +1 ô)   Xây: ", "  (+1 per level)   Built: ") + builtCount(st) + "/" + maxDrones() + "[]").colspan(cols).left().pad(6).row();
+                    let info = new Table(Styles.black6);
+                    info.margin(8);
+                    info.defaults().growX().uniformX().minWidth(0);
+                    info.add("[lightgray]Unit[]  [white]" + equipCount(st) + "/" + equipSlots(st) + "[]").center();
+                    info.add("[lightgray]" + tr("Lõi", "Core") + "[]  [white]" + coreCount(st) + "/" + coreSlots(st) + "[]").center();
+                    info.add("[lightgray]" + tr("Xây", "Build") + "[]  [white]" + builtCount(st) + "/" + maxDrones() + "[]").center();
+                    p.add(info).colspan(cols).width(W - 32).pad(4).row();
+                    p.add("[lightgray]" + tr("Mỗi cấp +1 ô. Có thể mua nhiều pháo cùng loại.", "+1 slot per level. You can buy the same turret many times.") + "[]").colspan(cols).width(W - 32).left().wrap().pad(2).row();
                     for (let j = 0; j < defs.list.length; j++) {
-                        p.add(turretCard(st, defs.list[j])).width(cw).pad(4).top();
+                        p.add(turretCard(st, defs.list[j], cw)).width(cw).pad(4).top().left();
                         if ((j + 1) % cols === 0) p.row();
                     }
                 } else {
@@ -2222,11 +3209,51 @@
         return Math.max(0, Math.min(1, st.exp / expNeed(st.lv)));
     }
 
+    function hudVisible() {
+        try { return Core.settings.getBool(KEY_HUD, true); } catch (err) {}
+        return true;
+    }
+
+    function hudSetVisible(v) {
+        try { Core.settings.put(KEY_HUD, v ? java.lang.Boolean.TRUE : java.lang.Boolean.FALSE); } catch (err) {}
+    }
+
+    function hudSavePos() {
+        if (hudPanel == null) return;
+        try {
+            Core.settings.put(KEY_HUD_X, java.lang.Float(hudPanel.x));
+            Core.settings.put(KEY_HUD_Y, java.lang.Float(hudPanel.y));
+        } catch (err) {}
+    }
+
+    function hudCenter() {
+        if (hudPanel == null) return;
+        let w = Core.graphics.getWidth();
+        let h = Core.graphics.getHeight();
+        hudPanel.setPosition((w - hudPanel.getWidth()) / 2, (h - hudPanel.getHeight()) / 2);
+        hudSavePos();
+    }
+
+    function hudClamp() {
+        if (hudPanel == null) return;
+        let mx = Math.max(0, Core.graphics.getWidth() - hudPanel.getWidth());
+        let my = Math.max(0, Core.graphics.getHeight() - hudPanel.getHeight());
+        hudPanel.setPosition(Mathf.clamp(hudPanel.x, 0, mx), Mathf.clamp(hudPanel.y, 0, my));
+        hudSavePos();
+    }
+
     Events.on(ClientLoadEvent, new Cons({
         get: function(e) {
             if (Vars.headless) return;
+            try {
+                Core.bundle.getProperties().put("setting." + KEY_HUD + ".name", tr("Hiện UI EXP PvP (Shift+2)", "Show PvP EXP UI (Shift+2)"));
+                Vars.ui.settings.game.checkPref(KEY_HUD, true);
+            } catch (err) {
+                Log.err("[NexPvp] cannot add HUD setting: " + err);
+            }
             const W = 170;
             let t = new Table(Styles.black6);
+            hudPanel = t;
             t.margin(4);
             t.name = "newex-pvp-hud";
             t.touchable = Touchable.enabled;
@@ -2240,12 +3267,66 @@
             t.row();
             let ub = t.button(tr("Nâng cấp", "Upgrade"), Icon.up || Icon.add, new Runnable({ run: function() { openUpgrade(); } })).size(W, 28).padTop(3).get();
             ub.getLabel().setFontScale(0.8);
-            t.visibility = new Boolp({ get: function() { return isActive() && Vars.ui.hudfrag.shown; } });
+            t.visibility = new Boolp({ get: function() { return isActive() && Vars.ui.hudfrag.shown && hudVisible(); } });
             t.pack();
-            t.setPosition(screenW() / 2 - t.getWidth() / 2, screenH() - t.getHeight() - 70);
+            if (Core.settings.has(KEY_HUD_X) && Core.settings.has(KEY_HUD_Y)) {
+                t.setPosition(Core.settings.getFloat(KEY_HUD_X, 0), Core.settings.getFloat(KEY_HUD_Y, 0));
+                hudClamp();
+            } else {
+                t.setPosition(screenW() / 2 - t.getWidth() / 2, screenH() - t.getHeight() - 70);
+            }
+
+            let dragging = false;
+            let offX = 0;
+            let offY = 0;
+            t.addListener(extend(InputListener, {
+                touchDown(event, x, y, pointer, button) {
+                    dragging = false;
+                    offX = x;
+                    offY = y;
+                    return true;
+                },
+                touchDragged(event, x, y, pointer) {
+                    if (Math.abs(x - offX) > 5 || Math.abs(y - offY) > 5) dragging = true;
+                    if (dragging) {
+                        let mx = Math.max(0, Core.graphics.getWidth() - t.getWidth());
+                        let my = Math.max(0, Core.graphics.getHeight() - t.getHeight());
+                        t.setPosition(Mathf.clamp(t.x + x - offX, 0, mx), Mathf.clamp(t.y + y - offY, 0, my));
+                        hudSavePos();
+                    }
+                },
+                touchUp(event, x, y, pointer, button) {
+                    dragging = false;
+                }
+            }));
             Vars.ui.hudGroup.addChild(t);
+            hudLastW = Core.graphics.getWidth();
+            hudLastH = Core.graphics.getHeight();
         }
     }));
+
+    if (!Vars.headless) {
+        Events.run(Trigger.update, new Runnable({
+            run: function() {
+                if (hudPanel == null) return;
+                let w = Core.graphics.getWidth();
+                let h = Core.graphics.getHeight();
+                if (w !== hudLastW || h !== hudLastH) {
+                    hudLastW = w;
+                    hudLastH = h;
+                    if (Vars.mobile) hudCenter();
+                    else hudClamp();
+                }
+                if (!isActive()) return;
+                try {
+                    let sh = Core.input.keyDown(KeyCode.shiftLeft) || Core.input.keyDown(KeyCode.shiftRight);
+                    if (sh && Core.input.keyTap(KeyCode.num2) && !Core.scene.hasKeyboard()) {
+                        hudSetVisible(!hudVisible());
+                    }
+                } catch (err) {}
+            }
+        }));
+    }
 
     function normalizeRules(r, tl) {
         try { r.infiniteResources = false; } catch (err) {}
@@ -2268,13 +3349,14 @@
         onBegin: function() {
             winning = false;
             seenBoth = false;
-            store = {};
             byId = {};
             equipCd = {};
             teamsCache = null;
             let r = Vars.state.rules;
             r.tags.put(TAG_ACTIVE, "1");
             r.tags.put(TAG_DATA, "{}");
+            loadStore();
+            saveStore(false);
             r.waves = true;
             r.waveTimer = true;
             r.attackMode = false;

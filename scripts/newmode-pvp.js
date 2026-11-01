@@ -35,6 +35,9 @@
     const KEY_HUD = "newex-pvp-hud";
     const KEY_HUD_X = "newex-pvp-hud-x";
     const KEY_HUD_Y = "newex-pvp-hud-y";
+    const KEY_KD = "newex-pvp-kd";
+    const KEY_KD_X = "newex-pvp-kd-x";
+    const KEY_KD_Y = "newex-pvp-kd-y";
     const RESPAWN_SEC = [2, 4, 6, 9, 12];
     const CORE_MOUNT = -2;
     const DEFAULT_EXP = 100;
@@ -146,12 +149,39 @@
         sublimate: { liquidAmmo: "ozone" },
         scorch: { aura: true, auraRange: 15, auraAtkPct: 50, auraArmorPct: 50 },
         lustre: { equip: false },
-        scathe: { equip: false },
-        malign: { costFixed: 18, stackCost: 1, unitRateMul: 0.5, unitLifeMul: 1.2 },
+        scathe: { equip: false, dmgAtkPct: 100 },
+        hail: { rangeMul: 2.5 },
+        lancer: { rangeMul: 1.5 },
+        ripple: { rangeMul: 2.5 },
+        fuse: { dmgArmorPct: 200, dmgCopy: true },
+        smite: { unitRateMul: 1.8 },
+        malign: { costFixed: 18, stackCost: 1, unitRateMul: 0.5, lifeMul: 0.7 },
         foreshadow: { costMul: 2 },
         forstarsilum: { equip: true, star: true, costFixed: FORSTAR_COST, rangeTiles: FORSTAR_RANGE / 8 },
-        breach: { costFixed: 1 }
+        breach: { costFixed: 1, dmgAtkPct: 100 }
     };
+
+    const ROLE_BRAWLER = "brawler";
+    const ROLE_ATTACK = "attack";
+    const ROLE_DEFENSE = "defense";
+    const ROLE_DEALER = "dealer";
+    const TURRET_ROLES = {
+        duo: ROLE_BRAWLER, scatter: ROLE_ATTACK, scorch: ROLE_BRAWLER, hail: ROLE_ATTACK, wave: ROLE_BRAWLER,
+        lancer: ROLE_ATTACK, arc: ROLE_BRAWLER, parallax: ROLE_BRAWLER, swarmer: ROLE_ATTACK, salvo: ROLE_ATTACK,
+        segment: ROLE_DEFENSE, tsunami: ROLE_BRAWLER, fuse: ROLE_BRAWLER, ripple: ROLE_ATTACK, cyclone: ROLE_ATTACK,
+        foreshadow: ROLE_DEALER, spectre: ROLE_ATTACK, meltdown: ROLE_BRAWLER, breach: ROLE_ATTACK, diffuse: ROLE_BRAWLER,
+        sublimate: ROLE_BRAWLER, titan: ROLE_ATTACK, disperse: ROLE_ATTACK, afflict: ROLE_ATTACK, lustre: ROLE_ATTACK,
+        scathe: ROLE_DEALER, smite: ROLE_ATTACK, malign: ROLE_DEALER, forstarsilum: ROLE_DEALER
+    };
+
+    function roleText(id) {
+        let r = TURRET_ROLES[id];
+        if (r === ROLE_BRAWLER) return "[orange]" + tr("Cận chiến (Brawler)", "Brawler") + "[]";
+        if (r === ROLE_ATTACK) return "[scarlet]" + tr("Tấn công (Attack)", "Attack") + "[]";
+        if (r === ROLE_DEFENSE) return "[sky]" + tr("Phòng thủ (Defense)", "Defense") + "[]";
+        if (r === ROLE_DEALER) return "[gold]" + tr("Sát thương (Damage Dealer)", "Damage Dealer") + "[]";
+        return "";
+    }
 
     let shredMap = new Map();
     let starState = {};
@@ -361,11 +391,13 @@
     let equipBeam = {};
     let equipRail = {};
     let hostOwner = {};
+    let builtOwner = {};
     let auraSeen = {};
     let respawnLock = {};
     let coreT = 0;
     let deathOk = null;
     let hudPanel = null;
+    let kdPanel = null;
     let hudLastW = 0;
     let hudLastH = 0;
     let swapPending = {};
@@ -596,11 +628,23 @@
         dirty = true;
     }
 
+    function addKill(pl) {
+        let st = bind(pl);
+        st.k = (st.k || 0) + 1;
+        dirty = true;
+    }
+
+    function addDeath(pl) {
+        let st = bind(pl);
+        st.dd = (st.dd || 0) + 1;
+        dirty = true;
+    }
+
     function broadcast() {
         let out = {};
         for (let id in byId) {
             let s = byId[id];
-            out[id] = [s.lv, Math.floor(s.exp), s.pts, s.s, s.d, s.u || 0, s.p, s.b || 0];
+            out[id] = [s.lv, Math.floor(s.exp), s.pts, s.s, s.d, s.u || 0, s.p, s.b || 0, s.k || 0, s.dd || 0];
         }
         if (Vars.net.server()) {
             try { Call.clientPacketReliable(SYNC_KIND, JSON.stringify({ d: out })); } catch (err) {}
@@ -615,7 +659,7 @@
             for (let id in o.d) {
                 let a = o.d[id];
                 let pp = (a[6] != null && a[4] != null && a[6].length === a[4].length) ? a[6] : [];
-                n[id] = { lv: a[0], exp: a[1], pts: a[2], s: a[3], d: a[4], u: a[5] || 0, p: pp, b: a[7] || 0 };
+                n[id] = { lv: a[0], exp: a[1], pts: a[2], s: a[3], d: a[4], u: a[5] || 0, p: pp, b: a[7] || 0, k: a[8] || 0, dd: a[9] || 0 };
             }
             byId = n;
             ver++;
@@ -721,6 +765,21 @@
             if (d.ov.spread !== undefined) setf(d.block, "inaccuracy", d.ov.spread);
             if (d.ov.rapidMul) {
                 try { d.block.reload = Math.max(1, d.block.reload * d.ov.rapidMul); } catch (err) {}
+            }
+            if (d.ov.rangeMul) {
+                let m = d.ov.rangeMul;
+                try { d.block.range = d.block.range * m; } catch (err) {}
+                try {
+                    let pr = ammoPairs(d.block);
+                    for (let j = 0; j < pr.length; j++) {
+                        let abt = pr[j].v;
+                        if (abt == null) continue;
+                        try {
+                            if (className(abt) === "LaserBulletType") abt.length = abt.length * m;
+                            else if (abt.scaleLife !== true) abt.lifetime = abt.lifetime * m;
+                        } catch (err2) {}
+                    }
+                } catch (err) {}
             }
         }
     }
@@ -901,6 +960,7 @@
         let b = tile.build;
         if (b == null || b.block !== def.block) return -1;
         supplyTurret(b, def, true, pl);
+        builtOwner[b.id] = pl.id;
         fx(b.x, b.y);
         return tile.pos();
     }
@@ -1189,11 +1249,19 @@
         let x = mp.x + Mathf.cosDeg(ang) * off;
         let y = mp.y + Mathf.sinDeg(ang) * off;
 
+        if (dmgOverride != null && def.ov && def.ov.dmgCopy) {
+            try {
+                let cbt = bt.copy();
+                cbt.damage = dmgOverride;
+                bt = cbt;
+            } catch (err) {}
+        }
+
         let ls = 1;
         try {
             if (bt.scaleLife === true) {
                 let rng = bt.range > 0 ? bt.range : bt.speed * bt.lifetime;
-                if (rng > 0) ls = Math.max(0.05, Math.min(1, Mathf.dst(x, y, tx, ty) / rng));
+                if (rng > 0) ls = Math.max(0.05, Math.min((def.ov && def.ov.rangeMul) || 1, Mathf.dst(x, y, tx, ty) / rng));
             }
         } catch (err) {}
 
@@ -1245,8 +1313,22 @@
     }
 
     function mountLife(def, u, pfx) {
-        if (def.ov && def.ov.unitLifeMul && pfx === "u" && u.isCoreHost !== true) return def.ov.unitLifeMul;
-        return 1;
+        let m = 1;
+        if (def.ov && def.ov.lifeMul) m *= def.ov.lifeMul;
+        if (def.ov && def.ov.unitLifeMul && pfx === "u" && u.isCoreHost !== true) m *= def.ov.unitLifeMul;
+        return m;
+    }
+
+    function ovDamage(pl, u, def, forBuilt) {
+        if (!def.ov || !(def.ov.dmgAtkPct || def.ov.dmgArmorPct)) return null;
+        let v = 0;
+        if (def.ov.dmgAtkPct) v += attackPower(pl, u) * def.ov.dmgAtkPct / 100;
+        if (def.ov.dmgArmorPct) v += armorPower(pl, u) * def.ov.dmgArmorPct / 100;
+        if (!forBuilt) {
+            let st = byId[pl.id];
+            if (st != null) v -= st.s[2] * ATK_FLAT;
+        }
+        return Math.max(1, v);
     }
 
     function ownedCount(st, id) {
@@ -1517,7 +1599,7 @@
                 }
                 if (bt != null && tx != null) {
                     equipAng[key] = Angles.angle(mp.x, mp.y, tx, ty);
-                    if (fireEquip(u, def, bt, mp, tx, ty, null, mountLife(def, u, pfx))) {
+                    if (fireEquip(u, def, bt, mp, tx, ty, ovDamage(pl, u, def, false), mountLife(def, u, pfx))) {
                         let reload = def.block.reload;
                         if (def.ov && def.ov.reloadMul) reload *= def.ov.reloadMul;
                         cd = Math.max(5, reload);
@@ -1918,9 +2000,137 @@
         }
     }
 
+    let iceCore = null;
+    let iceMid = null;
+    let iceEdge = null;
+    let iceClear = null;
+    let iceLine = null;
+    let iceDeep = null;
+
+    function drawIceZone(u, def, key) {
+        let rng = (def.ov.rangeTiles || 20) * Vars.tilesize;
+        let c = auraState(u, rng, key);
+        let I = c.i;
+        let T = Time.time;
+        if (iceCore == null) {
+            iceCore = new Color(0.85, 0.96, 1, 1);
+            iceMid = new Color(0.2, 0.55, 1, 1);
+            iceEdge = new Color(0.04, 0.2, 0.85, 0);
+            iceClear = new Color(0.45, 0.8, 1, 0);
+            iceLine = Color.valueOf("8fd0ff");
+            iceDeep = Color.valueOf("2e6bff");
+        }
+        try {
+            Draw.z(Layer.flyingUnit + 1);
+            Draw.color(iceLine, 0.22 + 0.25 * I);
+            Lines.stroke(1.2 + I);
+            try { Lines.dashCircle(u.x, u.y, rng); } catch (err) { Lines.circle(u.x, u.y, rng); }
+            Draw.reset();
+        } catch (err) {}
+        if (I < 0.02) return;
+        try {
+            let breathe = 1 + Mathf.sin(T, 30, 0.025);
+
+            Draw.z(Layer.groundUnit - 1);
+            Draw.blend(Blending.additive);
+            iceMid.a = 0.2 * I;
+            Fill.light(u.x, u.y, 64, rng * breathe, iceMid, iceEdge);
+            iceCore.a = 0.3 * I;
+            iceClear.a = 0;
+            Fill.light(u.x, u.y, 44, rng * 0.5 * (1 + Mathf.sin(T, 12, 0.05)), iceCore, iceClear);
+
+            Draw.z(Layer.flyingUnit + 1);
+
+            for (let k = 0; k < 5; k++) {
+                let ph = (T * 0.005 + k / 5) % 1;
+                let r = rng * (0.05 + 0.95 * ph);
+                let fade = Math.min(1, ph * 7) * Math.pow(1 - ph, 1.2);
+                Draw.color(iceCore, iceDeep, ph);
+                Draw.alpha(0.55 * fade * I);
+                Lines.stroke(1 + 2.6 * (1 - ph));
+                Lines.circle(u.x, u.y, r);
+            }
+
+            for (let i = 0; i < 24; i++) {
+                Draw.color(iceLine, 0.5 * I);
+                Lines.stroke(2);
+                Lines.arc(u.x, u.y, rng * 0.97, 0.03, T * 0.35 + i * 15);
+            }
+            for (let i = 0; i < 12; i++) {
+                Draw.color(iceCore, 0.35 * I);
+                Lines.stroke(1.2);
+                Lines.arc(u.x, u.y, rng * 0.86, 0.05, -T * 0.5 + i * 30);
+            }
+
+            let hexR = rng * 0.45;
+            let hexR2 = rng * 0.62;
+            let rot1 = T * 0.3;
+            let rot2 = -T * 0.2;
+            Draw.color(iceLine, 0.55 * I);
+            Lines.stroke(1.6);
+            Lines.poly(u.x, u.y, 6, hexR, rot1);
+            Draw.color(iceDeep, 0.5 * I);
+            Lines.stroke(1.2);
+            Lines.poly(u.x, u.y, 6, hexR2, rot2);
+            for (let i = 0; i < 6; i++) {
+                let a1 = (rot1 + i * 60) * Mathf.degRad;
+                let a2 = (rot2 + i * 60) * Mathf.degRad;
+                Draw.color(iceCore, iceDeep, 0.5);
+                Draw.alpha(0.3 * I);
+                Lines.stroke(1);
+                Lines.line(u.x + Math.cos(a1) * hexR, u.y + Math.sin(a1) * hexR, u.x + Math.cos(a2) * hexR2, u.y + Math.sin(a2) * hexR2);
+                Draw.color(iceCore, 0.7 * I);
+                Fill.poly(u.x + Math.cos(a1) * hexR, u.y + Math.sin(a1) * hexR, 4, 4.5, T * 0.8 + i * 40);
+            }
+
+            for (let i = 0; i < 6; i++) {
+                let a = (T * 0.45 + i * 60) * Mathf.degRad;
+                Draw.color(iceLine, 0.4 * I);
+                Lines.stroke(1.4);
+                Lines.line(u.x, u.y, u.x + Math.cos(a) * rng * 0.34, u.y + Math.sin(a) * rng * 0.34);
+            }
+
+            for (let j = 0; j < 56; j++) {
+                let rd = (T * 0.0032 * (0.7 + (j % 5) * 0.12) + j * 0.6180339) % 1;
+                let r = rng * (0.05 + 0.93 * rd);
+                let a = j * 2.39996 + Math.sin(T * 0.02 + j) * 0.2;
+                let mx = u.x + Math.cos(a) * r;
+                let my = u.y + Math.sin(a) * r;
+                let fade = Math.sin(rd * Math.PI);
+                let sz = (0.7 + (j % 3) * 0.45) * (1.1 - rd * 0.5);
+                Draw.color(iceCore, iceDeep, rd);
+                Draw.alpha(0.8 * fade * I);
+                Fill.circle(mx, my, sz);
+                Draw.alpha(0.12 * fade * I);
+                Fill.circle(mx, my, sz * 3);
+                if (j % 7 === 0) {
+                    Draw.color(Color.white, 0.7 * fade * I);
+                    Lines.stroke(0.9);
+                    Lines.line(mx - sz * 3, my, mx + sz * 3, my);
+                    Lines.line(mx, my - sz * 3, mx, my + sz * 3);
+                }
+            }
+
+            Draw.z(Layer.flyingUnit + 0.5);
+            iceCore.a = 0.5 * I;
+            iceClear.a = 0;
+            Fill.light(u.x, u.y, 28, u.hitSize * (0.95 + 0.06 * Math.sin(T * 0.13)), iceCore, iceClear);
+
+            Draw.blend();
+            Draw.reset();
+            try { Drawf.light(u.x, u.y, rng * 1.25, iceLine, 0.45 * I); } catch (err) {}
+        } catch (err) {
+            Draw.blend();
+            Draw.reset();
+            logOnce("icezone", "ice zone draw failed: " + err);
+        }
+    }
+
     function drawMounts(pl, u, list, pfx) {
             let n = list.length;
             if (n === 0) return;
+            let auraDrawn = false;
+            let iceDrawn = false;
             let scl = 0.25;
             try { scl = Draw.scl; } catch (err) {}
             for (let k = 0; k < n; k++) {
@@ -1948,8 +2158,15 @@
                     }
                 }
                 if (def.ov && def.ov.aura) {
-                    drawFireZone(u, def, key);
+                    if (!auraDrawn) {
+                        auraDrawn = true;
+                        drawFireZone(u, def, key);
+                    }
                     continue;
+                }
+                if (def.ov && def.ov.blast && !iceDrawn) {
+                    iceDrawn = true;
+                    drawIceZone(u, def, key);
                 }
                 if (def.ov && def.ov.beam) {
                     let bp = equipBeam[key];
@@ -2355,6 +2572,24 @@
         return c;
     }
 
+    function builtOverride(b, o, pid) {
+        try {
+            let nm = String(o.block.name).replace(/^newex-/, "");
+            let d = droneDefs().map[normId(nm)];
+            if (d == null || !d.ov || !(d.ov.dmgAtkPct || d.ov.dmgArmorPct)) return;
+            let pl = Groups.player.getByID(pid);
+            if (pl == null) return;
+            let pu = pl.unit();
+            if (pu == null || !pu.isValid()) return;
+            let v = ovDamage(pl, pu, d, true);
+            if (v != null) {
+                b.damage = v;
+                rolled[b.id] = 1;
+                rolledN++;
+            }
+        } catch (err) {}
+    }
+
     const eachBullet = new Cons({
         get: function(b) {
             let o = b.owner;
@@ -2365,7 +2600,11 @@
                 s = statsOf(o);
             } else {
                 let hp = hostOwner[o.id];
-                if (hp === undefined) return;
+                if (hp === undefined) {
+                    let bp = builtOwner[o.id];
+                    if (bp !== undefined) builtOverride(b, o, bp);
+                    return;
+                }
                 let hst = byId[hp];
                 s = hst != null ? hst.s : null;
             }
@@ -2395,6 +2634,7 @@
             let s = byId[id].s;
             if (s[2] > 0 || s[7] > 0 || s[12] > 0) return true;
         }
+        for (let bid in builtOwner) return true;
         return false;
     }
 
@@ -3166,11 +3406,10 @@
             if (u == null) return;
             try {
                 let dp = u.getPlayer();
-                if (dp != null && isPvpTeam(u.team)) startRespawnLock(dp);
+                if (dp != null && isPvpTeam(u.team)) { startRespawnLock(dp); addDeath(dp); }
             } catch (err) {}
             if (u.team == Vars.state.rules.waveTeam) {
                 let gained = killExp(u);
-                if (!(gained > 0)) return;
                 let rx = u.x;
                 let ry = u.y;
                 Groups.player.each(new Cons({
@@ -3179,7 +3418,10 @@
                         if (pu == null || !pu.isValid()) return;
                         let dx = pu.x - rx;
                         let dy = pu.y - ry;
-                        if (dx * dx + dy * dy <= CREDIT_RADIUS * CREDIT_RADIUS) addExp(pl, gained);
+                        if (dx * dx + dy * dy <= CREDIT_RADIUS * CREDIT_RADIUS) {
+                            if (gained > 0) addExp(pl, gained);
+                            addKill(pl);
+                        }
                     }
                 }));
                 return;
@@ -3188,10 +3430,12 @@
             if (pid === undefined) return;
             delete soldierOwner[u.id];
             let sg = killExp(u);
-            if (!(sg > 0)) return;
             Groups.player.each(new Cons({
                 get: function(pl2) {
-                    if (pl2.id === pid) addExp(pl2, sg);
+                    if (pl2.id === pid) {
+                        if (sg > 0) addExp(pl2, sg);
+                        addKill(pl2);
+                    }
                 }
             }));
         }
@@ -3233,6 +3477,7 @@
             logged = {};
             rolled = {};
             rolledN = 0;
+            builtOwner = {};
             winning = false;
             seenBoth = false;
             dirty = false;
@@ -3658,6 +3903,7 @@
         let col = new Table();
         col.left();
         col.add("[white]" + def.block.localizedName + "[]").left().row();
+        if (roleText(def.id).length > 0) col.add(roleText(def.id)).left().row();
         col.add("[yellow]" + tr("Giá: ", "Cost: ") + price + tr(" điểm", " pt") + "[]").left();
         top.add(col).left().growX();
         let tag = owned.length > 0 ? "[accent]x" + owned.length + "[]" : (!def.equip ? "[lightgray]" + tr("Chỉ xây", "Build only") + "[]" : "");
@@ -4126,6 +4372,112 @@
                     let sh = Core.input.keyDown(KeyCode.shiftLeft) || Core.input.keyDown(KeyCode.shiftRight);
                     if (sh && Core.input.keyTap(KeyCode.num2) && !Core.scene.hasKeyboard()) {
                         hudSetVisible(!hudVisible());
+                    }
+                } catch (err) {}
+            }
+        }));
+    }
+
+    function kdVisible() {
+        try { return Core.settings.getBool(KEY_KD, true); } catch (err) {}
+        return true;
+    }
+
+    function kdSavePos() {
+        if (kdPanel == null) return;
+        try {
+            Core.settings.put(KEY_KD_X, java.lang.Float(kdPanel.x));
+            Core.settings.put(KEY_KD_Y, java.lang.Float(kdPanel.y));
+        } catch (err) {}
+    }
+
+    function kdClamp() {
+        if (kdPanel == null) return;
+        let mx = Math.max(0, screenW() - kdPanel.getWidth());
+        let my = Math.max(0, screenH() - kdPanel.getHeight());
+        kdPanel.setPosition(Mathf.clamp(kdPanel.x, 0, mx), Mathf.clamp(kdPanel.y, 0, my));
+        kdSavePos();
+    }
+
+    function kdLine() {
+        let st = localState();
+        let k = st != null ? (st.k || 0) : 0;
+        let d = st != null ? (st.dd || 0) : 0;
+        return "[accent]Kill: [white]" + k + "[]   [scarlet]Death: [white]" + d + "[]";
+    }
+
+    Events.on(ClientLoadEvent, new Cons({
+        get: function(e) {
+            if (Vars.headless) return;
+            try {
+                Core.bundle.getProperties().put("setting." + KEY_KD + ".name", tr("Hiện UI Kill/Death PvP (Shift+3)", "Show PvP Kill/Death UI (Shift+3)"));
+                Vars.ui.settings.game.checkPref(KEY_KD, true);
+            } catch (err) {
+                Log.err("[NexPvp] cannot add KD setting: " + err);
+            }
+            let t = new Table(Styles.black6);
+            kdPanel = t;
+            t.margin(6);
+            t.name = "newex-pvp-kd";
+            t.touchable = Touchable.enabled;
+            t.label(new Prov({ get: function() { return kdLine(); } })).left().get().setFontScale(Vars.mobile ? 0.9 : 0.85);
+            t.visibility = new Boolp({ get: function() { return isActive() && Vars.ui.hudfrag.shown && kdVisible(); } });
+            t.pack();
+            if (Core.settings.has(KEY_KD_X) && Core.settings.has(KEY_KD_Y)) {
+                t.setPosition(Core.settings.getFloat(KEY_KD_X, 0), Core.settings.getFloat(KEY_KD_Y, 0));
+                kdClamp();
+            } else {
+                let by = hudPanel != null ? hudPanel.y - t.getHeight() - 6 : screenH() - t.getHeight() - (Vars.mobile ? 140 : 120);
+                let bx = hudPanel != null ? hudPanel.x : (screenW() - t.getWidth()) / 2;
+                t.setPosition(bx, Math.max(0, by));
+                kdClamp();
+            }
+
+            let dragging = false;
+            let offX = 0;
+            let offY = 0;
+            t.addListener(extend(InputListener, {
+                touchDown(event, x, y, pointer, button) {
+                    dragging = false;
+                    offX = x;
+                    offY = y;
+                    return true;
+                },
+                touchDragged(event, x, y, pointer) {
+                    if (Math.abs(x - offX) > 5 || Math.abs(y - offY) > 5) dragging = true;
+                    if (dragging) {
+                        let mx = Math.max(0, screenW() - t.getWidth());
+                        let my = Math.max(0, screenH() - t.getHeight());
+                        t.setPosition(Mathf.clamp(t.x + x - offX, 0, mx), Mathf.clamp(t.y + y - offY, 0, my));
+                        kdSavePos();
+                    }
+                },
+                touchUp(event, x, y, pointer, button) {
+                    dragging = false;
+                }
+            }));
+            Vars.ui.hudGroup.addChild(t);
+        }
+    }));
+
+    if (!Vars.headless) {
+        let kdLastW = 0;
+        let kdLastH = 0;
+        Events.run(Trigger.update, new Runnable({
+            run: function() {
+                if (kdPanel == null) return;
+                let w = Core.graphics.getWidth();
+                let h = Core.graphics.getHeight();
+                if (w !== kdLastW || h !== kdLastH) {
+                    kdLastW = w;
+                    kdLastH = h;
+                    kdClamp();
+                }
+                if (!isActive()) return;
+                try {
+                    let sh = Core.input.keyDown(KeyCode.shiftLeft) || Core.input.keyDown(KeyCode.shiftRight);
+                    if (sh && Core.input.keyTap(KeyCode.num3) && !Core.scene.hasKeyboard()) {
+                        Core.settings.put(KEY_KD, kdVisible() ? java.lang.Boolean.FALSE : java.lang.Boolean.TRUE);
                     }
                 } catch (err) {}
             }

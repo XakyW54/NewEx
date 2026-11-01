@@ -71,6 +71,13 @@
     const PASSIVE_INTERVAL = 3600;
     const MAX_WAVE_UNITS = 200;
     const PCT_STAT = 8;
+    const MAXHP_DMG_DIV = 3;
+    const REIGN_HP_MUL = 1.5;
+    const DISRUPT_SPEED_MUL = 2.2;
+
+    function maxHpDmgPct(l) {
+        return (l + 1) * 0.1 / MAXHP_DMG_DIV;
+    }
     const EXP_PER_HP = 0.1;
     const EXP_HP_BONUS_REF = 5000;
     const EXP_HP_BONUS_MAX = 1.5;
@@ -126,7 +133,7 @@
     const REGEN_PCT = 0.25;
     const REGEN_THRESHOLD = 0.99;
     const DMG_PER_HP = 0.00025;
-    const DMG_PER_ARMOR = 0.01;
+    const DMG_PER_ARMOR = 0.03;
     const KNOCK_PER = 1.0;
 
     const TURRET_OVERRIDES = {
@@ -138,7 +145,7 @@
         scorch: { aura: true, auraRange: 15, auraAtkPct: 50, auraArmorPct: 50 },
         lustre: { equip: false },
         scathe: { equip: false },
-        malign: { costMul: 2 },
+        malign: { costFixed: 18 },
         foreshadow: { costMul: 2 },
         forstarsilum: { equip: true, star: true, costFixed: FORSTAR_COST, rangeTiles: FORSTAR_RANGE / 8 },
         breach: { costFixed: 1 }
@@ -322,7 +329,7 @@
         { vi: "Tỉ lệ bạo kích", en: "Crit chance", f: function(l) { return (l * 2) + "%"; } },
         { vi: "Sát thương bạo kích", en: "Crit damage", f: function(l) { return (150 + l * 12) + "%"; } },
         { vi: "Xuyên giáp", en: "Armor pierce", f: function(l) { return (l * 5) + "%"; } },
-        { vi: "Sát thương % máu tối đa", en: "Max HP damage", mx: 9, f: function(l) { return ((l + 1) / 10).toFixed(1) + "%"; } },
+        { vi: "Sát thương % máu tối đa", en: "Max HP damage", mx: 9, f: function(l) { return maxHpDmgPct(l).toFixed(2) + "%"; } },
         { vi: "Hồi máu", en: "Regeneration", f: function(l) { return "+" + (l * REGEN_PCT).toFixed(2) + tr("% máu tối đa mỗi giây (khi máu dưới 99%)", "% max HP per second (when below 99% HP)"); } },
         { vi: "Sát thương theo máu", en: "HP-based damage", f: function(l) { return "+" + (l * DMG_PER_HP * 1000).toFixed(1) + "% " + tr("mỗi 1000 máu hiện tại", "per 1000 current HP"); } },
         { vi: "Sát thương theo giáp", en: "Armor-based damage", f: function(l) { return "+" + (l * DMG_PER_ARMOR * 10).toFixed(1) + "% " + tr("mỗi 10 giáp hiện tại", "per 10 current armor"); } },
@@ -1223,7 +1230,7 @@
         let st = byId[pl.id];
         let s = st != null ? st.s : null;
         let t = st != null ? tierType(activeTier(st)) : null;
-        let base = t != null ? t.health : 350;
+        let base = t != null ? t.health * (t === UnitTypes.reign ? REIGN_HP_MUL : 1) : 350;
         return s != null ? base * (1 + s[0] * HP_PCT / 100) + s[0] * HP_FLAT : base;
     }
 
@@ -2247,7 +2254,11 @@
         let s = statsOf(unit);
         if (s == null) return;
 
-        let hpT = unit.type.health * (1 + s[0] * HP_PCT / 100) + s[0] * HP_FLAT;
+        let isPl = false;
+        try { isPl = unit.isPlayer(); } catch (err) {}
+        let tHp = unit.type.health;
+        if (isPl && unit.type === UnitTypes.reign) tHp *= REIGN_HP_MUL;
+        let hpT = tHp * (1 + s[0] * HP_PCT / 100) + s[0] * HP_FLAT;
         if (Math.abs(unit.maxHealth - hpT) > 0.5) {
             let diff = hpT - unit.maxHealth;
             unit.maxHealth = hpT;
@@ -2264,6 +2275,7 @@
         unit.damageMultiplier *= dm;
         let base = Math.max(0.1, unit.type.speed);
         unit.speedMultiplier *= (1 + s[3] * SPD_PCT / 100) * (1 + s[3] * SPD_FLAT / base);
+        if (isPl && unit.type === UnitTypes.disrupt) unit.speedMultiplier *= DISRUPT_SPEED_MUL;
         unit.reloadMultiplier *= 1 + s[4] * 0.06;
         if (s[9] > 0 && !Vars.net.client() && unit.health > 0 && unit.health < unit.maxHealth * REGEN_THRESHOLD) {
             unit.health = Math.min(unit.maxHealth, unit.health + unit.maxHealth * s[9] * REGEN_PCT / 100 * Time.delta / 60);
@@ -3098,7 +3110,7 @@
                 let ss = statsOf(o);
                 if (ss == null) return;
                 let lv = ss[PCT_STAT] || 0;
-                let pct = (lv + 1) * 0.1;
+                let pct = maxHpDmgPct(lv);
                 let extra = tgt.maxHealth * pct / 100;
                 if (extra > 0) {
                     try { tgt.damagePierce(extra); } catch (err) { tgt.damage(extra); }
@@ -3719,7 +3731,7 @@
         out.push([tr("Tỉ lệ bạo kích", "Crit chance"), (s[5] * 2) + "%"]);
         out.push([tr("Sát thương bạo kích", "Crit damage"), (150 + s[6] * 12) + "%"]);
         out.push([tr("Xuyên giáp", "Armor pierce"), (s[7] * 5) + "%"]);
-        out.push([tr("Sát thương % máu tối đa", "Max HP damage"), ((s[8] + 1) / 10).toFixed(1) + "%"]);
+        out.push([tr("Sát thương % máu tối đa", "Max HP damage"), maxHpDmgPct(s[8]).toFixed(2) + "%"]);
         out.push([tr("Hồi máu", "Regeneration"), f1(u.maxHealth * s[9] * REGEN_PCT / 100) + tr(" máu/giây (khi dưới 99%)", " HP/s (below 99%)")]);
         out.push([tr("Sát thương theo máu", "HP-based damage"), "+" + f1(s[10] * DMG_PER_HP * u.health * 100) + "%"]);
         out.push([tr("Sát thương theo giáp", "Armor-based damage"), "+" + f1(s[11] * DMG_PER_ARMOR * u.armor * 100) + "%"]);

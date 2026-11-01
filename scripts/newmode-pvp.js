@@ -36,6 +36,7 @@
     const KEY_HUD_X = "newex-pvp-hud-x";
     const KEY_HUD_Y = "newex-pvp-hud-y";
     const KEY_KD = "newex-pvp-kd";
+    const KEY_JOY = "newex-pvp-joystick";
     const KEY_KD_X = "newex-pvp-kd-x";
     const KEY_KD_Y = "newex-pvp-kd-y";
     const RESPAWN_SEC = [2, 4, 6, 9, 12];
@@ -45,7 +46,8 @@
     const LIMIT_EXP = 1000;
     const LIMIT_DRONES = 12;
     const DEFAULT_SHIELD_MIN = 15;
-    const LIMIT_SHIELD_MIN = 600;
+    const LIMIT_SHIELD_MIN = 9999;
+    const SHIELD_FOREVER_TICKS = 1000000000;
     const SHIELD_HP = 15000;
     const SHIELD_BUFFER = 1000000;
     const SHIELD_SYNC_TICKS = 30;
@@ -84,6 +86,11 @@
         return (l + 1) * 0.1 / MAXHP_DMG_DIV;
     }
     const EXP_PER_HP = 0.1;
+    const DEATH_EXP_PCT = 10;
+    const SPAWN_GUARD_TICKS = 600;
+    const SPAWN_GUARD_DAMAGE_CUT = 99;
+    const SPAWN_RAGE_TICKS = 180;
+    const SPAWN_RAGE_MAXHP_PCT = 100;
     const EXP_HP_BONUS_REF = 5000;
     const EXP_HP_BONUS_MAX = 1.5;
     const CREDIT_RADIUS = 420;
@@ -394,6 +401,8 @@
     let builtOwner = {};
     let auraSeen = {};
     let respawnLock = {};
+    let deadUnit = {};
+    let spawnBuff = {};
     let coreT = 0;
     let deathOk = null;
     let hudPanel = null;
@@ -2232,11 +2241,13 @@
             shieldMinCache = shieldMinutes();
             shieldMinT = 120;
         }
+        if (shieldMinCache >= LIMIT_SHIELD_MIN) return SHIELD_FOREVER_TICKS;
         let left = shieldMinCache * 3600 - matchT;
         return left > 0 ? left : 0;
     }
 
     function fmtTicks(t) {
+        if (t >= SHIELD_FOREVER_TICKS / 2) return "\u221e";
         let sec = Math.ceil(t / 60);
         let m = Math.floor(sec / 60);
         let r = sec % 60;
@@ -2333,6 +2344,7 @@
                 if (cb == null || !cb.isValid()) continue;
                 let r = shieldRec(cb.id);
                 r.seen = shieldStamp;
+                if (inv && cb.health < cb.maxHealth) cb.health = cb.maxHealth;
                 if (!inv && (r.broken || r.hp <= 0)) continue;
                 if (shieldProtectedByReflect(cb)) continue;
                 r.b = cb;
@@ -2548,6 +2560,23 @@
     equipStatus.permanent = true;
     equipStatus.show = false;
     try { equipStatus.disarm = true; } catch (err) {}
+
+    const spawnGuardStatus = extend(StatusEffect, "pvp-spawn-guard", {});
+    spawnGuardStatus.healthMultiplier = 1 / (1 - SPAWN_GUARD_DAMAGE_CUT / 100);
+    spawnGuardStatus.permanent = false;
+    spawnGuardStatus.show = true;
+    try { spawnGuardStatus.color = Color.valueOf("7fd8ff"); } catch (err) {}
+
+    const spawnRageStatus = extend(StatusEffect, "pvp-spawn-rage", {});
+    spawnRageStatus.permanent = false;
+    spawnRageStatus.show = true;
+    try { spawnRageStatus.color = Color.valueOf("ff5a5a"); } catch (err) {}
+
+    function spawnLeft(pid, dur) {
+        let t = spawnBuff[pid];
+        if (t === undefined) return 0;
+        return dur - (Time.time - t);
+    }
 
     function hasEquipped(st) {
         if (st == null || st.d.length === 0 || st.p.length !== st.d.length) return false;
@@ -2917,6 +2946,20 @@
             }
             let u = pl.unit();
             if (u == null || !u.isValid()) return;
+            let dead = deadUnit[pl.id];
+            if (dead !== undefined && u.id !== dead && !u.dead) {
+                delete deadUnit[pl.id];
+                spawnBuff[pl.id] = Time.time;
+            }
+            let gl = spawnLeft(pl.id, SPAWN_GUARD_TICKS);
+            if (gl > 0) {
+                if (!u.hasEffect(spawnGuardStatus)) u.apply(spawnGuardStatus, gl);
+            } else if (spawnBuff[pl.id] !== undefined && spawnLeft(pl.id, SPAWN_RAGE_TICKS) <= 0) {
+                delete spawnBuff[pl.id];
+            }
+            if (spawnLeft(pl.id, SPAWN_RAGE_TICKS) > 0) {
+                if (!u.hasEffect(spawnRageStatus)) u.apply(spawnRageStatus, spawnLeft(pl.id, SPAWN_RAGE_TICKS));
+            }
             let want = tierType(activeTier(st));
             if (u.type === want && u.team == pl.team()) {
                 delete swapPending[pl.id];
@@ -3038,6 +3081,12 @@
         }
         for (let key3 in equipBeam) {
             if (present[key3.split(":")[0]] !== true) delete equipBeam[key3];
+        }
+        for (let sid4 in deadUnit) {
+            if (present[sid4] !== true) delete deadUnit[sid4];
+        }
+        for (let sid5 in spawnBuff) {
+            if (present[sid5] !== true) delete spawnBuff[sid5];
         }
         for (let sid3 in swapPending) {
             if (present[sid3] !== true) delete swapPending[sid3];
@@ -3381,6 +3430,22 @@
                 }
                 let o = b.owner;
                 if (o == null || typeof o.getPlayer !== "function" || o.team == tgt.team) return;
+                try {
+                    if (tgt.getPlayer() != null) {
+                        let ap = o.getPlayer();
+                        let apid = ap != null ? ap.id : soldierOwner[o.id];
+                        if (apid !== undefined) lastHitBy[tgt.id] = { pid: apid, t: Time.time };
+                    }
+                } catch (err) {}
+                try {
+                    let rp = o.getPlayer();
+                    if (rp != null && isPvpTeam(tgt.team) && spawnLeft(rp.id, SPAWN_RAGE_TICKS) > 0) {
+                        let rx = tgt.maxHealth * SPAWN_RAGE_MAXHP_PCT / 100;
+                        if (rx > 0) {
+                            try { tgt.damagePierce(rx); } catch (err) { tgt.damage(rx); }
+                        }
+                    }
+                } catch (err) {}
                 let ss = statsOf(o);
                 if (ss == null) return;
                 let lv = ss[PCT_STAT] || 0;
@@ -3391,6 +3456,18 @@
                 }
             }
         }));
+    }
+
+    let lastHitBy = {};
+    const KILL_CREDIT_TICKS = 900;
+
+    function pvpKiller(u) {
+        let rec = lastHitBy[u.id];
+        delete lastHitBy[u.id];
+        if (rec == null || Time.time - rec.t > KILL_CREDIT_TICKS) return null;
+        let found = null;
+        Groups.player.each(new Cons({ get: function(p) { if (p.id === rec.pid) found = p; } }));
+        return found;
     }
 
     function killExp(u) {
@@ -3406,7 +3483,20 @@
             if (u == null) return;
             try {
                 let dp = u.getPlayer();
-                if (dp != null && isPvpTeam(u.team)) { startRespawnLock(dp); addDeath(dp); }
+                if (dp != null && isPvpTeam(u.team)) {
+                    startRespawnLock(dp);
+                    deadUnit[dp.id] = u.id;
+                    delete spawnBuff[dp.id];
+                    let killer = pvpKiller(u);
+                    if (killer != null && killer.team() != dp.team()) {
+                        addDeath(dp);
+                        addKill(killer);
+                        let dx = killExp(u) * DEATH_EXP_PCT / 100;
+                        if (dx > 0) addExp(dp, dx);
+                    }
+                } else {
+                    delete lastHitBy[u.id];
+                }
             } catch (err) {}
             if (u.team == Vars.state.rules.waveTeam) {
                 let gained = killExp(u);
@@ -3420,7 +3510,6 @@
                         let dy = pu.y - ry;
                         if (dx * dx + dy * dy <= CREDIT_RADIUS * CREDIT_RADIUS) {
                             if (gained > 0) addExp(pl, gained);
-                            addKill(pl);
                         }
                     }
                 }));
@@ -3434,7 +3523,6 @@
                 get: function(pl2) {
                     if (pl2.id === pid) {
                         if (sg > 0) addExp(pl2, sg);
-                        addKill(pl2);
                     }
                 }
             }));
@@ -3468,11 +3556,14 @@
             lastUpTab = 0;
             auraSeen = {};
             respawnLock = {};
+            deadUnit = {};
+            spawnBuff = {};
             swapPending = {};
             burstState = {};
             barrackT = {};
             soldiers = {};
             soldierOwner = {};
+            lastHitBy = {};
             passiveT = PASSIVE_INTERVAL;
             logged = {};
             rolled = {};
@@ -3506,7 +3597,8 @@
         if (!isActive() || player == null) return null;
         let u = player.unit();
         let core = player.team().core();
-        if (u == null || !u.isValid() || core == null) return null;
+        if (core == null) return null;
+        if (u == null || !u.isValid() || u.dead) return bind(player);
         if (Mathf.dst(u.x, u.y, core.x, core.y) > core.block.size * Vars.tilesize / 2 + NEAR_CORE) {
             toast(player, tr("[scarlet]Hãy về gần lõi để nâng cấp!", "[scarlet]Return near your core to upgrade!"));
             return null;
@@ -3683,7 +3775,8 @@
         if (Vars.player == null) return false;
         let u = Vars.player.unit();
         let core = Vars.player.team().core();
-        if (u == null || !u.isValid() || core == null) return false;
+        if (core == null) return false;
+        if (u == null || !u.isValid() || u.dead || Vars.player.dead()) return true;
         return Mathf.dst(u.x, u.y, core.x, core.y) <= core.block.size * Vars.tilesize / 2 + NEAR_CORE;
     }
 
@@ -3773,7 +3866,7 @@
 
     function listH(extra) {
         let sh = screenH();
-        let reserve = (shortScreen() ? 40 : 56) + (shortScreen() ? 52 : 72) + 24 + (extra === undefined ? headH() : extra);
+        let reserve = (shortScreen() ? 40 : 56) + (shortScreen() ? 52 : 72) + 24 + (extra === undefined ? headH() : extra) + (Vars.mobile ? 32 : 0);
         return Math.max(100, Math.min(sh - reserve, sh * 0.8));
     }
 
@@ -4181,18 +4274,19 @@
             if (start === 0) armyHeader(body, st, innerW);
             armyList(body, st, innerW, start, end);
         }
-        c.add(body).width(W).row();
-
+        let nav = null;
         if (totalPages > 1) {
-            let nav = new Table();
+            nav = new Table();
             let navBtnW = narrowScreen() ? 56 : 72;
             let prevBtn = nav.button("<", new Runnable({ run: function() { if (upPage > 0) { upPage--; ver++; } } })).size(navBtnW, btnH()).get();
             prevBtn.setDisabled(upPage <= 0);
             nav.add("[white]" + (upPage + 1) + "/" + totalPages + "[]").width(80).center();
             let nextBtn = nav.button(">", new Runnable({ run: function() { if (upPage < totalPages - 1) { upPage++; ver++; } } })).size(navBtnW, btnH()).get();
             nextBtn.setDisabled(upPage >= totalPages - 1);
-            c.add(nav).width(W).pad(4).row();
         }
+        if (nav != null && Vars.mobile) c.add(nav).width(W).pad(4).row();
+        c.add(body).width(W).row();
+        if (nav != null && !Vars.mobile) c.add(nav).width(W).pad(4).row();
     }
 
     function openUpgrade() {
@@ -4484,6 +4578,189 @@
         }));
     }
 
+    let joyPad = null;
+    let joyDx = 0;
+    let joyDy = 0;
+    let joyPointer = -1;
+    let joyOx = 0;
+    let joyOy = 0;
+    const JOY_SIZE = 170;
+    const JOY_R = JOY_SIZE / 2;
+    const JOY_KNOB = JOY_R * 0.4;
+    const JOY_REACH = JOY_R - JOY_KNOB;
+    const JOY_DEAD = 0.12;
+    const JOY_ZONE_W = 0.28;
+    const JOY_ZONE_H = 0.56;
+    const joyVec = new Vec2();
+    const JOY_CAM_LAG = 0.5;
+
+    function joyEnabled() {
+        try { return Core.settings.getBool(KEY_JOY, true); } catch (err) {}
+        return true;
+    }
+
+    function joyUnit() {
+        if (Vars.player == null || Vars.player.dead()) return null;
+        let u = Vars.player.unit();
+        if (u == null || !u.isValid() || u.dead) return null;
+        return u;
+    }
+
+    function joyShown() {
+        if (!Vars.mobile || Vars.headless || !isActive() || !joyEnabled()) return false;
+        if (!Vars.ui.hudfrag.shown || Core.scene.hasDialog()) return false;
+        return joyUnit() != null;
+    }
+
+    function joyLocksCam() {
+        return Vars.mobile && !Vars.headless && isActive() && joyEnabled();
+    }
+
+    function joyReset() {
+        joyDx = 0;
+        joyDy = 0;
+        joyPointer = -1;
+    }
+
+    function joyTouch(x, y) {
+        let dx = (x - joyOx) / JOY_REACH;
+        let dy = (y - joyOy) / JOY_REACH;
+        let len = Math.sqrt(dx * dx + dy * dy);
+        if (len > 1) {
+            dx /= len;
+            dy /= len;
+            len = 1;
+        }
+        if (len < JOY_DEAD) {
+            joyDx = 0;
+            joyDy = 0;
+        } else {
+            joyDx = dx;
+            joyDy = dy;
+        }
+    }
+
+    function joyPlace() {
+        if (joyPad == null) return;
+        let gw = 0;
+        let gh = 0;
+        try {
+            gw = Vars.ui.hudGroup.getWidth();
+            gh = Vars.ui.hudGroup.getHeight();
+        } catch (err) {}
+        if (!(gw > 0)) gw = screenW();
+        if (!(gh > 0)) gh = screenH();
+        joyPad.setPosition(0, 0);
+        joyPad.setSize(Math.floor(gw * JOY_ZONE_W), Math.floor(gh * JOY_ZONE_H));
+    }
+
+    Events.on(ClientLoadEvent, new Cons({
+        get: function(e) {
+            if (Vars.headless) return;
+            try {
+                Core.bundle.getProperties().put("setting." + KEY_JOY + ".name", tr("Bật joystick điều khiển unit (tắt camera tự do)", "Enable unit joystick (disables free camera)"));
+                Vars.ui.settings.game.checkPref(KEY_JOY, true);
+            } catch (err) {
+                Log.err("[NexPvp] cannot add joystick setting: " + err);
+            }
+            if (!Vars.mobile) return;
+            joyPad = extend(Element, {
+                draw() {
+                    if (joyPointer === -1) return;
+                    let zx = joyPad.x + 2;
+                    let zy = joyPad.y + 2;
+                    let zw = joyPad.getWidth() - 4;
+                    let zh = joyPad.getHeight() - 4;
+                    Draw.color(Color.white, 0.55);
+                    Lines.stroke(2.5);
+                    Lines.dashLine(zx, zy, zx + zw, zy, Math.max(2, Math.round(zw / 18)));
+                    Lines.dashLine(zx + zw, zy, zx + zw, zy + zh, Math.max(2, Math.round(zh / 18)));
+                    Lines.dashLine(zx + zw, zy + zh, zx, zy + zh, Math.max(2, Math.round(zw / 18)));
+                    Lines.dashLine(zx, zy + zh, zx, zy, Math.max(2, Math.round(zh / 18)));
+                    let cx = joyPad.x + joyOx;
+                    let cy = joyPad.y + joyOy;
+                    Draw.color(Color.black, 0.35);
+                    Fill.circle(cx, cy, JOY_R);
+                    Draw.color(Color.white, 0.45);
+                    Lines.stroke(3);
+                    Lines.circle(cx, cy, JOY_R);
+                    Draw.color(Pal.accent, 0.95);
+                    Fill.circle(cx + joyDx * JOY_REACH, cy + joyDy * JOY_REACH, JOY_KNOB);
+                    Draw.reset();
+                }
+            });
+            joyPad.name = "newex-pvp-joystick";
+            joyPad.touchable = Touchable.enabled;
+            joyPad.visibility = new Boolp({ get: function() { return joyShown(); } });
+            joyPad.addListener(extend(InputListener, {
+                touchDown(event, x, y, pointer, button) {
+                    if (joyPointer !== -1) return false;
+                    joyPointer = pointer;
+                    joyOx = x;
+                    joyOy = y;
+                    joyDx = 0;
+                    joyDy = 0;
+                    return true;
+                },
+                touchDragged(event, x, y, pointer) {
+                    if (pointer !== joyPointer) return;
+                    joyTouch(x, y);
+                },
+                touchUp(event, x, y, pointer, button) {
+                    if (pointer !== joyPointer) return;
+                    joyReset();
+                }
+            }));
+            joyPlace();
+            try { Vars.ui.hudGroup.addChildAt(0, joyPad); } catch (err) { Vars.ui.hudGroup.addChild(joyPad); }
+        }
+    }));
+
+    if (!Vars.headless && Vars.mobile) {
+        let joyLastW = 0;
+        let joyLastH = 0;
+        Events.run(Trigger.preDraw != null ? Trigger.preDraw : Trigger.update, new Runnable({
+            run: function() {
+                if (joyPad == null) return;
+                let w = Core.graphics.getWidth();
+                let h = Core.graphics.getHeight();
+                if (w !== joyLastW || h !== joyLastH) {
+                    joyLastW = w;
+                    joyLastH = h;
+                    joyPlace();
+                }
+                if (joyLocksCam()) {
+                    let cu = joyUnit();
+                    if (cu != null) {
+                        try { Vars.control.input.panning = false; } catch (err) {}
+                        try {
+                            let cp = Core.camera.position;
+                            let dtc = Math.min(0.1, Core.graphics.getDeltaTime());
+                            let k = 1 - Math.exp(-dtc / JOY_CAM_LAG);
+                            let ddx = cu.x - cp.x;
+                            let ddy = cu.y - cp.y;
+                            if (ddx * ddx + ddy * ddy < 0.01) cp.set(cu.x, cu.y);
+                            else cp.set(cp.x + ddx * k, cp.y + ddy * k);
+                        } catch (err) {}
+                    }
+                }
+                if (!joyShown()) {
+                    if (joyPointer !== -1 || joyDx !== 0 || joyDy !== 0) joyReset();
+                    return;
+                }
+                if (joyPointer === -1 || (joyDx === 0 && joyDy === 0)) return;
+                let u = joyUnit();
+                if (u == null) return;
+                try {
+                    joyVec.set(joyDx, joyDy).limit(1).scl(u.speed());
+                    u.movePref(joyVec);
+                } catch (err) {
+                    logOnce("joystick", "joystick move failed: " + err);
+                }
+            }
+        }));
+    }
+
     function normalizeRules(r, tl) {
         try { r.infiniteResources = false; } catch (err) {}
         for (let i = 0; i < tl.length; i++) {
@@ -4584,8 +4861,8 @@
             let shTable = new Table();
             let shField = shTable.field(String(shieldMinutes()), text => {}).width(120).get();
             shField.setFilter(TextField.TextFieldFilter.digitsOnly);
-            shField.setMaxLength(3);
-            shTable.add(tr("phút (mặc định " + DEFAULT_SHIELD_MIN + ")", "min (default " + DEFAULT_SHIELD_MIN + ")")).padLeft(8);
+            shField.setMaxLength(4);
+            shTable.add(tr("phút (0 - " + LIMIT_SHIELD_MIN + ", mặc định " + DEFAULT_SHIELD_MIN + "; " + LIMIT_SHIELD_MIN + " = lõi bất tử vĩnh viễn)", "min (0 - " + LIMIT_SHIELD_MIN + ", default " + DEFAULT_SHIELD_MIN + "; " + LIMIT_SHIELD_MIN + " = core invincible forever)")).padLeft(8).wrap().width(260);
             content.add(shTable).pad(5).row();
 
             return function() {

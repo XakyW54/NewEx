@@ -64,6 +64,7 @@
 
     const EXP_PER_HP = 0.1;
     const DEATH_EXP_PCT = 10; // người thua nhận 10% EXP của unit mình
+    const SOLDIER_EXP_PCT = 20; // % EXP (theo máu lính) chủ nhận khi lính của mình chết
     const KILL_EXP_PCT = 20;  // người thắng nhận 20% EXP của unit bị hạ
     const SPAWN_GUARD_TICKS = 600;
     const SPAWN_GUARD_DAMAGE_CUT = 99;
@@ -2132,6 +2133,12 @@
         return false;
     }
 
+    function canReturnCore(pv, core) {
+        if (!onCoreZone(pv)) return false;
+        try { return ourSide(core, enemyCores(core.team), pv.tileX(), pv.tileY()); } catch (err) {}
+        return false;
+    }
+
     function isPvpTeam(t) {
         let tl = pvpTeams();
         for (let i = 0; i < tl.length; i++) {
@@ -2387,11 +2394,11 @@
                 try {
                     let cr0 = pl.team().core();
                     let toCore = cr0 != null && u.type === cr0.block.unitType;
-                    if (toCore && pv.isValid() && !pv.dead && pv.team == pl.team() && !onCoreZone(pv)) {
+                    if (toCore && pv.isValid() && !pv.dead && pv.team == pl.team() && !canReturnCore(pv, cr0)) {
                         // người chơi bấm nút về lõi khi không đứng trên nền đặt lõi -> trả lại unit cũ
                         try { Call.unitDespawn(u); } catch (err) { u.remove(); }
                         pl.unit(pv);
-                        toast(pl, tr("[scarlet]Chỉ về lõi được khi đứng trên nền đặt lõi!", "[scarlet]You can only return to core while standing on the core zone!"));
+                        toast(pl, tr("[scarlet]Chỉ về lõi được khi đứng trên nền đặt lõi ở nửa map phe ta!", "[scarlet]You can only return to core on core-zone floor on your half of the map!"));
                         return;
                     }
                 } catch (err) {}
@@ -2412,6 +2419,10 @@
             } catch (err) {}
             if (!isTier && !isCoreUnit) {
                 delete swapPending[pl.id];
+                if (pv != null && pv !== u && pv.isValid() && !pv.dead && pv.team == pl.team()) {
+                    pl.unit(pv); // trả về unit cũ, chặn điều khiển pháo/lính
+                    toast(pl, tr("[scarlet]Không được điều khiển pháo hoặc lính!", "[scarlet]You cannot control turrets or soldiers!"));
+                }
                 return;
             }
             let pend = swapPending[pl.id];
@@ -2901,6 +2912,12 @@
             delete teamHit[u.id];
             let hitTeam = (th != null && Time.time - th.t <= KILL_CREDIT_TICKS) ? th.team : null;
             try {
+                let sPid = soldierOwner[u.id];
+                if (sPid !== undefined) {
+                    delete soldierOwner[u.id];
+                    let gx = killExp(u) * SOLDIER_EXP_PCT / 100;
+                    if (gx > 0) Groups.player.each(new Cons({ get: function(p) { if (p.id === sPid) addExp(p, gx); } }));
+                }
                 let dp = u.getPlayer();
                 if (dp != null && isPvpTeam(u.team)) {
                     startRespawnLock(dp);
@@ -4306,6 +4323,7 @@
     }
 
     function normalizeRules(r, tl) {
+        setf(r, "possessionAllowed", false);
         try { r.infiniteResources = false; } catch (err) {}
         for (let i = 0; i < tl.length; i++) {
             try {

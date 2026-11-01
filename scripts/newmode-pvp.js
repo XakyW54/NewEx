@@ -24,6 +24,10 @@
     const FORSTAR_HPSTRIKE_PCT = 0.01;
     const FORSTAR_STARLIGHT_ITEM = "newex-starlight";
     const STAR_KIND = "newex-pvp-star";
+    const MALIGN_KIND = "newex-pvp-malign";
+    const MALIGN_SLOW_MUL = 0.01;
+    const MALIGN_BOOST_MUL = 1.5;
+    const MALIGN_BOOST_TICKS = 180;
 
     const MAP_ID = "pvpnewex3110";
     const REWARD_POINTS = 30;
@@ -145,7 +149,7 @@
         scorch: { aura: true, auraRange: 15, auraAtkPct: 50, auraArmorPct: 50 },
         lustre: { equip: false },
         scathe: { equip: false },
-        malign: { costFixed: 18, stackCost: 1, stackRatePct: 1, stackLifePct: 10 },
+        malign: { costFixed: 18, stackCost: 1, stackRatePct: 1, stackLifePct: 10, slowOnFire: true },
         foreshadow: { costMul: 2 },
         forstarsilum: { equip: true, star: true, costFixed: FORSTAR_COST, rangeTiles: FORSTAR_RANGE / 8 },
         breach: { costFixed: 1 }
@@ -153,6 +157,7 @@
 
     let shredMap = new Map();
     let starState = {};
+    let malignState = {};
 
 
     function starRewardStarlight(team) {
@@ -623,6 +628,9 @@
             Vars.netClient.addPacketHandler(STAR_KIND, new Cons({
                 get: function(content) { onStar(content); }
             }));
+            Vars.netClient.addPacketHandler(MALIGN_KIND, new Cons({
+                get: function(content) { onMalign(content); }
+            }));
             Vars.netClient.addPacketHandler(SHIELD_KIND, new Cons({
                 get: function(content) { onShieldSync(content); }
             }));
@@ -634,6 +642,47 @@
     Events.on(ClientLoadEvent, new Cons({ get: function(e) { register(); } }));
     Events.on(ServerLoadEvent, new Cons({ get: function(e) { register(); } }));
     Events.on(WorldLoadEvent, new Cons({ get: function(e) { register(); } }));
+
+    function malignRec(pid) {
+        let r = malignState[pid];
+        if (r === undefined) {
+            r = { slowed: false, until: 0, boostUntil: 0 };
+            malignState[pid] = r;
+        }
+        return r;
+    }
+
+    function malignSet(pid, on) {
+        let r = malignRec(pid);
+        if (on) {
+            r.slowed = true;
+            r.boostUntil = 0;
+        } else if (r.slowed) {
+            r.slowed = false;
+            r.boostUntil = Time.time + MALIGN_BOOST_TICKS;
+        }
+    }
+
+    function onMalign(content) {
+        try {
+            let parts = String(content).split("|");
+            malignSet(parts[0], parts[1] === "1");
+        } catch (err) {}
+    }
+
+    function malignSend(pid, on) {
+        malignSet(pid, on);
+        if (Vars.net.server()) {
+            try { Call.clientPacketReliable(MALIGN_KIND, pid + "|" + (on ? "1" : "0")); } catch (err) {}
+        }
+    }
+
+    function malignFired(pl, u, def) {
+        let r = malignRec(pl.id);
+        let interval = Math.max(5, def.block.reload) / Math.max(0.1, u.reloadMultiplier * stackRate(pl, def));
+        r.until = Time.time + Math.max(30, interval * 1.5);
+        if (!r.slowed) malignSend(pl.id, true);
+    }
 
     function droneBlock(id) {
         let b = Vars.content.getByName(ContentType.block, "newex-" + id);
@@ -1511,6 +1560,7 @@
                 if (bt != null && tx != null) {
                     equipAng[key] = Angles.angle(mp.x, mp.y, tx, ty);
                     if (fireEquip(u, def, bt, mp, tx, ty, null, stackLife(pl, def))) {
+                        if (def.ov && def.ov.slowOnFire && pfx === "u" && u.isCoreHost !== true) malignFired(pl, u, def);
                         let reload = def.block.reload;
                         if (def.ov && def.ov.reloadMul) reload *= def.ov.reloadMul;
                         cd = Math.max(5, reload);
@@ -2303,6 +2353,16 @@
         let base = Math.max(0.1, unit.type.speed);
         unit.speedMultiplier *= (1 + s[3] * SPD_PCT / 100) * (1 + s[3] * SPD_FLAT / base);
         if (isPl && unit.type === UnitTypes.disrupt) unit.speedMultiplier *= DISRUPT_SPEED_MUL;
+        if (isPl) {
+            let mr = null;
+            try { mr = malignState[unit.getPlayer().id]; } catch (err) {}
+            if (mr != null && mr !== undefined) {
+                let now = Time.time;
+                if (mr.slowed && !Vars.net.client() && now > mr.until) malignSend(unit.getPlayer().id, false);
+                if (mr.slowed) unit.speedMultiplier *= MALIGN_SLOW_MUL;
+                else if (now < mr.boostUntil) unit.speedMultiplier *= MALIGN_BOOST_MUL;
+            }
+        }
         unit.reloadMultiplier *= 1 + s[4] * 0.06;
         if (s[9] > 0 && !Vars.net.client() && unit.health > 0 && unit.health < unit.maxHealth * REGEN_THRESHOLD) {
             unit.health = Math.min(unit.maxHealth, unit.health + unit.maxHealth * s[9] * REGEN_PCT / 100 * Time.delta / 60);
@@ -3202,6 +3262,7 @@
             equipBeam = {};
             equipRail = {};
             starState = {};
+            malignState = {};
             bonusWaveT = 0;
             matchT = 0;
             shieldMinT = 0;

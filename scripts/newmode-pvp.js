@@ -145,7 +145,7 @@
         scorch: { aura: true, auraRange: 15, auraAtkPct: 50, auraArmorPct: 50 },
         lustre: { equip: false },
         scathe: { equip: false },
-        malign: { costFixed: 18 },
+        malign: { costFixed: 18, stackCost: 1, stackRatePct: 1, stackLifePct: 10 },
         foreshadow: { costMul: 2 },
         forstarsilum: { equip: true, star: true, costFixed: FORSTAR_COST, rangeTiles: FORSTAR_RANGE / 8 },
         breach: { costFixed: 1 }
@@ -1163,7 +1163,7 @@
         return { x: tx, y: ty };
     }
 
-    function fireEquip(u, def, bt, mp, tx, ty, dmgOverride) {
+    function fireEquip(u, def, bt, mp, tx, ty, dmgOverride, lifeMul) {
         let blk = def.block;
         let own = u.isCoreHost === true ? u.build : u;
         let ang = Angles.angle(mp.x, mp.y, tx, ty);
@@ -1203,6 +1203,9 @@
             if (dmgOverride != null && blt != null) {
                 try { blt.damage = dmgOverride; } catch (err3) {}
             }
+            if (lifeMul != null && lifeMul < 1 && blt != null) {
+                try { blt.lifetime = blt.lifetime * lifeMul; } catch (err4) {}
+            }
         }
         if (!Vars.headless) {
             try { blk.shootSound.at(mp.x, mp.y, 0.9 + Math.random() * 0.2); } catch (err) {}
@@ -1213,6 +1216,30 @@
         }
         logOnce("fired:" + def.id, "equip turret fired: " + def.id, true);
         return true;
+    }
+
+    function turretCost(st, def) {
+        let c = def.cost;
+        if (def.ov && def.ov.stackCost) c += ownedCount(st, def.id) * def.ov.stackCost;
+        return c;
+    }
+
+    function turretSellValue(st, def) {
+        let c = def.cost;
+        if (def.ov && def.ov.stackCost) c += Math.max(0, ownedCount(st, def.id) - 1) * def.ov.stackCost;
+        return c;
+    }
+
+    function stackRate(pl, def) {
+        if (!(def.ov && def.ov.stackRatePct)) return 1;
+        let extra = Math.max(0, ownedCount(byId[pl.id], def.id) - 1);
+        return Math.max(0.1, 1 - extra * def.ov.stackRatePct / 100);
+    }
+
+    function stackLife(pl, def) {
+        if (!(def.ov && def.ov.stackLifePct)) return 1;
+        let extra = Math.max(0, ownedCount(byId[pl.id], def.id) - 1);
+        return Math.max(0.1, 1 - extra * def.ov.stackLifePct / 100);
     }
 
     function ownedCount(st, id) {
@@ -1461,7 +1488,7 @@
             }
             let cd = equipCd[key];
             if (cd === undefined) cd = 0;
-            cd -= Time.delta * Math.max(0.1, u.reloadMultiplier);
+            cd -= Time.delta * Math.max(0.1, u.reloadMultiplier) * stackRate(pl, def);
             if (cd < 0) cd = 0;
             if (cd <= 0) {
                 let bt = equipBullet(def);
@@ -1483,7 +1510,7 @@
                 }
                 if (bt != null && tx != null) {
                     equipAng[key] = Angles.angle(mp.x, mp.y, tx, ty);
-                    if (fireEquip(u, def, bt, mp, tx, ty)) {
+                    if (fireEquip(u, def, bt, mp, tx, ty, null, stackLife(pl, def))) {
                         let reload = def.block.reload;
                         if (def.ov && def.ov.reloadMul) reload *= def.ov.reloadMul;
                         cd = Math.max(5, reload);
@@ -3266,7 +3293,8 @@
             let mode = parts.length > 1 ? parts[1] : "b";
             let d = droneDefs().map[parts[0]];
             if (d == null) return;
-            if (st.pts < d.cost) return;
+            let price = turretCost(st, d);
+            if (st.pts < price) return;
             let pos;
             if (mode === "e" || mode === "c") {
                 if (!d.equip) {
@@ -3289,7 +3317,7 @@
                     return;
                 }
             }
-            st.pts -= d.cost;
+            st.pts -= price;
             st.d.push(d.id);
             st.p.push(pos);
             changed();
@@ -3353,10 +3381,11 @@
             if (!(idx >= 0 && idx < st.d.length)) return;
             let d = droneDefs().map[st.d[idx]];
             if (d == null) return;
+            let sellVal = turretSellValue(st, d);
             removeTurret(st.p[idx], d);
             st.d.splice(idx, 1);
             st.p.splice(idx, 1);
-            st.pts += d.cost;
+            st.pts += sellVal;
             changed();
         }, false, 60);
     }
@@ -3611,7 +3640,8 @@
         let canBuild = builtCount(st) < maxDrones();
         let canEquip = equipCount(st) < equipSlots(st);
         let canCore = coreCount(st) < coreSlots(st);
-        let afford = st.pts >= def.cost;
+        let price = turretCost(st, def);
+        let afford = st.pts >= price;
         let tabStyle = Styles.togglet != null ? Styles.togglet : Styles.defaultt;
         let iconSz = narrowScreen() ? 32 : (Vars.mobile ? 44 : 36);
 
@@ -3621,7 +3651,7 @@
         let col = new Table();
         col.left();
         col.add("[white]" + def.block.localizedName + "[]").left().row();
-        col.add("[yellow]" + tr("Giá: ", "Cost: ") + def.cost + tr(" điểm", " pt") + "[]").left();
+        col.add("[yellow]" + tr("Giá: ", "Cost: ") + price + tr(" điểm", " pt") + "[]").left();
         top.add(col).left().growX();
         let tag = owned.length > 0 ? "[accent]x" + owned.length + "[]" : (!def.equip ? "[lightgray]" + tr("Chỉ xây", "Build only") + "[]" : "");
         if (tag.length > 0) top.add(tag).right().padLeft(6);

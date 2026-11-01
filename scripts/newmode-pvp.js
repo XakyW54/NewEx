@@ -24,10 +24,6 @@
     const FORSTAR_HPSTRIKE_PCT = 0.01;
     const FORSTAR_STARLIGHT_ITEM = "newex-starlight";
     const STAR_KIND = "newex-pvp-star";
-    const MALIGN_KIND = "newex-pvp-malign";
-    const MALIGN_SLOW_MUL = 0.01;
-    const MALIGN_BOOST_MUL = 1.5;
-    const MALIGN_BOOST_TICKS = 180;
 
     const MAP_ID = "pvpnewex3110";
     const REWARD_POINTS = 30;
@@ -63,6 +59,8 @@
     const REQ_MODE = "newex-pvp-mode";
 
     const MAX_LEVEL = 99;
+    const KEY_MAXLV = "newex-pvp-max-level";
+    const LIMIT_MAXLV = 999;
     const FREE_SWITCH_LEVEL = 5;
     const STAT_PER_PAGE = 4;
     const TURRET_PER_PAGE = 5;
@@ -149,7 +147,7 @@
         scorch: { aura: true, auraRange: 15, auraAtkPct: 50, auraArmorPct: 50 },
         lustre: { equip: false },
         scathe: { equip: false },
-        malign: { costFixed: 18, stackCost: 1, stackRatePct: 1, stackLifePct: 10, slowOnFire: true },
+        malign: { costFixed: 18, stackCost: 1, unitRateMul: 0.5, unitLifeMul: 1.2 },
         foreshadow: { costMul: 2 },
         forstarsilum: { equip: true, star: true, costFixed: FORSTAR_COST, rangeTiles: FORSTAR_RANGE / 8 },
         breach: { costFixed: 1 }
@@ -157,7 +155,6 @@
 
     let shredMap = new Map();
     let starState = {};
-    let malignState = {};
 
 
     function starRewardStarlight(team) {
@@ -478,6 +475,13 @@
         return isPvpMap();
     }
 
+    function maxLevel() {
+        let v = MAX_LEVEL;
+        try { v = Core.settings.getInt(KEY_MAXLV, MAX_LEVEL); } catch (err) {}
+        if (!(v >= 1)) v = MAX_LEVEL;
+        return Math.min(LIMIT_MAXLV, Math.floor(v));
+    }
+
     function expPercent() {
         let v = DEFAULT_EXP;
         try { v = Core.settings.getInt(KEY_EXP, DEFAULT_EXP); } catch (err) {}
@@ -573,17 +577,17 @@
 
     function addExp(pl, amount) {
         let st = bind(pl);
-        if (st.lv >= MAX_LEVEL) return;
+        if (st.lv >= maxLevel()) return;
         st.exp += amount;
         let before = st.lv;
         let up = 0;
-        while (st.lv < MAX_LEVEL && st.exp >= expNeed(st.lv)) {
+        while (st.lv < maxLevel() && st.exp >= expNeed(st.lv)) {
             st.exp -= expNeed(st.lv);
             st.lv++;
             st.pts++;
             up++;
         }
-        if (st.lv >= MAX_LEVEL) st.exp = 0;
+        if (st.lv >= maxLevel()) st.exp = 0;
         if (up > 0) {
             toast(pl, tr("[accent]Lên cấp ", "[accent]Level up ") + st.lv + tr(" - +", " - +") + up + tr(" điểm nâng cấp và ô lắp pháo. Về lõi để nâng cấp!", " upgrade point(s) and turret slot(s). Return to your core!") +
                 (before < FREE_SWITCH_LEVEL && st.lv >= FREE_SWITCH_LEVEL ? tr(" Đã mở đổi unit trong bảng nâng cấp!", " You can now switch units in the upgrade menu!") : ""));
@@ -628,9 +632,6 @@
             Vars.netClient.addPacketHandler(STAR_KIND, new Cons({
                 get: function(content) { onStar(content); }
             }));
-            Vars.netClient.addPacketHandler(MALIGN_KIND, new Cons({
-                get: function(content) { onMalign(content); }
-            }));
             Vars.netClient.addPacketHandler(SHIELD_KIND, new Cons({
                 get: function(content) { onShieldSync(content); }
             }));
@@ -642,47 +643,6 @@
     Events.on(ClientLoadEvent, new Cons({ get: function(e) { register(); } }));
     Events.on(ServerLoadEvent, new Cons({ get: function(e) { register(); } }));
     Events.on(WorldLoadEvent, new Cons({ get: function(e) { register(); } }));
-
-    function malignRec(pid) {
-        let r = malignState[pid];
-        if (r === undefined) {
-            r = { slowed: false, until: 0, boostUntil: 0 };
-            malignState[pid] = r;
-        }
-        return r;
-    }
-
-    function malignSet(pid, on) {
-        let r = malignRec(pid);
-        if (on) {
-            r.slowed = true;
-            r.boostUntil = 0;
-        } else if (r.slowed) {
-            r.slowed = false;
-            r.boostUntil = Time.time + MALIGN_BOOST_TICKS;
-        }
-    }
-
-    function onMalign(content) {
-        try {
-            let parts = String(content).split("|");
-            malignSet(parts[0], parts[1] === "1");
-        } catch (err) {}
-    }
-
-    function malignSend(pid, on) {
-        malignSet(pid, on);
-        if (Vars.net.server()) {
-            try { Call.clientPacketReliable(MALIGN_KIND, pid + "|" + (on ? "1" : "0")); } catch (err) {}
-        }
-    }
-
-    function malignFired(pl, u, def) {
-        let r = malignRec(pl.id);
-        let interval = Math.max(5, def.block.reload) / Math.max(0.1, u.reloadMultiplier * stackRate(pl, def));
-        r.until = Time.time + Math.max(30, interval * 1.5);
-        if (!r.slowed) malignSend(pl.id, true);
-    }
 
     function droneBlock(id) {
         let b = Vars.content.getByName(ContentType.block, "newex-" + id);
@@ -1252,7 +1212,7 @@
             if (dmgOverride != null && blt != null) {
                 try { blt.damage = dmgOverride; } catch (err3) {}
             }
-            if (lifeMul != null && lifeMul < 1 && blt != null) {
+            if (lifeMul != null && lifeMul !== 1 && blt != null) {
                 try { blt.lifetime = blt.lifetime * lifeMul; } catch (err4) {}
             }
         }
@@ -1279,16 +1239,14 @@
         return c;
     }
 
-    function stackRate(pl, def) {
-        if (!(def.ov && def.ov.stackRatePct)) return 1;
-        let extra = Math.max(0, ownedCount(byId[pl.id], def.id) - 1);
-        return Math.max(0.1, 1 - extra * def.ov.stackRatePct / 100);
+    function mountRate(def, u, pfx) {
+        if (def.ov && def.ov.unitRateMul && pfx === "u" && u.isCoreHost !== true) return def.ov.unitRateMul;
+        return 1;
     }
 
-    function stackLife(pl, def) {
-        if (!(def.ov && def.ov.stackLifePct)) return 1;
-        let extra = Math.max(0, ownedCount(byId[pl.id], def.id) - 1);
-        return Math.max(0.1, 1 - extra * def.ov.stackLifePct / 100);
+    function mountLife(def, u, pfx) {
+        if (def.ov && def.ov.unitLifeMul && pfx === "u" && u.isCoreHost !== true) return def.ov.unitLifeMul;
+        return 1;
     }
 
     function ownedCount(st, id) {
@@ -1537,7 +1495,7 @@
             }
             let cd = equipCd[key];
             if (cd === undefined) cd = 0;
-            cd -= Time.delta * Math.max(0.1, u.reloadMultiplier) * stackRate(pl, def);
+            cd -= Time.delta * Math.max(0.1, u.reloadMultiplier) * mountRate(def, u, pfx);
             if (cd < 0) cd = 0;
             if (cd <= 0) {
                 let bt = equipBullet(def);
@@ -1559,8 +1517,7 @@
                 }
                 if (bt != null && tx != null) {
                     equipAng[key] = Angles.angle(mp.x, mp.y, tx, ty);
-                    if (fireEquip(u, def, bt, mp, tx, ty, null, stackLife(pl, def))) {
-                        if (def.ov && def.ov.slowOnFire && pfx === "u" && u.isCoreHost !== true) malignFired(pl, u, def);
+                    if (fireEquip(u, def, bt, mp, tx, ty, null, mountLife(def, u, pfx))) {
                         let reload = def.block.reload;
                         if (def.ov && def.ov.reloadMul) reload *= def.ov.reloadMul;
                         cd = Math.max(5, reload);
@@ -2353,16 +2310,6 @@
         let base = Math.max(0.1, unit.type.speed);
         unit.speedMultiplier *= (1 + s[3] * SPD_PCT / 100) * (1 + s[3] * SPD_FLAT / base);
         if (isPl && unit.type === UnitTypes.disrupt) unit.speedMultiplier *= DISRUPT_SPEED_MUL;
-        if (isPl) {
-            let mr = null;
-            try { mr = malignState[unit.getPlayer().id]; } catch (err) {}
-            if (mr != null && mr !== undefined) {
-                let now = Time.time;
-                if (mr.slowed && !Vars.net.client() && now > mr.until) malignSend(unit.getPlayer().id, false);
-                if (mr.slowed) unit.speedMultiplier *= MALIGN_SLOW_MUL;
-                else if (now < mr.boostUntil) unit.speedMultiplier *= MALIGN_BOOST_MUL;
-            }
-        }
         unit.reloadMultiplier *= 1 + s[4] * 0.06;
         if (s[9] > 0 && !Vars.net.client() && unit.health > 0 && unit.health < unit.maxHealth * REGEN_THRESHOLD) {
             unit.health = Math.min(unit.maxHealth, unit.health + unit.maxHealth * s[9] * REGEN_PCT / 100 * Time.delta / 60);
@@ -3262,7 +3209,6 @@
             equipBeam = {};
             equipRail = {};
             starState = {};
-            malignState = {};
             bonusWaveT = 0;
             matchT = 0;
             shieldMinT = 0;
@@ -3735,30 +3681,39 @@
         b3.setDisabled(!afford || !def.equip || !canCore);
         card.add(buy).width(inner).row();
 
+        let groups = [
+            { m: "e", name: "Unit", list: [] },
+            { m: "c", name: tr("Lõi", "Core"), list: [] },
+            { m: "b", name: tr("Xây", "Build"), list: [] }
+        ];
         for (let n = 0; n < owned.length; n++) {
-            let j = owned[n];
-            let pp = st.p[j];
-            let cur = pp >= 0 ? "b" : (pp === EQUIPPED ? "e" : "c");
-            let curName = cur === "b" ? tr("Xây", "Build") : (cur === "e" ? "Unit" : tr("Lõi", "Core"));
+            let pp = st.p[owned[n]];
+            let gm = pp >= 0 ? "b" : (pp === EQUIPPED ? "e" : "c");
+            for (let g = 0; g < groups.length; g++) {
+                if (groups[g].m === gm) groups[g].list.push(owned[n]);
+            }
+        }
+        let canMove = { b: canBuild, e: def.equip && canEquip, c: def.equip && canCore };
+        for (let g = 0; g < groups.length; g++) {
+            let grp = groups[g];
+            if (grp.list.length === 0) continue;
+            let j = grp.list[grp.list.length - 1];
 
             card.image().color(Pal.gray).width(inner).height(1).padTop(8).padBottom(4).row();
 
             let hdr = new Table();
-            hdr.add("[accent]#" + (n + 1) + "[]  [lightgray]" + curName + "[]").left().growX();
-            hdr.button(tr("Bán", "Sell"), new Runnable({ run: function() { send(REQ_SELL, String(j)); } })).width(narrowScreen() ? 64 : (Vars.mobile ? 88 : 72)).height(btnH());
+            hdr.add("[accent]" + grp.name + "  x" + grp.list.length + "[]").left().growX();
+            hdr.button(tr("Bán 1", "Sell 1"), new Runnable({ run: function() { send(REQ_SELL, String(j)); } })).width(narrowScreen() ? 72 : (Vars.mobile ? 96 : 80)).height(btnH());
             card.add(hdr).width(inner).row();
 
             let row = new Table();
             row.defaults().growX().uniformX().height(btnH()).pad(2).minWidth(0);
-            let m1 = row.button(tr("Xây", "Build"), tabStyle, new Runnable({ run: function() { send(REQ_MODE, j + "|b"); } })).get();
-            m1.setChecked(cur === "b");
-            m1.setDisabled(cur === "b" || !canBuild);
-            let m2 = row.button("Unit", tabStyle, new Runnable({ run: function() { send(REQ_MODE, j + "|e"); } })).get();
-            m2.setChecked(cur === "e");
-            m2.setDisabled(cur === "e" || !def.equip || !canEquip);
-            let m3 = row.button(tr("Lõi", "Core"), tabStyle, new Runnable({ run: function() { send(REQ_MODE, j + "|c"); } })).get();
-            m3.setChecked(cur === "c");
-            m3.setDisabled(cur === "c" || !def.equip || !canCore);
+            for (let t = 0; t < groups.length; t++) {
+                let tg = groups[t];
+                if (tg.m === grp.m) continue;
+                let mb = row.button("> " + tg.name, tabStyle, new Runnable({ run: function() { send(REQ_MODE, j + "|" + tg.m); } })).get();
+                mb.setDisabled(!canMove[tg.m]);
+            }
             card.add(row).width(inner).row();
         }
         return card;
@@ -3872,7 +3827,7 @@
 
         let head = new Table(Styles.black6);
         head.margin(shortScreen() ? 4 : 8);
-        head.add("[accent]" + tr("Cấp ", "Level ") + st.lv + "/" + MAX_LEVEL + "[]").left();
+        head.add("[accent]" + tr("Cấp ", "Level ") + st.lv + "/" + maxLevel() + "[]").left();
         head.add("[white]" + tierType(activeTier(st)).localizedName + "[]").expandX().center();
         head.add("[yellow]" + tr("Điểm: ", "Points: ") + st.pts + "[]").right();
         head.row();
@@ -4051,13 +4006,13 @@
     function expText() {
         let st = localState();
         if (st == null) return "";
-        if (st.lv >= MAX_LEVEL) return "MAX";
+        if (st.lv >= maxLevel()) return "MAX";
         return Math.floor(st.exp) + "/" + expNeed(st.lv);
     }
 
     function expFrac() {
         let st = localState();
-        if (st == null || st.lv >= MAX_LEVEL) return 1;
+        if (st == null || st.lv >= maxLevel()) return 1;
         return Math.max(0, Math.min(1, st.exp / expNeed(st.lv)));
     }
 
@@ -4265,6 +4220,14 @@
             drTable.add(tr("pháo (0 - " + LIMIT_DRONES + ")", "turrets (0 - " + LIMIT_DRONES + ")")).padLeft(8);
             content.add(drTable).pad(5).row();
 
+            content.add(tr("Cấp tối đa (PvP):", "Max level (PvP):")).padBottom(4).row();
+            let mlTable = new Table();
+            let mlField = mlTable.field(String(maxLevel()), text => {}).width(120).get();
+            mlField.setFilter(TextField.TextFieldFilter.digitsOnly);
+            mlField.setMaxLength(3);
+            mlTable.add(tr("cấp (1 - " + LIMIT_MAXLV + ", mặc định " + MAX_LEVEL + ")", "level (1 - " + LIMIT_MAXLV + ", default " + MAX_LEVEL + ")")).padLeft(8);
+            content.add(mlTable).pad(5).row();
+
             content.add(tr("Thời gian khiên bất tử của lõi đầu trận (phút, 0 = tắt):", "Core invincible shield time at match start (minutes, 0 = off):")).padBottom(4).row();
             let shTable = new Table();
             let shField = shTable.field(String(shieldMinutes()), text => {}).width(120).get();
@@ -4278,6 +4241,11 @@
                 if (isNaN(sm) || sm < 0) sm = DEFAULT_SHIELD_MIN;
                 if (sm > LIMIT_SHIELD_MIN) sm = LIMIT_SHIELD_MIN;
                 Core.settings.put(KEY_SHIELD, java.lang.Integer(sm));
+
+                let ml = parseInt(mlField.getText());
+                if (isNaN(ml) || ml < 1) ml = MAX_LEVEL;
+                if (ml > LIMIT_MAXLV) ml = LIMIT_MAXLV;
+                Core.settings.put(KEY_MAXLV, java.lang.Integer(ml));
 
                 let e = parseInt(expField.getText());
                 if (isNaN(e) || e < 0) e = DEFAULT_EXP;

@@ -1,0 +1,48 @@
+type: legs
+name: VUS-27
+description: Unit cơ giáp hạng nặng dạng chân nhện. Sở hữu lượng máu lớn, trang bị pháo Laser cộng dồn kích thước và khả năng sấy liên tục. Có thể chuyển dạng lại thành SUV-27.
+speed: 0.75
+health: 24000
+hitSize: 26
+armor: 18
+legCount: 6
+legLength: 22
+legTrns: 1.2
+legMoveSpace: 1.5
+hovering: true
+itemCapacity: 120
+
+weapons: [
+  {
+    name: vus-27-repeater
+    x: 8
+    y: 2
+    reload: 10
+    alternate: false
+    mirror: false
+    bullet: {
+      type: BasicBulletType
+      damage: 25
+      speed: 6.5
+      lifetime: 35
+      frontColor: ffffff
+      backColor: c084fc
+    }
+  }
+  {
+    name: vus-27-laser
+    x: -8
+    y: 2
+    reload: 72
+    alternate: false
+    mirror: false
+    shootSound: laser
+    bullet: {
+      type: LaserBulletType
+      damage: 160
+      length: 180
+      width: 38
+      colors: ["7e22ce", "c084fc", "ffffff"]
+    }
+  }
+]

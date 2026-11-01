@@ -1,0 +1,6 @@
+speedMultiplier: 0.7
+reloadMultiplier: 0.7
+color: 9bdcff
+effect: freezing
+effectChance: 0.12
+show: true

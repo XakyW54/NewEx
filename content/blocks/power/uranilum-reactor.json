@@ -1,0 +1,110 @@
+{
+  "type": "ImpactReactor",
+  "name": "uranilum-reactor",
+  "researchCostMultiplier": 0.5,
+  "health": 1200,
+  "size": 5,
+  "lightColor": "EBFFFEFF",
+
+  "hasItems": true,
+  "hasLiquids": true,
+  "powerProduction": 200,
+  "warmupSpeed": 0.003,
+  "itemDuration": 380,
+  "drawer": {
+    "type": "DrawMulti",
+    "drawers": [
+      {
+        "type": "DrawRegion",
+        "suffix": "-bottom"
+      },
+      {
+        "type": "DrawParticles",
+        "color": "66B1FFFF",
+        "alpha": 0.4,
+        "blending": "additive",
+        "particleSize": 5,
+        "reverse": true,
+        "particleRad": 12,
+        "particles": 36,
+        "fadeMargin": 1,
+        "rotateScl": 7,
+        "particleLife": 60
+      },
+      {
+        "type": "DrawParticles",
+        "color": "66B1FFFF",
+        "alpha": 0.4,
+        "reverse": true,
+        "blending": "additive",
+        "particleSize": 7,
+        "particleRad": 12,
+        "particles": 36,
+        "fadeMargin": 1,
+        "rotateScl": 7,
+        "particleLife": 80
+      },
+      {
+        "type": "DrawPlasma",
+        "suffix": "-plasma-",
+        "plasma1": "5a58c4",
+        "plasma2": "7382f0"
+      },
+      {
+        "type": "DrawDefault"
+      },
+      {
+        "type": "DrawGlowRegion",
+        "suffix": "-glow",
+        "color": "66B1FF90"
+      }
+    ]
+  },
+  "consumes": {
+    "power": 6,
+    "item": "newex-uranilum",
+    "liquids": [
+      "newex-herilum/0.05"
+    ]
+  },
+  "requirements": [
+    {
+      "item": "lead",
+      "amount": 1000
+    },
+    {
+      "item": "copper",
+      "amount": 700
+    },
+    {
+      "item": "silicon",
+      "amount": 300
+    },
+    {
+      "item": "titanium",
+      "amount": 470
+    },
+    {
+      "item": "obs",
+      "amount": 450
+    },
+    {
+      "item": "thorium",
+      "amount": 600
+    },
+        {
+      "item": "uranilum",
+      "amount": 800
+    },
+        {
+      "item": "uranilum-shard",
+      "amount": 1600
+    }
+  ],
+  "category": "power",
+  "loopSound": "pulse",
+  "loopSoundVolume": 1.0,
+  "research": "comduik",
+  "ambientSound": "hum",
+  "ambientSoundVolume": 0.85
+}

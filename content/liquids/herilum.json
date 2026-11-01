@@ -1,0 +1,11 @@
+{
+  "name": "Khí Herilum",
+  "description": "Loại khí trơ cực nhẹ và cực lạnh, hình thành từ quá trình phân rã uranilum. Hoàn toàn không màu và không thể bốc cháy.",
+  "gas": true,
+  "color": "ffffff15",
+  "gasColor": "ffffff15",
+  "flammability": 0.0,
+  "explosiveness": 0.0,
+  "temperature": 0.15,
+  "heatCapacity": 0.9
+}

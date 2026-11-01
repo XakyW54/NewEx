@@ -1,0 +1,413 @@
+const NexNet = global.NexNet;
+const packCons2 = (func) => new Cons2({ get: func });
+const packRun = (func) => new java.lang.Runnable({ run: func });
+const packProv = (func) => new Prov({ get: func });
+
+function isEnglish() {
+    return Core.settings.getString("locale").startsWith("en");
+}
+
+const reqMK2 = { thorium: 400, silicon: 300 };
+const reqMK2B = { surgeAlloy: 150, silicon: 500, phaseFabric: 100 };
+
+const critEffect = new Effect(20, e => {
+    Draw.color(Color.gold, Color.scarlet, e.fin());
+
+    for (let i = 0; i < 4; i++) {
+        let angle = i * 90 + 45;
+        let len = 3 + e.fin() * 10;
+        Drawf.tri(
+            e.x + Mathf.cosDeg(angle) * (len * 0.2),
+            e.y + Mathf.sinDeg(angle) * (len * 0.2),
+            3 * e.fout(),
+            len,
+            angle
+        );
+    }
+});
+
+const speedBuffEffect = new Effect(30, e => {
+    Draw.color(Color.gold, Color.orange, e.fin());
+    Lines.stroke(2 * e.fout());
+    Lines.circle(e.x, e.y, 6 + e.fin() * 14);
+});
+
+const resetUpgradeEffect = new Effect(30, e => {
+    Draw.color(Color.gold, Color.white, e.fin());
+    Lines.stroke(3 * e.fout());
+    Lines.circle(e.x, e.y, 8 + e.fin() * 20);
+});
+
+let buffetlesBlock = null;
+
+Events.on(ContentInitEvent, () => {
+    buffetlesBlock = Vars.content.blocks().find(b => b != null && b.name != null && b.name.endsWith("buffetles"));
+    if (buffetlesBlock == null) return;
+
+    buffetlesBlock.configurable = true;
+
+    try {
+        buffetlesBlock.addBar("crit_rate", new Func({
+            get: function(e){
+                return new Bar(
+                    new Prov({ get: function(){ return "CRIT CHANCE: " + (e.getCritRate != null ? (e.getCritRate() * 100).toFixed(1) : "0") + "%"; } }),
+                    new Prov({ get: function(){ return Color.scarlet; } }),
+                    new Floatp({ get: function(){ return e.getCritRate != null ? e.getCritRate() : 0; } })
+                );
+            }
+        }));
+
+        buffetlesBlock.addBar("crit_damage", new Func({
+            get: function(e){
+                return new Bar(
+                    new Prov({ get: function(){ return "CRIT DMG: +" + (e.getCritDamageMultiplier != null ? (e.getCritDamageMultiplier() * 100).toFixed(1) : "0") + "%"; } }),
+                    new Prov({ get: function(){ return Color.gold; } }),
+                    new Floatp({ get: function(){ return e.getCritDamageMultiplier != null ? Math.min(e.getCritDamageMultiplier() / 3.0, 1.0) : 0; } })
+                );
+            }
+        }));
+    } catch(err) {}
+
+    buffetlesBlock.config(java.lang.Integer, packCons2((tile, value) => {
+        if (tile != null && tile.setTier !== undefined) {
+            tile.setTier(value);
+        }
+    }));
+
+    buffetlesBlock.buildType = () => extend(ItemTurret.ItemTurretBuild, buffetlesBlock, {
+        critStacks: 0,
+        extraCritDamage: 0.0,
+        tierState: 0,
+        speedBuffTimer: 0,
+        activeBullets: [],
+
+        getTier(){ return this.tierState == null ? 0 : this.tierState; },
+
+        setTier(val){
+            this.tierState = val;
+            Fx.upgradeCore.at(this.x, this.y);
+        },
+
+        getCritRate(){
+            let ratePerStack = (this.getTier() == 1) ? 0.005 : 0.001;
+            return 0.05 + (this.critStacks * ratePerStack);
+        },
+
+        getCritDamageMultiplier(){
+            return 0.50 + this.extraCritDamage;
+        },
+
+        addStack(){
+            this.critStacks++;
+            if(this.getCritRate() >= 1.0){
+                this.critStacks = 0;
+                this.extraCritDamage += 0.15;
+                resetUpgradeEffect.at(this.x, this.y);
+            }
+        },
+
+        handleBullet(bullet, x, y, angle){
+            this.super$handleBullet(bullet, x, y, angle);
+
+            if(bullet != null){
+                let currentTier = this.getTier();
+
+                let finalDamage = bullet.damage;
+
+                if(currentTier == 2){
+                    finalDamage *= 1.5;
+                }
+
+                let critRate = this.getCritRate();
+                if(Mathf.chance(critRate)){
+                    finalDamage *= (1.0 + this.getCritDamageMultiplier());
+                    critEffect.at(bullet.x, bullet.y);
+                }
+
+                this.addStack();
+
+                if(currentTier == 1 && Mathf.chance(0.20)){
+                    this.extraCritDamage += 0.01;
+                }
+
+                if(this.speedBuffTimer <= 0 && Mathf.chance(0.02)){
+                    this.speedBuffTimer = 60;
+                    speedBuffEffect.at(this.x, this.y);
+                }
+
+                if(currentTier > 0){
+                    let damageNormal = finalDamage * 0.5;
+                    let damageTrue = finalDamage * 0.5;
+
+                    bullet.damage = damageNormal;
+
+                    if(bullet.type != null){
+                        bullet.type.absorbable = false;
+                        bullet.type.hittable = false;
+                        bullet.type.reflectable = false;
+                        bullet.type.pierceArmor = true;
+                    }
+                    if(this.activeBullets == null) this.activeBullets = [];
+                    this.activeBullets.push({ bullet: bullet, trueDmg: damageTrue });
+                } else {
+                    bullet.damage = finalDamage;
+                }
+            }
+        },
+
+        updateTile(){
+            this.super$updateTile();
+
+            if(this.speedBuffTimer > 0){
+                this.speedBuffTimer -= Time.delta;
+            }
+
+            if(this.speedBuffTimer > 0 && this.isShooting && this.hasAmmo()){
+                this.reloadCounter += Time.delta * 5.0 * this.efficiency;
+            }
+
+            if(this.getTier() > 0 && this.activeBullets != null && this.activeBullets.length > 0){
+                for(let i = this.activeBullets.length - 1; i >= 0; i--){
+                    let entry = this.activeBullets[i];
+                    if(entry == null) {
+                        this.activeBullets.splice(i, 1);
+                        continue;
+                    }
+
+                    let b = entry.bullet;
+                    let trueDmg = entry.trueDmg;
+
+                    if(b == null || !b.isAdded() || b.lifetime <= 0){
+                        this.activeBullets.splice(i, 1);
+                        continue;
+                    }
+
+                    let radius = (b.type != null ? b.type.hitSize : 8) + 4;
+                    let bTeam = this.team;
+
+                    Groups.unit.intersect(b.x - radius, b.y - radius, radius * 2, radius * 2, cons(u => {
+                        if (u != null && u.isValid() && u.team != bTeam && Mathf.dst(b.x, b.y, u.x, u.y) <= radius + u.hitSize) {
+                            u.health -= trueDmg;
+                            Fx.hitBulletSmall.at(u.x, u.y);
+
+                            if (u.health <= 0) u.kill();
+                            b.remove();
+                        }
+                    }));
+
+                    if (b.isAdded()) {
+                        let tileBuild = Vars.world.build(World.toTile(b.x), World.toTile(b.y));
+                        if (tileBuild != null && tileBuild.team != bTeam) {
+                            tileBuild.health -= trueDmg;
+                            Fx.hitBulletSmall.at(tileBuild.x, tileBuild.y);
+
+                            if (tileBuild.health <= 0) tileBuild.kill();
+                            b.remove();
+                        }
+                    }
+                }
+            }
+        },
+
+        draw(){
+            this.super$draw();
+            if(this.speedBuffTimer > 0){
+                Draw.color(Color.gold, Color.orange, Mathf.absin(Time.time, 4, 1));
+                Lines.stroke(1.5);
+                Lines.circle(this.x, this.y, 10);
+                Draw.reset();
+            }
+        },
+
+        buildConfiguration(table){
+            if (table == null) return;
+            table.clear(); table.row();
+            let tier = this.getTier();
+
+            if(tier == 0) {
+                table.button(Icon.upOpen, Styles.cleari, 40, packRun(() => {
+                    if (Vars.ui == null) return;
+                    let dialogTitle = isEnglish() ? "Buffetles Upgrade Center" : "Trung tâm nâng cấp pháo Buffetles";
+                    let dialog = extend(BaseDialog, dialogTitle, {});
+
+                    if (dialog.cont != null) {
+                        let reqCell = dialog.cont.add(new Table());
+                        let reqSnapshot = (() => {
+                            let core = this.team != null ? this.team.core() : null;
+                            if(core == null) return isEnglish() ? "[red]Team Core not found![]" : "[red]Không tìm thấy Lõi Đội![]";
+                            let currentThorium = core.items.get(Items.thorium);
+                            let currentSilicon = core.items.get(Items.silicon);
+                            let currentSurge = core.items.get(Items.surgeAlloy);
+                            let currentPhase = core.items.get(Items.phaseFabric);
+
+                            let thoColor1 = currentThorium >= reqMK2.thorium ? "[green]" : "[red]";
+                            let silColor1 = currentSilicon >= reqMK2.silicon ? "[green]" : "[red]";
+
+                            let surColor2 = currentSurge >= reqMK2B.surgeAlloy ? "[green]" : "[red]";
+                            let silColor2 = currentSilicon >= reqMK2B.silicon ? "[green]" : "[red]";
+                            let phaColor2 = currentPhase >= reqMK2B.phaseFabric ? "[green]" : "[red]";
+
+                            if (isEnglish()) {
+                                return "[yellow]CORE RESOURCE REQUIREMENTS:[]\n" +
+                                       "[cyan]MK2 Branch:[]\n" +
+                                       " • Thorium: " + thoColor1 + currentThorium + "[] / " + reqMK2.thorium + "\n" +
+                                       " • Silicon: " + silColor1 + currentSilicon + "[] / " + reqMK2.silicon + "\n" +
+                                       "[purple]MK2B Branch:[]\n" +
+                                       " • Surge Alloy: " + surColor2 + currentSurge + "[] / " + reqMK2B.surgeAlloy + "\n" +
+                                       " • Silicon: " + silColor2 + currentSilicon + "[] / " + reqMK2B.silicon + "\n" +
+                                       " • Phase Fabric: " + phaColor2 + currentPhase + "[] / " + reqMK2B.phaseFabric;
+                            } else {
+                                return "[yellow]YÊU CẦU TÀI NGUYÊN KHO LÕI:[]\n" +
+                                       "[cyan]Nhánh MK2:[]\n" +
+                                       " • Thorium: " + thoColor1 + currentThorium + "[] / " + reqMK2.thorium + "\n" +
+                                       " • Silicon: " + silColor1 + currentSilicon + "[] / " + reqMK2.silicon + "\n" +
+                                       "[purple]Nhánh MK2B:[]\n" +
+                                       " • Kim loại Surge: " + surColor2 + currentSurge + "[] / " + reqMK2B.surgeAlloy + "\n" +
+                                       " • Silicon: " + silColor2 + currentSilicon + "[] / " + reqMK2B.silicon + "\n" +
+                                       " • Vải Phase: " + phaColor2 + currentPhase + "[] / " + reqMK2B.phaseFabric;
+                            }
+                        })();
+                        reqCell.get().add(new Label(reqSnapshot.toString())).growX();
+
+                        dialog.cont.row(); dialog.cont.add().height(10).row();
+
+                        let branchesTable = new Table();
+
+                        let b1 = new Table(); b1.background(Styles.black6); b1.margin(12);
+                        b1.add(isEnglish() ? "[cyan]===(MK2 - SUPER SPEED CRIT)===[]" : "[cyan]===(MK2 - BẠO KÍCH SIÊU TỐC)===[]").row();
+                        let b1Text = isEnglish() ?
+                            "[white]• Crit chance gain/stack: [green]+0.5%[] (base 0.1%)\n• TRUE DAMAGE: [scarlet]50% True Damage (Bypasses armor, shield, Vela mechanism)[]\n• [orange]Special Ability:[] Accelerates crit chance stacking speed by 5x\n• On shoot, 20% chance to permanently gain +1% crit damage. 2% chance to gain 500% fire rate for 1s" :
+                            "[white]• Tăng tỉ lệ bạo kích/stack: [green]+0.5%[] (gốc 0.1%)\n• SÁT THƯƠNG CHUẨN: [scarlet]50% True Damage (Xuyên giáp, khiên, cơ chế Vela)[]\n• [orange]Kỹ năng đặc biệt:[] Tăng tốc tích lũy tỉ lệ bạo kích gấp 5 lần\n• Khi bắn đạn có 20% tỉ lệ tăng vĩnh viễn +1% sát thương bạo kích\n• Khi bắn có 2% tỉ lệ tăng 500% tốc bắn trong 1s";
+                        let b1D = b1.add(b1Text);
+                        b1D.width(340).get().setWrap(true); b1D.get().setAlignment(Align.left); b1.row();
+                        b1.button(isEnglish() ? "[green]ACTIVATE MK2[]" : "[green]KÍCH HOẠT MK2[]", packRun(() => {
+                            let core = this.team != null ? this.team.core() : null;
+                            if(core != null && core.items.get(Items.thorium) >= reqMK2.thorium && core.items.get(Items.silicon) >= reqMK2.silicon){
+                                NexNet.take(core, Items.thorium, reqMK2.thorium); NexNet.take(core, Items.silicon, reqMK2.silicon);
+                                NexNet.fx(Fx.upgradeCore, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(4, 4, this.x, this.y);
+                                this.configure(java.lang.Integer(1));
+                                dialog.hide(); this.deselect();
+                            } else { if(Vars.ui != null) Vars.ui.showInfo(isEnglish() ? "[red]Not enough resources for MK2![]" : "[red]Không đủ tài nguyên cho nhánh MK2![]"); }
+                        })).size(180, 38);
+
+                        let b2 = new Table(); b2.background(Styles.black6); b2.margin(12);
+                        b2.add(isEnglish() ? "[purple]===(MK2B - DAMAGE MULTIPLIER)===[]" : "[purple]===(MK2B - BỘI PHÁT SÁT THƯƠNG)===[]").row();
+                        let b2Text = isEnglish() ?
+                            "[white]• Base bullet damage: [green]+50.0%[]\n• TRUE DAMAGE: [scarlet]50% True Damage (Bypasses armor, shield, Vela mechanism)[]\n• [orange]Special Ability:[] Maintains maximum crit mechanism and 2% chance to gain 500% fire rate for 1s on shot" :
+                            "[white]• Sát thương gốc của đạn: [green]+50.0%[]\n• SÁT THƯƠNG CHUẨN: [scarlet]50% True Damage (Xuyên giáp, khiên, cơ chế Vela)[]\n• [orange]Kỹ năng đặc biệt:[] Duy trì cơ chế bạo kích cực đại và khi bắn có 2% cơ hội tăng 500% tốc bắn trong 1s";
+                        let b2D = b2.add(b2Text);
+                        b2D.width(340).get().setWrap(true); b2D.get().setAlignment(Align.left); b2.row();
+                        b2.button(isEnglish() ? "[orange]ACTIVATE MK2B[]" : "[orange]KÍCH HOẠT MK2B[]", packRun(() => {
+                            let core = this.team != null ? this.team.core() : null;
+                            if(core != null && core.items.get(Items.surgeAlloy) >= reqMK2B.surgeAlloy && core.items.get(Items.silicon) >= reqMK2B.silicon && core.items.get(Items.phaseFabric) >= reqMK2B.phaseFabric){
+                                NexNet.take(core, Items.surgeAlloy, reqMK2B.surgeAlloy); NexNet.take(core, Items.silicon, reqMK2B.silicon); NexNet.take(core, Items.phaseFabric, reqMK2B.phaseFabric);
+                                NexNet.fx(Fx.bigShockwave, this.x, this.y); NexNet.fx(Fx.mineHuge, this.x, this.y); NexNet.shake(4, 4, this.x, this.y);
+                                this.configure(java.lang.Integer(2));
+                                dialog.hide(); this.deselect();
+                            } else { if(Vars.ui != null) Vars.ui.showInfo(isEnglish() ? "[red]Not enough resources for MK2B![]" : "[red]Không đủ tài nguyên cho nhánh MK2B![]"); }
+                        })).size(180, 38);
+
+                        branchesTable.add(b1).width(340); branchesTable.row();
+                        branchesTable.add().height(12).row();
+                        branchesTable.add(b2).width(340);
+
+                        let scroll = new ScrollPane(branchesTable);
+                        scroll.setScrollingDisabled(true, false);
+                        dialog.cont.add(scroll).maxHeight(400);
+                        dialog.addCloseButton(); dialog.show();
+                    }
+                })).size(50, 40).tooltip(isEnglish() ? "Upgrade Buffetles System" : "Nâng cấp hệ thống Buffetles");
+            } else {
+                table.button(Icon.lock, Styles.cleari, 40, packRun(() => {
+                    if (Vars.ui != null) Vars.ui.showInfo(isEnglish() ? "[scarlet]BUFFETLES SYSTEM HAS REACHED MAX EVOLUTION LEVEL![]" : "[scarlet]HỆ THỐNG BUFFETLES ĐÃ ĐẠT GIỚI HẠN CẤU HÌNH TIẾN HÓA![]");
+                })).size(50, 40).tooltip(isEnglish() ? "Max level reached" : "Đã đạt cấp tối đa");
+            }
+
+            table.button(Icon.info, Styles.cleari, 40, packRun(() => {
+                let title = isEnglish() ? " Buffetles Stats: " : " Thông số pháo Buffetles: ";
+                let descStr = "";
+                let currentTier = this.getTier();
+
+                if (currentTier == 0) {
+                    title += "[yellow](MK1)[]";
+                    descStr = isEnglish() ?
+                              "[gold]⚡ BASE STATS (MK1) ⚡[]\n" +
+                              "[lightgray]Starting Crit Chance:[] [orange]5.0%[]\n" +
+                              "[lightgray]Stack Gain:[] [white]+0.1% / stack[]\n" +
+                              "[lightgray]Crit Damage:[] [yellow]+" + (this.getCritDamageMultiplier() * 100).toFixed(1) + "%[]\n\n" +
+                              "[sky]⚡ STACKING MECHANISM:[]\n" +
+                              "• Every shot increases crit stacks.\n" +
+                              "• On shot: 2% chance to gain +500% fire rate for 1 second.\n" +
+                              "• When crit rate reaches 100%, stacks reset and grants +15% permanent crit damage." :
+                              "[gold]⚡ THÔNG SỐ CƠ BẢN (MK1) ⚡[]\n" +
+                              "[lightgray]Tỉ lệ bạo kích khởi điểm:[] [orange]5.0%[]\n" +
+                              "[lightgray]Mức tích lũy:[] [white]+0.1% / stack[]\n" +
+                              "[lightgray]Sát thương bạo kích:[] [yellow]+" + (this.getCritDamageMultiplier() * 100).toFixed(1) + "%[]\n\n" +
+                              "[sky]⚡ CƠ CHẾ DỒN ĐẠP (STACKS):[]\n" +
+                              "• Mỗi lần bắn sẽ tăng stack bạo kích.\n" +
+                              "• Khi phát bắn diễn ra: 2% cơ hội tăng +500% tốc bắn trong 1 giây.\n" +
+                              "• Khi tỉ lệ bạo kích đạt 100%, reset stack và cộng thêm 15% sát thương bạo kích vĩnh viễn.";
+                }
+                else if (currentTier == 1) {
+                    title += "[cyan](MK2)[]";
+                    descStr = isEnglish() ?
+                              "[cyan]⚡ BASE STATS (MK2) ⚡[]\n" +
+                              "[lightgray]Damage Type:[] [scarlet]50% True Damage (Pierces Shield, Armor, Vela)[]\n" +
+                              "[lightgray]Crit Stack Rate:[] [lime]+0.5% / stack (5x speed)[]\n" +
+                              "[lightgray]Current Crit Damage:[] [yellow]+" + (this.getCritDamageMultiplier() * 100).toFixed(1) + "%[]\n\n" +
+                              "[lime]⚡ MK2 SPECIAL MECHANISM:[]\n" +
+                              "• On shot: [yellow]20% chance[] to add [green]+1% permanent crit damage[].\n" +
+                              "• On shot: [gold]2% chance[] to activate [orange]+500% fire rate[] for 1 second." :
+                              "[cyan]⚡ THÔNG SỐ CƠ BẢN (MK2) ⚡[]\n" +
+                              "[lightgray]Loại Sát Thương:[] [scarlet]50% Sát thương Chuẩn (Xuyên Vela Shield, Giáp, Khiên)[]\n" +
+                              "[lightgray]Mức tích lũy bạo kích:[] [lime]+0.5% / stack (x5 tốc độ)[]\n" +
+                              "[lightgray]Sát thương bạo kích hiện tại:[] [yellow]+" + (this.getCritDamageMultiplier() * 100).toFixed(1) + "%[]\n\n" +
+                              "[lime]⚡ CƠ CHẾ ĐẶC BIỆT MK2:[]\n" +
+                              "• Khi bắn có [yellow]20% tỉ lệ[] tăng thêm [green]+1% sát thương bạo kích[] vĩnh viễn.\n" +
+                              "• Khi phát bắn diễn ra: [gold]2% cơ hội[] kích hoạt [orange]+500% tốc bắn[] trong 1 giây.";
+                }
+                else if (currentTier == 2) {
+                    title += "[purple](MK2B)[]";
+                    descStr = isEnglish() ?
+                              "[purple]⚡ BASE STATS (MK2B) ⚡[]\n" +
+                              "[lightgray]Damage Type:[] [scarlet]50% True Damage (Pierces Shield, Armor, Vela)[]\n" +
+                              "[lightgray]Base Bullet DMG:[] [lime]+50.0% DMG[]\n\n" +
+                              "[purple]🔥 MK2B SPECIAL MECHANISM:[]\n" +
+                              "• On shot: [gold]2% chance[] to gain [orange]+500% fire rate[] for 1 second." :
+                              "[purple]⚡ THÔNG SỐ CƠ BẢN (MK2B) ⚡[]\n" +
+                              "[lightgray]Loại Sát Thương:[] [scarlet]50% Sát thương Chuẩn (Xuyên Vela Shield, Giáp, Khiên)[]\n" +
+                              "[lightgray]Sát thương gốc đạn:[] [lime]+50.0% DMG[]\n\n" +
+                              "[purple]🔥 CƠ CHẾ ĐẶC BIỆT MK2B:[]\n" +
+                              "• Khi phát bắn diễn ra: [gold]2% tỉ lệ[] tăng [orange]+500% tốc bắn[] trong 1 giây.";
+                }
+
+                if (Vars.ui == null) return;
+                let dialog = extend(BaseDialog, title, {});
+                let infoTable = new Table();
+                let cell = infoTable.add(descStr).width(360);
+                cell.get().setWrap(true); cell.get().setAlignment(Align.left);
+                let scroll = new ScrollPane(infoTable);
+                scroll.setScrollingDisabled(true, false);
+                dialog.cont.add(scroll).maxHeight(400);
+                dialog.addCloseButton(); dialog.show();
+            })).size(50, 40).tooltip(isEnglish() ? "View Detailed System Stats" : "Xem thông số chi tiết hệ thống");
+        },
+
+        config() { return java.lang.Integer(this.getTier()); },
+
+        write(write){
+            this.super$write(write);
+            write.i(this.critStacks);
+            write.f(this.extraCritDamage);
+            write.i(this.getTier());
+        },
+        read(read, revision){
+            this.super$read(read, revision);
+            this.critStacks = read.i();
+            this.extraCritDamage = read.f();
+            this.tierState = read.i();
+        }
+    });
+});
+
+module.exports = {};

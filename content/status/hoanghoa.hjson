@@ -1,0 +1,18 @@
+healthMultiplier: 0.6666667
+color: ffd54a
+effect: {
+    type: ParticleEffect
+    particles: 3
+    length: 22
+    cone: 360
+    lifetime: 36
+    lenFrom: 1
+    lenTo: 5
+    strokeFrom: 1.4
+    strokeTo: 0.3
+    line: true
+    colorFrom: ffe27a
+    colorTo: ff8a0000
+}
+effectChance: 0.22
+show: true

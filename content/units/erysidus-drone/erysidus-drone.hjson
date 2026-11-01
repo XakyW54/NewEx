@@ -1,0 +1,40 @@
+type: flying
+name: "Erysidus Drone"
+description: "Drone chiến đấu tự động được kích hoạt khi tháp pháo Erysidus bị phá hủy. Tự động giữ cự ly, xả đạn tên lửa, đạn năng lượng cận chiến và chưởng Repulsor."
+
+speed: 12
+accel: 0.15
+drag: 0.05
+flying: true
+health: 1250
+armor: 5
+hitSize: 16
+rotateSpeed: 8
+
+targetAir: true
+targetGround: true
+
+engineOffset: 10
+engineSize: 3
+
+weapons: [
+  {
+    name: "erysidus-drone-weapon"
+    x: 8.5
+    y: 2.5
+    reload: 42
+    recoil: 2
+    alternate: true
+    mirror: true
+    shootSound: missile
+    
+    bullet: {
+      type: BasicBulletType
+      speed: 8
+      damage: 0
+      lifetime: 10
+      layer: 115
+      spawnUnit: "erysidusrocket"
+    }
+  }
+]

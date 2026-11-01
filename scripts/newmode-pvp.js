@@ -2,19 +2,36 @@
     const DRONE_IDS = [
         "duo", "scatter", "scorch", "hail", "wave", "lancer", "arc", "parallax", "swarmer",
         "salvo", "segment", "tsunami", "fuse", "ripple", "cyclone", "foreshadow", "spectre", "meltdown",
-        "breach", "diffuse", "sublimate", "titan", "disperse", "afflict", "lustre", "scathe", "smite", "malign"
+        "breach", "diffuse", "sublimate", "titan", "disperse", "afflict", "lustre", "scathe", "smite", "malign",
+        "forstarsilum"
     ];
+
+    const FORSTAR_CHARGE_TICKS = 60;
+    const FORSTAR_NORMAL_ATK_PCT = 80;
+    const FORSTAR_NORMAL_HP_PCT = 20;
+    const FORSTAR_BASE_DMG = 78;
+    const FORSTAR_MIN_OWNED = 2;
+    const FORSTAR_RAGE_CHANCE = 0.4;
+    const FORSTAR_RAGE_HP_PCT = 250;
+    const FORSTAR_RAGE_ATK_PCT = 120;
+    const FORSTAR_RANGE = 320;
+    const FORSTAR_COST = 20;
+    const FORSTAR_TRUE_PCT = 0.75;
+    const FORSTAR_CRIT_CHANCE = 0.50;
+    const FORSTAR_CRIT_MUL = 4.0;
+    const FORSTAR_STARLIGHT_CHANCE = 0.09;
+    const FORSTAR_HPSTRIKE_CHANCE = 0.10;
+    const FORSTAR_HPSTRIKE_PCT = 0.01;
+    const FORSTAR_STARLIGHT_ITEM = "newex-starlight";
+    const STAR_KIND = "newex-pvp-star";
 
     const MAP_ID = "pvpnewex3110";
     const REWARD_POINTS = 30;
 
     const TAG_ACTIVE = "newex-pvp";
-    const TAG_DATA = "newex-pvp-data";
-    const TAG_TEAMS = "newex-pvp-teams";
-    const TAG_ASSIGN = "newex-pvp-assign";
     const KEY_EXP = "newex-pvp-exp-percent";
     const KEY_DRONES = "newex-pvp-max-drones";
-    const KEY_STORE = "newex-pvp-store";
+    const KEY_SHIELD = "newex-pvp-shield-min";
     const KEY_HUD = "newex-pvp-hud";
     const KEY_HUD_X = "newex-pvp-hud-x";
     const KEY_HUD_Y = "newex-pvp-hud-y";
@@ -24,6 +41,15 @@
     const DEFAULT_DRONES = 3;
     const LIMIT_EXP = 1000;
     const LIMIT_DRONES = 12;
+    const DEFAULT_SHIELD_MIN = 15;
+    const LIMIT_SHIELD_MIN = 600;
+    const SHIELD_HP = 15000;
+    const SHIELD_BUFFER = 1000000;
+    const SHIELD_SYNC_TICKS = 30;
+    const SHIELD_KIND = "newex-pvp-shield";
+    const SHIELD_COLOR = Color.valueOf("#d000ff");
+    const SHIELD_GLOW = Color.valueOf("#00f0ff");
+    const SHIELD_GOLD = Color.valueOf("#ffe58a");
 
     const SYNC_KIND = "newex-pvp-sync";
     const REQ_UP = "newex-pvp-up";
@@ -36,6 +62,9 @@
     const FREE_SWITCH_LEVEL = 5;
     const STAT_PER_PAGE = 4;
     const TURRET_PER_PAGE = 5;
+    const UNIT_PER_PAGE = 5;
+    const ARMY_PER_PAGE = 5;
+    const TIER_MAX = 7;
     const STAT_MAX = 20;
     const START_POINTS = 3;
     const PASSIVE_EXP = 60;
@@ -51,6 +80,10 @@
     const WAVE_SPACING = 2400;
     const FIRST_WAVE = 1200;
     const WAVE_UNIT_CAP = 1000;
+    const BONUS_WAVE_INTERVAL = 8 * 60 * 60;
+    const BONUS_WAVE_TIMES = 10;
+    const BONUS_WAVE_MAX_NEW = 300;
+    let bonusWaveT = 0;
     const EQUIPPED = -1;
     const EQUIP_SLOT_CAP = 12;
     const REQ_BARR = "newex-pvp-barr";
@@ -101,14 +134,184 @@
         parallax: { equip: true, beam: true, pull: true, beamDps: 24, pullForce: 0.6 },
         salvo: { equip: true, rail: true, rangeTiles: 33, railPct: 150, railLen: 33, railWidth: 9, railInterval: 120 },
         meltdown: { equip: true, blast: true, rangeTiles: 20, blastPct: 100, blastRadius: 3, blastInterval: 60 },
-        sublimate: { liquidAmmo: "hydrogen" },
+        sublimate: { liquidAmmo: "ozone" },
         scorch: { aura: true, auraRange: 15, auraAtkPct: 50, auraArmorPct: 50 },
         lustre: { equip: false },
         scathe: { equip: false },
-        malign: { costMul: 2 }
+        malign: { costMul: 2 },
+        foreshadow: { costMul: 2 },
+        forstarsilum: { equip: true, star: true, costFixed: FORSTAR_COST, rangeTiles: FORSTAR_RANGE / 8 },
+        breach: { costFixed: 1 }
     };
 
     let shredMap = new Map();
+    let starState = {};
+
+
+    function starRewardStarlight(team) {
+        if (Vars.net.client() || team == null) return;
+        try {
+            let core = team.core();
+            if (core == null) return;
+            let item = Vars.content.getByName(ContentType.item, FORSTAR_STARLIGHT_ITEM);
+            if (item != null && Math.random() < FORSTAR_STARLIGHT_CHANCE) {
+                core.items.add(item, 1);
+                try { Call.effect(Fx.itemTransfer, core.x, core.y, 0, Color.valueOf("ffda66")); } catch (err) {}
+            }
+        } catch (err) {}
+    }
+
+    function starOnHit(b, entity, wasDead) {
+        if (entity == null || wasDead) return;
+        if (!Vars.net.client() && Math.random() < FORSTAR_HPSTRIKE_CHANCE) {
+            try { entity.damagePierce(entity.maxHealth * FORSTAR_HPSTRIKE_PCT); } catch (err) {}
+        }
+        if (entity.dead === true || entity.health <= 0) starRewardStarlight(b.team);
+    }
+
+    let starHitFx = null;
+    let starShockFx = null;
+    let starBlastFx = null;
+    let starPartFx = null;
+    try {
+        starHitFx = extend(ParticleEffect, {
+            line: true, particles: 8, lifetime: 26, length: 35, cone: -40,
+            lenFrom: 6, lenTo: 6,
+            colorFrom: Color.valueOf("A9D8FF"), colorTo: Color.valueOf("66B1FF")
+        });
+        starBlastFx = extend(ParticleEffect, {
+            line: true, particles: 32, lifetime: 55, length: 130, cone: 360,
+            lenFrom: 20, lenTo: 2, strokeFrom: 7, strokeTo: 0,
+            colorFrom: Color.white, colorTo: Color.valueOf("3399FF")
+        });
+        starPartFx = extend(ParticleEffect, {
+            particles: 24, lifetime: 60, length: 90, cone: 360,
+            sizeFrom: 6, sizeTo: 0,
+            colorFrom: Color.valueOf("A9D8FF"), colorTo: Color.valueOf("1a4a88")
+        });
+        starShockFx = new Effect(40, new Cons({
+            get: function(e) {
+                let fin = e.fin();
+                let fout = e.fout();
+                let steps = 30;
+                let rad = e.rotation * Mathf.degRad;
+                let cosA = Math.cos(rad);
+                let sinA = Math.sin(rad);
+                let rings = [[30, 80, 35, 5.0, "66B1FF", "FFFFFF"], [20, 50, 65, 3.0, "3399FF", "A9D8FF"]];
+                for (let r = 0; r < rings.length; r++) {
+                    let rg = rings[r];
+                    Draw.color(Color.valueOf(rg[5]), Color.valueOf(rg[4]), fin);
+                    Lines.stroke(rg[3] * fout);
+                    let rx0 = fin * rg[0];
+                    let ry0 = fin * rg[1];
+                    let off = fin * rg[2];
+                    let cx = e.x + cosA * off;
+                    let cy = e.y + sinA * off;
+                    let lx0 = 0;
+                    let ly0 = 0;
+                    for (let i = 0; i <= steps; i++) {
+                        let ang = (i * (360 / steps)) * Mathf.degRad;
+                        let lx = Math.cos(ang) * rx0;
+                        let ly = Math.sin(ang) * ry0;
+                        let px = cx + (lx * cosA - ly * sinA);
+                        let py = cy + (lx * sinA + ly * cosA);
+                        if (i > 0) Lines.line(lx0, ly0, px, py);
+                        lx0 = px;
+                        ly0 = py;
+                    }
+                }
+                Draw.reset();
+            }
+        }));
+    } catch (err) {
+        Log.err("[NexPvp] cannot create forstarsilum effects: " + err);
+    }
+
+    function starFxAt(fxo, x, y, rot) {
+        if (fxo == null) return;
+        try {
+            if (!Vars.net.client()) {
+                Call.effect(fxo, x, y, rot, Color.white);
+                return;
+            }
+        } catch (err) {}
+        try { fxo.at(x, y, rot); } catch (err) {}
+    }
+
+    let starNormalBullet = null;
+    let starUltBullet = null;
+    try {
+        starNormalBullet = extend(BasicBulletType, {
+            speed: 10, damage: FORSTAR_BASE_DMG, lifetime: FORSTAR_RANGE / 10, width: 20, height: 40,
+            shrinkX: 0, shrinkY: 0,
+            frontColor: Color.valueOf("bbdefb"), backColor: Color.valueOf("90caf9"),
+            sprite: "newex-starsword",
+            inaccuracy: 0,
+            pierce: true, pierceCap: 999, pierceBuilding: true, knockback: 1, impact: true,
+            hitEffect: starHitFx, despawnEffect: starHitFx,
+            hitEntity: function(b, entity, health) {
+                let wasDead = entity.dead === true || entity.health <= 0;
+                this.super$hitEntity(b, entity, health);
+                starOnHit(b, entity, wasDead);
+            }
+        });
+        starUltBullet = extend(BasicBulletType, {
+            speed: 25, damage: 1, lifetime: 30, width: 35, height: 70,
+            shrinkX: 0, shrinkY: 0,
+            frontColor: Color.white, backColor: Color.valueOf("bbdefb"),
+            sprite: "newex-starsword",
+            inaccuracy: 0,
+            pierce: true, pierceCap: 999, pierceBuilding: true, knockback: 4.0, impact: true,
+            pierceArmor: true,
+            absorbable: false, hittable: false, reflectable: false,
+            hitEffect: starHitFx, despawnEffect: starHitFx,
+            hitEntity: function(b, entity, health) {
+                let wasDead = entity.dead === true || entity.health <= 0;
+                this.super$hitEntity(b, entity, health);
+                if (wasDead) return;
+                let td = Number(b.data);
+                if (!Vars.net.client()) {
+                    if (td > 0) {
+                        try {
+                            entity.health -= td;
+                            if (entity.health <= 0) entity.kill();
+                        } catch (err) {}
+                    }
+                    try {
+                        if (entity.armor !== undefined) entity.armor = entity.armor * 0.5;
+                    } catch (err) {}
+                    if (Math.random() < FORSTAR_CRIT_CHANCE) {
+                        try { entity.damage(b.damage * FORSTAR_CRIT_MUL); } catch (err) {}
+                    }
+                }
+                if (Math.random() < FORSTAR_CRIT_CHANCE) {
+                    try {
+                        if (starShockFx != null) starShockFx.at(b.x, b.y, b.rotation());
+                        if (starBlastFx != null) starBlastFx.at(b.x, b.y);
+                        if (starPartFx != null) starPartFx.at(b.x, b.y);
+                        Effect.shake(14, 14, b.x, b.y);
+                    } catch (err) {}
+                }
+                starOnHit(b, entity, false);
+            },
+            hitTile: function(b, build, x, y, initialHealth, direct) {
+                this.super$hitTile(b, build, x, y, initialHealth, direct);
+                if (Vars.net.client() || build == null) return;
+                let td = Number(b.data);
+                if (td > 0) {
+                    try {
+                        build.health -= td;
+                        if (build.health <= 0) {
+                            build.kill();
+                            starRewardStarlight(b.team);
+                        }
+                    } catch (err) {}
+                }
+            }
+        });
+    } catch (err) {
+        Log.err("[NexPvp] cannot create forstarsilum bullets: " + err);
+    }
 
     const STATS = [
         { vi: "Máu", en: "Health", f: function(l) { return "+" + (l * HP_PCT) + "%  +" + (l * HP_FLAT) + " " + tr("máu", "HP"); } },
@@ -127,8 +330,14 @@
     ];
 
     function statMax(i) {
+        if (i === 0 || i === 1) return Infinity;
         let m = STATS[i].mx;
         return m > 0 ? m : STAT_MAX;
+    }
+
+    function statMaxLabel(i) {
+        let m = statMax(i);
+        return m === Infinity ? "\u221e" : String(m);
     }
 
     let store = {};
@@ -157,7 +366,6 @@
     let ver = 0;
     let dirty = false;
     let syncT = 0;
-    let saveT = 0;
     let winT = 0;
     let orphanT = 0;
     let turretT = 0;
@@ -168,9 +376,22 @@
     let seenPl = {};
     let upDialog = null;
     let upTab = 0;
-    let upScroll = 0;
-    let upPane = null;
-    let restoreN = 0;
+    let upPage = 0;
+    let recentUp = [[], [], [], []];
+    let viewUp = [[], [], [], []];
+    let lastUpTab = 0;
+
+    let matchT = 0;
+    let shieldMinCache = DEFAULT_SHIELD_MIN;
+    let shieldMinT = 0;
+    let coreShield = {};
+    let shieldRecs = [];
+    let shieldStamp = 0;
+    let shieldEnded = false;
+    let shieldSyncT = 0;
+    let shieldView = { inv: 0, at: 0, cores: {} };
+    let shieldFlash = {};
+    let shieldSeenHit = {};
 
     let registered = false;
 
@@ -212,37 +433,18 @@
 
     function pvpTeams() {
         if (teamsCache != null) return teamsCache;
-        let tags = getTags();
         let out = [];
-        if (tags != null) {
-            let str = String(tags.get(TAG_TEAMS, ""));
-            if (str.length > 0) {
-                let a = str.split(",");
-                for (let i = 0; i < a.length; i++) {
-                    let t = Team.get(parseInt(a[i]));
-                    if (t != null && t !== Team.crux && t !== Team.derelict) out.push(t);
-                }
-            }
+        for (let i = 0; i < Team.all.length; i++) {
+            let t = Team.all[i];
+            if (t !== Team.derelict && t !== Team.crux && t.cores().size > 0) out.push(t);
         }
-        if (out.length < 2) {
-            out = [];
-            for (let i = 0; i < Team.all.length; i++) {
-                let t = Team.all[i];
-                if (t !== Team.derelict && t !== Team.crux && t.cores().size > 0) out.push(t);
+        let fill = [Team.sharded, Team.blue, Team.green, Team.malis];
+        for (let k = 0; k < fill.length && out.length < 2; k++) {
+            let has = false;
+            for (let j = 0; j < out.length; j++) {
+                if (out[j] == fill[k]) has = true;
             }
-            let fill = [Team.sharded, Team.blue, Team.green, Team.malis];
-            for (let k = 0; k < fill.length && out.length < 2; k++) {
-                let has = false;
-                for (let j = 0; j < out.length; j++) {
-                    if (out[j] == fill[k]) has = true;
-                }
-                if (!has) out.push(fill[k]);
-            }
-            if (tags != null && Vars.state != null && Vars.state.isGame()) {
-                let ids = [];
-                for (let q = 0; q < out.length; q++) ids.push(out[q].id);
-                tags.put(TAG_TEAMS, ids.join(","));
-            }
+            if (!has) out.push(fill[k]);
         }
         teamsCache = out;
         return out;
@@ -278,6 +480,13 @@
         return Math.min(LIMIT_DRONES, Math.floor(v));
     }
 
+    function shieldMinutes() {
+        let v = DEFAULT_SHIELD_MIN;
+        try { v = Core.settings.getInt(KEY_SHIELD, DEFAULT_SHIELD_MIN); } catch (err) {}
+        if (!(v >= 0)) v = DEFAULT_SHIELD_MIN;
+        return Math.min(LIMIT_SHIELD_MIN, Math.floor(v));
+    }
+
     function newState() {
         return { lv: 1, exp: 0, pts: START_POINTS, u: 0, s: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], d: [], p: [], b: 0 };
     }
@@ -288,71 +497,6 @@
             if (u != null && u.length > 0) return u;
         } catch (err) {}
         return "id:" + pl.id;
-    }
-
-    function normState(s) {
-        if (s == null || s.s == null || s.d == null) return null;
-        if (typeof s.lv !== "number" || typeof s.exp !== "number" || typeof s.pts !== "number") return null;
-        if (typeof s.u !== "number") s.u = 0;
-        if (typeof s.b !== "number") s.b = 0;
-        while (s.s.length < STATS.length) s.s.push(0);
-        if (s.p == null || s.p.length !== s.d.length) {
-            s.d = [];
-            s.p = [];
-        }
-        return s;
-    }
-
-    function progress(s) {
-        return s.lv * 1000000 + s.exp;
-    }
-
-    function readJson(str, into) {
-        try {
-            let o = JSON.parse(String(str));
-            for (let k in o) {
-                let s = normState(o[k]);
-                if (s == null) continue;
-                let cur = into[k];
-                if (cur == null || progress(s) > progress(cur)) into[k] = s;
-            }
-        } catch (err) {}
-    }
-
-    function loadStore() {
-        store = {};
-        let tags = getTags();
-        if (tags != null) readJson(tags.get(TAG_DATA, "{}"), store);
-        if (!Vars.net.client()) {
-            try { readJson(Core.settings.getString(KEY_STORE, "{}"), store); } catch (err) {}
-        }
-    }
-
-    let lastForce = 0;
-
-    function saveStore(force) {
-        let tags = getTags();
-        let json = "{}";
-        try { json = JSON.stringify(store); } catch (err) { return; }
-        if (tags != null && isActive()) {
-            try { tags.put(TAG_DATA, json); } catch (err) {}
-        }
-        if (Vars.net.client()) return;
-        try {
-            let old = {};
-            readJson(Core.settings.getString(KEY_STORE, "{}"), old);
-            for (let k in old) {
-                if (store[k] == null) store[k] = old[k];
-            }
-            Core.settings.put(KEY_STORE, JSON.stringify(store));
-            let now = Time.millis();
-            if (force === true || now - lastForce > 15000) {
-                lastForce = now;
-                Core.settings.forceSave();
-            }
-        } catch (err) {
-            logOnce("savefail", "cannot persist player data: " + err);
-        }
     }
 
     function bind(pl) {
@@ -372,12 +516,17 @@
     function changed() {
         dirty = true;
         ver++;
-        saveStore(false);
     }
 
     function tierType(lv) {
+        if (lv === 6) return UnitTypes.reign;
+        if (lv === 7) return UnitTypes.disrupt;
         let list = [UnitTypes.merui, UnitTypes.cleroi, UnitTypes.anthicus, UnitTypes.tecta, UnitTypes.collaris];
         return list[Math.min(5, Math.max(1, lv)) - 1];
+    }
+
+    function isExtraTier(lv) {
+        return lv === 6 || lv === 7;
     }
 
     function tierCap(lv) {
@@ -388,7 +537,7 @@
         let cap = tierCap(st.lv);
         if (st.lv < FREE_SWITCH_LEVEL) return cap;
         let u = st.u;
-        if (!(u >= 1) || u > 5) return cap;
+        if (!(u >= 1) || u > TIER_MAX) return cap;
         return u;
     }
 
@@ -464,6 +613,12 @@
             Vars.netClient.addPacketHandler(SYNC_KIND, new Cons({
                 get: function(content) { onSync(content); }
             }));
+            Vars.netClient.addPacketHandler(STAR_KIND, new Cons({
+                get: function(content) { onStar(content); }
+            }));
+            Vars.netClient.addPacketHandler(SHIELD_KIND, new Cons({
+                get: function(content) { onShieldSync(content); }
+            }));
             registered = true;
         } catch (err) {}
     }
@@ -529,6 +684,7 @@
             let eq = ov.equip !== undefined ? ov.equip : equippable(blk);
             let cost = costOf(blk);
             if (ov.costMul) cost = Math.max(1, Math.round(cost * ov.costMul));
+            if (ov.costFixed != null) cost = ov.costFixed;
             let d = { id: id, block: blk, cost: cost, equip: eq, ov: ov };
             list.push(d);
             map[d.id] = d;
@@ -1000,7 +1156,7 @@
         return { x: tx, y: ty };
     }
 
-    function fireEquip(u, def, bt, mp, tx, ty) {
+    function fireEquip(u, def, bt, mp, tx, ty, dmgOverride) {
         let blk = def.block;
         let own = u.isCoreHost === true ? u.build : u;
         let ang = Angles.angle(mp.x, mp.y, tx, ty);
@@ -1027,21 +1183,145 @@
 
         for (let k = 0; k < shots; k++) {
             let a = ang + (k - (shots - 1) / 2) * spread + (Math.random() - 0.5) * 2 * inacc;
+            let blt = null;
             try {
-                bt.create(own, u.team, x, y, a, -1, 1, ls, null);
+                blt = bt.create(own, u.team, x, y, a, -1, 1, ls, null);
             } catch (err) {
                 try {
-                    bt.create(own, u.team, x, y, a);
+                    blt = bt.create(own, u.team, x, y, a);
                 } catch (err2) {
                     logOnce("create:" + def.id, "bullet create failed for " + def.id + ": " + err2);
                 }
+            }
+            if (dmgOverride != null && blt != null) {
+                try { blt.damage = dmgOverride; } catch (err3) {}
             }
         }
         if (!Vars.headless) {
             try { blk.shootSound.at(mp.x, mp.y, 0.9 + Math.random() * 0.2); } catch (err) {}
         }
+        if (def.ov && def.ov.star) {
+            try { if (blk.shootEffect != null) blk.shootEffect.at(x, y, ang); } catch (err) {}
+            try { if (blk.smokeEffect != null) blk.smokeEffect.at(x, y, ang); } catch (err) {}
+        }
         logOnce("fired:" + def.id, "equip turret fired: " + def.id, true);
         return true;
+    }
+
+    function ownedCount(st, id) {
+        let c = 0;
+        if (st == null) return 0;
+        for (let i = 0; i < st.d.length; i++) {
+            if (st.d[i] === id) c++;
+        }
+        return c;
+    }
+
+    function hpPower(pl, u) {
+        let o = ownerOf(pl, u);
+        if (o != null) return Math.max(1, o.maxHealth);
+        let st = byId[pl.id];
+        let s = st != null ? st.s : null;
+        let t = st != null ? tierType(activeTier(st)) : null;
+        let base = t != null ? t.health : 350;
+        return s != null ? base * (1 + s[0] * HP_PCT / 100) + s[0] * HP_FLAT : base;
+    }
+
+    function starAim(u, def, mp, bt, ast) {
+        if (ast != null && ast.shoot) return { x: ast.x, y: ast.y };
+        let t = findTarget(u, def, mp);
+        if (t == null) return null;
+        return leadPos(mp, t, bt);
+    }
+
+    function starStart(key) {
+        starState[key] = { charge: FORSTAR_CHARGE_TICKS, rt: 0 };
+    }
+
+    function onStar(content) {
+        try { starStart(String(content)); } catch (err) {}
+    }
+
+    function fireStarUlt(pl, u, def, mp, tx, ty, key) {
+        let bt = starUltBullet != null ? starUltBullet : equipBullet(def);
+        if (bt == null) return false;
+        let own = u.isCoreHost === true ? u.build : u;
+        let ang = Angles.angle(mp.x, mp.y, tx, ty);
+        let blt = null;
+        try {
+            blt = bt.create(own, u.team, mp.x, mp.y, ang);
+        } catch (err) {
+            logOnce("starcreate", "star ult bullet create failed: " + err);
+            return false;
+        }
+        if (blt != null) {
+            let total = hpPower(pl, u) * FORSTAR_RAGE_HP_PCT / 100 + attackPower(pl, u) * FORSTAR_RAGE_ATK_PCT / 100;
+            try { blt.damage = total * (1 - FORSTAR_TRUE_PCT); } catch (err) {}
+            try { blt.data = total * FORSTAR_TRUE_PCT; } catch (err) {}
+        }
+        equipAng[key] = ang;
+        starFxAt(starShockFx, mp.x, mp.y, ang);
+        starFxAt(starBlastFx, mp.x, mp.y, ang);
+        starFxAt(starPartFx, mp.x, mp.y, ang);
+        if (!Vars.headless) {
+            try { Effect.shake(5, 5, mp.x, mp.y); } catch (err) {}
+        }
+        return true;
+    }
+
+    function starMount(pl, u, def, k, n, key, ast) {
+        let ss = starState[key];
+        let mp = mountPos(u, k, n);
+        let cd = equipCd[key];
+        if (cd === undefined) cd = 0;
+        cd -= Time.delta * Math.max(0.1, u.reloadMultiplier);
+        if (cd < 0) cd = 0;
+
+        if (ss !== undefined && ss.charge >= 0) {
+            ss.charge -= Time.delta;
+            ss.rt -= Time.delta;
+            if (ss.rt <= 0) {
+                ss.rt = 8;
+                let ct = findTarget(u, def, mp);
+                if (ct != null) equipAng[key] = Angles.angle(mp.x, mp.y, ct.x, ct.y);
+            }
+            if (ss.charge <= 0) {
+                delete starState[key];
+                let rb = starUltBullet != null ? starUltBullet : equipBullet(def);
+                let aim = rb != null ? starAim(u, def, mp, rb, ast) : null;
+                if (aim == null) {
+                    let a0 = equipAng[key];
+                    if (a0 === undefined) a0 = u.rotation;
+                    aim = { x: mp.x + Mathf.cosDeg(a0) * 200, y: mp.y + Mathf.sinDeg(a0) * 200 };
+                }
+                fireStarUlt(pl, u, def, mp, aim.x, aim.y, key);
+                cd = Math.max(cd, Math.max(5, def.block.reload));
+            }
+            equipCd[key] = cd;
+            return;
+        }
+
+        if (cd <= 0) {
+            let bt = starNormalBullet != null ? starNormalBullet : equipBullet(def);
+            if (bt == null) logOnce("nobt:" + def.id, "no bullet type found for equipped turret " + def.id);
+            let aim = bt != null ? starAim(u, def, mp, bt, ast) : null;
+            if (bt != null && aim != null) {
+                equipAng[key] = Angles.angle(mp.x, mp.y, aim.x, aim.y);
+                let dmg = FORSTAR_BASE_DMG + attackPower(pl, u) * FORSTAR_NORMAL_ATK_PCT / 100 + hpPower(pl, u) * FORSTAR_NORMAL_HP_PCT / 100;
+                if (fireEquip(u, def, bt, mp, aim.x, aim.y, dmg)) {
+                    cd = Math.max(5, def.block.reload);
+                    if (!Vars.net.client() && ownedCount(byId[pl.id], def.id) >= FORSTAR_MIN_OWNED && Math.random() < FORSTAR_RAGE_CHANCE) {
+                        starStart(key);
+                        if (Vars.net.server()) {
+                            try { Call.clientPacketReliable(STAR_KIND, key); } catch (err) {}
+                        }
+                    }
+                }
+            } else {
+                equipAng[key] = u.rotation;
+            }
+        }
+        equipCd[key] = cd;
     }
 
     function mountFire(pl, list, u, pfx) {
@@ -1061,6 +1341,11 @@
                     acd = 60;
                 }
                 equipCd[key] = acd;
+                continue;
+            }
+            if (def.ov && def.ov.star) {
+                if (ast == null) ast = hostAim(u, pl);
+                starMount(pl, u, def, k, n, key, ast);
                 continue;
             }
             if (def.ov && def.ov.rail) {
@@ -1544,6 +1829,54 @@
         }
     });
 
+    let swordReg;
+    let starGlow = null;
+
+    function swordRegion() {
+        if (swordReg === undefined) {
+            swordReg = null;
+            try {
+                let r = Core.atlas.find("newex-starsword");
+                if (r != null && r.found()) swordReg = r;
+            } catch (err) {}
+        }
+        return swordReg;
+    }
+
+    function drawStarCharge(u, def, key, k, n) {
+        let ss = starState[key];
+        if (ss === undefined || !(ss.charge >= 0)) return;
+        if (starGlow == null) starGlow = new Color(0.56, 0.79, 0.98, 1);
+        let p = Math.min(1, Math.max(0, 1 - ss.charge / FORSTAR_CHARGE_TICKS));
+        let mp = mountPos(u, k, n);
+        let ang = equipAng[key];
+        if (ang === undefined) ang = u.rotation;
+        let sc = Math.max(0.45, Math.min(1.2, u.hitSize / 36));
+        let rg = swordRegion();
+        let mx = mp.x + Mathf.cosDeg(ang) * 14 * sc;
+        let my = mp.y + Mathf.sinDeg(ang) * 14 * sc;
+        let baseR = 35 * sc * (1 - p * 0.7);
+        try {
+            Draw.z(Layer.effect + 1);
+            for (let i = 0; i < 5; i++) {
+                let a = ang + (i - 2) * 25 * (1 - p);
+                let cx = Mathf.lerp(mp.x + Mathf.cosDeg(a) * baseR, mx, p);
+                let cy = Mathf.lerp(mp.y + Mathf.sinDeg(a) * baseR, my, p);
+                Draw.color(Color.white);
+                Draw.alpha(0.4 + p * 0.6);
+                if (rg != null) {
+                    Draw.rect(rg, cx, cy, 35 * sc, 50 * sc, ang - 90);
+                } else {
+                    Lines.stroke(2.5 * sc);
+                    Lines.lineAngle(cx, cy, ang, 20 * sc);
+                }
+            }
+            Draw.reset();
+        } catch (err) {
+            Draw.reset();
+        }
+    }
+
     function drawMounts(pl, u, list, pfx) {
             let n = list.length;
             if (n === 0) return;
@@ -1590,6 +1923,7 @@
                     }
                     continue;
                 }
+                if (def.ov && def.ov.star) drawStarCharge(u, def, key, k, n);
                 if (u.isCoreHost !== true) continue;
                 let mp = mountPos(u, k, n);
                 let sc = mountScale(u, def, n);
@@ -1621,12 +1955,279 @@
                         if (!isActive()) return;
                         try {
                             Groups.player.each(eachDrawEquip);
+                            drawCoreShields();
                             Draw.reset();
                         } catch (err) {}
                     }
                 }));
             }
         } catch (err) {}
+    }
+
+    // ===== Khiên lõi: bất tử đầu trận -> khiên hấp thụ SHIELD_HP =====
+    function invulTicksLeft() {
+        if (Vars.net.client()) {
+            let l = shieldView.inv - (Time.time - shieldView.at);
+            return l > 0 ? l : 0;
+        }
+        if (shieldMinT <= 0) {
+            shieldMinCache = shieldMinutes();
+            shieldMinT = 120;
+        }
+        let left = shieldMinCache * 3600 - matchT;
+        return left > 0 ? left : 0;
+    }
+
+    function fmtTicks(t) {
+        let sec = Math.ceil(t / 60);
+        let m = Math.floor(sec / 60);
+        let r = sec % 60;
+        return m + ":" + (r < 10 ? "0" : "") + r;
+    }
+
+    function shieldRadius(cb) {
+        return cb.block.size * 7 + 10;
+    }
+
+    function shieldRec(id) {
+        let r = coreShield[id];
+        if (r === undefined) {
+            r = { hp: SHIELD_HP, broken: false, hitN: 0, b: null, base: 0, pre: 0, inv: false, syncAt: -100, seen: 0 };
+            coreShield[id] = r;
+        }
+        return r;
+    }
+
+    function shieldProtectedByReflect(cb) {
+        try {
+            return global.NexReflect != null && global.NexReflect.isProtected(cb) === true;
+        } catch (err) {}
+        return false;
+    }
+
+    function syncCore(cb, r) {
+        if (!Vars.net.server()) return;
+        if (Time.time - r.syncAt < 6 && Time.time >= r.syncAt) return;
+        r.syncAt = Time.time;
+        try { Call.tileDamage(cb, cb.health); } catch (err) {}
+    }
+
+    function sendShield(left) {
+        if (!Vars.net.server()) return;
+        let arr = [];
+        for (let id in coreShield) {
+            let r = coreShield[id];
+            arr.push([parseInt(id), Math.round(r.hp), r.broken ? 1 : 0, r.hitN]);
+        }
+        try { Call.clientPacketUnreliable(SHIELD_KIND, JSON.stringify({ i: Math.round(left), c: arr })); } catch (err) {}
+    }
+
+    function onShieldSync(content) {
+        try {
+            let o = JSON.parse(String(content));
+            let cs = {};
+            for (let i = 0; i < o.c.length; i++) {
+                let a = o.c[i];
+                cs[a[0]] = { hp: a[1], broken: a[2] === 1, hitN: a[3] };
+            }
+            shieldView = { inv: o.i, at: Time.time, cores: cs };
+        } catch (err) {}
+    }
+
+    function shieldBreakFx(cb) {
+        try { Call.effect(Fx.shieldBreak, cb.x, cb.y, shieldRadius(cb), SHIELD_COLOR); } catch (err) {}
+        try {
+            Groups.player.each(new Cons({
+                get: function(pl) {
+                    if (pl.team() == cb.team) toast(pl, tr("[scarlet]Khiên lõi đã vỡ!", "[scarlet]Core shield broken!"));
+                }
+            }));
+        } catch (err) {}
+        shieldSyncT = 0;
+    }
+
+    function shieldBefore() {
+        shieldRecs.length = 0;
+        if (Vars.net.client() || !isActive() || Vars.state.gameOver) return;
+        matchT += Time.delta;
+        shieldMinT -= Time.delta;
+        shieldStamp++;
+        let left = invulTicksLeft();
+        let inv = left > 0;
+        if (inv) {
+            shieldEnded = false;
+        } else if (!shieldEnded) {
+            shieldEnded = true;
+            if (shieldMinCache > 0) {
+                try {
+                    if (global.NexNet != null) {
+                        global.NexNet.toastAll(tr("[accent]Khiên bất tử của lõi đã hết! Chuyển sang khiên hấp thụ " + SHIELD_HP + " sát thương.",
+                            "[accent]Core invincible shield ended! Now an absorb shield of " + SHIELD_HP + " damage."), 5);
+                    }
+                } catch (err) {}
+            }
+        }
+        let tl = pvpTeams();
+        for (let i = 0; i < tl.length; i++) {
+            let cores = tl[i].cores();
+            for (let j = 0; j < cores.size; j++) {
+                let cb = cores.get(j);
+                if (cb == null || !cb.isValid()) continue;
+                let r = shieldRec(cb.id);
+                r.seen = shieldStamp;
+                if (!inv && (r.broken || r.hp <= 0)) continue;
+                if (shieldProtectedByReflect(cb)) continue;
+                r.b = cb;
+                r.base = cb.health;
+                r.inv = inv;
+                r.pre = cb.health + (inv ? SHIELD_BUFFER : r.hp);
+                cb.health = r.pre;
+                shieldRecs.push(r);
+            }
+        }
+        shieldSyncT -= Time.delta;
+        if (shieldSyncT <= 0) {
+            shieldSyncT = SHIELD_SYNC_TICKS;
+            for (let id in coreShield) {
+                if (coreShield[id].seen !== shieldStamp) delete coreShield[id];
+            }
+            sendShield(left);
+        }
+    }
+
+    function shieldAfter() {
+        let n = shieldRecs.length;
+        for (let i = 0; i < n; i++) {
+            let r = shieldRecs[i];
+            let cb = r.b;
+            r.b = null;
+            if (cb == null || !cb.isValid()) continue;
+            let loss = r.pre - cb.health;
+            if (loss <= 0.001) {
+                cb.health = r.base;
+                continue;
+            }
+            r.hitN++;
+            if (r.inv) {
+                cb.health = r.base;
+                syncCore(cb, r);
+                continue;
+            }
+            let paid = Math.min(loss, r.hp);
+            r.hp -= paid;
+            let rest = loss - paid;
+            if (r.hp <= 0.001) {
+                r.hp = 0;
+                if (!r.broken) {
+                    r.broken = true;
+                    shieldBreakFx(cb);
+                }
+            }
+            if (rest > 0.001) {
+                let hp = r.base - rest;
+                if (hp > 0) {
+                    cb.health = hp;
+                    syncCore(cb, r);
+                } else {
+                    cb.health = 0;
+                    try { cb.kill(); } catch (err) {}
+                }
+            } else {
+                cb.health = r.base;
+                syncCore(cb, r);
+            }
+        }
+        shieldRecs.length = 0;
+    }
+
+    if (Trigger.beforeGameUpdate !== undefined && Trigger.afterGameUpdate !== undefined) {
+        Events.run(Trigger.beforeGameUpdate, new Runnable({
+            run: function() {
+                try { shieldBefore(); } catch (err) { logOnce("shb", "core shield (before): " + err); }
+            }
+        }));
+        Events.run(Trigger.afterGameUpdate, new Runnable({
+            run: function() {
+                try { shieldAfter(); } catch (err) { logOnce("sha", "core shield (after): " + err); }
+            }
+        }));
+    } else {
+        Log.err("[NexPvp] Trigger.beforeGameUpdate/afterGameUpdate not found: core shield disabled");
+    }
+
+    function camVisible(x, y, r) {
+        let cam = Core.camera;
+        if (cam == null) return true;
+        let hw = cam.width / 2 + r;
+        let hh = cam.height / 2 + r;
+        return Math.abs(x - cam.position.x) <= hw && Math.abs(y - cam.position.y) <= hh;
+    }
+
+    function shieldInfo(id) {
+        if (!Vars.net.client()) {
+            let r = coreShield[id];
+            return r === undefined ? null : r;
+        }
+        let c = shieldView.cores[id];
+        return c === undefined ? null : c;
+    }
+
+    function drawCoreShields() {
+        let inv = invulTicksLeft() > 0;
+        let tl = pvpTeams();
+        let T = Time.time;
+        for (let i = 0; i < tl.length; i++) {
+            let cores = tl[i].cores();
+            for (let j = 0; j < cores.size; j++) {
+                let cb = cores.get(j);
+                if (cb == null || !cb.isValid()) continue;
+                let info = shieldInfo(cb.id);
+                if (!inv && info != null && (info.broken || info.hp <= 0)) continue;
+                if (!inv && info == null && Vars.net.client()) continue;
+                let R = shieldRadius(cb);
+                if (!camVisible(cb.x, cb.y, R + 16)) continue;
+
+                let hn = info != null ? info.hitN : 0;
+                let seen = shieldSeenHit[cb.id];
+                if (seen === undefined) seen = hn;
+                if (hn !== seen) shieldFlash[cb.id] = 25;
+                shieldSeenHit[cb.id] = hn;
+                let ft = shieldFlash[cb.id];
+                ft = ft === undefined ? 0 : Math.max(0, ft - Time.delta);
+                shieldFlash[cb.id] = ft;
+                let hf = ft / 25;
+                let hit = hf > 0;
+                let col = inv ? SHIELD_GOLD : SHIELD_COLOR;
+                let pulse = inv ? 0.5 + 0.5 * Math.sin(T * 0.06) : 0;
+                try {
+                    Draw.z(Layer.shields);
+                    Draw.color(hit ? SHIELD_GLOW : col, 0.08 + hf * 0.25 + pulse * 0.07);
+                    Fill.poly(cb.x, cb.y, 6, R);
+                    Lines.stroke(hit ? 2.8 : 1.5);
+                    Draw.color(hit ? Color.white : col, 0.8 + hf * 0.2);
+                    Lines.poly(cb.x, cb.y, 6, R);
+                    Draw.color(SHIELD_GLOW, 0.5 + hf * 0.5);
+                    Lines.stroke(1.0);
+                    Lines.poly(cb.x, cb.y, 6, R - 3);
+                    if (hit) {
+                        Draw.color(SHIELD_GLOW, hf);
+                        let inner = R * 0.65;
+                        Lines.poly(cb.x, cb.y, 6, inner);
+                        for (let q = 0; q < 6; q++) {
+                            Lines.line(
+                                cb.x + Mathf.cosDeg(q * 60) * inner,
+                                cb.y + Mathf.sinDeg(q * 60) * inner,
+                                cb.x + Mathf.cosDeg((q + 1) * 60) * R,
+                                cb.y + Mathf.sinDeg((q + 1) * 60) * R
+                            );
+                        }
+                    }
+                    Draw.reset();
+                } catch (err) {
+                    Draw.reset();
+                }
+            }
+        }
     }
 
     function statsOf(unit) {
@@ -1752,7 +2353,10 @@
     }
 
     function coreSpawnPos(pl, type) {
-        let core = pl.team().core();
+        return corePosOf(pl.team().core(), type);
+    }
+
+    function corePosOf(core, type) {
         if (core == null) return null;
         let cx = Vars.world.width() * Vars.tilesize / 2;
         let cy = Vars.world.height() * Vars.tilesize / 2;
@@ -1763,7 +2367,7 @@
 
     function swapUnit(pl, old, want) {
         let fromTier = false;
-        for (let lv = 1; lv <= 5; lv++) {
+        for (let lv = 1; lv <= TIER_MAX; lv++) {
             if (old.type === tierType(lv)) { fromTier = true; break; }
         }
         let x = old.x;
@@ -1800,32 +2404,10 @@
         return false;
     }
 
-    function saveTeams() {
-        let tags = getTags();
-        let tl = pvpTeams();
-        if (tags == null) return;
-        let ids = [];
-        for (let i = 0; i < tl.length; i++) ids.push(tl[i].id);
-        try { tags.put(TAG_TEAMS, ids.join(",")); } catch (err) {}
-    }
-
     function getAssign() {
         if (assignCache != null) return assignCache;
         assignCache = {};
-        let tags = getTags();
-        if (tags != null) {
-            try {
-                let o = JSON.parse(String(tags.get(TAG_ASSIGN, "{}")));
-                for (let k in o) assignCache[k] = o[k];
-            } catch (err) {}
-        }
         return assignCache;
-    }
-
-    function saveAssign() {
-        let tags = getTags();
-        if (tags == null) return;
-        try { tags.put(TAG_ASSIGN, JSON.stringify(getAssign())); } catch (err) {}
     }
 
     function derelictCores() {
@@ -1897,7 +2479,6 @@
         let nb = tile.build;
         if (nb == null || nb.team != t) return null;
         tl.push(t);
-        saveTeams();
         normalizeRules(Vars.state.rules, [t]);
         syncRules();
         fx(nb.x, nb.y);
@@ -1929,8 +2510,7 @@
         }
         if (added) {
             tl.push(target);
-            saveTeams();
-        }
+            }
         normalizeRules(Vars.state.rules, [target]);
     }
 
@@ -1979,7 +2559,6 @@
         }
 
         asg[uid] = team.id;
-        saveAssign();
         seenPl[pl.id] = team;
         if (pl.team() != team) pl.team(team);
 
@@ -1998,7 +2577,7 @@
         get: function(u) {
             if (!isPvpTeam(u.team)) return;
             if (u.isPlayer()) return;
-            for (let lv = 1; lv <= 5; lv++) {
+            for (let lv = 1; lv <= TIER_MAX; lv++) {
                 if (u.type === tierType(lv)) {
                     try { Call.unitDespawn(u); } catch (err) { u.remove(); }
                     return;
@@ -2058,7 +2637,7 @@
                 return;
             }
             let isTier = false;
-            for (let lv = 1; lv <= 5; lv++) {
+            for (let lv = 1; lv <= TIER_MAX; lv++) {
                 if (u.type === tierType(lv)) { isTier = true; break; }
             }
             let isCoreUnit = false;
@@ -2167,6 +2746,9 @@
         }
         for (let key5 in equipRail) {
             if (present[key5.split(":")[0]] !== true) delete equipRail[key5];
+        }
+        for (let key6 in starState) {
+            if (present[key6.split(":")[0]] !== true) delete starState[key6];
         }
         for (let key3 in equipBeam) {
             if (present[key3.split(":")[0]] !== true) delete equipBeam[key3];
@@ -2313,11 +2895,6 @@
                     dirty = false;
                     syncT = 20;
                     broadcast();
-                    saveT -= 20;
-                    if (saveT <= 0) {
-                        saveT = 600;
-                        saveStore(false);
-                    }
                 } else if (syncT < -300) {
                     syncT = 20;
                     broadcast();
@@ -2432,12 +3009,15 @@
         } catch (err) {}
     }
 
-    function spawnWave(w) {
-        if (Groups.player.size() === 0) return;
+    function spawnWave(w, capNew) {
+        let fresh = capNew !== undefined;
+        let maxUnits = fresh ? capNew : MAX_WAVE_UNITS;
+        let spawned = 0;
+        if (Groups.player.size() === 0) return 0;
         allowWaveUnits(Vars.state.rules);
         let team = Vars.state.rules.waveTeam;
         let alive = 0;
-        Groups.unit.each(new Cons({ get: function(u) { if (u.team == team) alive++; } }));
+        if (!fresh) Groups.unit.each(new Cons({ get: function(u) { if (u.team == team) alive++; } }));
         for (let gi = 0; gi < WAVES.length; gi++) {
             let g = WAVES[gi];
             let type = UnitTypes[g.t];
@@ -2447,7 +3027,7 @@
             if (n <= 0) continue;
             prepareWaveType(type);
             for (let i = 0; i < n; i++) {
-                if (alive >= MAX_WAVE_UNITS) return;
+                if (alive >= maxUnits) return spawned;
                 let pos = spawnPos(type);
                 if (pos == null) continue;
                 let unit = type.create(team);
@@ -2456,26 +3036,47 @@
                 unit.apply(StatusEffects.invincible, 60);
                 unit.add();
                 alive++;
+                spawned++;
                 Events.fire(new UnitSpawnEvent(unit));
                 fx(pos.x, pos.y);
             }
         }
+        return spawned;
     }
 
-    if (typeof PlayerLeave !== "undefined") {
-        Events.on(PlayerLeave, new Cons({
-            get: function(e) {
-                if (Vars.net.client()) return;
-                try { if (Object.keys(store).length > 0) saveStore(true); } catch (err) {}
+    Events.run(Trigger.update, new Runnable({
+        run: function() {
+            if (Vars.net.client() || !isActive() || Vars.state.gameOver || Vars.state.isPaused()) return;
+            if (Groups.player.size() === 0) return;
+            bonusWaveT += Time.delta;
+            if (bonusWaveT < BONUS_WAVE_INTERVAL) return;
+            bonusWaveT = 0;
+            let w = Math.max(1, Vars.state.wave - 1);
+            let wt = Vars.state.rules.waveTeam;
+            let olds = [];
+            Groups.unit.each(new Cons({ get: function(u) { if (u.team == wt && !u.dead && u.isValid()) olds.push(u); } }));
+            let left = BONUS_WAVE_MAX_NEW;
+            for (let i = 0; i < BONUS_WAVE_TIMES && left > 0; i++) {
+                let n = spawnWave(w, left);
+                left -= (n || 0);
             }
-        }));
-    }
+            for (let i = 0; i < olds.length; i++) {
+                let ou = olds[i];
+                if (ou == null || !ou.isValid()) continue;
+                try { Call.unitDespawn(ou); } catch (err) {
+                    try { ou.remove(); } catch (err2) {}
+                }
+            }
+            try {
+                Call.sendMessage(tr("[scarlet]Đã tự động spawn x" + BONUS_WAVE_TIMES + " đợt quái!", "[scarlet]Auto-spawned x" + BONUS_WAVE_TIMES + " waves!"));
+            } catch (err) {}
+        }
+    }));
 
     Events.on(WaveEvent, new Cons({
         get: function(e) {
             if (Vars.net.client() || !isActive() || Vars.state.gameOver) return;
             spawnWave(Vars.state.wave - 1);
-            saveStore(true);
         }
     }));
 
@@ -2552,7 +3153,6 @@
 
     Events.on(WorldLoadEvent, new Cons({
         get: function(e) {
-            try { if (!Vars.net.client() && Object.keys(store).length > 0) saveStore(true); } catch (err) {}
             byId = {};
             teamsCache = null;
             assignCache = null;
@@ -2562,6 +3162,20 @@
             equipAng = {};
             equipBeam = {};
             equipRail = {};
+            starState = {};
+            bonusWaveT = 0;
+            matchT = 0;
+            shieldMinT = 0;
+            coreShield = {};
+            shieldRecs = [];
+            shieldEnded = false;
+            shieldSyncT = 0;
+            shieldView = { inv: 0, at: 0, cores: {} };
+            shieldFlash = {};
+            shieldSeenHit = {};
+            recentUp = [[], [], [], []];
+            viewUp = [[], [], [], []];
+            lastUpTab = 0;
             auraSeen = {};
             respawnLock = {};
             swapPending = {};
@@ -2582,8 +3196,7 @@
                 try { upDialog.hide(); } catch (err) {}
                 upDialog = null;
             }
-            if (isActive()) loadStore();
-            else store = {};
+            store = {};
 
             if (!Vars.net.client()) {
                 Time.run(2, new Runnable({
@@ -2626,7 +3239,7 @@
             let st = reqState(player);
             if (st == null || st.lv < FREE_SWITCH_LEVEL) return;
             let k = parseInt(payload);
-            if (!(k >= 1 && k <= 5)) return;
+            if (!(k >= 1 && k <= TIER_MAX)) return;
             let nu = (k === tierCap(st.lv)) ? 0 : k;
             if ((st.u || 0) === nu) return;
             st.u = nu;
@@ -2781,7 +3394,43 @@
         return Mathf.dst(u.x, u.y, core.x, core.y) <= core.block.size * Vars.tilesize / 2 + NEAR_CORE;
     }
 
+    function touchUp(tab, key) {
+        let a = recentUp[tab];
+        let i = a.indexOf(key);
+        if (i >= 0) a.splice(i, 1);
+        a.unshift(key);
+        lastUpTab = tab;
+    }
+
+    function noteTouch(kind, payload) {
+        try {
+            let parts = String(payload).split("|");
+            let st = localState();
+            if (kind === REQ_UP) touchUp(1, parseInt(parts[0]));
+            else if (kind === REQ_UNIT) touchUp(0, parseInt(parts[0]));
+            else if (kind === REQ_BUY) touchUp(2, String(parts[0]));
+            else if (kind === REQ_BARR) touchUp(3, "b");
+            else if ((kind === REQ_MODE || kind === REQ_SELL) && st != null) {
+                let idx = parseInt(parts[0]);
+                if (idx >= 0 && idx < st.d.length) touchUp(2, String(st.d[idx]));
+            }
+        } catch (err) {}
+    }
+
+    function orderedBy(tab, base) {
+        let seen = viewUp[tab];
+        let out = [];
+        for (let i = 0; i < seen.length; i++) {
+            if (base.indexOf(seen[i]) >= 0) out.push(seen[i]);
+        }
+        for (let j = 0; j < base.length; j++) {
+            if (out.indexOf(base[j]) < 0) out.push(base[j]);
+        }
+        return out;
+    }
+
     function send(kind, payload) {
+        noteTouch(kind, payload);
         if (global.NexNet != null) global.NexNet.send(kind, payload);
     }
 
@@ -2853,6 +3502,13 @@
         return Math.floor((panelW() - 36) / gridCols()) - 8;
     }
 
+    function measureHeight(buildFn) {
+        let probe = new Table();
+        buildFn(probe);
+        probe.pack();
+        return probe.getPrefHeight();
+    }
+
     function unitRow(p, st, t, cur, w) {
         let ut = tierType(t);
         let row = new Table(Styles.black6);
@@ -2862,7 +3518,7 @@
         let col = new Table();
         col.left();
         col.add("[white]" + ut.localizedName + "[]").left().row();
-        col.add("[lightgray]" + tr("Bậc ", "Tier ") + t + "[]").left();
+        col.add("[lightgray]" + (isExtraTier(t) ? tr("Đặc biệt", "Special") : (tr("Bậc ", "Tier ") + t)) + "[]").left();
         row.add(col).growX().left();
         if (t === cur) {
             row.add("[accent]" + tr("Đang dùng", "In use") + "[]").width(selW).center();
@@ -2872,13 +3528,17 @@
         p.add(row).width(w).pad(4).row();
     }
 
+    function statHeader(p, st, w) {
+        p.button(tr("Xem chi tiết chỉ số", "View stat details"), new Runnable({ run: function() { statDetailDialog(st); } })).width(w).height(btnH()).pad(4).row();
+    }
+
     function statRow(p, st, i, w) {
         let lv = st.s[i];
         let row = new Table(Styles.black6);
         row.margin(8);
         let col = new Table();
         col.left();
-        col.add("[white]" + tr(STATS[i].vi, STATS[i].en) + "[]   [lightgray]" + lv + "/" + statMax(i) + "[]").left().wrap().growX().row();
+        col.add("[white]" + tr(STATS[i].vi, STATS[i].en) + "[]   [lightgray]" + lv + "/" + statMaxLabel(i) + "[]").left().wrap().growX().row();
         col.add("[lightgray]" + STATS[i].f(lv) + (lv < statMax(i) ? "  >  " + STATS[i].f(lv + 1) : "  MAX") + "[]").left().wrap().growX();
         row.add(col).growX().left();
         let btn = row.button("+", new Runnable({ run: function() { send(REQ_UP, String(i)); } })).size(narrowScreen() ? 52 : 64, btnH()).padLeft(narrowScreen() ? 4 : 8).get();
@@ -2894,6 +3554,8 @@
             "Target within " + ov.rangeTiles + " tiles: every " + ((ov.railInterval || 120) / 60) + "s fires a piercing railgun shot dealing " + (ov.railPct || 150) + "% attack (length " + (ov.railLen || 33) + ", width " + (ov.railWidth || 9) + ")");
         if (ov.blast) return tr("Mục tiêu vào " + ov.rangeTiles + " ô: mỗi giây tạo 1 vụ nổ gây " + (ov.blastPct || 100) + "% tấn công",
             "Target within " + ov.rangeTiles + " tiles: 1 explosion per second dealing " + (ov.blastPct || 100) + "% attack");
+        if (ov.star) return tr("Tầm " + FORSTAR_RANGE + "px. Đạn kiếm xuyên: " + FORSTAR_BASE_DMG + " + " + FORSTAR_NORMAL_ATK_PCT + "% tấn công + " + FORSTAR_NORMAL_HP_PCT + "% máu tối đa. Khi sở hữu từ " + FORSTAR_MIN_OWNED + " pháo trở lên: mỗi phát có " + Math.round(FORSTAR_RAGE_CHANCE * 100) + "% tụ kiếm " + (FORSTAR_CHARGE_TICKS / 60) + "s rồi bắn đòn nộ: " + FORSTAR_RAGE_HP_PCT + "% máu tối đa + " + FORSTAR_RAGE_ATK_PCT + "% tấn công (" + Math.round(FORSTAR_TRUE_PCT * 100) + "% sát thương chuẩn, xuyên giáp, giảm 50% giáp mục tiêu, " + Math.round(FORSTAR_CRIT_CHANCE * 100) + "% bạo kích x" + FORSTAR_CRIT_MUL + "). " + Math.round(FORSTAR_HPSTRIKE_CHANCE * 100) + "% gây thêm " + Math.round(FORSTAR_HPSTRIKE_PCT * 100) + "% máu tối đa mục tiêu; " + Math.round(FORSTAR_STARLIGHT_CHANCE * 100) + "% rơi Starlight khi hạ mục tiêu (áp dụng khi gắn Unit/Lõi)",
+            "Range " + FORSTAR_RANGE + "px. Piercing sword shot: " + FORSTAR_BASE_DMG + " + " + FORSTAR_NORMAL_ATK_PCT + "% attack + " + FORSTAR_NORMAL_HP_PCT + "% max HP. When you own " + FORSTAR_MIN_OWNED + "+ of them: each shot has a " + Math.round(FORSTAR_RAGE_CHANCE * 100) + "% chance to charge " + (FORSTAR_CHARGE_TICKS / 60) + "s then fire a rage strike: " + FORSTAR_RAGE_HP_PCT + "% max HP + " + FORSTAR_RAGE_ATK_PCT + "% attack (" + Math.round(FORSTAR_TRUE_PCT * 100) + "% true damage, armor piercing, halves target armor, " + Math.round(FORSTAR_CRIT_CHANCE * 100) + "% crit x" + FORSTAR_CRIT_MUL + "). " + Math.round(FORSTAR_HPSTRIKE_CHANCE * 100) + "% chance to deal extra " + Math.round(FORSTAR_HPSTRIKE_PCT * 100) + "% target max HP; " + Math.round(FORSTAR_STARLIGHT_CHANCE * 100) + "% Starlight drop on kill (when mounted on Unit/Core)");
         if (ov.pull) return tr("Tia kéo: gây sát thương và kéo mục tiêu trên không lại gần", "Tractor beam: damages and pulls air targets closer");
         if (ov.beam) return tr("Bắn tia laser liên tục vào mục tiêu", "Fires a continuous laser at the target");
         let parts = [];
@@ -2905,12 +3567,23 @@
     function turretDmg(def) {
         try {
             if (!def.equip) return 0;
-            if (def.ov && (def.ov.aura || def.ov.blast || def.ov.rail)) return 0;
+            if (def.ov && (def.ov.aura || def.ov.blast || def.ov.rail || def.ov.star)) return 0;
             if (def.ov && def.ov.beam) return Math.round(def.ov.beamDps || 36);
             let bt = equipBullet(def);
             if (bt != null && bt.damage > 0) return Math.round(bt.damage);
         } catch (err) {}
         return 0;
+    }
+
+    function turretHeader(p, st, w, cols) {
+        let info = new Table(Styles.black6);
+        info.margin(8);
+        info.defaults().growX().uniformX().minWidth(0);
+        info.add("[lightgray]Unit[]  [white]" + equipCount(st) + "/" + equipSlots(st) + "[]").center();
+        info.add("[lightgray]" + tr("Lõi", "Core") + "[]  [white]" + coreCount(st) + "/" + coreSlots(st) + "[]").center();
+        info.add("[lightgray]" + tr("Xây", "Build") + "[]  [white]" + builtCount(st) + "/" + maxDrones() + "[]").center();
+        p.add(info).colspan(cols).width(w).pad(4).row();
+        p.add("[lightgray]" + tr("Mỗi cấp +1 ô. Có thể mua nhiều pháo cùng loại.", "+1 slot per level. You can buy the same turret many times.") + "[]").colspan(cols).width(w).left().wrap().pad(2).row();
     }
 
     function turretCard(st, def, cw) {
@@ -2995,7 +3668,7 @@
         return name + "  x" + cfg.n + tr(" / ", " / ") + cfg.sec + "s  " + tr("tối đa ", "max ") + cfg.cap;
     }
 
-    function armyTab(p, st, w) {
+    function armyHeader(p, st, w) {
         let lv = st.b || 0;
         let box = new Table(Styles.black6);
         box.margin(10);
@@ -3015,10 +3688,13 @@
             box.add("[accent]MAX[]").left().padTop(4).row();
         }
         p.add(box).width(w).pad(4).row();
+    }
 
+    function armyList(p, st, w, start, end) {
+        let lv = st.b || 0;
         let list = new Table(Styles.black6);
         list.margin(10);
-        for (let i = 0; i < BARRACKS.length; i++) {
+        for (let i = start; i < end; i++) {
             let c = (i + 1 === lv) ? "[accent]" : "[lightgray]";
             list.add(c + (i + 1) + ". " + armyDesc(i) + "  (" + BARRACKS[i].cost + tr(" điểm)", " pt)") + "[]").left().wrap().growX().row();
         }
@@ -3083,7 +3759,6 @@
     function buildDialog(d) {
         let c = d.cont;
         c.clear();
-        upPane = null;
         let st = localState();
         if (st == null) {
             c.add(tr("Đang đồng bộ dữ liệu...", "Syncing data...")).pad(20).row();
@@ -3116,7 +3791,7 @@
         let tabs = new Table();
         for (let i = 0; i < 4; i++) {
             let ix = i;
-            let tb = tabs.button(names[i], tabStyle, new Runnable({ run: function() { upTab = ix; ver++; } })).growX().height(btnH()).pad(2).get();
+            let tb = tabs.button(names[i], tabStyle, new Runnable({ run: function() { upTab = ix; upPage = 0; ver++; } })).growX().height(btnH()).pad(2).get();
             tb.setChecked(upTab === i);
         }
         c.add(tabs).width(W).row();
@@ -3124,41 +3799,96 @@
         let tab = upTab;
         let cols = gridCols();
         let cw = cardW();
-        let cell = c.pane(new Cons({
-            get: function(p) {
-                p.margin(4);
-                p.top();
-                if (tab === 0) {
-                    if (st.lv < FREE_SWITCH_LEVEL) {
-                        p.add("[lightgray]" + tr("Đạt cấp " + FREE_SWITCH_LEVEL + " để được đổi unit tùy ý.", "Reach level " + FREE_SWITCH_LEVEL + " to switch units freely.") + "[]").pad(10).row();
-                        return;
-                    }
-                    let cur = activeTier(st);
-                    for (let t = 1; t <= 5; t++) unitRow(p, st, t, cur, W - 24);
-                } else if (tab === 1) {
-                    p.button(tr("Xem chi tiết chỉ số", "View stat details"), new Runnable({ run: function() { statDetailDialog(st); } })).width(W - 24).height(btnH()).pad(4).row();
-                    for (let i = 0; i < STATS.length; i++) statRow(p, st, i, W - 24);
-                } else if (tab === 2) {
-                    let info = new Table(Styles.black6);
-                    info.margin(8);
-                    info.defaults().growX().uniformX().minWidth(0);
-                    info.add("[lightgray]Unit[]  [white]" + equipCount(st) + "/" + equipSlots(st) + "[]").center();
-                    info.add("[lightgray]" + tr("Lõi", "Core") + "[]  [white]" + coreCount(st) + "/" + coreSlots(st) + "[]").center();
-                    info.add("[lightgray]" + tr("Xây", "Build") + "[]  [white]" + builtCount(st) + "/" + maxDrones() + "[]").center();
-                    p.add(info).colspan(cols).width(W - 32).pad(4).row();
-                    p.add("[lightgray]" + tr("Mỗi cấp +1 ô. Có thể mua nhiều pháo cùng loại.", "+1 slot per level. You can buy the same turret many times.") + "[]").colspan(cols).width(W - 32).left().wrap().pad(2).row();
-                    for (let j = 0; j < defs.list.length; j++) {
-                        p.add(turretCard(st, defs.list[j], cw)).width(cw).pad(4).top().left();
-                        if ((j + 1) % cols === 0) p.row();
-                    }
-                } else {
-                    armyTab(p, st, W - 24);
-                }
+
+        let innerW = W - 24;
+        let navH = btnH() + 12;
+        let availH = Math.max(60, listH() - navH);
+
+        let unitList = (tab === 0 && st.lv >= FREE_SWITCH_LEVEL) ? orderedBy(0, [1, 2, 3, 4, 5, 6, 7]) : null;
+        let statOrder = [];
+        for (let q = 0; q < STATS.length; q++) statOrder.push(q);
+        statOrder = orderedBy(1, statOrder);
+        let turOrder = orderedBy(2, defs.list.map(function(d) { return d.id; }));
+        let itemCount = 1;
+        let perPage = 1;
+        if (tab === 0) {
+            if (unitList != null) {
+                itemCount = unitList.length;
+                let rowH = measureHeight(function(p) { unitRow(p, st, unitList[0], activeTier(st), innerW); });
+                perPage = Math.min(UNIT_PER_PAGE, Math.max(1, Math.floor(availH / Math.max(1, rowH))));
+            } else {
+                itemCount = 1;
+                perPage = 1;
             }
-        })).width(W).maxHeight(listH()).scrollX(false);
-        cell.row();
-        upPane = cell.get();
-        restoreN = upScroll > 0 ? 4 : 0;
+        } else if (tab === 1) {
+            itemCount = STATS.length;
+            let hH = measureHeight(function(p) { statHeader(p, st, innerW); });
+            let rowH = 0;
+            for (let i = 0; i < STATS.length; i++) {
+                let h = measureHeight((function(idx) { return function(p) { statRow(p, st, idx, innerW); }; })(i));
+                if (h > rowH) rowH = h;
+            }
+            perPage = Math.min(STAT_PER_PAGE, Math.max(1, Math.floor(Math.max(0, availH - hH) / Math.max(1, rowH))));
+        } else if (tab === 2) {
+            itemCount = defs.list.length;
+            let hH = measureHeight(function(p) { turretHeader(p, st, innerW, cols); });
+            let cardH = 0;
+            for (let i = 0; i < defs.list.length; i++) {
+                let card = turretCard(st, defs.list[i], cw);
+                card.pack();
+                if (card.getPrefHeight() > cardH) cardH = card.getPrefHeight();
+            }
+            let rows = Math.max(1, Math.floor(Math.max(0, availH - hH) / Math.max(1, cardH)));
+            perPage = Math.min(TURRET_PER_PAGE, rows) * cols;
+        } else {
+            itemCount = BARRACKS.length;
+            let hH = measureHeight(function(p) { armyHeader(p, st, innerW); });
+            let rowH = measureHeight(function(p) { armyList(p, st, innerW, 0, 1); });
+            perPage = Math.min(ARMY_PER_PAGE, Math.max(1, Math.floor(Math.max(0, availH - hH) / Math.max(1, rowH))));
+        }
+        let totalPages = Math.max(1, Math.ceil(itemCount / perPage));
+        if (upPage < 0) upPage = 0;
+        if (upPage > totalPages - 1) upPage = totalPages - 1;
+        let start = upPage * perPage;
+        let end = Math.min(itemCount, start + perPage);
+
+        let body = new Table();
+        body.margin(4);
+        body.top();
+        if (tab === 0) {
+            if (st.lv < FREE_SWITCH_LEVEL) {
+                body.add("[lightgray]" + tr("Đạt cấp " + FREE_SWITCH_LEVEL + " để được đổi unit tùy ý.", "Reach level " + FREE_SWITCH_LEVEL + " to switch units freely.") + "[]").pad(10).row();
+            } else {
+                let cur = activeTier(st);
+                for (let idx = start; idx < end; idx++) unitRow(body, st, unitList[idx], cur, innerW);
+            }
+        } else if (tab === 1) {
+            if (start === 0) statHeader(body, st, innerW);
+            for (let i = start; i < end; i++) statRow(body, st, statOrder[i], innerW);
+        } else if (tab === 2) {
+            if (start === 0) turretHeader(body, st, innerW, cols);
+            let colCount = 0;
+            for (let j = start; j < end; j++) {
+                body.add(turretCard(st, defs.map[turOrder[j]], cw)).width(cw).pad(4).top().left();
+                colCount++;
+                if (colCount % cols === 0) body.row();
+            }
+        } else {
+            if (start === 0) armyHeader(body, st, innerW);
+            armyList(body, st, innerW, start, end);
+        }
+        c.add(body).width(W).row();
+
+        if (totalPages > 1) {
+            let nav = new Table();
+            let navBtnW = narrowScreen() ? 56 : 72;
+            let prevBtn = nav.button("<", new Runnable({ run: function() { if (upPage > 0) { upPage--; ver++; } } })).size(navBtnW, btnH()).get();
+            prevBtn.setDisabled(upPage <= 0);
+            nav.add("[white]" + (upPage + 1) + "/" + totalPages + "[]").width(80).center();
+            let nextBtn = nav.button(">", new Runnable({ run: function() { if (upPage < totalPages - 1) { upPage++; ver++; } } })).size(navBtnW, btnH()).get();
+            nextBtn.setDisabled(upPage >= totalPages - 1);
+            c.add(nav).width(W).pad(4).row();
+        }
     }
 
     function openUpgrade() {
@@ -3174,9 +3904,9 @@
         let lastVer = -1;
         let lastTab = -1;
         let lastW = -1;
-        upTab = 0;
-        upScroll = 0;
-        restoreN = 0;
+        upTab = lastUpTab;
+        upPage = 0;
+        viewUp = [recentUp[0].slice(), recentUp[1].slice(), recentUp[2].slice(), recentUp[3].slice()];
         dialog.update(new Runnable({
             run: function() {
                 if (!nearOwnCore()) {
@@ -3185,19 +3915,10 @@
                 }
                 let w = Core.graphics.getWidth() * 10000 + Core.graphics.getHeight();
                 if (lastVer !== ver || lastTab !== upTab || lastW !== w) {
-                    if (upPane != null && lastTab === upTab) {
-                        try { upScroll = upPane.getScrollY(); } catch (err) {}
-                    }
-                    if (lastTab !== upTab) upScroll = 0;
                     lastVer = ver;
                     lastTab = upTab;
                     lastW = w;
                     buildDialog(dialog);
-                } else if (restoreN > 0 && upPane != null) {
-                    restoreN--;
-                    try { upPane.setScrollYForce(upScroll); } catch (err) {
-                        try { upPane.setScrollY(upScroll); } catch (err2) {}
-                    }
                 }
             }
         }));
@@ -3219,7 +3940,9 @@
     function hudLine() {
         let st = localState();
         if (st == null) return "";
-        return "[accent]" + tr("Cấp ", "Lv ") + "[white]" + st.lv + "[]  [yellow]" + tr("ĐP ", "Pt ") + st.pts + "[]  [lightgray]" + tierType(activeTier(st)).localizedName + "[]";
+        let sl = invulTicksLeft();
+        let tail = sl > 0 ? "[cyan]" + tr("Khiên ", "Shield ") + fmtTicks(sl) + "[]" : "[lightgray]" + tierType(activeTier(st)).localizedName + "[]";
+        return "[accent]" + tr("Cấp ", "Lv ") + "[white]" + st.lv + "[]  [yellow]" + tr("ĐP ", "Pt ") + st.pts + "[]  " + tail;
     }
 
     function expText() {
@@ -3377,9 +4100,11 @@
             teamsCache = null;
             let r = Vars.state.rules;
             r.tags.put(TAG_ACTIVE, "1");
-            r.tags.put(TAG_DATA, "{}");
-            loadStore();
-            saveStore(false);
+            store = {};
+            matchT = 0;
+            shieldMinT = 0;
+            coreShield = {};
+            shieldEnded = false;
             r.waves = true;
             r.waveTimer = true;
             r.attackMode = false;
@@ -3387,8 +4112,6 @@
             r.winWave = 0;
             r.waitEnemies = false;
             r.dropZoneRadius = 0;
-            try { r.tags.remove(TAG_TEAMS); } catch (err) {}
-            try { r.tags.remove(TAG_ASSIGN); } catch (err) {}
             teamsCache = null;
             assignCache = null;
             seenPl = {};
@@ -3439,7 +4162,20 @@
             drTable.add(tr("pháo (0 - " + LIMIT_DRONES + ")", "turrets (0 - " + LIMIT_DRONES + ")")).padLeft(8);
             content.add(drTable).pad(5).row();
 
+            content.add(tr("Thời gian khiên bất tử của lõi đầu trận (phút, 0 = tắt):", "Core invincible shield time at match start (minutes, 0 = off):")).padBottom(4).row();
+            let shTable = new Table();
+            let shField = shTable.field(String(shieldMinutes()), text => {}).width(120).get();
+            shField.setFilter(TextField.TextFieldFilter.digitsOnly);
+            shField.setMaxLength(3);
+            shTable.add(tr("phút (mặc định " + DEFAULT_SHIELD_MIN + ")", "min (default " + DEFAULT_SHIELD_MIN + ")")).padLeft(8);
+            content.add(shTable).pad(5).row();
+
             return function() {
+                let sm = parseInt(shField.getText());
+                if (isNaN(sm) || sm < 0) sm = DEFAULT_SHIELD_MIN;
+                if (sm > LIMIT_SHIELD_MIN) sm = LIMIT_SHIELD_MIN;
+                Core.settings.put(KEY_SHIELD, java.lang.Integer(sm));
+
                 let e = parseInt(expField.getText());
                 if (isNaN(e) || e < 0) e = DEFAULT_EXP;
                 if (e > LIMIT_EXP) e = LIMIT_EXP;

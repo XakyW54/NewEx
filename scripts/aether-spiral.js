@@ -70,6 +70,17 @@ const customShootFx = new Effect(20, e => {
 });
 
 const UniversalItemUI = {
+    // Gửi cấu hình bằng cơ chế gốc của Mindustry (tự đồng bộ client <-> server).
+    // PHẢI dùng "new java.lang.Integer" để giá trị không bị biến thành Double (Double không gửi qua mạng được).
+    sendConfig(build, mask) {
+        if (build == null || !build.isValid()) return;
+        try {
+            build.configure(new java.lang.Integer(mask | 0));
+        } catch (err) {
+            Log.err("[AetherSpiral] configure lỗi: " + err);
+        }
+    },
+
     buildSlotUI(table, build, onConfigChange) {
         let slotsTable = new Table();
         slotsTable.background(Styles.black6);
@@ -92,11 +103,11 @@ const UniversalItemUI = {
                 }
             }), Styles.defaultb, () => {
                 if (currentItem != null) {
-                    NexNet.configure(build, java.lang.Integer(this.buildMask(build, slotIndex, 0)));
+                    this.sendConfig(build, this.buildMask(build, slotIndex, 0));
                     if (onConfigChange) onConfigChange();
                 } else {
                     this.showItemSelectionDialog(build, (selectedType) => {
-                        NexNet.configure(build, java.lang.Integer(this.buildMask(build, slotIndex, selectedType)));
+                        this.sendConfig(build, this.buildMask(build, slotIndex, selectedType));
                         if (onConfigChange) onConfigChange();
                     });
                 }
@@ -571,8 +582,9 @@ Events.on(ContentInitEvent, () => {
         }
 
         aetherSpiral.config(java.lang.Integer, packCons2((tile, value) => {
+            // Xử lý chính nằm ở configured() bên dưới. Đây chỉ là dự phòng (applyEquipConfig an toàn khi gọi lặp).
             if (tile != null && tile.applyEquipConfig !== undefined) {
-                tile.applyEquipConfig(value);
+                tile.applyEquipConfig(Number(value));
             }
         }));
 
@@ -620,6 +632,7 @@ Events.on(ContentInitEvent, () => {
                     return;
                 }
                 let core = this.team.core();
+                if (core == null) return; // không có lõi thì không đổi trang bị (tránh mất vật phẩm)
                 for (let i = 0; i < 4; i++) {
                     let newType = (mask >> (i * 3)) & 7;
                     let oldType = Number(this.equipSlots[i]);
@@ -743,6 +756,13 @@ Events.on(ContentInitEvent, () => {
             config() { return java.lang.Integer(this.getSlotConfig()); },
 
             configured(builder, value) {
+                // Giá trị có thể đến dạng số JS hoặc java.lang.Integer tùy môi trường Rhino
+                let isInt = typeof value === "number" ||
+                    (value != null && value.getClass != null && String(value.getClass().getName()) === "java.lang.Integer");
+                if (isInt) {
+                    this.applyEquipConfig(Number(value));
+                    return;
+                }
                 this.super$configured(builder, value);
             },
 

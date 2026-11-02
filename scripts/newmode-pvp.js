@@ -31,6 +31,7 @@
     const SHIELD_BUFFER = 1000000;
     const SHIELD_SYNC_TICKS = 30;
     const SHIELD_KIND = "newex-pvp-shield";
+    const EXP_KIND = "newex-pvp-exp";
     const SHIELD_COLOR = Color.valueOf("#d000ff");
     const SHIELD_GLOW = Color.valueOf("#00f0ff");
     const SHIELD_GOLD = Color.valueOf("#ffe58a");
@@ -148,11 +149,42 @@
 
     function roleText(id) {
         let r = TURRET_ROLES[id];
-        if (r === ROLE_BRAWLER) return "[orange]" + tr("Cận chiến (Brawler)", "Brawler") + "[]";
-        if (r === ROLE_ATTACK) return "[scarlet]" + tr("Tấn công (Attack)", "Attack") + "[]";
-        if (r === ROLE_DEFENSE) return "[sky]" + tr("Phòng thủ (Defense)", "Defense") + "[]";
-        if (r === ROLE_DEALER) return "[gold]" + tr("Sát thương (Damage Dealer)", "Damage Dealer") + "[]";
+        if (r === ROLE_BRAWLER) return "[orange]" + tr("Cận chiến", "Brawler") + "[]";
+        if (r === ROLE_ATTACK) return "[scarlet]" + tr("Tấn công", "Attack") + "[]";
+        if (r === ROLE_DEFENSE) return "[sky]" + tr("Phòng thủ", "Defense") + "[]";
+        if (r === ROLE_DEALER) return "[gold]" + tr("Sát thương", "Damage") + "[]";
         return "";
+    }
+
+    // thưởng chỉ số theo vai trò khi pháo đang được trang bị (mỗi pháo cộng dồn)
+    const ROLE_ATK_PCT = 5;
+    const ROLE_HP_PCT = 15;
+    const ROLE_ARM_PCT = 10;
+    const ROLE_ARM_FLAT = 5;
+    const ROLE_CUT_PCT = 5;
+    const ROLE_CUT_CAP = 60;
+    const ROLE_ATK_MAX = 50;
+    const ROLE_HP_MAX = 100;
+
+    function roleDesc(id) {
+        let r = TURRET_ROLES[id];
+        if (r === ROLE_ATTACK) return tr("Trang bị: +" + ROLE_ATK_PCT + "% tấn công (tối đa " + ROLE_ATK_MAX + "%)", "Equipped: +" + ROLE_ATK_PCT + "% attack (max " + ROLE_ATK_MAX + "%)");
+        if (r === ROLE_BRAWLER) return tr("Trang bị: +" + ROLE_HP_PCT + "% máu (tối đa " + ROLE_HP_MAX + "%)", "Equipped: +" + ROLE_HP_PCT + "% HP (max " + ROLE_HP_MAX + "%)");
+        if (r === ROLE_DEFENSE) return tr("Trang bị: +" + ROLE_ARM_PCT + "% giáp, +" + ROLE_ARM_FLAT + " giáp, -" + ROLE_CUT_PCT + "% sát thương nhận (tối đa " + ROLE_CUT_CAP + "%)", "Equipped: +" + ROLE_ARM_PCT + "% armor, +" + ROLE_ARM_FLAT + " armor, -" + ROLE_CUT_PCT + "% damage taken (max " + ROLE_CUT_CAP + "%)");
+        return "";
+    }
+
+    function roleCounts(st) {
+        let o = { atk: 0, brl: 0, def: 0 };
+        if (st == null || st.d == null) return o;
+        for (let i = 0; i < st.d.length; i++) {
+            if (st.p[i] !== EQUIPPED) continue;
+            let r = TURRET_ROLES[st.d[i]];
+            if (r === ROLE_ATTACK) o.atk++;
+            else if (r === ROLE_BRAWLER) o.brl++;
+            else if (r === ROLE_DEFENSE) o.def++;
+        }
+        return o;
     }
 
     let shredMap = new Map();
@@ -229,6 +261,12 @@
     let recentUp = [[], [], [], []];
     let viewUp = [[], [], [], []];
     let lastUpTab = 0;
+    let upBodyEl = null;      // phần thân đang hiển thị (để chạy hiệu ứng thoát)
+    let upPending = null;     // thao tác chuyển trang đang chờ hiệu ứng thoát xong
+    let upEnterDir = 0;       // hướng lướt vào của trang mới (+1: sang phải, -1: về trái)
+    let turCardHCache = { key: "", h: 0 };
+    const UP_EXIT_MS = 90;
+    const UP_ENTER_MS = 170;
 
     let matchT = 0;
     let shieldMinCache = DEFAULT_SHIELD_MIN;
@@ -349,7 +387,7 @@
     }
 
     function newState() {
-        return { lv: 1, exp: 0, pts: START_POINTS, u: 0, s: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], d: [], p: [], b: 0 };
+        return { lv: 1, exp: 0, pts: START_POINTS, u: 0, s: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], d: [], p: [], b: 0, k: 0, dk: 0 };
     }
 
     function getUid(pl) {
@@ -420,10 +458,11 @@
         } catch (err) {}
     }
 
-    function addExp(pl, amount) {
+    function addExp(pl, amount, quiet) {
         let st = bind(pl);
         if (st.lv >= maxLevel()) return;
         st.exp += amount;
+        if (quiet !== true) notifyExp(pl, amount);
         let before = st.lv;
         let up = 0;
         while (st.lv < maxLevel() && st.exp >= expNeed(st.lv)) {
@@ -445,7 +484,7 @@
         let out = {};
         for (let id in byId) {
             let s = byId[id];
-            out[id] = [s.lv, Math.floor(s.exp), s.pts, s.s, s.d, s.u || 0, s.p, s.b || 0];
+            out[id] = [s.lv, Math.floor(s.exp), s.pts, s.s, s.d, s.u || 0, s.p, s.b || 0, s.k || 0, s.dk || 0];
         }
         if (Vars.net.server()) {
             try { Call.clientPacketReliable(SYNC_KIND, JSON.stringify({ d: out })); } catch (err) {}
@@ -460,7 +499,7 @@
             for (let id in o.d) {
                 let a = o.d[id];
                 let pp = (a[6] != null && a[4] != null && a[6].length === a[4].length) ? a[6] : [];
-                n[id] = { lv: a[0], exp: a[1], pts: a[2], s: a[3], d: a[4], u: a[5] || 0, p: pp, b: a[7] || 0 };
+                n[id] = { lv: a[0], exp: a[1], pts: a[2], s: a[3], d: a[4], u: a[5] || 0, p: pp, b: a[7] || 0, k: a[8] || 0, dk: a[9] || 0 };
             }
             byId = n;
             ver++;
@@ -476,6 +515,9 @@
             }));
             Vars.netClient.addPacketHandler(SHIELD_KIND, new Cons({
                 get: function(content) { onShieldSync(content); }
+            }));
+            Vars.netClient.addPacketHandler(EXP_KIND, new Cons({
+                get: function(content) { onExpPacket(content); }
             }));
             registered = true;
         } catch (err) {}
@@ -530,7 +572,7 @@
                 Log.warn("[NexPvp] DRONE_IDS: không tìm thấy pháo \"" + id + "\" (newex-" + id + " hoặc " + id + "), bỏ qua");
                 continue;
             }
-            let d = { id: id, block: blk, cost: costOf(blk), equip: true, ov: {}, kind: turretKind(blk) };
+            let d = { id: id, block: blk, cost: costOf(blk), equip: true, mount: NO_MOUNT[id] !== true, ov: {}, kind: turretKind(blk) };
             list.push(d);
             map[d.id] = d;
         }
@@ -651,6 +693,14 @@
     // đạn + điện + chất làm mát vô hạn cho pháo xây
     function supplyTurret(b, def, tick, pl) {
         try { if (b.power != null) b.power.status = 1; } catch (err) {}
+        try {
+            let hr = def.block.heatRequirement;
+            if (hr > 0) {
+                let full = hr * Math.max(1, def.block.maxHeatEfficiency);
+                b.heatReq = full;
+                if (b.sideHeat != null) for (let h = 0; h < b.sideHeat.length; h++) b.sideHeat[h] = full;
+            }
+        } catch (err) {}
         let isT = def.block instanceof Turret;
         let low = isT && !hasAmmoSafe(b);
         if (!tick && !low) return;
@@ -760,6 +810,62 @@
             let b = Vars.world.build(pos);
             if (b == null || b.block !== def.block) continue;
             supplyTurret(b, def, tick, auth ? pl : null);
+            if (auth) preferEnemyPlayer(b, def);
+        }
+    }
+
+    // Tìm unit do PLAYER phe địch điều khiển, trong tầm pháo (tôn trọng targetAir/targetGround/minRange)
+    function findEnemyPlayerTarget(b, def, range) {
+        let blk = def.block;
+        let ta = fld(blk, "targetAir", true) !== false;
+        let tg = fld(blk, "targetGround", true) !== false;
+        let minR = fld(blk, "minRange", 0);
+        let team = b.team;
+        let best = null;
+        let bd = 1e18;
+        try {
+            Groups.unit.each(new Cons({
+                get: function(e) {
+                    if (e == null || e.team == team || e.team == Team.derelict || e.dead || !e.isValid()) return;
+                    let isPl = false;
+                    try { isPl = e.isPlayer(); } catch (err0) {}
+                    if (!isPl) return;
+                    if (e.isFlying() ? !ta : !tg) return;
+                    try { if (!e.targetable(team)) return; } catch (err1) {}
+                    let d = Mathf.dst(b.x, b.y, e.x, e.y);
+                    if (d - e.hitSize / 2 > range || d < minR) return;
+                    if (d < bd) { bd = d; best = e; }
+                }
+            }));
+        } catch (err) {
+            logOnce("fept", "findEnemyPlayerTarget: " + err);
+        }
+        return best;
+    }
+
+    // Mỗi tick: nếu có player phe địch trong tầm, ép pháo XÂY nhắm bắn người đó trước, ưu tiên
+    // hơn mục tiêu do AI gốc của pháo tự chọn (lính, unit AI...). Chỉ áp dụng cho pháo xây,
+    // không ảnh hưởng tới pháo lắp lên unit (hệ thống "equip" riêng, xử lý ở mountFire/resolveAim).
+    let playerPrioT = {};
+    const PLAYER_PRIO_INTERVAL = 15; // đỡ tốn hiệu năng: không quét Groups.unit mỗi tick cho từng pháo xây
+
+    function preferEnemyPlayer(b, def) {
+        if (def.kind === "point") return; // phòng thủ điểm bắn hạ đạn địch, không áp dụng ưu tiên nhắm player
+        try {
+            let key = b.id;
+            let left = playerPrioT[key];
+            if (left === undefined) left = 0;
+            left -= Time.delta;
+            if (left > 0) {
+                playerPrioT[key] = left;
+                return;
+            }
+            playerPrioT[key] = PLAYER_PRIO_INTERVAL;
+            let range = turretRange(def);
+            let t = findEnemyPlayerTarget(b, def, range);
+            if (t != null) b.target = t;
+        } catch (err) {
+            logOnce("prioplayer:" + def.id, "prioritize enemy player failed: " + err);
         }
     }
 
@@ -852,7 +958,7 @@
         for (let i = 0; i < st.d.length; i++) {
             if (st.p[i] !== EQUIPPED) continue;
             let def = defs.map[st.d[i]];
-            if (def == null || !def.equip) continue;
+            if (def == null || !def.equip || !def.mount) continue;
             if (!multi && seen[def.id] === true) continue;
             seen[def.id] = true;
             out.push(def);
@@ -967,6 +1073,14 @@
         if (cn === "ContinuousTurret" || cn === "ContinuousLiquidTurret") return "cont";
         return "shoot";
     }
+
+    // Các pháo trong danh sách này LUÔN tự động ngắm/bắn theo AI (findTarget, giới hạn đúng range
+    // của pháo), bỏ qua hoàn toàn input ngắm bắn của player — giống cơ chế pháo parallax (tractor).
+    // -> dùng để fix pháo lustre bắn full map khi player tự điều khiển.
+    const FORCE_AUTO_AIM = { lustre: true };
+
+    // Các pháo trong danh sách này chỉ cho XÂY, không cho LẮP lên unit player.
+    const NO_MOUNT = { scathe: true };
 
     function turretRange(def) {
         let r = fld(def.block, "range", 0);
@@ -1108,7 +1222,7 @@
 
     // Giống Turret.updateTile: chọn mục tiêu theo targetInterval, xoay bằng rotateSpeed, chỉ bắn khi trong shootCone
     function resolveAim(u, def, mp, ast, stt, bt, range) {
-        if (ast.shoot) return { tx: ast.x, ty: ast.y, t: null };
+        if (ast.shoot && !FORCE_AUTO_AIM[def.id]) return { tx: ast.x, ty: ast.y, t: null };
         let blk = def.block;
         if (!targetValid(stt.tgt, u, def, mp, range)) stt.tgt = null;
         stt.tt -= Time.delta;
@@ -1947,16 +2061,25 @@
         return st != null ? st.s : null;
     }
 
+    function statsStateOf(unit) {
+        let p = null;
+        try { p = unit.getPlayer(); } catch (err) {}
+        if (p != null) return byId[p.id];
+        let pid = soldierOwner[unit.id];
+        return pid !== undefined ? byId[pid] : null;
+    }
+
     function applyStats(unit) {
         if (!isActive()) return;
         let s = statsOf(unit);
         if (s == null) return;
+        let rc = roleCounts(statsStateOf(unit));
 
         let isPl = false;
         try { isPl = unit.isPlayer(); } catch (err) {}
         let tHp = unit.type.health;
         if (isPl && unit.type === UnitTypes.reign) tHp *= REIGN_HP_MUL;
-        let hpT = tHp * (1 + s[0] * HP_PCT / 100) + s[0] * HP_FLAT;
+        let hpT = (tHp * (1 + s[0] * HP_PCT / 100) + s[0] * HP_FLAT) * (1 + Math.min(ROLE_HP_MAX, rc.brl * ROLE_HP_PCT) / 100);
         if (Math.abs(unit.maxHealth - hpT) > 0.5) {
             let diff = hpT - unit.maxHealth;
             unit.maxHealth = hpT;
@@ -1964,11 +2087,11 @@
             else if (unit.health > hpT) unit.health = hpT;
         }
 
-        unit.armor = unit.type.armor + s[1] * ARM_FLAT;
-        let cut = armorCut(s[1]);
+        unit.armor = (unit.type.armor + s[1] * ARM_FLAT) * (1 + rc.def * ROLE_ARM_PCT / 100) + rc.def * ROLE_ARM_FLAT;
+        let cut = Math.min(ROLE_CUT_CAP, armorCut(s[1]) + rc.def * ROLE_CUT_PCT);
         if (cut > 0) unit.healthMultiplier *= 1 / (1 - cut / 100);
 
-        let dm = 1 + s[2] * ATK_PCT / 100;
+        let dm = (1 + s[2] * ATK_PCT / 100) * (1 + Math.min(ROLE_ATK_MAX, rc.atk * ROLE_ATK_PCT) / 100);
         if (s[5] > 0 && Math.random() < s[5] * 0.02) dm *= 1.5 + s[6] * 0.12;
         unit.damageMultiplier *= dm;
         let base = Math.max(0.1, unit.type.speed);
@@ -2016,7 +2139,7 @@
         if (st == null || st.d.length === 0 || st.p.length !== st.d.length) return false;
         let defs = droneDefs();
         for (let i = 0; i < st.d.length; i++) {
-            if (st.p[i] === EQUIPPED && defs.map[st.d[i]] != null && defs.map[st.d[i]].equip) return true;
+            if (st.p[i] === EQUIPPED && defs.map[st.d[i]] != null && defs.map[st.d[i]].equip && defs.map[st.d[i]].mount) return true;
         }
         return false;
     }
@@ -2478,7 +2601,7 @@
     }
 
     const eachPassiveExp = new Cons({
-        get: function(pl) { addExp(pl, PASSIVE_EXP); }
+        get: function(pl) { addExp(pl, PASSIVE_EXP, true); }
     });
 
     const eachPlayerCommon = new Cons({
@@ -2925,6 +3048,13 @@
                     delete spawnBuff[dp.id];
                     let killer = pvpKiller(u);
                     if (killer != null && killer.team() != dp.team()) {
+                        try {
+                            let ks = bind(killer);
+                            ks.k = (ks.k || 0) + 1;
+                            let ds = bind(dp);
+                            ds.dk = (ds.dk || 0) + 1;
+                            dirty = true;
+                        } catch (err2) {}
                         let dx = killExp(u) * DEATH_EXP_PCT / 100;
                         if (dx > 0) addExp(dp, dx);
                         let kx = killExp(u) * KILL_EXP_PCT / 100;
@@ -3034,13 +3164,13 @@
         }
     }));
 
-    function reqState(player) {
+    function reqState(player, anyDist) {
         if (!isActive() || player == null) return null;
         let u = player.unit();
         let core = player.team().core();
         if (core == null) return null;
         if (u == null || !u.isValid() || u.dead) return bind(player);
-        if (Mathf.dst(u.x, u.y, core.x, core.y) > core.block.size * Vars.tilesize / 2 + NEAR_CORE) {
+        if (anyDist !== true && Mathf.dst(u.x, u.y, core.x, core.y) > core.block.size * Vars.tilesize / 2 + NEAR_CORE) {
             toast(player, tr("[scarlet]Hãy về gần lõi để nâng cấp!", "[scarlet]Return near your core to upgrade!"));
             return null;
         }
@@ -3095,9 +3225,9 @@
 
         // payload "idx|mode": e = lắp lên unit, b = xây quanh lõi, u (mặc định) = gỡ/thu hồi về túi
         global.NexNet.on(REQ_MODE, function(player, payload) {
-            let st = reqState(player);
-            if (st == null) return;
             let parts = String(payload).split("|");
+            let st = reqState(player, parts.length > 1 && parts[1] === "b");
+            if (st == null) return;
             let idx = parseInt(parts[0]);
             let mode = parts.length > 1 ? parts[1] : "u";
             if (!(idx >= 0 && idx < st.d.length)) return;
@@ -3113,7 +3243,7 @@
             }
             if (cur >= 0 || cur === EQUIPPED) return; // chỉ lắp/xây pháo đang nằm trong túi
             if (mode === "e") {
-                if (!d.equip) {
+                if (!d.equip || !d.mount) {
                     toast(player, tr("[scarlet]Pháo này không thể gắn lên unit!", "[scarlet]This turret cannot be mounted!"));
                     return;
                 }
@@ -3367,26 +3497,33 @@
         let kind = def.kind;
         let rng = Math.round(turretRange(def) / Vars.tilesize * 10) / 10;
         let rangeTxt = tr(" Tầm: " + rng + " ô.", " Range: " + rng + " tiles.");
+        // ghi chú: pháo tự ngắm/bắn theo AI trong đúng tầm, player không điều khiển được (như parallax)
+        let autoTxt = FORCE_AUTO_AIM[def.id] === true
+            ? tr(" [sky]Tự động bắn (không điều khiển được).[]", " [sky]Auto-fire (not player-controlled).[]")
+            : "";
+        if (def.mount === false) {
+            autoTxt += tr(" [gray]Chỉ xây được, không thể lắp lên unit.[]", " [gray]Build only, cannot be mounted on a unit.[]");
+        }
         if (kind === "tractor") {
             let dps = Math.round(fld(blk, "damage", 0) * 60 * 10) / 10;
             return tr("Tia kéo: kéo máy bay lại gần, gây " + dps + " sát thương/giây, lực kéo " + fld(blk, "force", 0) + "." + rangeTxt,
-                "Tractor beam: pulls air units closer, deals " + dps + " dmg/s, force " + fld(blk, "force", 0) + "." + rangeTxt);
+                "Tractor beam: pulls air units closer, deals " + dps + " dmg/s, force " + fld(blk, "force", 0) + "." + rangeTxt) + autoTxt;
         }
         if (kind === "point") {
             return tr("Phòng thủ điểm: bắn hạ đạn địch, mỗi " + fld(blk, "reload", 0) + " tick trừ " + fld(blk, "bulletDamage", 0) + " sát thương đạn." + rangeTxt,
-                "Point defense: shoots down enemy bullets, every " + fld(blk, "reload", 0) + " ticks removes " + fld(blk, "bulletDamage", 0) + " bullet damage." + rangeTxt);
+                "Point defense: shoots down enemy bullets, every " + fld(blk, "reload", 0) + " ticks removes " + fld(blk, "bulletDamage", 0) + " bullet damage." + rangeTxt) + autoTxt;
         }
         if (kind === "laser") {
             return tr("Laser liên tục " + Math.round(fld(blk, "shootDuration", 0) / 6) / 10 + "s rồi nạp lại " + Math.round(fld(blk, "reload", 0) / 6) / 10 + "s." + rangeTxt,
-                "Continuous laser for " + Math.round(fld(blk, "shootDuration", 0) / 6) / 10 + "s, then recharges " + Math.round(fld(blk, "reload", 0) / 6) / 10 + "s." + rangeTxt);
+                "Continuous laser for " + Math.round(fld(blk, "shootDuration", 0) / 6) / 10 + "s, then recharges " + Math.round(fld(blk, "reload", 0) / 6) / 10 + "s." + rangeTxt) + autoTxt;
         }
         if (kind === "cont") {
-            return tr("Tia bắn liên tục khi có mục tiêu." + rangeTxt, "Fires a continuous beam while a target is in range." + rangeTxt);
+            return tr("Tia bắn liên tục khi có mục tiêu." + rangeTxt, "Fires a continuous beam while a target is in range." + rangeTxt) + autoTxt;
         }
         let parts = [];
         try { if (blk.targetGround !== false) parts.push(tr("bộ binh", "ground")); } catch (err) {}
         try { if (blk.targetAir !== false) parts.push(tr("máy bay", "air")); } catch (err) {}
-        return (parts.length > 0 ? tr("Bắn: ", "Targets: ") + parts.join(", ") + "." : tr("Pháo tiêu chuẩn.", "Standard turret.")) + rangeTxt;
+        return (parts.length > 0 ? tr("Bắn: ", "Targets: ") + parts.join(", ") + "." : tr("Pháo tiêu chuẩn.", "Standard turret.")) + rangeTxt + autoTxt;
     }
 
     function turretDmg(def) {
@@ -3399,42 +3536,39 @@
     }
 
     function turretHeader(p, st, w, cols) {
-        p.add("[lightgray]" + tr("Mua pháo xong sẽ vào Túi đồ (nút cạnh Điểm). Lắp pháo trong túi: ", "Bought turrets go to your Bag (button next to Points). Mounted: ") + "[]" + "[white]" + equipCount(st) + "/" + equipSlots(st) + tr("[lightgray], xây: ", "[lightgray], built: ") + "[white]" + builtCount(st) + "/" + maxBuilt() + "[]").colspan(cols).width(w).left().wrap().pad(2).row();
-        p.add("[lightgray]" + (multiTurretOn() ? tr("Mỗi cấp +1 ô. Có thể mua nhiều pháo cùng loại.", "+1 slot per level. You can buy the same turret many times.") : tr("Mỗi cấp +1 ô. Mỗi loại pháo chỉ mua được 1 (bật lại trong Cài đặt Newex).", "+1 slot per level. Only 1 of each turret type (re-enable in Newex settings).")) + "[]").colspan(cols).width(w).left().wrap().pad(2).row();
+        p.add("[lightgray]" + tr("Pháo mua xong vào Túi đồ. Lắp: ", "Bought turrets go to Bag. Mounted: ") + "[white]" + equipCount(st) + "/" + equipSlots(st) + "[]  [lightgray]" + tr("Xây: ", "Built: ") + "[white]" + builtCount(st) + "/" + maxBuilt() + "[]  [lightgray]" + (multiTurretOn() ? tr("Mua được nhiều pháo cùng loại.", "Same turret can be bought many times.") : tr("Mỗi loại chỉ mua 1.", "1 per turret type.")) + "[]").colspan(cols).width(w).left().wrap().minWidth(0).pad(2).row();
     }
 
     function turretCard(st, def, cw) {
-        let inner = Math.max(140, cw - 20);
+        let inner = Math.max(150, cw - 20);
         let ownedN = ownedCount(st, def.id);
         let card = new Table(Styles.black6);
-        card.margin(10);
+        card.margin(8);
         card.top().left();
 
         let single = !multiTurretOn() && ownedN > 0;
         let price = turretCost(st, def);
-        let afford = st.pts >= price;
-        let iconSz = narrowScreen() ? 32 : (Vars.mobile ? 44 : 36);
+        let iconSz = narrowScreen() ? 30 : (Vars.mobile ? 40 : 34);
 
+        // dòng 1: icon + tên + x số lượng + nút mua
         let top = new Table();
         top.left();
-        top.add(new Image(def.block.uiIcon)).size(iconSz).padRight(10).top();
-        let col = new Table();
-        col.left();
-        col.add("[white]" + def.block.localizedName + "[]").left().row();
-        if (roleText(def.id).length > 0) col.add(roleText(def.id)).left().row();
-        col.add("[yellow]" + tr("Giá: ", "Cost: ") + price + tr(" điểm", " pt") + "[]").left();
-        top.add(col).left().growX();
-        if (ownedN > 0) top.add("[accent]x" + ownedN + "[]").right().padLeft(6);
+        top.add(new Image(def.block.uiIcon)).size(iconSz).padRight(8);
+        top.add("[white]" + def.block.localizedName + "[]" + (ownedN > 0 ? "  [accent]x" + ownedN + "[]" : "")).left().growX().minWidth(0).wrap();
+        let buyBtn = top.button(tr("Mua", "Buy") + " " + price, new Runnable({ run: function() { send(REQ_BUY, def.id); } })).size(86, btnH()).padLeft(6).get();
+        buyBtn.setDisabled(st.pts < price || !def.equip || single);
         card.add(top).width(inner).left().row();
 
+        // dòng 2: vai trò + thưởng chỉ số
+        let rd = roleDesc(def.id);
+        card.add(roleText(def.id) + (rd.length > 0 ? "  [green]" + rd + "[]" : "")).width(inner).left().wrap().minWidth(0).padTop(4).row();
+
+        // dòng 3: mô tả (tầm bắn, tự động/thủ công)
+        card.add("[lightgray]" + turretDesc(def) + "[]").width(inner).left().wrap().minWidth(0).padTop(2).row();
+
+        // dòng 4: sát thương
         let dmg = turretDmg(def);
-        let desc = turretDesc(def) + (dmg > 0 ? "\n[scarlet]" + tr("Sát thương: ", "Damage: ") + dmg + "[]" : "");
-        card.add("[lightgray]" + desc + "[]").width(inner).left().wrap().padTop(6).row();
-
-        card.image().color(Pal.gray).width(inner).height(2).padTop(8).padBottom(6).row();
-
-        let buyBtn = card.button(tr("Mua", "Buy"), new Runnable({ run: function() { send(REQ_BUY, def.id); } })).width(inner).height(btnH()).pad(2).get();
-        buyBtn.setDisabled(!afford || !def.equip || single);
+        if (dmg > 0) card.add("[scarlet]" + tr("Sát thương: ", "Damage: ") + dmg + "[]").width(inner).left().wrap().minWidth(0).padTop(2).row();
         return card;
     }
 
@@ -3442,6 +3576,15 @@
     let bagDialog = null;
 
     let bagPage = 0;
+    let bagRecent = [];
+
+    function bagTouch(id) {
+        let i = bagRecent.indexOf(id);
+        if (i >= 0) bagRecent.splice(i, 1);
+        bagRecent.unshift(id);
+        bagPage = 0;
+        ver++;
+    }
     const BAG_PER_PAGE = 5;
 
     function buildBag(d) {
@@ -3480,9 +3623,11 @@
             else g.bag.push(i);
         }
         groups.sort(function(x, y) {
-            let ex = (x.on.length + x.built.length) > 0 ? 0 : 1;
-            let ey = (y.on.length + y.built.length) > 0 ? 0 : 1;
-            return ex - ey;
+            let ix = bagRecent.indexOf(x.def.id);
+            let iy = bagRecent.indexOf(y.def.id);
+            if (ix < 0) ix = 9999;
+            if (iy < 0) iy = 9999;
+            return ix - iy;
         });
 
         if (groups.length === 0) {
@@ -3518,13 +3663,13 @@
             let backIdx = g.on.length > 0 ? g.on[g.on.length - 1] : (g.built.length > 0 ? g.built[g.built.length - 1] : -1);
             let sellIdx = bagIdx >= 0 ? bagIdx : backIdx;
             let did = def.id;
-            let ub = row.button(tr("Tháo", "Unmount"), new Runnable({ run: function() { send(REQ_MODE, backIdx + "|u"); } })).size(btnW, btnH()).padLeft(6).get();
+            let ub = row.button(tr("Tháo", "Unmount"), new Runnable({ run: function() { bagTouch(did); send(REQ_MODE, backIdx + "|u"); } })).size(btnW, btnH()).padLeft(6).get();
             ub.setDisabled(backIdx < 0);
-            let mb = row.button(tr("Lắp", "Mount"), new Runnable({ run: function() { send(REQ_MODE, bagIdx + "|e"); } })).size(btnW, btnH()).padLeft(4).get();
-            mb.setDisabled(bagIdx < 0 || slotFull || !def.equip);
-            let bb = row.button(tr("Xây", "Build"), new Runnable({ run: function() { startBuild(did); } })).size(btnW, btnH()).padLeft(4).get();
+            let mb = row.button(tr("Lắp", "Mount"), new Runnable({ run: function() { bagTouch(did); send(REQ_MODE, bagIdx + "|e"); } })).size(btnW, btnH()).padLeft(4).get();
+            mb.setDisabled(bagIdx < 0 || slotFull || !def.equip || !def.mount);
+            let bb = row.button(tr("Xây", "Build"), new Runnable({ run: function() { bagTouch(did); startBuild(did); } })).size(btnW, btnH()).padLeft(4).get();
             bb.setDisabled(bagIdx < 0 || builtFull);
-            row.button(tr("Bán", "Sell"), new Runnable({ run: function() { send(REQ_SELL, String(sellIdx)); } })).size(btnW, btnH()).padLeft(4);
+            row.button(tr("Bán", "Sell"), new Runnable({ run: function() { bagTouch(did); send(REQ_SELL, String(sellIdx)); } })).size(btnW, btnH()).padLeft(4);
             list.add(row).width(W - 24).pad(3).row();
         }
         c.add(list).width(W).top().row();
@@ -3661,9 +3806,57 @@
         dialog.show();
     }
 
+    // ===== Hiệu ứng chuyển trang: lướt + mờ =====
+    function slideEl(el, dir, enter, ms, done) {
+        let t0 = Time.millis();
+        let dist = Vars.mobile ? 28 : 40;
+        let fin = false;
+        let step = function() {
+            if (fin) return;
+            let k = Math.min(1, (Time.millis() - t0) / ms);
+            let sh = enter ? (1 - Math.pow(1 - k, 3)) : (1 - k * k);
+            let off = (enter ? 1 : -1) * (1 - sh) * dir * dist;
+            try { el.color.a = sh; } catch (err) {}
+            try { el.translation.set(off, 0); } catch (err) {}
+            if (k >= 1) {
+                fin = true;
+                if (enter) {
+                    try { el.color.a = 1; } catch (err) {}
+                    try { el.translation.set(0, 0); } catch (err) {}
+                }
+                if (done != null) done();
+            }
+        };
+        try { el.update(new Runnable({ run: step })); } catch (err) {}
+        step();
+    }
+
+    function upCommit(bump) {
+        let pd = upPending;
+        if (pd == null) return;
+        upPending = null;
+        pd.apply();
+        upEnterDir = pd.dir;
+        if (bump) ver++;
+    }
+
+    function upNavigate(dir, apply) {
+        let el = upBodyEl;
+        if (el == null || upPending != null) {
+            if (upPending != null) upCommit(false);
+            apply();
+            upEnterDir = dir;
+            ver++;
+            return;
+        }
+        upPending = { apply: apply, dir: dir };
+        slideEl(el, dir, false, UP_EXIT_MS, function() { upCommit(true); });
+    }
+
     function buildDialog(d) {
         let c = d.cont;
         c.clear();
+        upBodyEl = null;
         let st = localState();
         if (st == null) {
             c.add(tr("Đang đồng bộ dữ liệu...", "Syncing data...")).pad(20).row();
@@ -3697,10 +3890,17 @@
         ];
         let tabStyle = Styles.togglet != null ? Styles.togglet : Styles.defaultt;
         let tabs = new Table();
+        let tabBtns = [];
         for (let i = 0; i < 4; i++) {
             let ix = i;
-            let tb = tabs.button(names[i], tabStyle, new Runnable({ run: function() { upTab = ix; upPage = 0; ver++; } })).growX().height(btnH()).pad(2).get();
+            let tb = tabs.button(names[i], tabStyle, new Runnable({ run: function() {
+                if (ix === upTab) { upPage = 0; ver++; return; }
+                let dir = ix > upTab ? 1 : -1;
+                for (let j = 0; j < tabBtns.length; j++) tabBtns[j].setChecked(j === ix);
+                upNavigate(dir, function() { upTab = ix; upPage = 0; });
+            } })).growX().height(btnH()).pad(2).get();
             tb.setChecked(upTab === i);
+            tabBtns.push(tb);
         }
         c.add(tabs).width(W).row();
 
@@ -3739,14 +3939,21 @@
             perPage = Math.min(STAT_PER_PAGE, Math.max(1, Math.floor(Math.max(0, availH - hH) / Math.max(1, rowH))));
         } else if (tab === 2) {
             itemCount = defs.list.length;
+            let cwM = Math.max(cw, 260);
             let hH = measureHeight(function(p) { turretHeader(p, st, innerW, cols); });
             let cardH = 0;
-            for (let i = 0; i < defs.list.length; i++) {
-                let card = turretCard(st, defs.list[i], cw);
-                card.pack();
-                if (card.getPrefHeight() > cardH) cardH = card.getPrefHeight();
+            let ckey = cwM + "|" + cols + "|" + (Vars.mobile ? 1 : 0) + "|" + tr("v", "e") + "|" + defs.list.length;
+            if (turCardHCache.key === ckey) {
+                cardH = turCardHCache.h;
+            } else {
+                for (let i = 0; i < defs.list.length; i++) {
+                    let card = turretCard(st, defs.list[i], cwM);
+                    card.pack();
+                    if (card.getPrefHeight() > cardH) cardH = card.getPrefHeight();
+                }
+                turCardHCache = { key: ckey, h: cardH };
             }
-            let rows = Math.max(1, Math.floor(Math.max(0, availH - hH) / Math.max(1, cardH)));
+            let rows = Math.max(1, Math.floor(Math.max(0, availH - hH) / Math.max(1, cardH + 8)));
             perPage = Math.min(TURRET_PER_PAGE, rows) * cols;
         } else {
             itemCount = BARRACKS.length;
@@ -3774,10 +3981,12 @@
             if (start === 0) statHeader(body, st, innerW);
             for (let i = start; i < end; i++) statRow(body, st, statOrder[i], innerW);
         } else if (tab === 2) {
-            if (start === 0) turretHeader(body, st, innerW, cols);
+            let cwE = Math.max(cw, 260);
+            let bodyW = (cwE + 8) * cols;
+            if (start === 0) turretHeader(body, st, Math.max(innerW, bodyW - 8), cols);
             let colCount = 0;
             for (let j = start; j < end; j++) {
-                body.add(turretCard(st, defs.map[turOrder[j]], cw)).width(cw).pad(4).top().left();
+                body.add(turretCard(st, defs.map[turOrder[j]], cwE)).width(cwE).pad(4).top().left();
                 colCount++;
                 if (colCount % cols === 0) body.row();
             }
@@ -3789,14 +3998,36 @@
         if (totalPages > 1) {
             nav = new Table();
             let navBtnW = narrowScreen() ? 56 : 72;
-            let prevBtn = nav.button("<", new Runnable({ run: function() { if (upPage > 0) { upPage--; ver++; } } })).size(navBtnW, btnH()).get();
+            let prevBtn = nav.button("<", new Runnable({ run: function() { if (upPage > 0) upNavigate(-1, function() { if (upPage > 0) upPage--; }); } })).size(navBtnW, btnH()).get();
             prevBtn.setDisabled(upPage <= 0);
             nav.add("[white]" + (upPage + 1) + "/" + totalPages + "[]").width(80).center();
-            let nextBtn = nav.button(">", new Runnable({ run: function() { if (upPage < totalPages - 1) { upPage++; ver++; } } })).size(navBtnW, btnH()).get();
+            let nextBtn = nav.button(">", new Runnable({ run: function() { if (upPage < totalPages - 1) upNavigate(1, function() { if (upPage < totalPages - 1) upPage++; }); } })).size(navBtnW, btnH()).get();
             nextBtn.setDisabled(upPage >= totalPages - 1);
         }
         if (nav != null && Vars.mobile) c.add(nav).width(W).pad(4).row();
-        c.add(body).width(W).row();
+        // cả 4 trang (Unit / Chỉ số / Pháo / Lính) đều dùng cuộn lướt tự động theo kích thước giao diện:
+        // cuộn dọc luôn bật (giới hạn theo chiều cao khả dụng), cuộn ngang chỉ bật khi nội dung rộng hơn khung.
+        let hs;
+        if (tab === 2) {
+            let cwE2 = Math.max(cw, 260);
+            hs = (cwE2 + 8) * cols > W - 8;
+        } else {
+            let bodyPrefW = 0;
+            try { bodyPrefW = body.getPrefWidth(); } catch (err) {}
+            hs = bodyPrefW > W + 1;
+        }
+        let sp = c.pane(body).width(W).maxHeight(Math.max(100, listH() - (nav != null ? navH : 0))).get();
+        sp.setScrollingDisabled(!hs, false);
+        sp.setFadeScrollBars(false);
+        sp.setOverscroll(false, false);
+        sp.setSmoothScrolling(true);
+        c.row();
+        upBodyEl = sp;
+        if (upEnterDir !== 0) {
+            let ed = upEnterDir;
+            upEnterDir = 0;
+            slideEl(sp, ed, true, UP_ENTER_MS, null);
+        }
         if (nav != null && !Vars.mobile) c.add(nav).width(W).pad(4).row();
     }
 
@@ -3815,6 +4046,9 @@
         let lastW = -1;
         upTab = lastUpTab;
         upPage = 0;
+        upPending = null;
+        upEnterDir = 0;
+        upBodyEl = null;
         viewUp = [recentUp[0].slice(), recentUp[1].slice(), recentUp[2].slice(), recentUp[3].slice()];
         dialog.update(new Runnable({
             run: function() {
@@ -3823,6 +4057,7 @@
                     return;
                 }
                 let w = Core.graphics.getWidth() * 10000 + Core.graphics.getHeight();
+                if (upPending != null && (lastVer !== ver || lastW !== w)) upCommit(false);
                 if (lastVer !== ver || lastTab !== upTab || lastW !== w) {
                     lastVer = ver;
                     lastTab = upTab;
@@ -3833,6 +4068,406 @@
         }));
         upDialog = dialog;
         dialog.show();
+    }
+
+    // ===== Số EXP nhảy lên trên đầu unit đang điều khiển =====
+    const EXP_JUMP_SEC = 0.8;   // giai đoạn nhảy
+    const EXP_FADE_SEC = 1.2;   // giai đoạn mờ dần
+    const EXP_MERGE_SEC = 0.25; // các lần nhận EXP liền nhau trong khoảng này gộp thành 1 số
+    let expPops = [];
+    let expLastPos = null;
+
+    // chạy ở phía máy chủ/host/offline: báo cho đúng người nhận EXP
+    function notifyExp(pl, amount) {
+        let n = Math.round(amount);
+        if (n < 1) return;
+        try {
+            if (!Vars.headless && Vars.player != null && pl.id === Vars.player.id) {
+                showExpPopup(n);
+                return;
+            }
+        } catch (err) {
+            logOnce("exppopup", "exp popup failed: " + err);
+            return;
+        }
+        if (!Vars.net.server()) return;
+        let msg = JSON.stringify({ p: pl.id, x: n });
+        try { Call.clientPacketReliable(pl.con, EXP_KIND, msg); return; } catch (err) {}
+        try { Call.clientPacketReliable(EXP_KIND, msg); } catch (err) {}
+    }
+
+    // chạy ở máy khách: chỉ hiện nếu gói tin dành cho mình
+    function onExpPacket(content) {
+        try {
+            let o = JSON.parse(String(content));
+            if (Vars.player != null && o.p === Vars.player.id) showExpPopup(o.x);
+        } catch (err) {
+            logOnce("exppacket", "exp packet failed: " + err);
+        }
+    }
+
+    function makeExpLabel(text) {
+        let L = Packages.arc.scene.ui.Label;
+        let el = null;
+        try { el = new L(text, Styles.outlineLabel); } catch (err) { el = new L(text); }
+        el.touchable = Touchable.disabled;
+        el.color.set(Pal.accent);
+        return el;
+    }
+
+    function showExpPopup(n) {
+        if (Vars.headless || Vars.ui == null || Vars.ui.hudGroup == null) return;
+        let now = Time.millis();
+        let last = expPops.length > 0 ? expPops[expPops.length - 1] : null;
+        if (last != null && now - last.t0 < EXP_MERGE_SEC * 1000) {
+            last.n += n;
+            last.el.setText("+" + last.n + " EXP");
+            return;
+        }
+        let el = makeExpLabel("+" + n + " EXP");
+        Vars.ui.hudGroup.addChild(el);
+        expPops.push({ el: el, n: n, t0: now });
+        updateExpPops();
+    }
+
+    function clearExpPops() {
+        for (let i = 0; i < expPops.length; i++) {
+            try { expPops[i].el.remove(); } catch (err) {}
+        }
+        expPops = [];
+        expLastPos = null;
+    }
+
+    function expStagePos(x, y) {
+        let v = null;
+        try { v = Core.input.mouseScreen(x, y); } catch (err) {}
+        if (v == null || !isFinite(v.x) || !isFinite(v.y)) {
+            try { v = Core.camera.project(x, y); } catch (err) {}
+        }
+        return v;
+    }
+
+    function updateExpPops() {
+        if (expPops.length === 0) return;
+        if (Vars.state == null || Vars.state.isMenu() || Vars.player == null) {
+            clearExpPops();
+            return;
+        }
+        let u = null;
+        try { u = Vars.player.unit(); } catch (err) {}
+        if (u != null && u.isValid() && !u.dead) expLastPos = { x: u.x, y: u.y, h: u.type.hitSize };
+        let now = Time.millis();
+        let base = Vars.mobile ? 1.1 : 1.25;
+        let keep = [];
+        for (let i = 0; i < expPops.length; i++) {
+            let pp = expPops[i];
+            let s = (now - pp.t0) / 1000;
+            if (s >= EXP_JUMP_SEC + EXP_FADE_SEC || expLastPos == null) {
+                try { pp.el.remove(); } catch (err) {}
+                continue;
+            }
+            let off;
+            let sc = base;
+            let a = 1;
+            if (s < EXP_JUMP_SEC) {
+                let k = s / EXP_JUMP_SEC;
+                off = 34 * (1 - Math.pow(1 - k, 3)) + 7 * Math.abs(Math.sin(k * Math.PI * 2.5)) * (1 - k);
+                if (k < 0.3) {
+                    let q = k / 0.3 - 1;
+                    sc = base * (0.4 + 0.6 * (1 + 2.7 * q * q * q + 1.7 * q * q)); // nảy phóng to rồi về cỡ chuẩn
+                }
+            } else {
+                let f = (s - EXP_JUMP_SEC) / EXP_FADE_SEC;
+                a = 0.5 * (1 + Math.cos(f * Math.PI));
+                off = 41 + 14 * f;
+            }
+            let v = expStagePos(expLastPos.x, expLastPos.y + expLastPos.h / 2 + 6);
+            if (v == null) { keep.push(pp); continue; }
+            pp.el.setFontScale(sc);
+            pp.el.setSize(pp.el.getPrefWidth(), pp.el.getPrefHeight());
+            pp.el.color.a = a;
+            pp.el.setPosition(v.x, v.y + off, 1);
+            keep.push(pp);
+        }
+        expPops = keep;
+    }
+
+    if (!Vars.headless) {
+        Events.run(Trigger.update, new Runnable({
+            run: function() {
+                try { updateExpPops(); } catch (err) { logOnce("expupdate", "exp popup update failed: " + err); }
+            }
+        }));
+        Events.on(WorldLoadEvent, new Cons({ get: function(e) { clearExpPops(); } }));
+    }
+
+    // ===== Danh sách người chơi (phím Tab): hiện số lần hạ người chơi khác và số lần bị người chơi khác hạ =====
+    const LIST_TAG = "[#e0e0e1]";
+    let listHooked = false;
+    let listHookTick = 0;
+    let listHookTry = 0;
+
+    function scrollWidgetDeep(el, depth) {
+        if (el == null || depth > 8) return null;
+        try {
+            if (el instanceof UI_ScrollPane) return el.getWidget();
+            if (el instanceof UI_Group) {
+                let ch = el.getChildren();
+                for (let i = 0; i < ch.size; i++) {
+                    let r = scrollWidgetDeep(ch.get(i), depth + 1);
+                    if (r != null) return r;
+                }
+            }
+        } catch (err) {}
+        return null;
+    }
+
+    // bảng chứa các hàng người chơi của PlayerListFragment
+    function findPlayerListContent() {
+        try {
+            let root = Core.scene.root;
+            let c = root.find("players");
+            if (c != null && c instanceof UI_Table) return c;
+            let pl = root.find("playerlist");
+            if (pl != null) {
+                let w = scrollWidgetDeep(pl, 0);
+                if (w != null && w instanceof UI_Table) return w;
+            }
+        } catch (err) {}
+        return null;
+    }
+
+    function decoratePlayerList(content) {
+        if (!isActive()) return;
+        let players = [];
+        let idx = 0;
+        Groups.player.each(new Cons({ get: function(p) { players.push({ p: p, i: idx++ }); } }));
+        let byName = {};
+        for (let i = 0; i < players.length; i++) {
+            let key = "n:" + String(players[i].p.name());
+            if (byName[key] === undefined) byName[key] = [];
+            byName[key].push(players[i]);
+        }
+        // trùng tên: sắp theo thứ tự danh sách của game (admin trước, rồi theo phe, rồi theo thứ tự vào)
+        for (let key in byName) {
+            byName[key].sort(function(a, b) {
+                let aa = a.p.admin ? 0 : 1;
+                let ba = b.p.admin ? 0 : 1;
+                if (aa !== ba) return aa - ba;
+                let at = a.p.team().id;
+                let bt = b.p.team().id;
+                if (at !== bt) return at - bt;
+                return a.i - b.i;
+            });
+        }
+        let seen = {};
+        let rows = content.getChildren();
+        for (let i = 0; i < rows.size; i++) {
+            let row = rows.get(i);
+            if (!(row instanceof UI_Table)) continue;
+            let rc = row.getChildren();
+            let lbl = null;
+            let key = null;
+            for (let j = 0; j < rc.size; j++) {
+                let e = rc.get(j);
+                if (lbl == null && e instanceof UI_Label) lbl = e;
+                if (key == null && e.name != null) {
+                    let kk = "n:" + String(e.name);
+                    if (byName[kk] !== undefined) key = kk;
+                }
+            }
+            if (lbl == null || key == null) continue;
+            let k = seen[key] || 0;
+            seen[key] = k + 1;
+            let arr = byName[key];
+            let pl = arr[Math.min(k, arr.length - 1)].p;
+            let st = byId[pl.id];
+            if (st == null) continue;
+            let tail = "\n" + LIST_TAG + "[lightgray]" + tr("Hạ ", "Kills ") + "[green]" + (st.k || 0) + "[]   [lightgray]" + tr("Bị hạ ", "Deaths ") + "[scarlet]" + (st.dk || 0) + "[]";
+            let cur = String(lbl.getText());
+            let ci = cur.indexOf("\n" + LIST_TAG);
+            let base = ci >= 0 ? cur.substring(0, ci) : cur;
+            if (base + tail !== cur) lbl.setText(base + tail);
+        }
+    }
+
+    function hookPlayerList() {
+        if (listHooked || Vars.headless) return;
+        let c = findPlayerListContent();
+        if (c == null) return;
+        // chạy mỗi khung hình ngay sau khi game dựng lại danh sách -> không bị nhấp nháy
+        c.update(new Runnable({
+            run: function() {
+                try { decoratePlayerList(c); } catch (err) { logOnce("playerlist", "player list stats failed: " + err); }
+            }
+        }));
+        listHooked = true;
+        Log.info("[NexPvp] player list hooked");
+    }
+
+    if (!Vars.headless) {
+        Events.on(WorldLoadEvent, new Cons({ get: function(e) { listHookTry = 0; } }));
+        Events.run(Trigger.update, new Runnable({
+            run: function() {
+                if (listHooked || listHookTry > 60) return;
+                listHookTick++;
+                if (listHookTick % 30 !== 0) return;
+                listHookTry++;
+                try { hookPlayerList(); } catch (err) { logOnce("playerlisthook", "player list hook failed: " + err); }
+                if (!listHooked && listHookTry === 61) Log.err("[NexPvp] player list not found, cannot show kills/deaths");
+            }
+        }));
+    }
+
+    // ===== Ẩn menu khối của game (góc dưới bên phải, cả PC lẫn mobile) khi đang ở chế độ PvP =====
+    const KEY_HIDE_BLOCKMENU = "newex-pvp-hide-blockmenu";
+    let blockHooked = false;
+    let blockHookTry = 0;
+    let blockHookTick = 0;
+    let blockHookWay = "";
+
+    function blockMenuHidden() {
+        try { return isActive() && Core.settings.getBool(KEY_HIDE_BLOCKMENU, true); } catch (err) { return false; }
+    }
+
+    const UI_Group = Packages.arc.scene.Group;
+    const UI_Table = Packages.arc.scene.ui.layout.Table;
+    const UI_ScrollPane = Packages.arc.scene.ui.ScrollPane;
+    const UI_Label = Packages.arc.scene.ui.Label;
+
+    function uiRoots() {
+        let groups = [];
+        try { if (Vars.ui.hudGroup != null) groups.push(Vars.ui.hudGroup); } catch (err) {}
+        try { if (Core.scene.root != null) groups.push(Core.scene.root); } catch (err) {}
+        return groups;
+    }
+
+    // có ScrollPane ở bất kỳ cấp con nào không (menu khối có danh sách khối cuộn được)
+    function hasScrollDeep(el, depth) {
+        if (el == null || depth > 10) return false;
+        try {
+            if (el instanceof UI_ScrollPane) return true;
+            if (el instanceof UI_Group) {
+                let ch = el.getChildren();
+                for (let i = 0; i < ch.size; i++) {
+                    if (hasScrollDeep(ch.get(i), depth + 1)) return true;
+                }
+            }
+        } catch (err) {}
+        return false;
+    }
+
+    // leo từ 1 phần tử con lên phần tử nằm ngay dưới hudGroup / root (bảng "fill" chứa toàn bộ menu khối)
+    function topLevelOf(el, groups) {
+        let cur = el;
+        for (let n = 0; n < 30 && cur != null; n++) {
+            let par = cur.parent;
+            if (par == null) return null;
+            for (let g = 0; g < groups.length; g++) {
+                if (par.equals(groups[g])) return cur;
+            }
+            cur = par;
+        }
+        return null;
+    }
+
+    // Script mod bị chặn reflection nên không lấy được field "toggler" -> tìm thẳng trong cây giao diện.
+    function findBlockToggler() {
+        let groups = uiRoots();
+        // 1) theo tên các phần tử của menu khối (PlacementFragment)
+        let names = ["blockfrag", "blocksSelect", "inputTable", "categoryTable"];
+        for (let n = 0; n < names.length; n++) {
+            for (let g = 0; g < groups.length; g++) {
+                try {
+                    let found = groups[g].find(names[n]);
+                    if (found == null) continue;
+                    let top = topLevelOf(found, groups);
+                    if (top != null) { blockHookWay = "name:" + names[n]; return top; }
+                } catch (err) {}
+            }
+        }
+        // 2) theo cấu trúc: bảng neo góc dưới-phải có chứa danh sách cuộn
+        for (let g = 0; g < groups.length; g++) {
+            try {
+                let ch = groups[g].getChildren();
+                for (let i = 0; i < ch.size; i++) {
+                    let el = ch.get(i);
+                    try {
+                        if (!(el instanceof UI_Table)) continue;
+                        if (hudPanel != null && el.equals(hudPanel)) continue;
+                        let al = el.getAlign();
+                        if ((al & 4) === 0 || (al & 16) === 0) continue; // bottom + right
+                        if (hasScrollDeep(el, 0)) { blockHookWay = "layout"; return el; }
+                    } catch (err2) {}
+                }
+            } catch (err) {}
+        }
+        return null;
+    }
+
+    // ghi log danh sách phần tử của HUD để chẩn đoán khi không tìm thấy menu khối
+    function dumpHudChildren() {
+        let groups = uiRoots();
+        for (let g = 0; g < groups.length; g++) {
+            try {
+                let ch = groups[g].getChildren();
+                let out = [];
+                for (let i = 0; i < ch.size && i < 40; i++) {
+                    let el = ch.get(i);
+                    let cn = "?";
+                    try { cn = String(el.getClass().getSimpleName()); } catch (err) {}
+                    let al = "";
+                    try { al = el.getAlign(); } catch (err) {}
+                    out.push(cn + "(" + (el.name != null ? el.name : "") + (al !== "" ? ",a" + al : "") + ")");
+                }
+                Log.err("[NexPvp] group" + g + " children: " + out.join(" | "));
+            } catch (err) {}
+        }
+    }
+
+    function hookBlockMenu() {
+        if (blockHooked || Vars.headless) return;
+        let tg = findBlockToggler();
+        if (tg == null) return;
+        let orig = tg.visibility;
+        tg.visibility = new Boolp({
+            get: function() {
+                if (blockMenuHidden()) return false;
+                if (orig != null) return orig.get();
+                return Vars.ui.hudfrag.shown;
+            }
+        });
+        blockHooked = true;
+        Log.info("[NexPvp] block menu hooked (" + blockHookWay + ")");
+    }
+
+    if (!Vars.headless) {
+        Events.on(ClientLoadEvent, new Cons({
+            get: function(e) {
+                try {
+                    Core.bundle.getProperties().put("setting." + KEY_HIDE_BLOCKMENU + ".name", tr("Ẩn menu khối của game khi chơi PvP", "Hide the game's block menu in PvP"));
+                    Vars.ui.settings.game.checkPref(KEY_HIDE_BLOCKMENU, true);
+                } catch (err) {
+                    Log.err("[NexPvp] cannot add block menu setting: " + err);
+                }
+                try { hookBlockMenu(); } catch (err) { logOnce("blockhook", "block menu hook failed: " + err); }
+            }
+        }));
+        Events.on(WorldLoadEvent, new Cons({ get: function(e) { blockHookTry = 0; try { hookBlockMenu(); } catch (err) { logOnce("blockhook", "block menu hook failed: " + err); } } }));
+        // dự phòng: thử gắn lại định kỳ (mỗi ~0,5s, tối đa 60 lần) nếu lần đầu chưa tìm thấy menu
+        Events.run(Trigger.update, new Runnable({
+            run: function() {
+                if (blockHooked || blockHookTry > 60) return;
+                blockHookTick++;
+                if (blockHookTick % 30 !== 0) return;
+                blockHookTry++;
+                try { hookBlockMenu(); } catch (err) { logOnce("blockhook", "block menu hook failed: " + err); }
+                if (!blockHooked && blockHookTry === 61) {
+                    Log.err("[NexPvp] block menu not found, cannot hide it");
+                    dumpHudChildren();
+                }
+            }
+        }));
     }
 
     // ===== Chế độ chọn vị trí xây: chạm 2 lần vào cùng 1 ô trên nền đặt lõi =====

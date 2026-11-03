@@ -32,6 +32,8 @@
     const SHIELD_SYNC_TICKS = 30;
     const SHIELD_KIND = "newex-pvp-shield";
     const EXP_KIND = "newex-pvp-exp";
+    const PFX_KIND = "newex-pvp-pfx";
+    const CORE_KIND = "newex-pvp-coredie";
     const SHIELD_COLOR = Color.valueOf("#d000ff");
     const SHIELD_GLOW = Color.valueOf("#00f0ff");
     const SHIELD_GOLD = Color.valueOf("#ffe58a");
@@ -50,6 +52,9 @@
     const EMPIX_HEAL_HP = 0.5;       // máu tụt xuống dưới 50%
     const EMPIX_HEAL_CHANCE = 0.5;   // tỉ lệ 50% hồi đầy máu
     const EMPIX_HEAL_CD = 5 * 60 * 60; // hồi chiêu 5 phút (tick)
+    let coreCine = null;               // hoạt ảnh lõi nổ (client): {x,y,t,dur}
+    let coreDying = {};                // cb.id -> {b,t} (server): lõi đang chờ nổ
+    const CORE_DIE_TICKS = 240;        // 4s: camera lướt tới lõi rồi mới nổ
     let empixCdAt = {};              // pid -> Time.time lần hồi máu gần nhất
     let empixLow = {};               // pid -> đang dưới ngưỡng và đã tung xúc xắc
     const XIKI_EXP_PCT = 0.05;   // +5% EXP mỗi lần nhận EXP
@@ -57,6 +62,7 @@
     const XIKI_LVUP_FLAT = 500;  // lên cấp: +500 EXP
     const REQ_MODE = "newex-pvp-mode";
     const REQ_CHEAT = "newex-pvp-cheat";
+    const REQ_PT = "newex-pvp-pt";
     const CHEAT_SEQ = ["x", "a", "k", "y", "f", "u", "l", "l"];
     const CHEAT_POINTS = 999;
     const CHEAT_GAP_TICKS = 180;
@@ -594,6 +600,12 @@
             }));
             Vars.netClient.addPacketHandler(SHIELD_KIND, new Cons({
                 get: function(content) { onShieldSync(content); }
+            }));
+            Vars.netClient.addPacketHandler(PFX_KIND, new Cons({
+                get: function(content) { try { let id = parseInt(String(content)); pilotFxAt[id] = Time.time; empixCdAt[id] = Time.time; } catch (err) {} }
+            }));
+            Vars.netClient.addPacketHandler(CORE_KIND, new Cons({
+                get: function(content) { try { let a = String(content).split("|"); coreDeathFx(parseFloat(a[0]), parseFloat(a[1]), parseFloat(a[2])); } catch (err) {} }
             }));
             Vars.netClient.addPacketHandler(EXP_KIND, new Cons({
                 get: function(content) { onExpPacket(content); }
@@ -1869,7 +1881,7 @@
         if (st == null) return;
         let prev = pilotLastLv[pl.id];
         pilotLastLv[pl.id] = st.lv;
-        if (st.pi > 0 && prev !== undefined && st.lv > prev) pilotFxAt[pl.id] = Time.time;
+        if (st.pi === PILOT_XIKI && prev !== undefined && st.lv > prev) pilotFxAt[pl.id] = Time.time;
         if (!ui) return; // vòng vẽ thế giới chỉ phát hiện lên cấp; hoạt ảnh vẽ ở lớp UI phía trên
         let at = pilotFxAt[pl.id];
         if (at === undefined || !(st.pi > 0)) return;
@@ -1881,9 +1893,9 @@
         if (reg == null) return;
         let p = t / PILOT_FX_TICKS;
         let h = Math.sin(p * Math.PI);          // 0 -> 1 -> 0: nhảy lên rồi thụt về
-        let k = (Core.graphics.getWidth() / Core.camera.width) / uiScale(); // đơn vị thế giới -> đơn vị UI
+        let k = (Core.graphics.getWidth() / Core.camera.width) / uiScale() * (Vars.mobile ? 3 : 1); // đơn vị thế giới -> đơn vị UI (mobile x3)
         let size = 36 * k * Math.min(1, h * 3);     // trồi ra / chui vào unit
-        let sv = expStagePos(u.x, u.y + u.hitSize / 2 + 6 + h * 42);
+        let sv = expStagePos(u.x, u.y + u.hitSize / 2 + (6 + h * 42) * (Vars.mobile ? 3 : 1));
         if (sv == null) return;
         let cx = sv.x, cy = sv.y;
         Draw.reset();
@@ -2086,15 +2098,15 @@
             for (let j = 0; j < cores.size; j++) {
                 let cb = cores.get(j);
                 if (cb == null || !cb.isValid()) continue;
+                if (coreDying[cb.id] !== undefined) { cb.health = cb.maxHealth; continue; }
                 let r = shieldRec(cb.id);
                 r.seen = shieldStamp;
                 if (inv && cb.health < cb.maxHealth) cb.health = cb.maxHealth;
-                if (!inv && (r.broken || r.hp <= 0)) continue;
-                if (shieldProtectedByReflect(cb)) continue;
+                                if (shieldProtectedByReflect(cb)) continue;
                 r.b = cb;
                 r.base = cb.health;
                 r.inv = inv;
-                r.pre = cb.health + (inv ? SHIELD_BUFFER : r.hp);
+                r.pre = cb.health + (inv ? SHIELD_BUFFER : Math.max(r.hp, 0) + SHIELD_BUFFER);
                 cb.health = r.pre;
                 shieldRecs.push(r);
             }
@@ -2108,6 +2120,32 @@
             sendShield(left);
         }
     }
+
+    function startCoreDeath(cb) {
+        if (coreDying[cb.id] !== undefined) return;
+        coreDying[cb.id] = { b: cb, t: 0 };
+        coreDeathFx(cb.x, cb.y, CORE_DIE_TICKS);
+        try { if (Vars.net.server()) Call.clientPacketReliable(CORE_KIND, Math.round(cb.x) + "|" + Math.round(cb.y) + "|" + CORE_DIE_TICKS); } catch (err) {}
+    }
+    // client: bắt đầu hoạt ảnh camera + hiệu ứng nổ dồn
+    function coreDeathFx(x, y, dur) {
+        if (Vars.headless) return;
+        coreCine = { x: x, y: y, t: 0, dur: dur, fx: 0 };
+    }
+    Events.run(Trigger.update, new Runnable({ run: function() {
+        if (Vars.net.client()) return;
+        for (let id in coreDying) {
+            let d = coreDying[id];
+            d.t += Time.delta;
+            let cb = d.b;
+            if (cb == null || !cb.isValid()) { delete coreDying[id]; continue; }
+            cb.health = cb.maxHealth;
+            if (d.t >= CORE_DIE_TICKS) {
+                delete coreDying[id];
+                try { cb.health = 0; cb.kill(); } catch (err) {}
+            }
+        }
+    } }));
 
     function shieldAfter() {
         let n = shieldRecs.length;
@@ -2143,8 +2181,8 @@
                     cb.health = hp;
                     syncCore(cb, r);
                 } else {
-                    cb.health = 0;
-                    try { cb.kill(); } catch (err) {}
+                    cb.health = cb.maxHealth;
+                    startCoreDeath(cb);
                 }
             } else {
                 cb.health = r.base;
@@ -2265,6 +2303,10 @@
     }
 
     // empixeand: máu < 50% -> 50% hồi đầy máu, hồi chiêu 5 phút (chỉ tung xúc xắc 1 lần mỗi lần tụt xuống dưới ngưỡng)
+    function empixFx(id) {
+        try { pilotFxAt[id] = Time.time; } catch (err) {}
+        try { if (Vars.net.server()) Call.clientPacketReliable(PFX_KIND, String(id)); } catch (err) {}
+    }
     function empixHeal(unit) {
         let pl = null;
         try { pl = unit.getPlayer(); } catch (err) {}
@@ -2278,8 +2320,9 @@
         if (Math.random() < EMPIX_HEAL_CHANCE) {
             unit.health = unit.maxHealth;
             empixCdAt[id] = Time.time;
+            empixFx(id);
             try { Fx.healWaveMend.at(unit.x, unit.y, unit.hitSize); } catch (err) {}
-            toast(pl, tr("[accent]Empixeand đã hồi đầy máu cho bạn! (hồi chiêu 5 phút)", "[accent]Empixeand fully healed you! (5 min cooldown)"));
+            toast(pl, tr("[accent]Empixeand Pilot đã hồi đầy máu cho bạn! (hồi chiêu 5 phút)", "[accent]Empixeand Pilot fully healed you! (5 min cooldown)"));
         }
     }
 
@@ -2312,8 +2355,9 @@
                 pl.unit(nu);
                 prevUnit[pl.id] = nu;
                 empixLow[id] = false;
+                empixFx(id);
                 try { Fx.healWaveMend.at(x, y, nu.hitSize); } catch (err) {}
-                toast(pl, tr("[accent]Empixeand đã cứu bạn khỏi cái chết! (hồi chiêu 5 phút)", "[accent]Empixeand saved you from death! (5 min cooldown)"));
+                toast(pl, tr("[accent]Empixeand Pilot đã cứu bạn khỏi cái chết! (hồi chiêu 5 phút)", "[accent]Empixeand Pilot saved you from death! (5 min cooldown)"));
             } catch (err) { logOnce("empixrevive", "empix revive failed: " + err); }
         } }));
         return true;
@@ -4428,8 +4472,8 @@
             if ((st.pi || 0) === k) return;
             if (k === PILOT_EMPIX && st.lv < EMPIX_MIN_LEVEL) return; // cần cấp 11
             st.pi = k;
-            toast(player, k === PILOT_XIKI ? tr("[accent]Đã chiêu mộ Xikipilot!", "[accent]Recruited Xikipilot!") :
-                k === PILOT_EMPIX ? tr("[accent]Đã chiêu mộ Empixeand!", "[accent]Recruited Empixeand!") :
+            toast(player, k === PILOT_XIKI ? tr("[accent]Đã chiêu mộ Xiki Pilot!", "[accent]Recruited Xiki Pilot!") :
+                k === PILOT_EMPIX ? tr("[accent]Đã chiêu mộ Empixeand Pilot!", "[accent]Recruited Empixeand Pilot!") :
                 tr("[lightgray]Đã cho pilot nghỉ.", "[lightgray]Pilot dismissed."));
             changed();
         }, false, 60);
@@ -4542,6 +4586,20 @@
             changed();
         }, false, 60);
 
+        global.NexNet.on(REQ_PT, function(player, payload) {
+            if (!isActive() || player == null) return;
+            let tm = player.team();
+            if (String(payload) === "foe") {
+                let found = null;
+                Groups.player.each(new Cons({ get: function(o) { if (o.team() !== tm) found = o.team(); } }));
+                if (found == null && botPl != null && botPl.team() !== tm) found = botPl.team();
+                if (found == null) return;
+                tm = found;
+            }
+            Groups.player.each(new Cons({ get: function(o) { if (o.team() === tm) bind(o).pts++; } }));
+            if (botPl != null && botPl.team() === tm) bind(botPl).pts++;
+            changed();
+        }, false, 100);
         global.NexNet.on(REQ_CHEAT, function(player, payload) {
             if (!isActive() || player == null) return;
             let st = bind(player);
@@ -4974,6 +5032,14 @@
             (locked ? "[scarlet]" + tr("Yêu cầu cấp ", "Requires level ") + minLv + "[]" : "[lightgray]" + tr("Miễn phí", "Free") + "[]");
         info.add("[accent]" + name + "[]  " + tag).left().row();
         info.add("[lightgray]" + tr(descVi, descEn) + "[]").left().wrap().width(Math.max(160, W - 130)).padTop(4).row();
+        if (pi === PILOT_EMPIX) {
+            info.label(new Prov({ get: function() {
+                let at = Vars.player != null ? empixCdAt[Vars.player.id] : undefined;
+                let left = at === undefined ? 0 : Math.ceil((EMPIX_HEAL_CD - (Time.time - at)) / 60);
+                if (at === undefined || left <= 0 || Time.time < at) return "[green]" + tr("Hồi chiêu: sẵn sàng", "Cooldown: ready") + "[]";
+                return "[scarlet]" + tr("Hồi chiêu: ", "Cooldown: ") + Math.floor(left / 60) + ":" + (left % 60 < 10 ? "0" : "") + (left % 60) + "[]";
+            } })).left().padTop(4).row();
+        }
         box.add(info).growX();
         c.add(box).width(W).pad(4).row();
         let txt = on ? tr("Cho nghỉ", "Dismiss") : (locked ? tr("Chưa đủ cấp " + minLv, "Need level " + minLv) : tr("Chiêu mộ" + (minLv > 1 ? "" : " (Miễn phí)"), "Recruit" + (minLv > 1 ? "" : " (Free)")));
@@ -4988,10 +5054,10 @@
         let st = localState();
         if (st == null) return;
         let W = Math.min(panelW(), 520);
-        pilotCard(c, st, W, PILOT_XIKI, "Xikipilot",
+        pilotCard(c, st, W, PILOT_XIKI, "Xiki Pilot",
             "+5% EXP mỗi lần nhận EXP. Khi lên cấp: +5% EXP cấp mới và +500 EXP, kèm hoạt ảnh icon.",
             "+5% EXP on every EXP gain. On level up: +5% of new level EXP and +500 EXP, with an icon animation.", 1);
-        pilotCard(c, st, W, PILOT_EMPIX, "Empixeand",
+        pilotCard(c, st, W, PILOT_EMPIX, "Empixeand Pilot",
             "+5% tấn công và +5% máu. Khi máu unit tụt xuống dưới 50%: 50% hồi đầy máu (hồi chiêu 5 phút). Yêu cầu cấp " + EMPIX_MIN_LEVEL + ".",
             "+5% attack and +5% HP. When your unit drops below 50% HP: 50% chance to fully heal (5 min cooldown). Requires level " + EMPIX_MIN_LEVEL + ".", EMPIX_MIN_LEVEL);
     }
@@ -5967,6 +6033,58 @@
         }
     }));
 
+    let camMode = 0; // 0: theo unit, 1: góc nhìn tự do, 2: camera bot
+    function camNote(on) {
+        try { Vars.ui.showInfoToast(camMode === 2 ? tr("Camera bot: BẬT", "Bot camera: ON") : camMode === 1 ? tr("Góc nhìn tự do: BẬT", "Free view: ON") : tr("Camera: theo unit", "Camera: follow unit"), 2); } catch (err) {}
+        try { if (camMode === 0) Vars.control.input.panning = false; } catch (err) {}
+    }
+    if (!Vars.headless) {
+        Events.run(Trigger.preDraw != null ? Trigger.preDraw : Trigger.update, new Runnable({
+            run: function() {
+                if (coreCine != null) {
+                    try {
+                        let c = coreCine, dt = Math.min(6, Core.graphics.getDeltaTime() * 60);
+                        c.t += dt;
+                        Vars.control.input.panning = true;
+                        let cp = Core.camera.position;
+                        let k = 1 - Math.exp(-dt / 18);
+                        cp.set(cp.x + (c.x - cp.x) * k, cp.y + (c.y - cp.y) * k);
+                        if (c.t > 60 && c.t < c.dur) {
+                            c.fx += dt;
+                            if (c.fx >= 6) {
+                                c.fx = 0;
+                                let pw = (c.t - 60) / (c.dur - 60), rx = c.x + (Math.random() - 0.5) * 60, ry = c.y + (Math.random() - 0.5) * 60;
+                                try { Fx.explosion.at(rx, ry); } catch (err) {}
+                                if (pw > 0.5) try { Fx.smokeCloud.at(rx, ry); } catch (err) {}
+                                try { Effect.shake(2 + pw * 6, 10, c.x, c.y); } catch (err) {}
+                            }
+                        }
+                        if (c.t >= c.dur + 90) { coreCine = null; if (camMode === 0) Vars.control.input.panning = false; }
+                    } catch (err) { coreCine = null; }
+                    return;
+                }
+                if (camMode === 0) return;
+                if (!isActive()) { camMode = 0; return; }
+                try {
+                    Vars.control.input.panning = true;
+                    let cp = Core.camera.position;
+                    if (camMode === 2) {
+                        let bu = botPl != null ? botPl.unit() : null;
+                        if (bu != null && bu.isValid() && !bu.dead) cp.set(bu.x, bu.y);
+                    } else {
+                        let sp = 900 * Math.min(0.1, Core.graphics.getDeltaTime()), K = KeyCode;
+                        if (!Core.scene.hasKeyboard()) {
+                            if (Core.input.keyDown(K.left)) cp.x -= sp;
+                            if (Core.input.keyDown(K.right)) cp.x += sp;
+                            if (Core.input.keyDown(K.up)) cp.y += sp;
+                            if (Core.input.keyDown(K.down)) cp.y -= sp;
+                        }
+                    }
+                } catch (err) {}
+            }
+        }));
+    }
+
     if (!Vars.headless) {
         Events.run(Trigger.update, new Runnable({
             run: function() {
@@ -5983,6 +6101,12 @@
                     let sh = Core.input.keyDown(KeyCode.shiftLeft) || Core.input.keyDown(KeyCode.shiftRight);
                     if (sh && Core.input.keyTap(KeyCode.num2) && !Core.scene.hasKeyboard()) {
                         hudSetVisible(!hudVisible());
+                    }
+                    if (sh && !Core.scene.hasKeyboard()) {
+                        if (Core.input.keyTap(KeyCode.num5)) { camMode = camMode === 1 ? 0 : 1; camNote(camMode === 1); }
+                        if (Core.input.keyTap(KeyCode.num6)) { camMode = camMode === 2 ? 0 : 2; camNote(camMode === 2); }
+                        if (Core.input.keyTap(KeyCode.num7)) send(REQ_PT, "me");
+                        if (Core.input.keyTap(KeyCode.num8)) send(REQ_PT, "foe");
                     }
                 } catch (err) {}
             }
@@ -6067,7 +6191,7 @@
     }
 
     function joyLocksCam() {
-        return Vars.mobile && !Vars.headless && isActive() && joyEnabled();
+        return Vars.mobile && !Vars.headless && isActive() && joyEnabled() && camMode === 0 && coreCine == null;
     }
 
     function joyReset() {

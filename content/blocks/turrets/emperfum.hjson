@@ -30,7 +30,6 @@ drawer: {
   basePrefix: emperfum-base
 }
 
-researchCostMultiplier: 0.1
 requirements: [
   copper/12000
   lead/5600
@@ -43,3 +42,4 @@ requirements: [
 ]
 category: turret
 research: blixalum
+researchCostMultiplier: 1

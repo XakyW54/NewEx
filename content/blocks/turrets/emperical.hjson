@@ -46,3 +46,4 @@ drawer: {
   type: DrawTurret
   basePrefix: reinforced-
 }
+researchCostMultiplier: 10

@@ -28,3 +28,4 @@ requirements: [
 ]
 
 alwaysUnlocked: true
+researchCostMultiplier: 10

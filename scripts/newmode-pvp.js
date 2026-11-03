@@ -14,6 +14,14 @@
     const KEY_BUILT = "newex-pvp-max-built";
     const DEFAULT_BUILT = 3;
     const LIMIT_BUILT = 12;
+    const KEY_EXT = "newex-pvp-ext";   // bật chế độ NewMode ở map ngoài (EXP + biến về + xây dựng)
+    const KEY_BZONE = "newex-pvp-build-zone";     // xây pháo chỉ trên nền đặt lõi
+    const KEY_RZONE = "newex-pvp-return-zone";    // biến về chỉ khi đứng trên nền đặt lõi
+    const KEY_UPANY = "newex-pvp-up-anywhere";    // vào trang update không cần gần lõi
+    const KEY_WRAND = "newex-pvp-wave-random";    // địch wave spawn ngẫu nhiên khắp bản đồ
+    const KEY_TERR = "newex-pvp-territory";       // bán kính địa bàn mỗi phe (ô), 0 = nửa map
+    const LIMIT_TERR = 100;
+    const EXT_BUILD_RANGE = 100;      // map ngoài: chỉ xây cách lõi tối đa 100 ô
     const BUILD_FLOOR = "core-zone"; // chỉ xây pháo trên nền đặt lõi (để "" = xây trên mọi nền)
     const KEY_SHIELD = "newex-pvp-shield-min";
     const KEY_HUD = "newex-pvp-hud";
@@ -45,6 +53,23 @@
     const REQ_UNIT = "newex-pvp-unit";
     const REQ_PILOT = "newex-pvp-pilot";
     const PILOT_XIKI = 1;
+    const PILOT_XAKY = 3;
+    const PILOT_HIST = 4;            // HistekaIMsp Pilot (miễn phí)
+    const HIST_STAT_PCT = 0.10;      // +10% máu, giáp, tốc bắn, tốc chạy, tầm đạn, tấn công, EXP
+    const HIST_PIERCE_ADD = 0.10;    // +10% tỉ lệ xuyên giáp
+    const HIST_SHIELD_PCT = 0.10;    // khiên cá nhân = 10% máu tối đa (tự hồi)
+    const HIST_REGEN_PCT = 0.5;      // hồi 0.5% máu tối đa mỗi giây
+    const HIST_SOLDIER_DMG = 0.10;   // +10% sát thương lên lính spawn từ lõi
+    const HIST_WAVE_DMG = 0.10;      // +10% sát thương lên quái wave
+    const HIST_PLAYER_DMG = 0.10;    // +10% sát thương lên unit người chơi
+    const HIST_ARMOR_SHRED = 0.05;   // đạn bào 5% giáp mục tiêu
+    const XAKY_MIN_LEVEL = 11;       // cấp mở khóa Dash
+    const XAKY_HP_MUL = 0.8;         // -20% máu
+    const XAKY_SPD_MUL = 1.2;        // +20% tốc độ di chuyển
+    const XAKY_CD = 10 * 60;         // hồi chiêu Dash 10s (tick)
+    const XAKY_DASH = 96;            // quãng Dash tối đa (12 ô)
+    let xakyCdAt = {};
+    let xakyPrev = {};
     const PILOT_EMPIX = 2;           // empixeand
     const EMPIX_MIN_LEVEL = 11;      // cấp tối thiểu để chiêu mộ
     const EMPIX_ATK_PCT = 0.05;      // +5% tấn công
@@ -438,11 +463,66 @@
         return false;
     }
 
-    function isActive() {
+    // isFull: map PvP (đầy đủ: bot, lính lõi, khiên, wave riêng, nền đặt lõi...)
+    function isFull() {
         if (Vars.state == null || !Vars.state.isGame()) return false;
         let tags = getTags();
         if (tags != null && String(tags.get(TAG_ACTIVE, "0")) === "1") return true;
         return isPvpMap();
+    }
+
+    function setBool(k, d) {
+        try { return Core.settings.getBool(k, d); } catch (err) {}
+        return d;
+    }
+    function buildZoneOn() { return setBool(KEY_BZONE, true); }
+    function returnZoneOn() { return setBool(KEY_RZONE, true); }
+    function upAnywhere() { return setBool(KEY_UPANY, false); }
+    function waveRandomOn() { return setBool(KEY_WRAND, true); }
+    function terrRadius() {
+        let v = 0;
+        try { v = Core.settings.getInt(KEY_TERR, 0); } catch (err) {}
+        if (!(v > 0)) return isFull() ? 0 : EXT_BUILD_RANGE;
+        return Math.min(LIMIT_TERR, Math.floor(v));
+    }
+
+    function extEnabled() {
+        try { return Core.settings.getBool(KEY_EXT, true); } catch (err) {}
+        return true;
+    }
+
+    // isExt: map bất kỳ khác (sinh tồn/tấn công...): chỉ EXP khi diệt quái + đổi unit + xây dựng
+    function isExt() {
+        try {
+            if (Vars.state == null || !Vars.state.isGame() || Vars.state.isEditor()) return false;
+            if (!extEnabled() || Vars.state.rules.pvp || isFull()) return false;
+            return true;
+        } catch (err) {}
+        return false;
+    }
+
+    function isActive() {
+        return isFull() || isExt();
+    }
+
+    function isTierUnit(u) {
+        if (u == null) return false;
+        for (let lv = 1; lv <= TIER_MAX; lv++) {
+            if (u.type === tierType(lv)) return true;
+        }
+        return false;
+    }
+
+    // đang điều khiển unit PvP? (map PvP: luôn; map ngoài: chỉ khi unit là unit cấp của mode)
+    function pvpOn(pl) {
+        if (isFull()) return true;
+        try { return pl != null && isTierUnit(pl.unit()); } catch (err) {}
+        return false;
+    }
+
+    function pvpCtl() {
+        try { return isFull() || (isActive() && Vars.player != null && isTierUnit(Vars.player.unit())); } catch (err) {}
+        return false;
     }
 
     function maxLevel() {
@@ -479,7 +559,7 @@
     }
 
     function newState() {
-        return { lv: 1, exp: 0, pts: START_POINTS, u: 0, s: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], d: [], p: [], b: 0, pi: 0 };
+        return { lv: 1, exp: 0, pts: START_POINTS, u: 0, s: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], d: [], p: [], b: 0, pi: 0, kc: [0, 0, 0] };
     }
 
     function getUid(pl) {
@@ -555,6 +635,7 @@
         let st = bind(pl);
         if (st.lv >= maxLevel()) return;
         if (st.pi === PILOT_XIKI) amount = amount * (1 + XIKI_EXP_PCT); // xikipilot: +5% EXP nhận
+        if (st.pi === PILOT_HIST) amount = amount * (1 + HIST_STAT_PCT); // histeka: +10% EXP nhận
         st.exp += amount;
         if (quiet !== true) notifyExp(pl, amount);
         let before = st.lv;
@@ -579,7 +660,7 @@
         let out = {};
         for (let id in byId) {
             let s = byId[id];
-            out[id] = [s.lv, Math.floor(s.exp), s.pts, s.s, s.d, s.u || 0, s.p, s.b || 0, s.pi || 0];
+            out[id] = [s.lv, Math.floor(s.exp), s.pts, s.s, s.d, s.u || 0, s.p, s.b || 0, s.pi || 0, s.kc || [0, 0, 0]];
         }
         if (Vars.net.server()) {
             try { Call.clientPacketReliable(SYNC_KIND, JSON.stringify({ d: out })); } catch (err) {}
@@ -595,7 +676,7 @@
                 let a = o.d[id];
                 let pp = (a[6] != null && a[4] != null && a[6].length === a[4].length) ? a[6] : [];
                 while (a[3].length < STATS.length) a[3].push(0);
-                n[id] = { lv: a[0], exp: a[1], pts: a[2], s: a[3], d: a[4], u: a[5] || 0, p: pp, b: a[7] || 0, pi: a[8] || 0 };
+                n[id] = { lv: a[0], exp: a[1], pts: a[2], s: a[3], d: a[4], u: a[5] || 0, p: pp, b: a[7] || 0, pi: a[8] || 0, kc: a[9] || [0, 0, 0] };
             }
             byId = n;
             ver++;
@@ -613,7 +694,7 @@
                 get: function(content) { onShieldSync(content); }
             }));
             Vars.netClient.addPacketHandler(PFX_KIND, new Cons({
-                get: function(content) { try { let id = parseInt(String(content)); pilotFxAt[id] = Time.time; empixCdAt[id] = Time.time; } catch (err) {} }
+                get: function(content) { try { let s0 = String(content); let id = parseInt(s0); pilotFxAt[id] = Time.time; if (s0.indexOf("x") >= 0) xakyCdAt[id] = Time.time; else empixCdAt[id] = Time.time; } catch (err) {} }
             }));
             Vars.netClient.addPacketHandler(CORE_KIND, new Cons({
                 get: function(content) { try { let a = String(content).split("|"); coreDeathFx(parseFloat(a[0]), parseFloat(a[1]), parseFloat(a[2])); } catch (err) {} }
@@ -843,7 +924,7 @@
             for (let dy = 0; dy < size; dy++) {
                 let t = Vars.world.tile(tx - off + dx, ty - off + dy);
                 if (t == null || t.solid() || t.build != null || t.floor().isDeep()) return false;
-                if (BUILD_FLOOR.length > 0 && String(t.floor().name) !== BUILD_FLOOR) return false;
+                if (BUILD_FLOOR.length > 0 && isFull() && buildZoneOn() && String(t.floor().name) !== BUILD_FLOOR) return false;
             }
         }
         return true;
@@ -852,7 +933,11 @@
     // vị trí hợp lệ: toàn bộ nền dưới pháo là nền đặt lõi, còn trống, và nằm ở nửa map phe ta
     function canBuildAt(core, ec, blk, tx, ty) {
         let off = Math.floor((blk.size - 1) / 2);
-        return ourSide(core, ec, tx, ty) && spotFree(tx, ty, blk.size, off);
+        let rr = terrRadius(); // >0: địa bàn = bán kính quanh lõi (tối đa 100 ô); 0: nửa map phe ta (chỉ map PvP)
+        if (rr > 0) {
+            if (Mathf.dst(tx, ty, core.tile.x, core.tile.y) > rr) return false;
+        } else if (!ourSide(core, ec, tx, ty)) return false;
+        return spotFree(tx, ty, blk.size, off);
     }
 
     function placeTurret(pl, def, tx, ty) {
@@ -1804,6 +1889,7 @@
 
     const eachEquip = new Cons({
         get: function(pl) {
+            if (!pvpOn(pl)) return;
             let st = byId[pl.id];
             if (st == null || st.d.length === 0 || st.p.length !== st.d.length) return;
             let defs = droneDefs();
@@ -1815,6 +1901,7 @@
 
     const eachDrawEquip = new Cons({
         get: function(pl) {
+            if (!pvpOn(pl)) return;
             let st = byId[pl.id];
             if (st == null || st.d.length === 0 || st.p.length !== st.d.length) return;
             let u = pl.unit();
@@ -2084,7 +2171,7 @@
 
     function shieldBefore() {
         shieldRecs.length = 0;
-        if (Vars.net.client() || !isActive() || Vars.state.gameOver) return;
+        if (Vars.net.client() || !isFull() || Vars.state.gameOver) return;
         matchT += Time.delta;
         shieldMinT -= Time.delta;
         shieldStamp++;
@@ -2145,9 +2232,32 @@
         coreCine = { x: x, y: y, t: 0, dur: dur, fx: 0 };
     }
     // lõi chết theo đường khác (không qua khiên): chiếu camera ngay lúc nổ
+    // pháo do mode xây: tháo/phá thì biến mất ngay, không hoàn trả item (pháo tự về túi đồ nhờ feedTurrets)
+    function isModeTurretPos(pos) {
+        for (let k in byId) {
+            let st = byId[k];
+            if (st != null && st.p != null && st.p.indexOf(pos) >= 0) return true;
+        }
+        return false;
+    }
+
+    Events.on(BlockBuildBeginEvent, new Cons({ get: function(e) {
+        try {
+            if (Vars.net.client() || !isActive() || !e.breaking || e.tile == null) return;
+            let cb = e.tile.build;
+            if (cb == null) return;
+            let prev = cb.prevBuild;
+            if (prev == null || prev.size < 1) return;
+            let ob = prev.first();
+            if (ob == null) return;
+            if (hostOwner[ob.id] === undefined && !isModeTurretPos(ob.tile.pos())) return;
+            e.tile.setNet(Blocks.air, Team.derelict, 0);
+        } catch (err) { logOnce("nodecon", "no-refund failed: " + err); }
+    } }));
+
     Events.on(BlockDestroyEvent, new Cons({ get: function(e) {
         try {
-            if (Vars.net.client() || !isActive()) return;
+            if (Vars.net.client() || !isFull()) return;
             let b = e.tile.build;
             if (b == null || !(b.block instanceof Packages.mindustry.world.blocks.storage.CoreBlock)) return;
             if (coreKilled[b.id]) { delete coreKilled[b.id]; return; }
@@ -2333,6 +2443,40 @@
     }
 
     // empixeand: máu < 50% -> 50% hồi đầy máu, hồi chiêu 5 phút (chỉ tung xúc xắc 1 lần mỗi lần tụt xuống dưới ngưỡng)
+    // xakypilot: quãng Dash an toàn. Không quân: bay xuyên (chỉ giới hạn trong map). Bộ binh: dừng cách tường/công trình 1 ô.
+    function xakyDashDist(u, ang) {
+        let d = XAKY_DASH;
+        if (u.isFlying()) return d;
+        for (let l = 4; l <= d; l += 4) {
+            let t = Vars.world.tileWorld(u.x + Angles.trnsx(ang, l), u.y + Angles.trnsy(ang, l));
+            if (t == null || t.solid()) return Math.max(0, l - 4 - 8 - u.hitSize / 2);
+        }
+        return d;
+    }
+
+    function xakyCheck(unit, pl, st) {
+        let id = pl.id;
+        let hp = unit.health + unit.shield;
+        let r = xakyPrev[id];
+        xakyPrev[id] = { u: unit.id, hp: hp, mh: unit.maxHealth };
+        if (r == null || r.u !== unit.id || r.mh !== unit.maxHealth || hp >= r.hp - 0.01) return;
+        if (st.lv < XAKY_MIN_LEVEL || unit.dead) return;
+        let at = xakyCdAt[id];
+        if (at !== undefined && Time.time >= at && Time.time - at < XAKY_CD) return;
+        let ang = unit.vel.len() > 0.1 ? unit.vel.angle() : unit.rotation;
+        let d = xakyDashDist(unit, ang);
+        if (d < 4) return; // sát tường: không Dash, không tốn hồi chiêu
+        let ox = unit.x, oy = unit.y;
+        let nx = ox + Angles.trnsx(ang, d), ny = oy + Angles.trnsy(ang, d);
+        nx = Mathf.clamp(nx, 0, Vars.world.width() * Vars.tilesize);
+        ny = Mathf.clamp(ny, 0, Vars.world.height() * Vars.tilesize);
+        unit.set(nx, ny);
+        xakyCdAt[id] = Time.time;
+        pilotFxAt[id] = Time.time;
+        try { Call.effect(Fx.spawnShockwave, ox, oy, 0, Color.white); Call.effect(Fx.spawnShockwave, nx, ny, 0, Color.white); } catch (err) {}
+        try { if (Vars.net.server()) Call.clientPacketReliable(PFX_KIND, id + "x"); } catch (err) {}
+    }
+
     function empixFx(id) {
         try { pilotFxAt[id] = Time.time; } catch (err) {}
         try { if (Vars.net.server()) Call.clientPacketReliable(PFX_KIND, String(id)); } catch (err) {}
@@ -2394,7 +2538,7 @@
     }
 
     function applyStats(unit) {
-        if (!isActive()) return;
+        if (!isActive() || (!isFull() && !isTierUnit(unit))) return;
         let s = statsOf(unit);
         if (s == null) return;
         let stOwn = statsStateOf(unit);
@@ -2407,6 +2551,10 @@
         let hpT = (tHp * (1 + s[0] * HP_PCT / 100) + s[0] * HP_FLAT) * (1 + Math.min(ROLE_HP_MAX, rc.brl * ROLE_HP_PCT) / 100);
         let empixOn = isPl && stOwn != null && stOwn.pi === PILOT_EMPIX;
         if (empixOn) hpT *= 1 + EMPIX_HP_PCT;
+        let xakyOn = isPl && stOwn != null && stOwn.pi === PILOT_XAKY;
+        if (xakyOn) hpT *= XAKY_HP_MUL;
+        let histOn = isPl && stOwn != null && stOwn.pi === PILOT_HIST;
+        if (histOn) hpT *= 1 + HIST_STAT_PCT;
         if (Math.abs(unit.maxHealth - hpT) > 0.5) {
             let diff = hpT - unit.maxHealth;
             unit.maxHealth = hpT;
@@ -2415,18 +2563,31 @@
         }
 
         unit.armor = (unit.type.armor + s[1] * ARM_FLAT) * (1 + rc.def * ROLE_ARM_PCT / 100) + rc.def * ROLE_ARM_FLAT;
+        if (histOn) unit.armor *= 1 + HIST_STAT_PCT;
         let cut = Math.min(ROLE_CUT_CAP, armorCut(s[1]) + rc.def * ROLE_CUT_PCT);
         if (cut > 0) unit.healthMultiplier *= 1 / (1 - cut / 100);
 
         let dm = (1 + s[2] * ATK_PCT / 100) * (1 + Math.min(ROLE_ATK_MAX, rc.atk * ROLE_ATK_PCT) / 100);
         if (s[5] > 0 && Math.random() < s[5] * 0.02) dm *= 1.5 + s[6] * 0.12;
         if (empixOn) dm *= 1 + EMPIX_ATK_PCT;
+        if (histOn) dm *= 1 + HIST_STAT_PCT;
         unit.damageMultiplier *= dm;
         if (empixOn && !Vars.net.client()) empixHeal(unit);
         let base = Math.max(0.1, unit.type.speed);
         unit.speedMultiplier *= (1 + s[3] * SPD_PCT / 100) * (1 + s[3] * SPD_FLAT / base);
         if (isPl && unit.type === UnitTypes.disrupt) unit.speedMultiplier *= DISRUPT_SPEED_MUL;
+        if (xakyOn) unit.speedMultiplier *= XAKY_SPD_MUL;
+        if (histOn) unit.speedMultiplier *= 1 + HIST_STAT_PCT;
         unit.reloadMultiplier *= 1 + s[4] * 0.06;
+        if (histOn) {
+            unit.reloadMultiplier *= 1 + HIST_STAT_PCT;
+            if (!Vars.net.client() && unit.health > 0) {
+                // hồi máu + khiên cá nhân tự hồi
+                if (unit.health < unit.maxHealth) unit.health = Math.min(unit.maxHealth, unit.health + unit.maxHealth * HIST_REGEN_PCT / 100 * Time.delta / 60);
+                let shCap = unit.maxHealth * HIST_SHIELD_PCT;
+                if (unit.shield < shCap) unit.shield = Math.min(shCap, unit.shield + shCap * 0.1 * Time.delta / 60);
+            }
+        }
         if (s[8] > 0 && !Vars.net.client() && unit.health > 0 && unit.health < unit.maxHealth * REGEN_THRESHOLD) {
             unit.health = Math.min(unit.maxHealth, unit.health + unit.maxHealth * s[8] * REGEN_PCT / 100 * Time.delta / 60);
         }
@@ -2441,6 +2602,7 @@
         let nSm = equippedCount(stOwn, SMITE_ID);
         if (nSm > 1) unit.damageMultiplier *= 1 + (nSm - 1) * SMITE_ATK_PCT / 100;
         if (equippedCount(stOwn, "duo") > 0 || equippedCount(stOwn, "breach") > 0) unit.speedMultiplier *= 1 + LIGHT_SPD_PCT / 100;
+        if (xakyOn && !Vars.net.client()) xakyCheck(unit, unit.getPlayer(), stOwn);
     }
 
     const buffStatus = extend(StatusEffect, "pvp-buff", {
@@ -2526,6 +2688,9 @@
                 if (isPl && malignEquipped(st)) {
                     try { b.lifetime *= MALIGN_LIFE_MUL; } catch (err) {}
                 }
+                if (isPl && st.pi === PILOT_HIST) {
+                    try { b.lifetime *= 1 + HIST_STAT_PCT; } catch (err) {}
+                }
             }
             if (s[2] > 0) {
                 try { b.damage += s[2] * ATK_FLAT; } catch (err) {}
@@ -2537,7 +2702,8 @@
                     if (s[10] > 0) b.damage *= 1 + s[10] * DMG_PER_ARMOR * (s[1] * ARM_FLAT);
                 } catch (err) {}
             }
-            if (s[7] > 0 && !b.type.pierceArmor && Math.random() < s[7] * 0.05) {
+            let histPierce = isUnitOwner && st.pi === PILOT_HIST;
+            if ((s[7] > 0 || histPierce) && !b.type.pierceArmor && Math.random() < s[7] * 0.05 + (histPierce ? HIST_PIERCE_ADD : 0)) {
                 let c = pierceType(b.type);
                 if (c != null) {
                     try { b.type = c; } catch (err) {}
@@ -2557,6 +2723,7 @@
             let s = byId[id].s;
             if (s[2] > 0 || s[5] > 0 || s[7] > 0 || s[10] > 0 || s[11] > 0) return true;
             if (malignEquipped(byId[id])) return true;
+            if (byId[id].pi === PILOT_HIST) return true;
         }
         return false;
     }
@@ -2616,6 +2783,7 @@
     }
 
     function canReturnCore(pv, core) {
+        if (!returnZoneOn()) return true;
         if (!onCoreZone(pv)) return false;
         try { return ourSide(core, enemyCores(core.team), pv.tileX(), pv.tileY()); } catch (err) {}
         return false;
@@ -2845,9 +3013,41 @@
         toast(pl, tr("[scarlet]Hồi sinh sau ", "[scarlet]Respawn in ") + sec + tr(" giây", " s"));
     }
 
+    // Map ngoài: bấm "biến về" lần 1 -> drone vanilla (xây dựng), lần 2 -> unit PvP, cứ thế lặp lại. Không cần nền đặt lõi.
+    let extPvp = {};
+    function extSwap(pl, st, u) {
+        let cr = pl.team().core();
+        let isCoreUnit = cr != null && u.type === cr.block.unitType;
+        let isTier = isTierUnit(u);
+        let mode = extPvp[pl.id];
+        if (mode === undefined) mode = true; // vào map: dùng unit PvP, bấm về lần 1 -> drone
+        let pv = prevUnit[pl.id];
+        if (isTier) mode = true;
+        else if (isCoreUnit && pv != null && pv !== u && !pv.dead && pv.team == pl.team()) mode = !mode; // vừa bấm biến về (unit cũ không chết)
+        extPvp[pl.id] = mode;
+        if (!mode || (!isTier && !isCoreUnit)) {
+            delete swapPending[pl.id];
+            prevUnit[pl.id] = u;
+            return;
+        }
+        let want = tierType(activeTier(st));
+        if (u.type === want && u.team == pl.team()) {
+            delete swapPending[pl.id];
+            prevUnit[pl.id] = u;
+            return;
+        }
+        let pend = swapPending[pl.id];
+        if (pend != null && pend.want === want) {
+            pend.t -= Time.delta;
+            if (pend.t > 0) return;
+        }
+        swapPending[pl.id] = { want: want, t: 10 };
+        swapUnit(pl, u, want);
+    }
+
     const eachPlayerServer = new Cons({
         get: function(pl) {
-            assignTeam(pl);
+            if (isFull()) assignTeam(pl);
             let st = bind(pl);
             let lk = respawnLock[pl.id];
             if (lk !== undefined) {
@@ -2861,6 +3061,7 @@
             }
             let u = pl.unit();
             if (u == null || !u.isValid()) return;
+            if (!isFull()) { extSwap(pl, st, u); return; }
             let dead = deadUnit[pl.id];
             if (dead !== undefined && u.id !== dead && !u.dead) {
                 delete deadUnit[pl.id];
@@ -2970,6 +3171,7 @@
 
     const eachPlayerCommon = new Cons({
         get: function(pl) {
+            if (!pvpOn(pl)) return;
             let u = pl.unit();
             if (u == null || !u.isValid()) return;
             if (!u.hasEffect(buffStatus)) u.apply(buffStatus, 1);
@@ -3326,8 +3528,8 @@
     }
 
     function botManage() {
-        if (!isActive() || Vars.state.gameOver || winning) {
-            logOnce("botinactive", "bot: chế độ chưa active (isActive=" + isActive() + ")", true);
+        if (!isFull() || Vars.state.gameOver || winning) {
+            logOnce("botinactive", "bot: chế độ chưa active (isFull=" + isFull() + ")", true);
             return;
         }
         let n = Groups.player.size();
@@ -3561,7 +3763,7 @@
 
     function botTick() {
         let pl = botPl;
-        if (pl == null || !isActive() || Vars.state.isPaused()) return;
+        if (pl == null || !isFull() || Vars.state.isPaused()) return;
         let core = pl.team().core();
         if (core == null) return;
         let u = pl._unit;
@@ -4089,7 +4291,7 @@
     // Trigger.update vẫn chạy khi game đang tạm dừng -> gỡ "Đang chờ người chơi..." của game gốc 1 lần mỗi map
     Events.run(Trigger.update, new Runnable({
         run: function() {
-            if (autoPauseFixed || Vars.net.client() || !isActive()) return;
+            if (autoPauseFixed || Vars.net.client() || !isFull()) return;
             autoPauseFixed = true;
             try {
                 let r = Vars.state.rules;
@@ -4103,16 +4305,17 @@
         run: function() {
             if (!isActive() || Vars.state.isPaused()) return;
             let auth = !Vars.net.client();
+            let full = isFull();
             if (auth) {
                 eachPl(eachPlayerServer);
                 botT -= Time.delta;
-                if (botT <= 0) {
+                if (full && botT <= 0) {
                     botT = 60;
                     try { botManage(); } catch (err) { logOnce("botmanage", "bot manage failed: " + err); }
                 }
-                try { botTick(); } catch (err) { logOnce("bottick", "bot tick failed: " + err); }
-                eachPl(eachBarracks);
-                eachPl(eachSoldierAI);
+                if (full) try { botTick(); } catch (err) { logOnce("bottick", "bot tick failed: " + err); }
+                if (full) eachPl(eachBarracks);
+                if (full) eachPl(eachSoldierAI);
                 if (anyBulletStat()) Groups.bullet.each(eachBullet);
                 syncT -= Time.delta;
                 if (dirty && syncT <= 0) {
@@ -4124,12 +4327,12 @@
                     broadcast();
                 }
                 coreT -= Time.delta;
-                if (coreT <= 0) {
+                if (full && coreT <= 0) {
                     coreT = 30;
                     coreStatsTick(30);
                 }
                 passiveT -= Time.delta;
-                if (passiveT <= 0) {
+                if (full && passiveT <= 0) {
                     passiveT = PASSIVE_INTERVAL;
                     eachPl(eachPassiveExp);
                 }
@@ -4139,7 +4342,7 @@
                     Groups.unit.each(eachOrphan);
                 }
                 winT -= Time.delta;
-                if (winT <= 0) {
+                if (full && winT <= 0) {
                     winT = 60;
                     checkWin();
                 }
@@ -4196,6 +4399,10 @@
         for (let i = 0; i < 120; i++) {
             let tx = 2 + Math.floor(Math.random() * (w - 4));
             let ty = 2 + Math.floor(Math.random() * (h - 4));
+            if (!waveRandomOn()) { // tắt ngẫu nhiên: địch chỉ xuất hiện ở vùng giữa bản đồ
+                tx = Math.floor(w * 0.35 + Math.random() * w * 0.3);
+                ty = Math.floor(h * 0.35 + Math.random() * h * 0.3);
+            }
             let ok = true;
             for (let dx = -rad; dx <= rad && ok; dx++) {
                 for (let dy = -rad; dy <= rad; dy++) {
@@ -4270,7 +4477,7 @@
 
     Events.run(Trigger.update, new Runnable({
         run: function() {
-            if (Vars.net.client() || !isActive() || Vars.state.gameOver || Vars.state.isPaused()) return;
+            if (Vars.net.client() || !isFull() || Vars.state.gameOver || Vars.state.isPaused()) return;
             if (Groups.player.size() === 0) return;
             bonusWaveT += Time.delta;
             if (bonusWaveT < BONUS_WAVE_INTERVAL) return;
@@ -4299,7 +4506,7 @@
 
     Events.on(WaveEvent, new Cons({
         get: function(e) {
-            if (Vars.net.client() || !isActive() || Vars.state.gameOver) return;
+            if (Vars.net.client() || !isFull() || Vars.state.gameOver) return;
             spawnWave(Vars.state.wave - 1);
         }
     }));
@@ -4330,6 +4537,7 @@
                 } else {
                     apid = hostOwner[o.id];
                 }
+                if (apid === undefined && botPl != null && o === botPl._unit) apid = BOT_ID;
                 if (apid === undefined) return;
                 try {
                     let ost = byId[apid];
@@ -4340,7 +4548,18 @@
                     }
                 } catch (err) {}
                 try {
-                    if (tgt.getPlayer() != null || soldierOwner[tgt.id] !== undefined) lastHitBy[tgt.id] = { pid: apid, t: Time.time };
+                    let hst = byId[apid];
+                    if (hst != null && hst.pi === PILOT_HIST) {
+                        let bonus = 0;
+                        if (tgt.team == Vars.state.rules.waveTeam) bonus = HIST_WAVE_DMG;
+                        else if (soldierOwner[tgt.id] !== undefined) bonus = HIST_SOLDIER_DMG;
+                        else if (tgt.isPlayer()) bonus = HIST_PLAYER_DMG;
+                        if (bonus > 0) tgt.damage(b.damage * bonus);
+                        if (tgt.armor > 0) tgt.damagePierce(Math.min(b.damage, tgt.armor * HIST_ARMOR_SHRED)); // bào 5% giáp
+                    }
+                } catch (err) {}
+                try {
+                    lastHitBy[tgt.id] = { pid: apid, t: Time.time };
                 } catch (err) {}
                 if (!isUnitOwner) return;
                 try {
@@ -4380,7 +4599,14 @@
             if (Vars.net.client() || !isActive() || Vars.state.gameOver) return;
             let u = e.unit;
             if (u == null) return;
-            if (empixRevive(u)) return; // empixeand cứu khỏi cú đánh chí mạng: không tính kill
+            if (empixRevive(u)) return;
+            try {
+                let kr = lastHitBy[u.id];
+                let up0 = u.getPlayer();
+                let upid = up0 != null ? up0.id : ((botPl != null && botPl._unit === u) ? BOT_ID : undefined);
+                if (upid !== undefined) bumpKc(upid, 2);
+                if (kr != null && Time.time - kr.t <= KILL_CREDIT_TICKS) bumpKc(kr.pid, upid !== undefined ? 1 : 0);
+            } catch (err) {} // empixeand cứu khỏi cú đánh chí mạng: không tính kill
             let th = teamHit[u.id];
             delete teamHit[u.id];
             let hitTeam = (th != null && Time.time - th.t <= KILL_CREDIT_TICKS) ? th.team : null;
@@ -4397,7 +4623,7 @@
                     }
                 }
                 let dp = u.getPlayer();
-                if (dp != null && isPvpTeam(u.team)) {
+                if (dp != null && isFull() && isPvpTeam(u.team)) {
                     startRespawnLock(dp);
                     deadUnit[dp.id] = u.id;
                     delete spawnBuff[dp.id];
@@ -4478,6 +4704,7 @@
             spawnBuff = {};
             swapPending = {};
             prevUnit = {};
+            extPvp = {};
             barrackT = {};
             soldiers = {};
             soldierOwner = {};
@@ -4522,7 +4749,7 @@
         let core = player.team().core();
         if (core == null) return null;
         if (u == null || !u.isValid() || u.dead) return bind(player);
-        if (anyDist !== true && Mathf.dst(u.x, u.y, core.x, core.y) > core.block.size * Vars.tilesize / 2 + NEAR_CORE) {
+        if (anyDist !== true && !upAnywhere() && Mathf.dst(u.x, u.y, core.x, core.y) > core.block.size * Vars.tilesize / 2 + NEAR_CORE) {
             toast(player, tr("[scarlet]Hãy về gần lõi để nâng cấp!", "[scarlet]Return near your core to upgrade!"));
             return null;
         }
@@ -4545,11 +4772,13 @@
             let st = reqState(player);
             if (st == null) return;
             let k = parseInt(payload);
-            if (k !== 0 && k !== PILOT_XIKI && k !== PILOT_EMPIX) return;
+            if (k !== 0 && k !== PILOT_XIKI && k !== PILOT_EMPIX && k !== PILOT_XAKY && k !== PILOT_HIST) return;
             if ((st.pi || 0) === k) return;
             if (k === PILOT_EMPIX && st.lv < EMPIX_MIN_LEVEL) return; // cần cấp 11
             st.pi = k;
             toast(player, k === PILOT_XIKI ? tr("[accent]Đã chiêu mộ Xiki Pilot!", "[accent]Recruited Xiki Pilot!") :
+                k === PILOT_XAKY ? tr("[accent]Đã chiêu mộ Xaky Pilot!", "[accent]Recruited Xaky Pilot!") :
+                k === PILOT_HIST ? tr("[accent]Đã chiêu mộ HistekaIMsp Pilot!", "[accent]Recruited HistekaIMsp Pilot!") :
                 k === PILOT_EMPIX ? tr("[accent]Đã chiêu mộ Empixeand Pilot!", "[accent]Recruited Empixeand Pilot!") :
                 tr("[lightgray]Đã cho pilot nghỉ.", "[lightgray]Pilot dismissed."));
             changed();
@@ -4572,6 +4801,7 @@
             if (st == null) return;
             let d = droneDefs().map[String(payload).split("|")[0]];
             if (d == null) return;
+            try { if (Vars.state.isCampaign() && !d.block.unlockedNowHost()) { toast(player, tr("[scarlet]Pháo này chưa được nghiên cứu!", "[scarlet]This turret is not researched yet!")); return; } } catch (err) {}
             if (!multiTurretOn() && ownedCount(st, d.id) >= 1) {
                 toast(player, tr("[scarlet]Đang tắt chế độ nhiều pháo cùng loại (Cài đặt Newex)!", "[scarlet]Multiple turrets of the same type is turned off (Newex settings)!"));
                 return;
@@ -4731,6 +4961,7 @@
 
     function nearOwnCore() {
         if (Vars.player == null) return false;
+        if (upAnywhere() && Vars.player.team().core() != null) return true;
         let u = Vars.player.unit();
         let core = Vars.player.team().core();
         if (core == null) return false;
@@ -5124,38 +5355,132 @@
                 if (Core.atlas.has("empixeand")) return Core.atlas.find("empixeand");
                 return null;
             }
+            if (pi === PILOT_XAKY) {
+                if (Core.atlas.has("newex-xakypilot")) return Core.atlas.find("newex-xakypilot");
+                if (Core.atlas.has("xakypilot")) return Core.atlas.find("xakypilot");
+                return null;
+            }
+            if (pi === PILOT_HIST) {
+                if (Core.atlas.has("newex-histeka")) return Core.atlas.find("newex-histeka");
+                if (Core.atlas.has("histeka")) return Core.atlas.find("histeka");
+                return null;
+            }
             if (Core.atlas.has("newex-xikipilot")) return Core.atlas.find("newex-xikipilot");
             if (Core.atlas.has("xikipilot")) return Core.atlas.find("xikipilot");
         } catch (err) {}
         return null;
     }
 
-    function pilotCard(c, st, W, pi, name, descVi, descEn, minLv) {
+    // ===== Xem ảnh pilot: zoom bung ra, chạm & lướt tự do để xoay nhẹ tấm ảnh =====
+    function openPilotZoom(pi, name) {
+        if (Vars.headless) return;
+        let reg = pilotIconRegion(pi);
+        if (reg == null) return;
+        let dlg = new BaseDialog(String(name));
+        let t0 = Time.time;
+        let tx = 0, ty = 0;       // vị trí chạm (lệch so với tâm), đơn vị UI
+        let cx = 0, cy = 0;       // giá trị làm mượt
+        let down = false;
+        let view = extend(Element, {
+            draw() {
+                try {
+                    let w = this.getWidth(), h = this.getHeight();
+                    let age = Mathf.clamp((Time.time - t0) / 24);
+                    let k = Interp.swingOut.apply(age);                 // hoạt ảnh phóng to bật ra
+                    if (!down) { tx = Mathf.lerp(tx, 0, 0.07 * Time.delta); ty = Mathf.lerp(ty, 0, 0.07 * Time.delta); } // thả tay: ảnh từ từ về chính giữa
+                    cx = Mathf.lerp(cx, tx, 0.22 * Time.delta);
+                    cy = Mathf.lerp(cy, ty, 0.22 * Time.delta);
+                    let base = Math.min(w, h) * 0.92 * k;
+                    let ratio = reg.height > 0 ? reg.width / reg.height : 1;
+                    let rot = Mathf.clamp(-cx * 0.06, -16, 16);          // lướt ngang: xoay nhẹ
+                    let sq = 1 - Math.min(0.14, Math.abs(cy) * 0.0016);  // lướt dọc: nghiêng, ảnh bị ép nhẹ
+                    let sh = 1 - Math.min(0.10, Math.abs(cx) * 0.0010);
+                    let px = this.x + w / 2 + cx * 0.25;
+                    let py = this.y + h / 2 + cy * 0.25;
+                    Draw.reset();
+                    Draw.color(0, 0, 0, 0.45 * Math.min(1, k));
+                    Fill.rect(px + 5, py - 5, base * ratio * sh, base * sq);   // bóng đổ
+                    Draw.color(Color.white);
+                    Draw.alpha(Math.min(1, age * 3));
+                    Draw.rect(reg, px, py, base * ratio * sh, base * sq, rot);
+                    Draw.reset();
+                } catch (err) { logOnce("pilotzoom", "pilot zoom failed: " + err); }
+            }
+        });
+        view.touchable = Touchable.enabled;
+        view.addListener(extend(InputListener, {
+            touchDown(event, x, y, pointer, button) {
+                down = true;
+                tx = x - view.getWidth() / 2; ty = y - view.getHeight() / 2;
+                return true;
+            },
+            touchDragged(event, x, y, pointer) {
+                tx = Mathf.clamp(x - view.getWidth() / 2, -view.getWidth() / 2, view.getWidth() / 2);
+                ty = Mathf.clamp(y - view.getHeight() / 2, -view.getHeight() / 2, view.getHeight() / 2);
+            },
+            touchUp(event, x, y, pointer, button) { down = false; }
+        }));
+        dlg.cont.add(view).grow();
+        dlg.cont.row();
+        dlg.cont.add("[lightgray]" + tr("Chạm và lướt để xoay ảnh", "Touch and drag to tilt the image") + "[]").padTop(4);
+        dlg.addCloseButton();
+        dlg.show();
+    }
+
+    let pilotPage = 0;
+    let pilotLastW = -1;
+
+    function pilotList() {
+        return [
+            [PILOT_XIKI, "Xiki Pilot",
+                "+5% EXP mỗi lần nhận EXP. Khi lên cấp: +5% EXP cấp mới và +500 EXP, kèm hoạt ảnh icon.",
+                "+5% EXP on every EXP gain. On level up: +5% of new level EXP and +500 EXP, with an icon animation.", 1],
+            [PILOT_EMPIX, "Empixeand Pilot",
+                "+5% tấn công và +5% máu. Máu dưới 50%: 50% hồi đầy máu (hồi chiêu 5 phút).",
+                "+5% attack and +5% HP. Below 50% HP: 50% chance to fully heal (5 min cooldown).", EMPIX_MIN_LEVEL],
+            [PILOT_XAKY, "Xaky Pilot",
+                "-20% máu, +20% tốc độ di chuyển. Từ cấp " + XAKY_MIN_LEVEL + ": khi nhận sát thương sẽ Dash theo hướng di chuyển (hồi chiêu 10s). Bộ binh dừng cách tường/công trình 1 ô, không quân bay xuyên.",
+                "-20% HP, +20% move speed. From level " + XAKY_MIN_LEVEL + ": taking damage makes you Dash in your move direction (10s cooldown). Ground units stop 1 tile short of walls/buildings; air units fly through.", 1],
+            [PILOT_HIST, "HistekaIMsp Pilot",
+                "Mạnh toàn diện, không điểm yếu! +10% máu, giáp, tốc bắn, tốc chạy, tầm đạn, tấn công, xuyên giáp, EXP, khiên. +10% dame lên lính lõi, quái wave, player. Tự hồi máu, đạn bào thêm 5% giáp địch.",
+                "All-rounder, no weakness! +10% HP, armor, fire rate, speed, bullet range, attack, pierce, EXP, shield. +10% dmg vs core soldiers, wave mobs, players. Self-heal, bullets shred 5% enemy armor.", 1]
+        ];
+    }
+
+    function pilotCard(p, st, W, d) {
+        let pi = d[0], minLv = d[4];
         let on = st.pi === pi;
         let locked = st.lv < minLv;
         let box = new Table(Styles.black6);
-        box.margin(10);
+        box.margin(8);
+        let isz = narrowScreen() ? 48 : 64;
         let reg = pilotIconRegion(pi);
-        if (reg != null) box.image(reg).size(72).left().padRight(10);
+        if (reg != null) {
+            let iconImg = box.image(reg).size(isz).top().left().padRight(8).get();
+            iconImg.touchable = Touchable.enabled;
+            iconImg.clicked(new Runnable({ run: function() { openPilotZoom(pi, d[1]); } })); // chạm icon: zoom ảnh pilot
+        } else box.add().size(isz).padRight(8);
         let info = new Table();
+        info.left();
         let tag = on ? "[green]" + tr("Đã chiêu mộ", "Recruited") + "[]" :
-            (locked ? "[scarlet]" + tr("Yêu cầu cấp ", "Requires level ") + minLv + "[]" : "[lightgray]" + tr("Miễn phí", "Free") + "[]");
-        info.add("[accent]" + name + "[]  " + tag).left().row();
-        info.add("[lightgray]" + tr(descVi, descEn) + "[]").left().wrap().width(Math.max(160, W - 130)).padTop(4).row();
-        if (pi === PILOT_EMPIX) {
+            (locked ? "[scarlet]" + tr("Cần cấp ", "Need Lv ") + minLv + "[]" : "[lightgray]" + tr("Miễn phí", "Free") + "[]");
+        info.add("[accent]" + d[1] + "[]  " + tag).left().wrap().growX().minWidth(0).row();
+        info.add("[lightgray]" + tr(d[2], d[3]) + "[]").left().wrap().growX().minWidth(0).padTop(3).row();
+        if (pi === PILOT_EMPIX || pi === PILOT_XAKY) {
             info.label(new Prov({ get: function() {
-                let at = Vars.player != null ? empixCdAt[Vars.player.id] : undefined;
-                let left = at === undefined ? 0 : Math.ceil((EMPIX_HEAL_CD - (Time.time - at)) / 60);
+                let cdm = pi === PILOT_XAKY ? xakyCdAt : empixCdAt;
+                let at = Vars.player != null ? cdm[Vars.player.id] : undefined;
+                let left = at === undefined ? 0 : Math.ceil(((pi === PILOT_XAKY ? XAKY_CD : EMPIX_HEAL_CD) - (Time.time - at)) / 60);
                 if (at === undefined || left <= 0 || Time.time < at) return "[green]" + tr("Hồi chiêu: sẵn sàng", "Cooldown: ready") + "[]";
                 return "[scarlet]" + tr("Hồi chiêu: ", "Cooldown: ") + Math.floor(left / 60) + ":" + (left % 60 < 10 ? "0" : "") + (left % 60) + "[]";
-            } })).left().padTop(4).row();
+            } })).left().padTop(3).row();
         }
-        box.add(info).growX();
-        c.add(box).width(W).pad(4).row();
-        let txt = on ? tr("Cho nghỉ", "Dismiss") : (locked ? tr("Chưa đủ cấp " + minLv, "Need level " + minLv) : tr("Chiêu mộ" + (minLv > 1 ? "" : " (Miễn phí)"), "Recruit" + (minLv > 1 ? "" : " (Free)")));
-        let b = c.button(txt, new Runnable({ run: function() { if (!on && locked) return; send(REQ_PILOT, on ? "0" : String(pi)); } })).width(Math.min(W, 300)).height(btnH()).pad(4);
-        if (!on && locked) b.disabled(true);
-        b.row();
+        box.add(info).growX().minWidth(0).top();
+        box.row();
+        let txt = on ? tr("Cho nghỉ", "Dismiss") : (locked ? tr("Chưa đủ cấp " + minLv, "Need level " + minLv) : tr("Chiêu mộ", "Recruit"));
+        let b = box.button(txt, new Runnable({ run: function() { if (!on && locked) return; send(REQ_PILOT, on ? "0" : String(pi)); } })).growX().height(btnH()).colspan(2).padTop(6).get();
+        if (!on && locked) b.setDisabled(true);
+        p.add(box).width(W).pad(3).row();
     }
 
     function buildPilot(dialog) {
@@ -5163,24 +5488,53 @@
         c.clear();
         let st = localState();
         if (st == null) return;
-        let W = Math.min(panelW(), 520);
-        pilotCard(c, st, W, PILOT_XIKI, "Xiki Pilot",
-            "+5% EXP mỗi lần nhận EXP. Khi lên cấp: +5% EXP cấp mới và +500 EXP, kèm hoạt ảnh icon.",
-            "+5% EXP on every EXP gain. On level up: +5% of new level EXP and +500 EXP, with an icon animation.", 1);
-        pilotCard(c, st, W, PILOT_EMPIX, "Empixeand Pilot",
-            "+5% tấn công và +5% máu. Khi máu unit tụt xuống dưới 50%: 50% hồi đầy máu (hồi chiêu 5 phút). Yêu cầu cấp " + EMPIX_MIN_LEVEL + ".",
-            "+5% attack and +5% HP. When your unit drops below 50% HP: 50% chance to fully heal (5 min cooldown). Requires level " + EMPIX_MIN_LEVEL + ".", EMPIX_MIN_LEVEL);
+        let W = Math.min(panelW(), 520) - 24;
+        let list = pilotList();
+        let navH = btnH() + 12;
+        let availH = Math.max(60, listH() - navH);
+        let cardH = 0;
+        for (let i = 0; i < list.length; i++) {
+            let h = measureHeight(function(p) { pilotCard(p, st, W, list[i]); });
+            if (h > cardH) cardH = h;
+        }
+        let perPage = Math.max(1, Math.min(list.length, Math.floor(availH / Math.max(1, cardH + 6))));
+        let totalPages = Math.max(1, Math.ceil(list.length / perPage));
+        if (pilotPage < 0) pilotPage = 0;
+        if (pilotPage > totalPages - 1) pilotPage = totalPages - 1;
+        let start = pilotPage * perPage;
+        let end = Math.min(list.length, start + perPage);
+        let body = new Table();
+        body.top();
+        for (let i = start; i < end; i++) pilotCard(body, st, W, list[i]);
+        let sp = c.pane(body).width(W + 24).maxHeight(Math.max(100, listH() - (totalPages > 1 ? navH : 0))).get();
+        sp.setScrollingDisabled(true, false);
+        sp.setFadeScrollBars(false);
+        sp.setOverscroll(false, false);
+        c.row();
+        if (totalPages > 1) {
+            let nav = new Table();
+            let nb = narrowScreen() ? 56 : 72;
+            let pv = nav.button("<", new Runnable({ run: function() { if (pilotPage > 0) { pilotPage--; ver++; } } })).size(nb, btnH()).get();
+            pv.setDisabled(pilotPage <= 0);
+            nav.add("[white]" + (pilotPage + 1) + "/" + totalPages + "[]").width(narrowScreen() ? 56 : 80).center();
+            let nx = nav.button(">", new Runnable({ run: function() { if (pilotPage < totalPages - 1) { pilotPage++; ver++; } } })).size(nb, btnH()).get();
+            nx.setDisabled(pilotPage >= totalPages - 1);
+            c.add(nav).width(W + 24).pad(4).row();
+        }
     }
 
     function openPilot() {
         if (Vars.headless || !isActive()) return;
         let dialog = new BaseDialog(tr("Chiêu mộ pilot", "Recruit pilot"));
+        pilotPage = 0;
+        pilotLastW = -1;
         addClose(dialog);
         let lastVer = -1;
         dialog.update(new Runnable({
             run: function() {
                 if (!nearOwnCore()) { dialog.hide(); return; }
-                if (lastVer !== ver) { lastVer = ver; buildPilot(dialog); }
+                let w0 = Core.graphics.getWidth() * 10000 + Core.graphics.getHeight();
+                if (lastVer !== ver || pilotLastW !== w0) { lastVer = ver; pilotLastW = w0; buildPilot(dialog); }
             }
         }));
         dialog.show();
@@ -5254,10 +5608,10 @@
         p.add(list).width(w).pad(4).row();
     }
 
-    function scanLines(st) {
+    function scanLines(st, u0) {
         let out = [];
-        let u = null;
-        try { u = Vars.player.unit(); } catch (err) {}
+        let u = u0 === undefined ? null : u0;
+        if (u0 === undefined) { try { u = Vars.player.unit(); } catch (err) {} }
         if (u == null || !u.isValid()) return null;
         let ut = u.type;
         let s = st.s;
@@ -5278,6 +5632,184 @@
         out.push([tr("Đẩy lùi", "Knockback"), "+" + f1(s[11] * KNOCK_PER)]);
         out.push([tr("Pháo gắn", "Mounted turrets"), "unit " + equipCount(st) + "/" + equipSlots(st) + tr(", xây ", ", built ") + builtCount(st) + "/" + maxBuilt()]);
         return out;
+    }
+
+    // ===== Danh sách unit người chơi (host, bạn bè, bot): chỉ quét 1 lần mỗi lần bấm =====
+    const KEY_ULIST = "newex-pvp-unitlist";
+    let ulistPanel = null, ulistW = 0, ulistH = 0;
+    function ulistClamp() {
+        let t = ulistPanel;
+        if (t == null) return;
+        t.setPosition(Mathf.clamp(t.x, 0, Math.max(0, screenW() - t.getWidth())), Mathf.clamp(t.y, 0, Math.max(0, screenH() - t.getHeight())));
+        try {
+            Core.settings.put(KEY_ULIST + "-x", java.lang.Float(t.x));
+            Core.settings.put(KEY_ULIST + "-y", java.lang.Float(t.y));
+        } catch (err) {}
+    }
+    function ulistOn() {
+        try { return Core.settings.getBool(KEY_ULIST, true); } catch (err) {}
+        return true;
+    }
+
+    function bumpKc(pid, i) {
+        let st = byId[pid];
+        if (st == null) return;
+        if (st.kc == null) st.kc = [0, 0, 0];
+        st.kc[i]++;
+        dirty = true;
+    }
+
+    function plName(pid) {
+        if (pid === BOT_ID) return "[orange]NexBot[]";
+        let n = "#" + pid;
+        Groups.player.each(new Cons({ get: function(p) { if (p.id === pid) n = String(p.name); } }));
+        return n;
+    }
+
+    function plUnit(pid) {
+        let r = null;
+        if (pid === BOT_ID) { if (botPl != null) r = botPl.unit(); }
+        else Groups.player.each(new Cons({ get: function(p) { if (p.id === pid) r = p.unit(); } }));
+        return (r != null && r.isValid() && !r.dead) ? r : null;
+    }
+
+    function kcText(st) {
+        let k = st.kc || [0, 0, 0];
+        return "[lightgray]" + tr("Diệt mục tiêu: ", "Target kills: ") + "[white]" + k[0] + "[]  [lightgray]" + tr("Diệt player: ", "Player kills: ") + "[white]" + k[1] + "[]  [lightgray]" + tr("Bị hạ: ", "Deaths: ") + "[white]" + k[2] + "[]";
+    }
+
+    function openUnitDetail(pid) {
+        let d = new BaseDialog(tr("Chi tiết unit", "Unit details"));
+        addClose(d);
+        let W = Math.min(panelW(), 520);
+        let fill = function() {
+            d.cont.clear();
+            d.cont.button(tr("Quét lại", "Rescan"), new Runnable({ run: function() { fill(); } })).width(W).height(btnH()).pad(4).row();
+            d.cont.pane(new Cons({ get: function(p) {
+                p.margin(10);
+                p.top();
+                let st = byId[pid];
+                if (st == null) { p.add("[scarlet]" + tr("Người chơi đã rời đi.", "Player left.") + "[]").row(); return; }
+                p.add("[accent]" + plName(pid) + "[]  [white]" + tr("Cấp ", "Lv ") + st.lv + "[]").left().wrap().growX().row();
+                p.add(kcText(st)).left().wrap().growX().padBottom(6).row();
+                let u = plUnit(pid);
+                let lines = u != null ? scanLines(st, u) : null;
+                if (lines == null) {
+                    p.add("[lightgray]" + tr("Unit: ", "Unit: ") + "[white]" + tierType(activeTier(st)).localizedName + "[]  [scarlet]" + tr("(không quét được: unit đang chết/chưa hồi sinh)", "(cannot scan: unit dead/respawning)") + "[]").left().wrap().growX().padBottom(6).row();
+                } else {
+                    for (let i = 0; i < lines.length; i++) {
+                        p.add("[lightgray]" + lines[i][0] + "[]").left().wrap().growX().row();
+                        p.add("[white]" + lines[i][1] + "[]").left().wrap().growX().padBottom(4).row();
+                    }
+                }
+                p.add("[accent]" + tr("Chỉ số đã nâng", "Upgraded stats") + "[]").left().padTop(6).row();
+                let any = false;
+                for (let i = 0; i < STATS.length; i++) {
+                    if (!(st.s[i] > 0)) continue;
+                    any = true;
+                    p.add("[lightgray]" + tr(STATS[i].vi, STATS[i].en) + "[]  [white]" + st.s[i] + "/" + statMaxLabel(i) + "[]").left().wrap().growX().row();
+                }
+                if (!any) p.add("[lightgray]-[]").left().row();
+                p.add("[accent]" + tr("Pháo lắp trên unit ", "Turrets mounted ") + equipCount(st) + "/" + equipSlots(st) + "[]").left().padTop(8).row();
+                let defs = droneDefs();
+                if (st.p.length === st.d.length) {
+                    for (let i = 0; i < st.d.length; i++) {
+                        if (st.p[i] !== EQUIPPED) continue;
+                        let def = defs.map[st.d[i]];
+                        if (def == null) continue;
+                        let row = new Table();
+                        row.add(new Image(def.block.uiIcon)).size(28).padRight(6);
+                        row.add("[white]" + def.block.localizedName + "[]  " + roleText(def.id)).left();
+                        p.add(row).left().padTop(2).row();
+                    }
+                }
+                p.add("[lightgray]" + tr("Pháo xây: ", "Built: ") + "[white]" + builtCount(st) + "/" + maxBuilt() + "[]  " + tr("Nhà máy lính: ", "Barracks: ") + "[white]" + (st.b || 0) + "[]").left().padTop(6).row();
+            } })).width(W).maxHeight(listH(btnH() + 12)).scrollX(false);
+        };
+        fill();
+        d.show();
+    }
+
+    function openUnitList() {
+        if (Vars.headless || !isActive()) return;
+        let d = new BaseDialog(tr("Unit người chơi", "Player units"));
+        addClose(d);
+        let W = Math.min(panelW(), 520);
+        let fill = function() {
+            d.cont.clear();
+            d.cont.button(tr("Quét lại", "Rescan"), new Runnable({ run: function() { fill(); } })).width(W).height(btnH()).pad(4).row();
+            d.cont.pane(new Cons({ get: function(p) {
+                p.top();
+                let n = 0;
+                for (let id in byId) {
+                    let pid = parseInt(id);
+                    let st = byId[id];
+                    if (st == null) continue;
+                    n++;
+                    let row = new Table(Styles.black6);
+                    row.margin(8);
+                    row.touchable = Touchable.enabled;
+                    row.add(new Image(tierType(activeTier(st)).uiIcon)).size(narrowScreen() ? 32 : 40).padRight(10);
+                    let col = new Table();
+                    col.left();
+                    col.add("[white]" + plName(pid) + "[]  [accent]" + tr("Cấp ", "Lv ") + st.lv + "[]").left().wrap().growX().row();
+                    col.add(kcText(st)).left().wrap().growX();
+                    row.add(col).growX().left().minWidth(0);
+                    row.clicked(new Runnable({ run: function() { openUnitDetail(pid); } }));
+                    p.add(row).width(W - 24).pad(4).row();
+                }
+                if (n === 0) p.add("[lightgray]" + tr("Chưa có dữ liệu.", "No data yet.") + "[]").pad(10).row();
+            } })).width(W).maxHeight(listH(btnH() + 12)).scrollX(false);
+        };
+        fill();
+        d.show();
+    }
+
+    if (!Vars.headless) {
+        Events.on(ClientLoadEvent, new Cons({
+            get: function(e) {
+                try {
+                    Core.bundle.getProperties().put("setting." + KEY_ULIST + ".name", tr("Hiện nút danh sách unit player (PvP)", "Show PvP player unit list button"));
+                    Vars.ui.settings.game.checkPref(KEY_ULIST, true);
+                } catch (err) { Log.err("[NexPvp] cannot add unit list setting: " + err); }
+                try {
+                    let t = new Table(Styles.black6);
+                    ulistPanel = t;
+                    t.margin(6);
+                    t.name = "newex-pvp-unitlist";
+                    t.touchable = Touchable.enabled;
+                    t.image(Icon.players || Icon.add).size(Vars.mobile ? 26 : 22).padRight(6);
+                    t.add(tr("Unit", "Units")).get().setFontScale(0.9);
+                    t.visibility = new Boolp({ get: function() { return isActive() && Vars.ui.hudfrag.shown && ulistOn(); } });
+                    t.pack();
+                    if (Core.settings.has(KEY_ULIST + "-x") && Core.settings.has(KEY_ULIST + "-y")) t.setPosition(Core.settings.getFloat(KEY_ULIST + "-x", 0), Core.settings.getFloat(KEY_ULIST + "-y", 0));
+                    else t.setPosition(4, (screenH() - t.getHeight()) / 2);
+                    ulistClamp();
+                    let dragging = false, offX = 0, offY = 0;
+                    t.addListener(extend(InputListener, {
+                        touchDown(event, x, y, pointer, button) { dragging = false; offX = x; offY = y; return true; },
+                        touchDragged(event, x, y, pointer) {
+                            if (Math.abs(x - offX) > 5 || Math.abs(y - offY) > 5) dragging = true;
+                            if (dragging) {
+                                t.setPosition(t.x + x - offX, t.y + y - offY);
+                                ulistClamp();
+                            }
+                        },
+                        touchUp(event, x, y, pointer, button) {
+                            if (!dragging) openUnitList();
+                            dragging = false;
+                        }
+                    }));
+                    Vars.ui.hudGroup.addChild(t);
+                    ulistW = Core.graphics.getWidth();
+                    ulistH = Core.graphics.getHeight();
+                    Events.run(Trigger.update, new Runnable({ run: function() {
+                        let w = Core.graphics.getWidth(), h = Core.graphics.getHeight();
+                        if (w !== ulistW || h !== ulistH) { ulistW = w; ulistH = h; ulistClamp(); }
+                    } }));
+                } catch (err) { Log.err("[NexPvp] cannot add unit list button: " + err); }
+            }
+        }));
     }
 
     function statDetailDialog(st) {
@@ -5366,6 +5898,12 @@
         }
         let W = panelW();
         let defs = droneDefs();
+        if (Vars.state.isCampaign()) {
+            // chiến dịch: chỉ hiện pháo đã nghiên cứu/mở khóa
+            let fl = [];
+            for (let i = 0; i < defs.list.length; i++) { try { if (defs.list[i].block.unlockedNow()) fl.push(defs.list[i]); } catch (err) {} }
+            defs = { list: fl, map: defs.map };
+        }
 
         let head = new Table(Styles.black6);
         head.margin(shortScreen() ? 4 : 8);
@@ -5734,7 +6272,7 @@
     let blockHookedEl = null; // bảng menu khối đã gắn hook (PlacementFragment.rebuild() sẽ thay bảng này bằng bảng mới)
 
     function blockMenuHidden() {
-        try { return isActive() && Core.settings.getBool(KEY_HIDE_BLOCKMENU, true); } catch (err) { return false; }
+        try { return isFull() && Core.settings.getBool(KEY_HIDE_BLOCKMENU, true); } catch (err) { return false; }
     }
 
     const UI_Group = Packages.arc.scene.Group;
@@ -5988,7 +6526,7 @@
         if (!isActive() || Vars.player.dead() || core == null || def == null) { stopBuild(); return; }
         if (Time.time - m.ecT > 30) { m.ec = enemyCores(core.team); m.ecT = Time.time; }
         let ts = Vars.tilesize;
-        if (BUILD_FLOOR.length > 0) {
+        if (BUILD_FLOOR.length > 0 && isFull() && buildZoneOn()) {
             let cx = Math.round(Core.camera.position.x / ts);
             let cy = Math.round(Core.camera.position.y / ts);
             Draw.z(Layer.overlayUI);
@@ -6036,6 +6574,23 @@
         let sl = invulTicksLeft();
         let tail = sl > 0 ? "[cyan]" + tr("Khiên ", "Shield ") + fmtTicks(sl) + "[]" : "[lightgray]" + tierType(activeTier(st)).localizedName + "[]";
         return "[accent]" + tr("Cấp ", "Lv ") + "[white]" + st.lv + "[]  [yellow]" + tr("ĐP ", "Pt ") + st.pts + "[]  " + tail;
+    }
+
+    function hudLvText() {
+        let st = localState();
+        return st == null ? "" : "[accent]" + tr("Cấp ", "Lv ") + "[white]" + st.lv + "[]";
+    }
+
+    function hudPtText() {
+        let st = localState();
+        return st == null ? "" : "[yellow]" + tr("ĐP ", "Pt ") + st.pts + "[]";
+    }
+
+    function hudTailText() {
+        let st = localState();
+        if (st == null) return "";
+        let sl = invulTicksLeft();
+        return sl > 0 ? "[cyan]" + tr("Khiên ", "Shield ") + fmtTicks(sl) + "[]" : "[lightgray]" + tierType(activeTier(st)).localizedName + "[]";
     }
 
     function expText() {
@@ -6096,16 +6651,24 @@
             hudPanel = t;
             t.margin(4);
             t.name = "newex-pvp-hud";
+            t.margin(6);
             t.touchable = Touchable.enabled;
-            t.label(new Prov({ get: function() { return hudLine(); } })).width(W).left().get().setFontScale(0.8);
+            let top = new Table();
+            top.label(new Prov({ get: function() { return hudLvText(); } })).left().growX().get().setFontScale(0.85);
+            top.label(new Prov({ get: function() { return hudPtText(); } })).right().get().setFontScale(0.85);
+            t.add(top).width(W);
             t.row();
             t.add(new Bar(
                 new Prov({ get: function() { return expText(); } }),
                 new Prov({ get: function() { return Pal.accent; } }),
                 new Floatp({ get: function() { return expFrac(); } })
-            )).size(W, 14).padTop(2);
+            )).size(W, Vars.mobile ? 18 : 16).padTop(4);
             t.row();
-            let ub = t.button(tr("Nâng cấp", "Upgrade"), Icon.up || Icon.add, new Runnable({ run: function() { openUpgrade(); } })).size(W, Vars.mobile ? 36 : 28).padTop(3).get();
+            let tl = t.label(new Prov({ get: function() { return hudTailText(); } })).width(W).padTop(4).get();
+            tl.setFontScale(0.8);
+            tl.setAlignment(1);
+            t.row();
+            let ub = t.button(tr("Nâng cấp", "Upgrade"), Icon.up || Icon.add, new Runnable({ run: function() { openUpgrade(); } })).size(W, Vars.mobile ? 36 : 28).padTop(5).get();
             ub.getLabel().setFontScale(0.8);
             t.visibility = new Boolp({ get: function() { return isActive() && Vars.ui.hudfrag.shown && hudVisible(); } });
             t.pack();
@@ -6297,13 +6860,13 @@
     }
 
     function joyShown() {
-        if (!Vars.mobile || Vars.headless || !isActive() || !joyEnabled()) return false;
+        if (!Vars.mobile || Vars.headless || !pvpCtl() || !joyEnabled()) return false;
         if (!Vars.ui.hudfrag.shown || Core.scene.hasDialog()) return false;
         return joyUnit() != null;
     }
 
     function joyLocksCam() {
-        return Vars.mobile && !Vars.headless && isActive() && joyEnabled() && camMode === 0 && coreCine == null;
+        return Vars.mobile && !Vars.headless && pvpCtl() && joyEnabled() && camMode === 0 && coreCine == null;
     }
 
     function joyReset() {
@@ -6538,7 +7101,21 @@
             Vars.ui.showInfoToast(tr("PvP Cày Cấp: đã tiếp tục trận đấu", "PvP Leveling: match resumed"), 3);
         },
 
-        addSettings: function(content) {
+        addSettings: function(outer) {
+            outer.button(tr("NewMode PvP - Tùy chỉnh", "NewMode PvP - Settings"), Icon.settings, function() {
+                let d = new BaseDialog("NewMode PvP");
+                let c = new Table();
+                c.top().margin(10);
+                let save = api._build(c);
+                d.cont.add(new ScrollPane(c)).grow().row();
+                d.hidden(function() { try { save(); } catch (err) {} });
+                d.addCloseButton();
+                d.show();
+            }).size(280, 54).pad(6).row();
+            return function() {};
+        },
+
+        _build: function(content) {
             content.add(tr("[accent]-- PVP CÀY CẤP --[]", "[accent]-- PVP LEVELING --[]")).padTop(10).row();
 
             content.add(tr("% EXP nhận vào (PvP):", "EXP received (%) (PvP):")).padBottom(4).row();
@@ -6552,6 +7129,35 @@
             let multiVal = multiTurretOn();
             content.check(tr("Cho phép trang bị nhiều pháo cùng loại (PvP)", "Allow multiple turrets of the same type (PvP)"), multiVal, new Boolc({
                 get: function(v) { multiVal = v; }
+            })).pad(5).left().row();
+
+            let bzVal = buildZoneOn();
+            content.check(tr("Chỉ xây pháo đã mua trên nền đặt lõi", "Build owned turrets only on core-zone floor"), bzVal, new Boolc({
+                get: function(v) { bzVal = v; }
+            })).pad(5).left().row();
+            let rzVal = returnZoneOn();
+            content.check(tr("Cần đứng trên nền đặt lõi để biến về", "Must stand on core-zone to return to core"), rzVal, new Boolc({
+                get: function(v) { rzVal = v; }
+            })).pad(5).left().row();
+            let uaVal = upAnywhere();
+            content.check(tr("Không cần ở gần lõi vẫn vào trang nâng cấp", "Open upgrade page without being near core"), uaVal, new Boolc({
+                get: function(v) { uaVal = v; }
+            })).pad(5).left().row();
+            let wrVal = waveRandomOn();
+            content.check(tr("Địch từ wave spawn ngẫu nhiên khắp bản đồ (tắt = chỉ ở giữa)", "Wave enemies spawn randomly across the map (off = center only)"), wrVal, new Boolc({
+                get: function(v) { wrVal = v; }
+            })).pad(5).left().row();
+            content.add(tr("Địa bàn mỗi phe (ô quanh lõi, 0 = nửa map; tối đa " + LIMIT_TERR + "):", "Territory per team (tiles around core, 0 = half map; max " + LIMIT_TERR + "):")).padBottom(4).row();
+            let tTable = new Table();
+            let tField = tTable.field(String(Core.settings.getInt(KEY_TERR, 0)), text => {}).width(120).get();
+            tField.setFilter(TextField.TextFieldFilter.digitsOnly);
+            tField.setMaxLength(3);
+            tTable.add(tr("ô (map ngoài: 0 = " + EXT_BUILD_RANGE + ")", "tiles (other maps: 0 = " + EXT_BUILD_RANGE + ")")).padLeft(8);
+            content.add(tTable).pad(5).row();
+
+            let extVal = extEnabled();
+            content.check(tr("Dùng NewMode ở map khác (EXP diệt quái, biến về đổi unit, xây dựng)", "Use NewMode on other maps (kill EXP, return toggles unit, building)"), extVal, new Boolc({
+                get: function(v) { extVal = v; }
             })).pad(5).left().row();
 
             content.add(tr("Giới hạn pháo xây gần lõi (PvP):", "Built turret limit (PvP):")).padBottom(4).row();
@@ -6599,6 +7205,15 @@
                 if (nb > LIMIT_BUILT) nb = LIMIT_BUILT;
                 Core.settings.put(KEY_BUILT, java.lang.Integer(nb));
 
+                Core.settings.put(KEY_BZONE, bzVal ? java.lang.Boolean.TRUE : java.lang.Boolean.FALSE);
+                Core.settings.put(KEY_RZONE, rzVal ? java.lang.Boolean.TRUE : java.lang.Boolean.FALSE);
+                Core.settings.put(KEY_UPANY, uaVal ? java.lang.Boolean.TRUE : java.lang.Boolean.FALSE);
+                Core.settings.put(KEY_WRAND, wrVal ? java.lang.Boolean.TRUE : java.lang.Boolean.FALSE);
+                let tv = parseInt(tField.getText());
+                if (isNaN(tv) || tv < 0) tv = 0;
+                if (tv > LIMIT_TERR) tv = LIMIT_TERR;
+                Core.settings.put(KEY_TERR, java.lang.Integer(tv));
+                Core.settings.put(KEY_EXT, extVal ? java.lang.Boolean.TRUE : java.lang.Boolean.FALSE);
                 Core.settings.put(KEY_MULTI, multiVal ? java.lang.Boolean.TRUE : java.lang.Boolean.FALSE);
             };
         }

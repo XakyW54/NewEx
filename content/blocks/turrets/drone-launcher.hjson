@@ -38,3 +38,4 @@ requirements: [
 
 category: turret
 research: rangtaturs
+researchCostMultiplier: 10

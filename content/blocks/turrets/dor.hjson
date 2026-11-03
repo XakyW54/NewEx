@@ -63,6 +63,6 @@ drawer: {
 requirements: [
   copper/70
 ]
-researchCostMultiplier: 0.1
 category: turret
 research: newex
+researchCostMultiplier: 1

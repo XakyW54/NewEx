@@ -21,7 +21,6 @@ drawer: {
   basePrefix: reinforced-
 }
 
-researchCostMultiplier: 0.2
 requirements: [
   copper/4200
   lead/2000
@@ -31,3 +30,4 @@ requirements: [
 ]
 category: turret
 research: blaw
+researchCostMultiplier: 2

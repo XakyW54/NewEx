@@ -1,3 +1,9 @@
+> Cập nhật bản 0.8.4 (chỉnh sửa):
++ Pilot (PvP): chạm icon pilot để zoom ảnh to ra, chạm/lướt tự do để xoay nhẹ tấm ảnh.
++ Chiến dịch: trang nâng cấp pháo chỉ hiện pháo đã mở khóa; giá nghiên cứu pháo tăng gấp 10 lần.
++ Thêm HistekaIMsp Pilot (miễn phí): +10% máu/giáp/tốc bắn/tốc chạy/tầm đạn/tấn công/xuyên giáp/EXP/khiên, +10% dame lên lính lõi/quái wave/player, tự hồi máu, đạn bào 5% giáp địch.
+
+-------------------------------------------
 - mod còn lỏd lắm nha :> nhưng mong mọi người trải nghiệm và nêu ý kiến để tui cải thiện.
 
 

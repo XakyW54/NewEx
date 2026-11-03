@@ -24,3 +24,4 @@ requirements: [
 
 category: "turret"
 research: "endyr"
+researchCostMultiplier: 10

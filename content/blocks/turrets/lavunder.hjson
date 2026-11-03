@@ -28,7 +28,6 @@ drawer: {
     }
   ]
 }
-researchCostMultiplier: 0.1
 requirements: [
   copper/190
   lead/260
@@ -37,3 +36,4 @@ requirements: [
 ]
 category: turret
 research: newex
+researchCostMultiplier: 1

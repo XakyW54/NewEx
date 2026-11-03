@@ -24,3 +24,4 @@ requirements: [
 
 category: "turret"
 research: "nethyr"
+researchCostMultiplier: 10

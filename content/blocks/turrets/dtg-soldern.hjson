@@ -30,7 +30,6 @@ drawer: {
   basePrefix: reinforced-
 }
 
-researchCostMultiplier: 0.1
 requirements: [
   copper/254
     titanium/104
@@ -38,3 +37,4 @@ requirements: [
 ]
 category: turret
 research: xylaon
+researchCostMultiplier: 1

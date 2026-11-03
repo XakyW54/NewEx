@@ -26,3 +26,4 @@ requirements: [
   silicon/280
   phase-fabric/250
 ]
+researchCostMultiplier: 10

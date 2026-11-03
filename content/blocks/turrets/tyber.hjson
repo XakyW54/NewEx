@@ -4,7 +4,6 @@ description: "Pháo tên lửa hạng nặng 3 nòng bắn luân phiên. Tự b�
 size: 4
 health: 1413
 category: turret
-researchCostMultiplier: 0.7
 
 configurable: true
 
@@ -34,7 +33,6 @@ shoot: {
   shots: 3
   shotDelay: 9
 }
-researchCostMultiplier: 0.1
 requirements: [
   copper/4400
   lead/2100
@@ -44,3 +42,4 @@ plastanium/1250
 ]
 category: turret
 research: Vendicum
+researchCostMultiplier: 1

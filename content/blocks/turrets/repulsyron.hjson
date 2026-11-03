@@ -38,3 +38,4 @@ shootType: {
   smokeEffect: none
   shootEffect: none
 }
+researchCostMultiplier: 10

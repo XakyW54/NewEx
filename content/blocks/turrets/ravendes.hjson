@@ -40,3 +40,4 @@ requirements: [
 category: "turret"
 research: "foreshadow"
 buildVisibility: "shown"
+researchCostMultiplier: 10

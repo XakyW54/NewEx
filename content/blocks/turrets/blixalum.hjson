@@ -29,7 +29,6 @@ drawer: {
   basePrefix: reinforced-
 }
 
-researchCostMultiplier: 0.1
 requirements: [
   copper/224
   lead/ 110
@@ -38,3 +37,4 @@ requirements: [
 ]
 category: turret
 research: blaw
+researchCostMultiplier: 1

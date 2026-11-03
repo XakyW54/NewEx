@@ -46,3 +46,4 @@ category: turret
 research: forstarsilum
 targetAir: true
 targetGround: true
+researchCostMultiplier: 10

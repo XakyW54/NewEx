@@ -4,7 +4,6 @@ description: "Bản tối thượng của Tankani, hơn bản 2k 50% máu và s�
 size: 5
 health: 3913
 category: turret
-researchCostMultiplier: 0.7
 
 configurable: true
 
@@ -140,7 +139,6 @@ shoot: {
   ]
 }
 
-researchCostMultiplier: 0.1
 requirements: [
   copper/10400
   lead/7100
@@ -150,3 +148,4 @@ requirements: [
 ]
 category: turret
 research: tankani2k
+researchCostMultiplier: 1

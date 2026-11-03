@@ -20,7 +20,6 @@ drawer: {
   type: DrawTurret
   basePrefix: reinforced-
 }
-researchCostMultiplier: 0.1
 requirements: [
   copper/190
   lead/160
@@ -29,3 +28,4 @@ requirements: [
 ]
 category: turret
 research: newex
+researchCostMultiplier: 1

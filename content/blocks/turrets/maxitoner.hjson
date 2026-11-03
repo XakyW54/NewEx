@@ -49,3 +49,4 @@ requirements: [
 ]
 category: turret
 research: dor
+researchCostMultiplier: 10

@@ -42,3 +42,4 @@ range: 320
 targetAir: true
 targetGround: true
 shootSound: "none"
+researchCostMultiplier: 10

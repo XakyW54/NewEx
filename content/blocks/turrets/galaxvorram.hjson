@@ -26,7 +26,6 @@ drawer: {
   basePrefix: galaxvorram-base
 }
 
-researchCostMultiplier: 0.1
 
 requirements: [
     copper/26600
@@ -41,3 +40,4 @@ requirements: [
 ]
 category: turret
 research: xylaon
+researchCostMultiplier: 1

@@ -4,7 +4,6 @@ description: "Chính xác tuyệt đối, bắn cả mặt đất và trên khô
 size: 4
 health: 1413
 category: turret
-researchCostMultiplier: 0.7
 
 configurable: true
 itemCapacity: 1
@@ -103,7 +102,6 @@ shoot: {
   shotDelay: 9
   
 }
-researchCostMultiplier: 0.1
 requirements: [
   copper/1040
   lead/510
@@ -111,3 +109,4 @@ requirements: [
 ]
 category: turret
 research: Vendicum
+researchCostMultiplier: 1

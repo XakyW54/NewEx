@@ -501,7 +501,6 @@ progress: reload
 ]
 }
 
-researchCostMultiplier: 0.03
 consumes: {
 coolant: {
 type: ConsumeCoolant
@@ -509,3 +508,4 @@ amount: 0.3
 }
 }
 crushDamageMultiplier: 0.2
+researchCostMultiplier: 0.3

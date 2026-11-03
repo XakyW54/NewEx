@@ -41,3 +41,4 @@ requirements: [
 
 category: turret
 research: lyvervon
+researchCostMultiplier: 10

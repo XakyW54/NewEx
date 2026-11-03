@@ -7,7 +7,6 @@ reload: 12
 inaccuracy: 0          
 rotateSpeed: 15
 category: turret
-researchCostMultiplier: 0.7
 
 configurable: true
 
@@ -49,8 +48,8 @@ shoot: {
   shotDelay: 0
 }
 
-researchCostMultiplier: 0.1
 requirements: [
   copper/16
 ]
 research: newex
+researchCostMultiplier: 1

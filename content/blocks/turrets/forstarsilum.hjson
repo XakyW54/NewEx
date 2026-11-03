@@ -1,7 +1,6 @@
 type: PowerTurret
 name: Forstarsilum
 description: "Bắn đạn Starsword chính xác mỗi 1 giây. Bắn liên tục sẽ tích buff tăng sát thương và tốc độ bắn."
-researchCostMultiplier: 0.1
 size: 3
 health: 3000
 reload: 60
@@ -59,3 +58,4 @@ requirements: [
 
 category: turret
 research: dor
+researchCostMultiplier: 1

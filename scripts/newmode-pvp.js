@@ -53,6 +53,7 @@
     const EMPIX_HEAL_CHANCE = 0.5;   // tỉ lệ 50% hồi đầy máu
     const EMPIX_HEAL_CD = 5 * 60 * 60; // hồi chiêu 5 phút (tick)
     let coreCine = null;               // hoạt ảnh lõi nổ (client): {x,y,t,dur}
+    let coreKilled = {};               // lõi do ta chủ động cho nổ (đã chiếu hoạt ảnh)
     let coreDying = {};                // cb.id -> {b,t} (server): lõi đang chờ nổ
     const CORE_DIE_TICKS = 240;        // 4s: camera lướt tới lõi rồi mới nổ
     let empixCdAt = {};              // pid -> Time.time lần hồi máu gần nhất
@@ -63,6 +64,7 @@
     const REQ_MODE = "newex-pvp-mode";
     const REQ_CHEAT = "newex-pvp-cheat";
     const REQ_PT = "newex-pvp-pt";
+    const REQ_RESET = "newex-pvp-reset";
     const CHEAT_SEQ = ["x", "a", "k", "y", "f", "u", "l", "l"];
     const CHEAT_POINTS = 999;
     const CHEAT_GAP_TICKS = 180;
@@ -76,6 +78,9 @@
     const UNIT_PER_PAGE = 5;
     const TIER_MAX = 7;
     const STAT_MAX = 20;
+    const STAT_MAIN = 12;   // số chỉ số hiển thị ở trang chỉ số; chỉ số kế tiếp nằm ở trang lính
+    const STAT_ARMY = 12;   // tầm bắn + thời gian tồn tại đạn của lính
+    const RANGE_PCT = 3;    // mỗi cấp: +3% tầm bắn & thời gian tồn tại đạn
     const START_POINTS = 3;
     const PASSIVE_EXP = 60;
     const PASSIVE_INTERVAL = 3600;
@@ -204,6 +209,8 @@
     }
 
     const SMITE_ID = "smite";
+    const LUSTRE_ID = "lustre";
+    const LUSTRE_ATK_PCT = 18; // mỗi lustre trang bị thêm: +18% tấn công, không thêm tia
     const SMITE_ATK_PCT = 18;  // mỗi smite trang bị thêm: +18% tấn công, không thêm đạn
     const LIGHT_SPD_PCT = 8;   // trang bị duo / breach: +8% tốc độ di chuyển (không cộng dồn)
     function equippedCount(st, id) {
@@ -215,6 +222,7 @@
 
     function roleDesc(id) {
         let s = roleDescBase(id);
+        if (id === LUSTRE_ID) s += tr(". Mỗi lustre trang bị thêm không bắn thêm tia, chỉ +" + LUSTRE_ATK_PCT + "% tấn công", ". Extra copies fire no extra beams, only +" + LUSTRE_ATK_PCT + "% attack each");
         if (id === "duo" || id === "breach") {
             s += tr(". Thêm: +" + LIGHT_SPD_PCT + "% tốc độ di chuyển (không cộng dồn)", ". Also: +" + LIGHT_SPD_PCT + "% move speed (does not stack)");
         }
@@ -263,7 +271,8 @@
         { vi: "Hồi máu", en: "Regeneration", f: function(l) { return "+" + (l * REGEN_PCT).toFixed(2) + tr("% máu tối đa mỗi giây (khi máu dưới 99%)", "% max HP per second (when below 99% HP)"); } },
         { vi: "Sát thương % máu tối đa", en: "Max HP % damage", f: function(l) { return "+" + (l * DMG_PCT_MAXHP).toFixed(2) + "% " + tr("máu tối đa của mục tiêu mỗi lần trúng", "of target max HP per hit"); } },
         { vi: "Sát thương theo giáp", en: "Armor-based damage", f: function(l) { return "+" + (l * DMG_PER_ARMOR * 10).toFixed(1) + "% " + tr("mỗi 10 giáp hiện tại", "per 10 current armor"); } },
-        { vi: "Đẩy lùi", en: "Knockback", f: function(l) { return "+" + (l * KNOCK_PER).toFixed(2) + " " + tr("lực đẩy lùi", "knockback"); } }
+        { vi: "Đẩy lùi", en: "Knockback", f: function(l) { return "+" + (l * KNOCK_PER).toFixed(2) + " " + tr("lực đẩy lùi", "knockback"); } },
+        { vi: "Tầm bắn & đạn của lính", en: "Soldier range & bullet life", f: function(l) { return "+" + (l * RANGE_PCT) + "% " + tr("tầm bắn và thời gian tồn tại của đạn", "range and bullet lifetime"); } }
     ];
 
     function statMax(i) {
@@ -470,7 +479,7 @@
     }
 
     function newState() {
-        return { lv: 1, exp: 0, pts: START_POINTS, u: 0, s: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], d: [], p: [], b: 0, pi: 0 };
+        return { lv: 1, exp: 0, pts: START_POINTS, u: 0, s: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], d: [], p: [], b: 0, pi: 0 };
     }
 
     function getUid(pl) {
@@ -490,6 +499,7 @@
             st = newState();
             store[uid] = st;
         }
+        while (st.s.length < STATS.length) st.s.push(0);
         byId[pl.id] = st;
         dirty = true;
         return st;
@@ -584,6 +594,7 @@
             for (let id in o.d) {
                 let a = o.d[id];
                 let pp = (a[6] != null && a[4] != null && a[6].length === a[4].length) ? a[6] : [];
+                while (a[3].length < STATS.length) a[3].push(0);
                 n[id] = { lv: a[0], exp: a[1], pts: a[2], s: a[3], d: a[4], u: a[5] || 0, p: pp, b: a[7] || 0, pi: a[8] || 0 };
             }
             byId = n;
@@ -1058,7 +1069,7 @@
             if (st.p[i] !== EQUIPPED) continue;
             let def = defs.map[st.d[i]];
             if (def == null || !def.equip || !def.mount) continue;
-            if ((!multi || def.id === SMITE_ID) && seen[def.id] === true) continue;
+            if ((!multi || def.id === SMITE_ID || def.id === LUSTRE_ID) && seen[def.id] === true) continue;
             seen[def.id] = true;
             out.push(def);
         }
@@ -2102,11 +2113,12 @@
                 let r = shieldRec(cb.id);
                 r.seen = shieldStamp;
                 if (inv && cb.health < cb.maxHealth) cb.health = cb.maxHealth;
-                                if (shieldProtectedByReflect(cb)) continue;
+                                let prot = shieldProtectedByReflect(cb);
+                r.prot = prot;
                 r.b = cb;
                 r.base = cb.health;
                 r.inv = inv;
-                r.pre = cb.health + (inv ? SHIELD_BUFFER : Math.max(r.hp, 0) + SHIELD_BUFFER);
+                r.pre = cb.health + (inv || prot ? SHIELD_BUFFER : Math.max(r.hp, 0) + SHIELD_BUFFER);
                 cb.health = r.pre;
                 shieldRecs.push(r);
             }
@@ -2132,6 +2144,17 @@
         if (Vars.headless) return;
         coreCine = { x: x, y: y, t: 0, dur: dur, fx: 0 };
     }
+    // lõi chết theo đường khác (không qua khiên): chiếu camera ngay lúc nổ
+    Events.on(BlockDestroyEvent, new Cons({ get: function(e) {
+        try {
+            if (Vars.net.client() || !isActive()) return;
+            let b = e.tile.build;
+            if (b == null || !(b.block instanceof Packages.mindustry.world.blocks.storage.CoreBlock)) return;
+            if (coreKilled[b.id]) { delete coreKilled[b.id]; return; }
+            coreDeathFx(b.x, b.y, 30);
+            if (Vars.net.server()) Call.clientPacketReliable(CORE_KIND, Math.round(b.x) + "|" + Math.round(b.y) + "|30");
+        } catch (err) {}
+    } }));
     Events.run(Trigger.update, new Runnable({ run: function() {
         if (Vars.net.client()) return;
         for (let id in coreDying) {
@@ -2142,6 +2165,7 @@
             cb.health = cb.maxHealth;
             if (d.t >= CORE_DIE_TICKS) {
                 delete coreDying[id];
+                coreKilled[cb.id] = true;
                 try { cb.health = 0; cb.kill(); } catch (err) {}
             }
         }
@@ -2157,6 +2181,12 @@
             let loss = r.pre - cb.health;
             if (loss <= 0.001) {
                 cb.health = r.base;
+                continue;
+            }
+            if (r.prot) {
+                let hp0 = r.base - loss;
+                if (hp0 > 0) cb.health = hp0;
+                else { cb.health = cb.maxHealth; startCoreDeath(cb); }
                 continue;
             }
             r.hitN++;
@@ -2406,6 +2436,8 @@
             unit.damageMultiplier *= 1 + MALIGN_ATK_PCT / 100;
             unit.reloadMultiplier *= MALIGN_RELOAD_MUL;
         }
+        let nLu = equippedCount(stOwn, LUSTRE_ID);
+        if (nLu > 1) unit.damageMultiplier *= 1 + (nLu - 1) * LUSTRE_ATK_PCT / 100;
         let nSm = equippedCount(stOwn, SMITE_ID);
         if (nSm > 1) unit.damageMultiplier *= 1 + (nSm - 1) * SMITE_ATK_PCT / 100;
         if (equippedCount(stOwn, "duo") > 0 || equippedCount(stOwn, "breach") > 0) unit.speedMultiplier *= 1 + LIGHT_SPD_PCT / 100;
@@ -2488,6 +2520,9 @@
                 // đang trang bị malign: đạn của người chơi sống ngắn hơn
                 let isPl = false;
                 try { isPl = o.isPlayer(); } catch (err) {}
+                if (s[STAT_ARMY] > 0 && soldierOwner[o.id] !== undefined) {
+                    try { b.lifetime *= 1 + s[STAT_ARMY] * RANGE_PCT / 100; } catch (err) {}
+                }
                 if (isPl && malignEquipped(st)) {
                     try { b.lifetime *= MALIGN_LIFE_MUL; } catch (err) {}
                 }
@@ -3014,6 +3049,20 @@
         return out;
     }
 
+    // có công trình địch (tường...) chắn giữa lính và mục tiêu?
+    function soldierWallBetween(u, tg) {
+        try {
+            if (u.isFlying()) return false;
+            let d = Mathf.dst(u.x, u.y, tg.x, tg.y);
+            for (let l = 12; l < d - 16; l += 8) {
+                let f = l / d;
+                let t = Vars.world.tileWorld(u.x + (tg.x - u.x) * f, u.y + (tg.y - u.y) * f);
+                if (t != null && t.solid() && (t.build == null || (t.build !== tg && t.build.team !== u.team))) return true;
+            }
+        } catch (err) {}
+        return false;
+    }
+
     function groundAI() {
         try { return new Packages.mindustry.ai.types.GroundAI(); } catch (err) { return null; }
     }
@@ -3090,6 +3139,34 @@
                     let s = soldierAI[u.id];
                     if (s === undefined) { s = { t: 0, tg: null, hold: false }; soldierAI[u.id] = s; }
                     let rng = u.range();
+                    let sst = byId[soldierOwner[u.id]];
+                    if (sst != null && sst.s[STAT_ARMY] > 0) rng *= 1 + sst.s[STAT_ARMY] * RANGE_PCT / 100;
+                    if (s.hp !== undefined && u.health < s.hp - 0.01) s.hurt = 300;
+                    s.hp = u.health;
+                    if (s.hurt > 0) {
+                        s.hurt -= Time.delta;
+                        s.cgT = (s.cgT || 0) - Time.delta;
+                        if (s.cg != null && Units.invalidateTarget(s.cg, u.team, u.x, u.y)) s.cg = null;
+                        if (s.cg == null && s.cgT <= 0) {
+                            s.cgT = 10;
+                            s.cg = Units.closestTarget(u.team, u.x, u.y, Math.max(rng * 2.5, 480), anyTarget, anyTarget);
+                        }
+                        if (s.cg != null) {
+                            if (!s.hold) { s.hold = true; u.controller(new Packages.mindustry.ai.types.NoAI()); }
+                            let myCore = u.team.core();
+                            if (myCore != null && soldierWallBetween(u, s.cg)) {
+                                u.controlWeapons(false, false);
+                                botGo(u, myCore.x, myCore.y, 48); // lùi về lõi né đạn
+                            } else {
+                                u.lookAt(s.cg.x, s.cg.y);
+                                u.aim(s.cg.x, s.cg.y);
+                                u.controlWeapons(true, true);
+                                if (Mathf.dst(u.x, u.y, s.cg.x, s.cg.y) > rng * 0.85) botGo(u, s.cg.x, s.cg.y, rng * 0.75);
+                                else u.movePref(Tmp.v1.setZero());
+                            }
+                            continue;
+                        }
+                    }
                     if (s.tg != null && Units.invalidateTarget(s.tg, u.team, u.x, u.y, rng)) s.tg = null; // ra khỏi tầm / chết -> bỏ
                     s.t -= Time.delta;
                     if (s.tg == null && s.t <= 0) {
@@ -4558,6 +4635,24 @@
             changed();
         }, false, 60);
 
+        global.NexNet.on(REQ_RESET, function(player, payload) {
+            let st = reqState(player);
+            if (st == null) return;
+            let refund = 0;
+            if (String(payload) === "stat") {
+                for (let k = 0; k < STAT_MAIN; k++) { refund += st.s[k]; st.s[k] = 0; }
+            } else {
+                refund += st.s[STAT_ARMY]; st.s[STAT_ARMY] = 0;
+                for (let i = 0; i < (st.b || 0); i++) refund += barrackCost(i);
+                if ((st.b || 0) > 0) { st.b = 0; try { removeSoldiers(player.id); } catch (err) {} delete barrackT[player.id]; }
+            }
+            if (refund <= 0) return;
+            st.pts += refund;
+            st.exp = 0;
+            toast(player, tr("[accent]Đã reset, hoàn ", "[accent]Reset, refunded ") + refund + tr(" điểm. EXP cấp hiện tại = 0.", " pts. Current level EXP = 0."));
+            changed();
+        }, false, 300);
+
         global.NexNet.on(REQ_BARR, function(player, payload) {
             let st = reqState(player);
             if (st == null) return;
@@ -4791,7 +4886,22 @@
         p.add(row).width(w).pad(4).row();
     }
 
+    function resetBtn(p, st, w, mode) {
+        let refund = 0;
+        if (mode === "stat") for (let k = 0; k < STAT_MAIN; k++) refund += st.s[k];
+        else {
+            refund += st.s[STAT_ARMY];
+            for (let i = 0; i < (st.b || 0); i++) refund += barrackCost(i);
+        }
+        let b = p.button(tr("Reset (hoàn " + refund + " điểm, EXP cấp hiện tại về 0)", "Reset (refund " + refund + " pt, current level EXP -> 0)"), new Runnable({ run: function() {
+            Vars.ui.showConfirm(tr("Reset", "Reset"), tr("Hoàn lại điểm đã nâng và đặt EXP cấp hiện tại về 0. Tiếp tục?", "Refund spent points and set current level EXP to 0. Continue?"), new Runnable({ run: function() { send(REQ_RESET, mode); } }));
+        } })).width(w).height(btnH()).pad(4).get();
+        b.setDisabled(refund <= 0);
+        b.row();
+    }
+
     function statHeader(p, st, w) {
+        resetBtn(p, st, w, "stat");
         p.button(tr("Xem chi tiết chỉ số", "View stat details"), new Runnable({ run: function() { statDetailDialog(st); } })).width(w).height(btnH()).pad(4).row();
     }
 
@@ -5129,6 +5239,8 @@
             box.add("[accent]MAX[]").left().padTop(4).row();
         }
         p.add(box).width(w).pad(4).row();
+        statRow(p, st, STAT_ARMY, w);
+        resetBtn(p, st, w, "army");
     }
 
     function armyList(p, st, w, start, end) {
@@ -5324,7 +5436,7 @@
 
         let unitList = (tab === 0 && st.lv >= FREE_SWITCH_LEVEL) ? orderedBy(0, [1, 2, 3, 4, 5, 6, 7]) : null;
         let statOrder = [];
-        for (let q = 0; q < STATS.length; q++) statOrder.push(q);
+        for (let q = 0; q < STAT_MAIN; q++) statOrder.push(q);
         statOrder = orderedBy(1, statOrder);
         let turOrder = orderedBy(2, defs.list.map(function(d) { return d.id; }));
         let itemCount = 1;
@@ -5339,10 +5451,10 @@
                 perPage = 1;
             }
         } else if (tab === 1) {
-            itemCount = STATS.length;
+            itemCount = STAT_MAIN;
             let hH = measureHeight(function(p) { statHeader(p, st, innerW); });
             let rowH = 0;
-            for (let i = 0; i < STATS.length; i++) {
+            for (let i = 0; i < STAT_MAIN; i++) {
                 let h = measureHeight((function(idx) { return function(p) { statRow(p, st, idx, innerW); }; })(i));
                 if (h > rowH) rowH = h;
             }

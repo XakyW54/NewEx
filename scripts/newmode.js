@@ -209,6 +209,11 @@
     function saveNewModeGame() {
         if (!isPlayingNewMode || !activeMapName || !Vars.state.isGame()) return;
         try {
+            // Ghi tiến trình trang update (PvP: cấp, EXP, điểm nâng, chỉ số, pilot...) vào rules.tags
+            // trước khi lưu file, để không bị mất khi out rồi vào lại / tiếp tục trận.
+            if (activeMapName === PVP_ID && global.NexPvp && global.NexPvp.persistStore) {
+                try { global.NexPvp.persistStore(); } catch (e) {}
+            }
             let slotName = "NewEx_NewMode_Save_" + activeMapName;
             let slots = Vars.control.saves.getSaveSlots();
             let slot = slots.find(s => s.name === slotName);

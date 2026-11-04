@@ -132,14 +132,20 @@
     const AURA_BURN_TICKS = 600;
     const WAVE_SPACING = 2400;
     const FIRST_WAVE = 1200;
-    const WAVE_UNIT_CAP = 1000;
+    const WAVE_UNIT_CAP = 400;
     const BONUS_WAVE_INTERVAL = 8 * 60 * 60;
-    const BONUS_WAVE_TIMES = 10;
-    const BONUS_WAVE_MAX_NEW = 300;
+    const BONUS_WAVE_TIMES = 5;
+    const BONUS_WAVE_MAX_NEW = 150;
     let bonusWaveT = 0;
     const EQUIPPED = -1;
     const EQUIP_SLOT_CAP = 12;
     const REQ_BARR = "newex-pvp-barr";
+    const REQ_WALL = "newex-pvp-wall"; // mua / xây / nâng cấp khối tường tăng giới hạn lính
+    const WALL_NONE = -3;              // chưa mua (IN_BAG = trong túi, >=0 = vị trí đã xây)
+    const WALL_CHAIN = ["copper-wall", "titanium-wall", "plastanium-wall", "thorium-wall", "phase-wall", "surge-wall"];
+    const WALL_COST = [2, 3, 5, 8, 12, 16]; // [0] = giá mua, [1..5] = giá nâng cấp (điểm)
+    const WALL_BUILD_ID = "__wall";
+    const REQ_CMD = "newex-pvp-cmd"; // bật/tắt ra lệnh cho lính; tập kết; theo người chơi
     const ARMY_PER_PAGE = 5;
     const BARRACKS_DISCOUNT = 0.8; // giảm 80% giá nhà máy lính (trả 20%, tối thiểu 1 điểm)
     const BARRACKS = [
@@ -156,6 +162,19 @@
         { t: "conquer", sec: 45, n: 1, cap: 2, cost: 32 },
         { t: "conquer", sec: 35, n: 1, cap: 3, cost: 40 }
     ];
+
+    let wallBlocks = null;
+    function wallBlock(i) {
+        if (wallBlocks == null) {
+            wallBlocks = [];
+            for (let k = 0; k < WALL_CHAIN.length; k++) { let b = null; try { b = Vars.content.block(WALL_CHAIN[k]); } catch (err) {} wallBlocks.push(b); }
+        }
+        return wallBlocks[Math.max(0, Math.min(WALL_CHAIN.length - 1, i))];
+    }
+    function wallBonus(st) {
+        if (st == null || st.w === undefined || st.w === WALL_NONE) return 0;
+        return 1 + (st.wl || 0);
+    }
 
     function barrackCost(i) {
         return Math.max(1, Math.ceil(BARRACKS[i].cost * (1 - BARRACKS_DISCOUNT)));
@@ -320,7 +339,12 @@
     let store = {};
     let byId = {};
     let teamsCache = null;
+    const PROFILE = true; // đặt false để tắt đo
+    let profAcc = {}, profFrames = 0;
+    function pn() { return PROFILE ? Time.nanos() : 0; }
+    function pe(name, t0) { if (PROFILE) profAcc[name] = (profAcc[name] || 0) + (Time.nanos() - t0) / 1e6; }
     let rolled = {};
+    let bulletStatT = 0, bulletStatOn = false, wallT = 0, orphanTypes = null;
     let rolledN = 0;
     let pierceCache = {};
     let defsCache = null;
@@ -345,7 +369,7 @@
             botCoreHit: 0, botCoreHp: 0, botAlertT: 0, botFightT: 0, botMissionT: 0, botRebuildCd: 0, botMem: {}, botSkip: null,
             botSkipT: 0, botStuckT: 0, botLastX: 0, botLastY: 0, botDeadT: 60, botTarget: null, botIdle: {}, botBan: {}, botBad: {},
             botIdleT: 0, botSaveCost: 0, botSeen: null, botSeenAt: -1e9, botSeenT: 0, botSwapPend: false, botSwapT0: 0,
-            botScout: false, botScoutT0: 0, botSm: 1 };
+            botScout: false, botScoutT0: 0, botSm: 1, botNoShotT: 0, botResetPend: false, botResetT0: 0 };
     }
     let BC = newBotCtx();
     const BOT_MAX = 8;
@@ -387,6 +411,7 @@
     let hudLastH = 0;
     let swapPending = {};
     let barrackT = {};
+    let rally = {}; // điểm tập kết lính theo người chơi (chỉ máy chủ)
     let soldiers = {};
     let soldierOwner = {};
     let prevUnit = {}; // unit tier còn sống của từng người chơi, để chặn nút respawn/về lõi
@@ -592,7 +617,7 @@
     }
 
     function newState() {
-        return { lv: 1, exp: 0, pts: START_POINTS, u: 0, s: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], d: [], p: [], b: 0, pi: 0, kc: [0, 0, 0] };
+        return { lv: 1, exp: 0, pts: START_POINTS, u: 0, s: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], d: [], p: [], b: 0, pi: 0, kc: [0, 0, 0], w: WALL_NONE, wl: 0 };
     }
 
     function getUid(pl) {
@@ -716,7 +741,7 @@
         let out = {};
         for (let id in byId) {
             let s = byId[id];
-            out[id] = [s.lv, Math.floor(s.exp), s.pts, s.s, s.d, s.u || 0, s.p, s.b || 0, s.pi || 0, s.kc || [0, 0, 0]];
+            out[id] = [s.lv, Math.floor(s.exp), s.pts, s.s, s.d, s.u || 0, s.p, s.b || 0, s.pi || 0, s.kc || [0, 0, 0], s.cmd || 0, s.w === undefined ? WALL_NONE : s.w, s.wl || 0];
         }
         if (Vars.net.server()) {
             try { Call.clientPacketReliable(SYNC_KIND, JSON.stringify({ d: out })); } catch (err) {}
@@ -732,7 +757,7 @@
                 let a = o.d[id];
                 let pp = (a[6] != null && a[4] != null && a[6].length === a[4].length) ? a[6] : [];
                 while (a[3].length < STATS.length) a[3].push(0);
-                n[id] = { lv: a[0], exp: a[1], pts: a[2], s: a[3], d: a[4], u: a[5] || 0, p: pp, b: a[7] || 0, pi: a[8] || 0, kc: a[9] || [0, 0, 0] };
+                n[id] = { lv: a[0], exp: a[1], pts: a[2], s: a[3], d: a[4], u: a[5] || 0, p: pp, b: a[7] || 0, pi: a[8] || 0, kc: a[9] || [0, 0, 0], cmd: a[10] || 0, w: a[11] === undefined ? WALL_NONE : a[11], wl: a[12] || 0 };
             }
             byId = n;
             stVer++;
@@ -1075,19 +1100,19 @@
         let best = null;
         let bd = 1e18;
         try {
-            Groups.unit.each(new Cons({
-                get: function(e) {
+            let plUnits = [];
+            Groups.player.each(new Cons({ get: function(p) { let pu = p.unit(); if (pu != null) plUnits.push(pu); } }));
+            for (let bi = 0; bi < bots.length; bi++) { let bu = bots[bi].botPl.unit(); if (bu != null) plUnits.push(bu); }
+            for (let pi = 0; pi < plUnits.length; pi++) (function(e) {
+                {
                     if (e == null || e.team == team || e.team == Team.derelict || e.dead || !e.isValid()) return;
-                    let isPl = false;
-                    try { isPl = e.isPlayer(); } catch (err0) {}
-                    if (!isPl) return;
                     if (e.isFlying() ? !ta : !tg) return;
                     try { if (!e.targetable(team)) return; } catch (err1) {}
                     let d = Mathf.dst(b.x, b.y, e.x, e.y);
                     if (d - e.hitSize / 2 > range || d < minR) return;
                     if (d < bd) { bd = d; best = e; }
                 }
-            }));
+            })(plUnits[pi]);
         } catch (err) {
             logOnce("fept", "findEnemyPlayerTarget: " + err);
         }
@@ -1412,7 +1437,7 @@
         let best = null;
         let bc = 1e18;
         try {
-            Groups.unit.each(new Cons({
+            let ftCons = new Cons({
                 get: function(e) {
                     if (e == null || e.team == team || e.team == Team.derelict || e.dead || !e.isValid()) return;
                     if (e.isFlying() ? !ta : !tg) return;
@@ -1428,7 +1453,10 @@
                         best = e;
                     }
                 }
-            }));
+            });
+            let rr0 = range + 64;
+            try { Units.nearbyEnemies(team, mp.x - rr0, mp.y - rr0, rr0 * 2, rr0 * 2, ftCons); }
+            catch (err9) { Groups.unit.each(ftCons); }
         } catch (err) {
             logOnce("tgt1", "findTarget (unit): " + err);
         }
@@ -1799,7 +1827,7 @@
             let best = null;
             let bd = 1e18;
             try {
-                Groups.bullet.each(new Cons({
+                let pdCons = new Cons({
                     get: function(bl) {
                         if (bl == null || bl.team == team || !bl.isAdded()) return;
                         try { if (!bl.type.hittable) return; } catch (err0) { return; }
@@ -1811,7 +1839,9 @@
                             best = bl;
                         }
                     }
-                }));
+                });
+                try { Groups.bullet.intersect(mp.x - range - 16, mp.y - range - 16, (range + 16) * 2, (range + 16) * 2, pdCons); }
+                catch (err8) { Groups.bullet.each(pdCons); }
             } catch (err) {}
             stt.tgt = best;
             t = best;
@@ -2129,10 +2159,13 @@
                     run: function() {
                         if (!isActive()) return;
                         try {
+                            let t8 = pn();
                             Groups.player.each(eachDrawEquip);
                             drawBuildPreview();
+                            drawCmdMark();
                             drawCoreShields();
                             drawPilotIcons();
+                            pe("draw", t8);
                             Draw.reset();
                         } catch (err) {}
                     }
@@ -2724,9 +2757,10 @@
 
     const eachBullet = new Cons({
         get: function(b) {
+            if (b.time > 3) return;
             let o = b.owner;
             if (o == null) return;
-            if (b.time > 3 || rolled[b.id] === 1) return;
+            if (rolled[b.id] === 1) return;
             let s = null;
             let st = null;
             let isUnitOwner = typeof o.getPlayer === "function";
@@ -3047,8 +3081,9 @@
             if (!isPvpTeam(u.team)) return;
             if (u.isPlayer()) return;
             if (botUnitOf(u) != null) return;
-            for (let lv = 1; lv <= TIER_MAX; lv++) {
-                if (u.type === tierType(lv)) {
+            if (orphanTypes == null) { orphanTypes = []; for (let k = 1; k <= TIER_MAX; k++) orphanTypes.push(tierType(k)); }
+            for (let lv = 0; lv < orphanTypes.length; lv++) {
+                if (u.type === orphanTypes[lv]) {
                     try { Call.unitDespawn(u); } catch (err) { u.remove(); }
                     return;
                 }
@@ -3303,6 +3338,10 @@
             rolled = {};
             rolledN = 0;
         }
+        let nowT = Time.time;
+        for (let k1 in teamHit) { if (nowT - teamHit[k1].t > KILL_CREDIT_TICKS) delete teamHit[k1]; }
+        for (let k2 in lastHitBy) { if (nowT - lastHitBy[k2].t > KILL_CREDIT_TICKS) delete lastHitBy[k2]; }
+        for (let k3 in soldierAI) { if (Groups.unit.getByID(parseInt(k3)) == null) delete soldierAI[k3]; }
     }
 
     function aliveSoldiers(pid) {
@@ -3384,7 +3423,7 @@
                 return;
             }
             let alive = aliveSoldiers(pl.id);
-            let room = cfg.cap - alive.length;
+            let room = cfg.cap + wallBonus(st) - alive.length;
             if (room <= 0) {
                 barrackT[pl.id] = 0;
                 return;
@@ -3406,13 +3445,44 @@
         get: function(pl) {
             let list = soldiers[pl.id];
             if (list == null) return;
+            let stO = byId[pl.id], cmdOn = stO != null && stO.cmd === 1, anchor = null, atk = null, hasRally = false;
+            if (cmdOn) {
+                anchor = rally[pl.id];
+                hasRally = anchor != null;
+                if (anchor != null && (anchor.uid !== undefined || anchor.bpos !== undefined)) { // mục tiêu tấn công: bám theo vị trí hiện tại
+                    let tu2 = anchor.uid !== undefined ? Groups.unit.getByID(anchor.uid) : Vars.world.build(anchor.bpos);
+                    if (tu2 != null && tu2.isValid() && !tu2.dead && tu2.team != pl.team()) { anchor = { x: tu2.x, y: tu2.y }; atk = tu2; }
+                    else { delete rally[pl.id]; anchor = null; }
+                }
+                if (anchor == null) { let ou = pl.unit(); if (ou != null && ou.isValid() && !ou.dead) anchor = { x: ou.x, y: ou.y }; }
+            }
             for (let i = 0; i < list.length; i++) {
                 let u = Groups.unit.getByID(list[i]);
                 if (u == null || !u.isValid() || u.dead) { delete soldierAI[list[i]]; continue; }
                 try {
                     let s = soldierAI[u.id];
-                    if (s === undefined) { s = { t: 0, tg: null, hold: false }; soldierAI[u.id] = s; }
-                    let rng = u.range();
+                    if (s === undefined) { s = { t: Math.floor(Math.random() * 10), tg: null, hold: false }; soldierAI[u.id] = s; }
+                    if (cmdOn) { // chế độ ra lệnh: dùng CommandAI của game (tự tìm đường, né vật cản, tự đánh)
+                        let ai = s.isCmd ? u.controller() : null;
+                        if (ai == null) { ai = new Packages.mindustry.ai.types.CommandAI(); u.controller(ai); s.isCmd = true; s.hold = false; s.cmdKey = null; s.cmdT = 0; }
+                        if (anchor != null) {
+                            let key = atk != null ? "a" + atk.id : (hasRally ? "p" + Math.round(anchor.x) + "," + Math.round(anchor.y) : "f");
+                            s.cmdT -= Time.delta;
+                            if (key !== s.cmdKey || (key === "f" && s.cmdT <= 0 && (s.lx === undefined || Mathf.dst(anchor.x, anchor.y, s.lx, s.ly) > 64))) {
+                                s.cmdKey = key;
+                                s.cmdT = 45 + Math.floor(Math.random() * 30);
+                                s.lx = anchor.x; s.ly = anchor.y;
+                                if (atk != null) ai.commandTarget(atk, false);
+                                else if (key === "f" && Mathf.dst(u.x, u.y, anchor.x, anchor.y) <= 110) ai.clearCommands();
+                                else ai.commandPosition(Tmp.v2.set(anchor.x, anchor.y));
+                            }
+                        }
+                        continue;
+                    }
+                    if (s.isCmd) { s.isCmd = false; s.hold = false; let g0 = groundAI(); if (g0 != null) u.controller(g0); }
+                    s.rT = (s.rT || 0) - Time.delta;
+                    if (s.rT <= 0 || s.r0 === undefined) { s.rT = 60; s.r0 = u.range(); }
+                    let rng = s.r0;
                     let sst = byId[soldierOwner[u.id]];
                     if (sst != null && sst.s[STAT_ARMY] > 0) rng *= 1 + sst.s[STAT_ARMY] * RANGE_PCT / 100;
                     if (s.hp !== undefined && u.health < s.hp - 0.01) s.hurt = 300;
@@ -3427,15 +3497,18 @@
                         }
                         if (s.cg != null) {
                             if (!s.hold) { s.hold = true; u.controller(new Packages.mindustry.ai.types.NoAI()); }
-                            let myCore = u.team.core();
-                            if (myCore != null && soldierWallBetween(u, s.cg)) {
-                                u.controlWeapons(false, false);
-                                botGo(u, myCore.x, myCore.y, 48); // lùi về lõi né đạn
+                            // bị bắn: đứng lại bắn trả, giữ khoảng cách an toàn (không chạy về lõi)
+                            let cd = Mathf.dst(u.x, u.y, s.cg.x, s.cg.y);
+                            u.lookAt(s.cg.x, s.cg.y);
+                            u.aim(s.cg.x, s.cg.y);
+                            u.controlWeapons(true, true); // luôn bắn, kể cả khi đang lùi
+                            s.wbT = (s.wbT || 0) - Time.delta;
+                            if (s.wbT <= 0) { s.wbT = 6; s.wb = soldierWallBetween(u, s.cg); }
+                            if (s.wb) {
+                                u.movePref(Tmp.v1.setZero());
                             } else {
-                                u.lookAt(s.cg.x, s.cg.y);
-                                u.aim(s.cg.x, s.cg.y);
-                                u.controlWeapons(true, true);
-                                if (Mathf.dst(u.x, u.y, s.cg.x, s.cg.y) > rng * 0.85) botGo(u, s.cg.x, s.cg.y, rng * 0.75);
+                                if (cd > rng * 0.85) soldierGo(u, s, s.cg.x, s.cg.y, rng * 0.75);
+                                else if (cd < rng * 0.55 && cd > 1) soldierGo(u, s, s.cg.x + (u.x - s.cg.x) / cd * rng * 0.7, s.cg.y + (u.y - s.cg.y) / cd * rng * 0.7, 8); // lùi ra tầm an toàn
                                 else u.movePref(Tmp.v1.setZero());
                             }
                             continue;
@@ -3461,9 +3534,15 @@
                         }
                         if (s.approachLv > 0) {
                             let closeDist = rng * (s.approachLv === 1 ? 0.5 : 0.22);
-                            if (Mathf.dst(u.x, u.y, s.tg.x, s.tg.y) > closeDist) botGo(u, s.tg.x, s.tg.y, closeDist);
+                            if (Mathf.dst(u.x, u.y, s.tg.x, s.tg.y) > closeDist) soldierGo(u, s, s.tg.x, s.tg.y, closeDist);
                             else u.movePref(Tmp.v1.setZero());
                         }
+                    } else if (cmdOn) {
+                        // chế độ ra lệnh: không tự đi đánh lõi; về điểm tập kết (hoặc đi theo chủ), thấy địch trong tầm thì bắn
+                        if (!s.hold) { s.hold = true; u.controller(new Packages.mindustry.ai.types.NoAI()); }
+                        u.controlWeapons(false, false);
+                        if (anchor != null && Mathf.dst(u.x, u.y, anchor.x, anchor.y) > 110) soldierGo(u, s, anchor.x, anchor.y, 90);
+                        else u.movePref(Tmp.v1.setZero());
                     } else if (s.hold) {
                         s.hold = false;
                         u.controlWeapons(false, false);
@@ -3471,6 +3550,55 @@
                         if (ai != null) u.controller(ai);
                     }
                 } catch (err) { logOnce("soldierai", "soldier AI failed: " + err); }
+            }
+        }
+    });
+
+    // như botGo nhưng chỉ hỏi controlPath mỗi ~10 tick (botGo hỏi mỗi frame cho từng lính -> rất nặng)
+    function soldierGo(u, s, tx, ty, stopDist) {
+        let v = Tmp.v1;
+        if (Mathf.dst(u.x, u.y, tx, ty) <= stopDist) { v.setZero(); u.movePref(v); return; }
+        s.pT = (s.pT || 0) - Time.delta;
+        if (s.pT <= 0 || s.px === undefined) {
+            s.pT = 10 + Math.floor(Math.random() * 4);
+            s.px = tx; s.py = ty;
+            try {
+                botGoal.set(tx, ty);
+                let r = Vars.controlPath.getPathPosition(u, botGoal, botGoal);
+                if (!r.unreachable) {
+                    if (r.move) { s.px = r.dest.x; s.py = r.dest.y; } else { s.px = u.x; s.py = u.y; }
+                }
+            } catch (err) {}
+        }
+        v.set(s.px - u.x, s.py - u.y);
+        if (v.len() > 0.1) v.setLength(u.speed()); else v.setZero();
+        u.movePref(v);
+    }
+
+    function placeWall(pl, lv, tx, ty) {
+        let core = pl.team().core();
+        let blk = wallBlock(lv);
+        if (core == null || blk == null) return -1;
+        if (!canBuildAt(core, enemyCores(core.team), blk, tx, ty)) return -1;
+        let tile = Vars.world.tile(tx, ty);
+        if (tile == null) return -1;
+        tile.setNet(blk, pl.team(), 0);
+        let b = tile.build;
+        if (b == null || b.block !== blk) return -1;
+        fx(b.x, b.y);
+        return tile.pos();
+    }
+
+    // tường bị phá -> về túi đồ (giữ cấp), xây lại được
+    const eachWall = new Cons({
+        get: function(pl) {
+            let st = byId[pl.id];
+            if (st == null || !(st.w >= 0)) return;
+            let blk = wallBlock(st.wl || 0), b = Vars.world.build(st.w);
+            if (b == null || !b.isValid() || b.block !== blk || b.team != pl.team()) {
+                st.w = IN_BAG;
+                try { toast(pl, tr("[scarlet]Khối tường bị phá, đã về túi đồ.", "[scarlet]Wall destroyed, returned to your bag.")); } catch (err) {}
+                changed();
             }
         }
     });
@@ -3682,7 +3810,8 @@
     function botEnemyOk(e, u) {
         return e != null && e !== BC.botSkip && e.isValid() && !e.dead && e.team !== u.team;
     }
-    function pickWave(u, core) {
+    // pr = tầm bắn pháo đã lắp của bot: chỉ CHUYỂN sang bắn player địch khi player đó lọt vào đúng tầm này, farm wave vẫn ưu tiên khi không có player trong tầm
+    function pickWave(u, core, pr) {
         let wt = Vars.state.rules.waveTeam;
         let best = null;
         let bd = BOT_LEASH * BOT_LEASH;
@@ -3699,14 +3828,15 @@
                 if (d < bd) { bd = d; best = e; }
             }
         }));
-        // player địch (người thật) trong tầm thấy -> ưu tiên nếu gần hơn mục tiêu wave
-        let pd = BOT_PLAYER_AGGRO * BOT_PLAYER_AGGRO;
+        // player địch chỉ chen vào khi ĐANG trong tầm bắn của pháo bot (không rời mục tiêu wave vì player ở xa)
+        let pr0 = pr > 0 ? pr : BOT_PLAYER_AGGRO;
+        let pr2 = pr0 * pr0;
         eachPl(new Cons({
             get: function(p) {
                 let e = p.unit();
                 if (e == null || !botEnemyOk(e, u) || e.team === wt) return;
-                let d = Math.min(Mathf.dst2(u.x, u.y, e.x, e.y), Mathf.dst2(core.x, core.y, e.x, e.y));
-                if (d < pd && Mathf.dst2(u.x, u.y, e.x, e.y) < bd) { pd = d; bd = Mathf.dst2(u.x, u.y, e.x, e.y); best = e; }
+                let d = Mathf.dst2(u.x, u.y, e.x, e.y);
+                if (d <= pr2 && d < bd) { bd = d; best = e; }
             }
         }));
         return best;
@@ -3810,10 +3940,12 @@
     function botLearn(pl) {
         let out = { b: {}, e: {}, pos: [] };
         let best = null, bn = -1;
+        let bo = botOf(pl.id), kid = bo != null ? bo.botKillerId : undefined;
         eachPl(new Cons({
             get: function(p) {
                 if (p === pl || p.team() === pl.team() || p.team() === Vars.state.rules.waveTeam) return;
                 let s0 = byId[p.id];
+                if (kid !== undefined && p.id === kid && s0 != null) { best = p; bn = 1e9; return; } // ưu tiên người vừa hạ bot
                 if (s0 != null && s0.d.length > bn) { bn = s0.d.length; best = p; }
             }
         }));
@@ -3897,6 +4029,18 @@
         }
     }
 
+    // tầm bắn thật của bot: max/min trong các pháo ĐÃ LẮP (EQUIPPED); không có pháo nào thì dùng tầm vũ khí gốc của unit
+    function botGearRanges(pl, u) {
+        let st = byId[pl.id];
+        let mx = 0, mn = 1e18;
+        if (st != null) {
+            let list = equipList(st, droneDefs());
+            for (let i = 0; i < list.length; i++) { let r = turretRange(list[i]); if (r > mx) mx = r; if (r < mn) mn = r; }
+        }
+        if (mx <= 0) { try { mx = u.type.maxRange; } catch (err) {} mn = mx; }
+        return { max: Math.max(48, mx), min: Math.max(48, mn) };
+    }
+
     function botTickOne() {
         let pl = BC.botPl;
         BC.botSm = botSmart();
@@ -3916,6 +4060,8 @@
             if (BC.botDeadT <= 0) spawnBotUnit();
             return;
         }
+        let gr = botGearRanges(pl, u);
+        let maxR = gr.max, minR = gr.min;
         BC.botDbgT -= Time.delta;
         if (BC.botDbgT <= 0) {
             BC.botDbgT = 600;
@@ -3924,15 +4070,20 @@
             let st1 = bind(pl);
             Log.info("[NexPvp] botdbg unit=" + u.type.name + " pos=" + Math.round(u.tileX()) + "," + Math.round(u.tileY()) + " core=" + core.tileX() + "," + core.tileY() + " wave=" + Vars.state.wave + " waveUnits=" + wn + " nearest=" + nearD + " target=" + (BC.botTarget != null) + " pts=" + st1.pts + " turrets=" + builtCount(st1) + " ctrl=" + u.controller().getClass().getSimpleName() + " paused=" + Vars.state.isPaused());
         }
-        // 1) tìm / giữ mục tiêu là unit wave
+        // 1) tìm / giữ mục tiêu: ưu tiên farm wave, chỉ bắn player địch khi nó vào tầm bắn pháo
         BC.botScanT -= Time.delta;
         if (BC.botTarget == null || !BC.botTarget.isValid() || BC.botTarget.dead || BC.botScanT <= 0) {
             if (BC.botScanT <= 0) BC.botScanT = 20;
-            BC.botTarget = (BC.botFightT > 0 ? botPickDefend(u, core) : null) || pickWave(u, core);
+            BC.botTarget = (BC.botFightT > 0 ? botPickDefend(u, core) : null) || pickWave(u, core, maxR);
             if (BC.botTarget != null) logOnce("botfound", "bot: thấy unit wave " + BC.botTarget.type.name + " cách " + Math.round(Mathf.dst(core.x, core.y, BC.botTarget.x, BC.botTarget.y)), true);
         }
         BC.botSeenT -= Time.delta;
         if (BC.botSeenT <= 0) { BC.botSeenT = 30; try { botSee(u); } catch (err) { logOnce("botsee", "bot see failed: " + err); } }
+        // --- không bắn thứ gì một lúc (không phải đang đi dò/tấn công/về nhà/mua) -> biến về để reset tìm quái wave ---
+        let shotNow = false;
+        try { shotNow = u.isShooting(); } catch (err) {}
+        if (shotNow || BC.botAttack || BC.botScout || BC.botHome || BC.botBuyTrip || BC.botFightT > 0 || BC.botSwapPend || BC.botResetPend) BC.botNoShotT = 0;
+        else if ((BC.botNoShotT += Time.delta) > BOT_NOSHOT_RESET) { BC.botNoShotT = 0; BC.botResetPend = true; BC.botResetT0 = Time.time; Log.info("[NexPvp] bot không bắn gì, về nhà biến về để reset"); }
         // --- thu nhập theo thời gian: càng chơi lâu bot càng được nhiều điểm ---
         BC.botIncomeT += Time.delta;
         if (BC.botIncomeT >= 3600) {
@@ -3987,29 +4138,38 @@
         } else BC.botMissionT = 0;
         let hpf = u.health / u.maxHealth;
         let t = BC.botTarget;
-        let maxR = Math.max(48, u.type.maxRange);
         let combat = t != null && t.isValid() && !t.dead && Mathf.dst(u.x, u.y, t.x, t.y) <= BOT_COMBAT_R;
-        if (combat && botUnfavorable(u)) BC.botRetreatT = 240;
+        if (combat && botUnfavorable(u)) { BC.botRetreatT = 240; BC.botFleeT = Math.max(BC.botFleeT || 0, 300); }
+        if (BC.botHitT > 0) {
+            BC.botHitT -= Time.delta;
+            if (BC.botRetreatT < 120) BC.botRetreatT = 120; // bị player địch bắn: rút về nền/biến về
+            BC.botRevengeT = 3600;                          // xong sẽ quay lại đánh player
+            BC.botFleeT = 600;                              // rút liên tục tới khi biến về được (không quay đầu tiến lên)
+        } else if (BC.botRevengeT > 0) BC.botRevengeT -= Time.delta;
+        if (BC.botFleeT > 0) BC.botFleeT -= Time.delta;
         BC.botPlanT -= Time.delta;
         if (BC.botPlanT <= 0) { BC.botPlanT = Math.max(45, 120 - 20 * (BC.botSm - 1)); botPlan(pl, u, core, combat, hpf); }
         let onBase = botIsBase(u);
-        if (BC.botHome || BC.botRetreatT > 0 || BC.botBuyTrip) {
+        if (BC.botHome || BC.botRetreatT > 0 || BC.botFleeT > 0 || BC.botBuyTrip) {
             BC.botBaseT -= Time.delta;
             if (BC.botBase == null || BC.botBaseT <= 0) { BC.botBase = botFindBase(u, core); BC.botBaseT = 120; }
         }
         let bx = BC.botBase != null ? BC.botBase.x : core.x;
         let by = BC.botBase != null ? BC.botBase.y : core.y;
 
-        if (BC.botHome || BC.botRetreatT > 0) {
+        if (BC.botHome || BC.botRetreatT > 0 || BC.botFleeT > 0) {
             // máu thấp / bất lợi: về nền đặt lõi gần nhất, vừa lùi vừa bắn nếu địch còn trong tầm
             botGo(u, bx, by, 8);
             // đứng trên nền đặt lõi (nửa map phe ta) thì mới được biến về lõi: unit mới hồi sinh đầy máu
-            if (BC.botHome && onBase && (hpf < 0.95 || BC.botSwapPend) && botRecall(pl, u, core)) return;
-            if (t != null && t.isValid() && !t.dead && Mathf.dst(u.x, u.y, t.x, t.y) <= maxR) {
-                u.lookAt(t.x, t.y); u.aim(t.x, t.y); u.controlWeapons(true, true);
+            if (onBase && ((BC.botHome && (hpf < 0.7 || BC.botSwapPend || BC.botResetPend)) || BC.botFleeT > 0 || BC.botRetreatT > 0) && botRecall(pl, u, core)) return;
+            BC.botNpT = (BC.botNpT || 0) - Time.delta;
+            if (BC.botNpT <= 0) { BC.botNpT = 10; BC.botNp = botNearestPlayer(u); }
+            let at = (BC.botNp != null && BC.botNp.isValid() && !BC.botNp.dead) ? BC.botNp : t; // rút lui: ưu tiên ngắm player địch gần nhất, nhưng chỉ bắn khi trong tầm pháo
+            if (at != null && at.isValid() && !at.dead && Mathf.dst(u.x, u.y, at.x, at.y) <= maxR) {
+                u.lookAt(at.x, at.y); u.aim(at.x, at.y); u.controlWeapons(true, true);
             } else u.controlWeapons(false, false);
         } else if (combat) {
-            botChase(u, t, maxR);
+            botChase(u, t, maxR, minR);
         } else if (BC.botBuyTrip) {
             // có điểm: về nền đặt lõi để xây pháo / nâng nhà máy lính
             botGo(u, bx, by, 8);
@@ -4036,7 +4196,7 @@
             if (ge == null || !botGo(u, ge.x, ge.y, BOT_SEE_R * 0.8)) { BC.botScout = false; BC.botSeenAt = Time.time - BOT_SCOUT_EVERY + 1800; }
             u.controlWeapons(false, false);
         } else if (t != null) {
-            botChase(u, t, maxR);
+            botChase(u, t, maxR, minR);
         } else {
             botGo(u, core.x, core.y, BOT_HOME_R);
             u.controlWeapons(false, false);
@@ -4045,6 +4205,7 @@
     }
 
     const BOT_SEE_R = 640;        // 80 ô
+    const BOT_NOSHOT_RESET = 2700; // 45s không bắn gì -> về nhà biến về để tìm lại quái wave
     const BOT_SCOUT_EVERY = 5400; // 90s chưa nhìn player địch -> đi dò lại
 
     // chọn unit/pilot muốn đổi theo mẫu botSeen (null nếu không đổi được/không cần)
@@ -4097,6 +4258,9 @@
         BC.botHome = false;
         BC.botRetreatT = 0;
         try { botApplySwap(pl); } catch (err) { logOnce("botswap", "bot swap failed: " + err); }
+        BC.botResetPend = false;
+        BC.botFleeT = 0;
+        BC.botNoShotT = 0;
         BC.botDeadT = 90; // ~1.5s rồi hồi sinh tại lõi
         return true;
     }
@@ -4114,23 +4278,32 @@
         u.movePref(v);
     }
 
-    function botChase(u, t, maxR) {
+    const BOT_ENG_SCAN = 300; // 5s: quét lại xem pháo tầm ngắn hơn đã gây sát thương chưa
+
+    function botChase(u, t, maxR, minR) {
+        if (BC.botEngTgt !== t) { BC.botEngTgt = t; BC.botEngR = 0; BC.botEngOn = false; } // đổi mục tiêu -> reset về tầm xa nhất
+        let useR = BC.botEngR > 0 ? BC.botEngR : maxR;
         let dist = Mathf.dst(u.x, u.y, t.x, t.y);
-        if (maxR >= 110 && dist <= maxR * 0.9 && dist > 20) {
+        if (useR >= 110 && dist <= useR * 0.9 && dist > 20) {
+            if (minR < maxR) { // có pháo tầm ngắn hơn chưa chắc đã trúng -> định kỳ kiểm tra, không trúng thì ép lại gần hơn
+                if (!BC.botEngOn) { BC.botEngOn = true; BC.botEngScanT = BOT_ENG_SCAN; }
+                else if ((BC.botEngScanT -= Time.delta) <= 0) { BC.botEngScanT = BOT_ENG_SCAN; if (dist > minR) BC.botEngR = minR; }
+            }
             BC.botStuckT = 0;
             u.lookAt(t.x, t.y);
             u.aim(t.x, t.y);
             u.controlWeapons(true, true);
-            if (t.team !== Vars.state.rules.waveTeam) botStrafe(u, t, maxR, dist); // quái wave: đứng yên mà bắn
+            if (t.team !== Vars.state.rules.waveTeam) botStrafe(u, t, useR, dist); // quái wave: đứng yên mà bắn
             return;
         }
-        let reach = botGo(u, t.x, t.y, maxR * 0.75);
+        BC.botEngOn = false;
+        let reach = botGo(u, t.x, t.y, useR * 0.75);
         if (!reach) { BC.botSkip = t; BC.botSkipT = 180; BC.botTarget = null; }
-        if (dist > maxR * 0.75 && Mathf.dst(u.x, u.y, BC.botLastX, BC.botLastY) < 0.3) BC.botStuckT += Time.delta; else BC.botStuckT = 0;
+        if (dist > useR * 0.75 && Mathf.dst(u.x, u.y, BC.botLastX, BC.botLastY) < 0.3) BC.botStuckT += Time.delta; else BC.botStuckT = 0;
         if (BC.botStuckT > 300) { BC.botSkip = t; BC.botSkipT = 180; BC.botTarget = null; BC.botStuckT = 0; }
         u.lookAt(t.x, t.y);
         u.aim(t.x, t.y);
-        u.controlWeapons(true, dist <= maxR);
+        u.controlWeapons(true, dist <= useR);
     }
 
     function botIsBase(u) {
@@ -4173,6 +4346,20 @@
             }
         }));
         return best;
+    }
+
+    function botNearestPlayer(u) {
+        let r = null, bd = 1e12;
+        eachPl(new Cons({
+            get: function(p) {
+                if (p.team() === u.team || p.team() === Vars.state.rules.waveTeam) return;
+                let e = p.unit();
+                if (e == null || e.dead || !e.isValid()) return;
+                let d = Mathf.dst2(u.x, u.y, e.x, e.y);
+                if (d < bd) { bd = d; r = e; }
+            }
+        }));
+        return r;
     }
 
     function botEnemyUnit(u) {
@@ -4256,11 +4443,12 @@
 
     // đọc tình hình: có cần về hồi máu / về xây không, có đủ mạnh để sang tấn công không
     function botPlan(pl, u, core, combat, hpf) {
-        if (hpf < 0.35) BC.botHome = true;
-        else if (!combat && hpf < 0.95) BC.botHome = true;
-        if (hpf >= 0.99) BC.botHome = false;
+        BC.botHome = hpf < 0.7; // dưới 70% máu mới về lõi, còn lại cứ farm/tấn công bình thường
         if (BC.botSwapPend) { // đã thấy địch đổi unit/pilot: về nền, biến về lõi để đổi (quá 60s không về được thì bỏ)
             if (Time.time - BC.botSwapT0 > 3600) BC.botSwapPend = false; else BC.botHome = true;
+        }
+        if (BC.botResetPend) { // không bắn gì quá lâu: về nền, biến về lõi để làm mới (quá 60s không về được thì bỏ)
+            if (Time.time - BC.botResetT0 > 3600) BC.botResetPend = false; else BC.botHome = true;
         }
         let st = bind(pl);
         let ln = botLearnInfo(pl, st);
@@ -4270,27 +4458,16 @@
         if (st.pts - ln.need >= 1 && !BC.botBuyTrip && (BC.botNoBuyT > 0 || !botWantsBuy(st, ln))) {
             try { botSpendStats(pl, st, ln.need); } catch (err) { logOnce("botstats", "bot stats failed: " + err); }
         }
-        let ep = botEnemyPower(pl), mp = botPower(st);
         let wt = Vars.state.rules.waveTeam, nearWave = 0;
         Groups.unit.each(new Cons({
             get: function(e) { if (e.team === wt && !e.dead && Mathf.dst2(core.x, core.y, e.x, e.y) < 900 * 900) nearWave++; }
         }));
-        if (BC.botAttack) {
-            if (ep <= 0 || mp < ep * 0.9 || hpf < 0.5 || nearWave >= 8) BC.botAttack = false;
-        } else if (ep > 0 && mp >= ep * 1.25 && hpf > 0.8 && nearWave < 4 && BC.botNoAtkT <= 0) {
-            BC.botAttack = true;
-            Log.info("[NexPvp] bot sang tấn công (mạnh " + mp + " vs địch " + ep + ")");
-        }
+        BC.botAttack = false; // không chủ động đánh úp căn cứ địch: chỉ farm wave, bắn trả khi player vào tầm, <70% máu thì rút
         let sgE = botEnemyUnit(u);
         if (BC.botScout) {
             if (sgE == null || hpf < 0.7 || nearWave >= 6 || Time.time - BC.botScoutT0 > 3600) { BC.botScout = false; BC.botSeenAt = Time.time - BOT_SCOUT_EVERY + 1800; }
-        } else if (sgE != null && !BC.botAttack && !combat && !BC.botHome && !BC.botSwapPend && hpf > 0.8 && nearWave < 4 && Time.time - BC.botSeenAt > BOT_SCOUT_EVERY) {
+        } else if (sgE != null && !combat && !BC.botHome && !BC.botSwapPend && hpf > 0.8 && nearWave < 4 && Time.time - BC.botSeenAt > BOT_SCOUT_EVERY) {
             BC.botScout = true; BC.botScoutT0 = Time.time;
-        }
-        if (BC.botAttack) {
-            let ec = enemyCores(core.team);
-            if (ec.length === 0) BC.botAttack = false;
-            else BC.botEnemyPos = { x: ec[0].worldx(), y: ec[0].worldy() };
         }
     }
 
@@ -4433,6 +4610,29 @@
         let rl = botBuyLearned(pl, st, defs, L, core0, own, lrn, slotFree);
         if (rl === 1) return true;
         if (rl === 2) return false; // đang tích điểm cho pháo địch dùng
+        if (slotFree) { // địch chưa trang bị pháo nào -> bot tự trang bị ngẫu nhiên 1 loại mua được
+            let enE = 0;
+            for (let k in L.e) enE += L.e[k];
+            if (enE === 0) {
+                let rc = [], tn = Time.time;
+                for (let j = 0; j < defs.list.length; j++) {
+                    let d = defs.list[j];
+                    if (BOT_NO_TURRET[d.kind] === true || !d.equip) continue;
+                    if (!multiTurretOn() && ownedCount(st, d.id) >= 1) continue;
+                    if ((BC.botBan[d.id] || 0) > tn || turretCost(st, d) > st.pts) continue;
+                    rc.push(d);
+                }
+                if (rc.length > 0) {
+                    let rd = rc[Math.floor(Math.random() * rc.length)];
+                    st.pts -= turretCost(st, rd);
+                    st.d.push(rd.id);
+                    st.p.push(EQUIPPED);
+                    Log.info("[NexPvp] bot gắn ngẫu nhiên " + rd.id + " (địch chưa trang bị)");
+                    changed();
+                    return true;
+                }
+            }
+        }
         let cands = [], now = Time.time;
         for (let j = 0; j < defs.list.length; j++) {
             let d = defs.list[j];
@@ -4505,16 +4705,20 @@
             let auth = !Vars.net.client();
             let full = isFull();
             if (auth) {
-                eachPl(eachPlayerServer);
+                let t9 = pn(); eachPl(eachPlayerServer); pe("playerServer", t9);
                 botT -= Time.delta;
                 if (full && botT <= 0) {
                     botT = 60;
                     try { botManage(); } catch (err) { logOnce("botmanage", "bot manage failed: " + err); }
                 }
-                if (full) botTick();
-                if (full) eachPl(eachBarracks);
-                if (full) eachPl(eachSoldierAI);
-                if (anyBulletStat()) Groups.bullet.each(eachBullet);
+                let t1 = pn(); if (full) botTick(); pe("botTick", t1);
+                let t2 = pn(); if (full) eachPl(eachBarracks); pe("barracks", t2);
+                let t3 = pn(); if (full) eachPl(eachSoldierAI); pe("soldierAI", t3);
+                bulletStatT -= Time.delta;
+                if (bulletStatT <= 0) { bulletStatT = 30; bulletStatOn = anyBulletStat(); }
+                let t4 = pn(); if (bulletStatOn) Groups.bullet.each(eachBullet); pe("bullets", t4);
+                wallT -= Time.delta;
+                if (full && wallT <= 0) { wallT = 30; eachPl(eachWall); }
                 syncT -= Time.delta;
                 if (dirty && syncT <= 0) {
                     dirty = false;
@@ -4539,7 +4743,7 @@
                 orphanT -= Time.delta;
                 if (orphanT <= 0) {
                     orphanT = 30;
-                    Groups.unit.each(eachOrphan);
+                    let t5 = pn(); Groups.unit.each(eachOrphan); pe("orphan", t5);
                 }
                 winT -= Time.delta;
                 if (full && winT <= 0) {
@@ -4552,13 +4756,13 @@
                     prune();
                 }
             }
-            eachPl(eachPlayerCommon);
+            let ta = pn(); eachPl(eachPlayerCommon); pe("playerCommon", ta);
 
             turretT -= Time.delta;
-            eachPl(eachTurretOwner);
+            let t6 = pn(); eachPl(eachTurretOwner); pe("turretOwner", t6);
             if (turretT <= 0) turretT = 15;
 
-            eachPl(eachEquip);
+            let t7 = pn(); eachPl(eachEquip); pe("equip", t7);
 
             if (!auth) {
                 pruneT -= Time.delta;
@@ -4569,6 +4773,17 @@
             }
         }
     }));
+
+    if (PROFILE) {
+        Events.run(Trigger.update, new Runnable({ run: function() {
+            profFrames++;
+            if (profFrames < 300) return;
+            let out = [];
+            for (let k in profAcc) out.push(k + "=" + (profAcc[k] / profFrames).toFixed(2) + "ms");
+            Log.info("[NexPvp][prof] avg ms/frame over " + profFrames + " frames, units=" + Groups.unit.size() + ", bullets=" + Groups.bullet.size() + " | " + out.join(" "));
+            profAcc = {}; profFrames = 0;
+        } }));
+    }
 
     function nearPos(x, y) {
         let teams = pvpTeams();
@@ -4727,6 +4942,10 @@
                 let o = b.owner;
                 if (b.team != null && b.team != tgt.team) teamHit[tgt.id] = { team: b.team, t: Time.time };
                 if (o == null || o.team == tgt.team) return;
+                try {
+                    let bb = botUnitOf(tgt);
+                    if (bb != null && o.team !== Vars.state.rules.waveTeam && typeof o.getPlayer === "function" && ownerPl(o) != null) { bb.botHitT = 300; bb.botHitBy = o; }
+                } catch (err) {}
                 // chủ của viên đạn: unit người chơi / lính -> getPlayer hoặc soldierOwner; pháo xây (Building) -> hostOwner
                 let isUnitOwner = typeof o.getPlayer === "function";
                 let apid;
@@ -4810,6 +5029,10 @@
                 let bu0 = botUnitOf(u);
                 let upid = up0 != null ? up0.id : (bu0 != null ? bu0.botPl.id : undefined);
                 if (upid !== undefined) bumpKc(upid, 2);
+                if (bu0 != null && kr != null && Time.time - kr.t <= KILL_CREDIT_TICKS && kr.pid !== bu0.botPl.id) { // bot bị hạ bởi player: quét & học theo cách lắp pháo của người đó
+                    bu0.botKillerId = kr.pid;
+                    Log.info("[NexPvp] bot bị hạ bởi player " + kr.pid + ", quét và học theo pháo của người đó");
+                }
                 if (kr != null && Time.time - kr.t <= KILL_CREDIT_TICKS) bumpKc(kr.pid, upid !== undefined ? 1 : 0);
             } catch (err) {} // empixeand cứu khỏi cú đánh chí mạng: không tính kill
             let th = teamHit[u.id];
@@ -4914,6 +5137,7 @@
             prevUnit = {};
             extPvp = {};
             barrackT = {};
+            rally = {};
             soldiers = {};
             soldierOwner = {};
             mountSt = {};
@@ -5082,6 +5306,11 @@
                 refund += st.s[STAT_ARMY]; st.s[STAT_ARMY] = 0;
                 for (let i = 0; i < (st.b || 0); i++) refund += barrackCost(i);
                 if ((st.b || 0) > 0) { st.b = 0; try { removeSoldiers(player.id); } catch (err) {} delete barrackT[player.id]; }
+                if (st.w !== undefined && st.w !== WALL_NONE) {
+                    for (let wi = 0; wi <= (st.wl || 0); wi++) refund += WALL_COST[wi];
+                    if (st.w >= 0) removeTurret(st.w, { block: wallBlock(st.wl || 0) });
+                    st.w = WALL_NONE; st.wl = 0;
+                }
             }
             if (refund <= 0) return;
             st.pts += refund;
@@ -5089,6 +5318,32 @@
             toast(player, tr("[accent]Đã reset, hoàn ", "[accent]Reset, refunded ") + refund + tr(" điểm. EXP cấp hiện tại = 0.", " pts. Current level EXP = 0."));
             changed();
         }, false, 300);
+
+        global.NexNet.on(REQ_CMD, function(player, payload) {
+            let st = reqState(player, true); // ra lệnh ở bất cứ đâu
+            if (st == null || (st.b || 0) < 1) return;
+            let c = String(payload), pid = player.id;
+            if (c === "t") {
+                st.cmd = st.cmd === 1 ? 0 : 1;
+                delete rally[pid];
+                toast(player, st.cmd === 1 ? tr("[accent]Ra lệnh cho lính: BẬT (lính theo bạn; Shift+9 tập kết tại con trỏ, Shift+0 theo bạn)", "[accent]Soldier commands: ON (soldiers follow you; Shift+9 rally at cursor, Shift+0 follow)") : tr("[accent]Ra lệnh cho lính: TẮT (lính tự đi đánh)", "[accent]Soldier commands: OFF (soldiers march automatically)"));
+            } else if (st.cmd === 1) {
+                if (c === "f") delete rally[pid];
+                else if (c === "h") { let u = player.unit(); if (u != null && u.isValid()) rally[pid] = { x: u.x, y: u.y }; }
+                else if (c.indexOf("au:") === 0) {
+                    let tu = Groups.unit.getByID(parseInt(c.substring(3)));
+                    if (tu != null && tu.isValid() && !tu.dead && tu.team != player.team()) rally[pid] = { x: tu.x, y: tu.y, uid: tu.id };
+                } else if (c.indexOf("ab:") === 0) {
+                    let bp = parseInt(c.substring(3)), tb = Vars.world.build(bp);
+                    if (tb != null && tb.isValid() && tb.team != player.team()) rally[pid] = { x: tb.x, y: tb.y, bpos: bp };
+                } else if (c.indexOf("r:") === 0) {
+                    let xy = c.substring(2).split(",");
+                    let rx = parseFloat(xy[0]), ry = parseFloat(xy[1]);
+                    if (isFinite(rx) && isFinite(ry)) rally[pid] = { x: Mathf.clamp(rx, 0, Vars.world.width() * Vars.tilesize), y: Mathf.clamp(ry, 0, Vars.world.height() * Vars.tilesize) };
+                }
+            }
+            changed();
+        }, false, 100);
 
         global.NexNet.on(REQ_BARR, function(player, payload) {
             let st = reqState(player);
@@ -5102,6 +5357,46 @@
             toast(player, tr("[accent]Nhà máy lính cấp ", "[accent]Barracks level ") + st.b);
             changed();
         }, false, 300);
+
+        global.NexNet.on(REQ_WALL, function(player, payload) {
+            let parts = String(payload).split("|");
+            let mode = parts[0];
+            let st = reqState(player, mode === "b");
+            if (st == null) return;
+            let w = st.w === undefined ? WALL_NONE : st.w;
+            let lv = st.wl || 0;
+            if (mode === "buy") {
+                if (w !== WALL_NONE || st.pts < WALL_COST[0]) return;
+                st.pts -= WALL_COST[0];
+                st.w = IN_BAG;
+                st.wl = 0;
+                toast(player, tr("[accent]Đã mua copper-wall (+1 giới hạn lính) - xem trong Túi đồ.", "[accent]Bought copper-wall (+1 soldier cap) - check your Bag."));
+                changed();
+            } else if (mode === "b") {
+                if (w !== IN_BAG) return;
+                let tx = parseInt(parts[1]), ty = parseInt(parts[2]);
+                let pos = (isNaN(tx) || isNaN(ty)) ? -1 : placeWall(player, lv, tx, ty);
+                if (pos < 0) {
+                    toast(player, tr("[scarlet]Vị trí không hợp lệ: phải là nền đặt lõi còn trống ở nửa map phe ta!", "[scarlet]Invalid spot: needs free core-zone floor on your half of the map!"));
+                    return;
+                }
+                st.w = pos;
+                changed();
+            } else if (mode === "up") {
+                if (!(w >= 0) || lv >= WALL_CHAIN.length - 1) return;
+                let cost = WALL_COST[lv + 1];
+                if (st.pts < cost) return;
+                let b = Vars.world.build(w), nb = wallBlock(lv + 1);
+                if (b == null || !b.isValid() || nb == null) return;
+                let tile = b.tile;
+                tile.setNet(nb, player.team(), 0);
+                if (tile.build == null || tile.build.block !== nb) return;
+                st.pts -= cost;
+                st.wl = lv + 1;
+                toast(player, tr("[accent]Nâng cấp tường: ", "[accent]Wall upgraded: ") + nb.localizedName + " (+" + wallBonus(st) + tr(" giới hạn lính)", " soldier cap)"));
+                changed();
+            }
+        }, false, 60);
 
         global.NexNet.on(REQ_SELL, function(player, payload) {
             let st = reqState(player);
@@ -5226,6 +5521,7 @@
     }
 
     function send(kind, payload) {
+        if (kind === REQ_CMD) cmdMark = null;
         noteTouch(kind, payload);
         if (global.NexNet != null) global.NexNet.send(kind, payload);
     }
@@ -5554,6 +5850,15 @@
             list.add(row).width(W - 24).pad(3).row();
         }
         c.add(list).width(W).top().row();
+        if (st.w === IN_BAG) {
+            let wr = new Table(Styles.black6);
+            wr.margin(8);
+            let wb0 = wallBlock(st.wl || 0);
+            if (wb0 != null) wr.add(new Image(wb0.uiIcon)).size(32).padRight(10);
+            wr.add("[white]" + wallName(st.wl || 0) + "[]  [accent]+" + wallBonus(st) + tr(" lính", " cap") + "[]").left().growX().wrap().minWidth(0);
+            wr.button(tr("Xây", "Build"), new Runnable({ run: function() { startWallBuild(); } })).size(narrowScreen() ? 72 : 90, btnH()).padLeft(6);
+            c.add(wr).width(W - 24).pad(3).row();
+        }
 
         if (totalPages > 1) {
             let nav = new Table();
@@ -5813,6 +6118,36 @@
         return name + "  x" + cfg.n + " / " + cfg.sec + "s  " + tr("tối đa ", "max ") + cfg.cap;
     }
 
+    function wallName(i) { let b = wallBlock(i); return b != null ? b.localizedName : WALL_CHAIN[i]; }
+
+    function wallCard(p, st, w) {
+        let ws = st.w === undefined ? WALL_NONE : st.w;
+        let lv = st.wl || 0, mx = WALL_CHAIN.length - 1;
+        let box = new Table(Styles.black6);
+        box.margin(10);
+        box.add("[accent]" + tr("Khối tường: tăng giới hạn lính", "Wall block: raises soldier cap") + "[]").left().row();
+        box.add("[lightgray]" + tr("Mỗi cấp +1 giới hạn lính sinh từ lõi.", "Each level adds +1 to the soldier cap.") + "[]").left().wrap().growX().padBottom(6).row();
+        if (ws === WALL_NONE) {
+            box.add("[white]" + tr("Chưa mua. Mua ", "Not bought. Buy ") + wallName(0) + " (+1)[]").left().wrap().growX().row();
+            let bb = box.button(tr("Mua", "Buy") + " (" + WALL_COST[0] + tr(" điểm)", " pt)"), new Runnable({ run: function() { send(REQ_WALL, "buy"); } })).growX().height(btnH()).padTop(8).get();
+            bb.setDisabled(st.pts < WALL_COST[0]);
+        } else {
+            box.add("[white]" + wallName(lv) + "  " + tr("Cấp ", "Level ") + lv + "/" + mx + "  [accent]+" + (1 + lv) + tr(" lính", " cap") + "[]").left().wrap().growX().row();
+            if (ws === IN_BAG) {
+                box.add("[lightgray]" + tr("Đang trong Túi đồ.", "In your Bag.") + "[]").left().row();
+                box.button(tr("Xây", "Build"), new Runnable({ run: function() { startWallBuild(); } })).growX().height(btnH()).padTop(6).row();
+            } else if (lv < mx) {
+                let cost = WALL_COST[lv + 1];
+                box.add("[lightgray]" + tr("Tiếp theo: ", "Next: ") + wallName(lv + 1) + "[]").left().row();
+                let ub = box.button(tr("Nâng cấp", "Upgrade") + " (" + cost + tr(" điểm)", " pt)"), new Runnable({ run: function() { send(REQ_WALL, "up"); } })).growX().height(btnH()).padTop(6).get();
+                ub.setDisabled(st.pts < cost);
+            } else {
+                box.add("[accent]MAX[]").left().padTop(4).row();
+            }
+        }
+        p.add(box).width(w).pad(4).row();
+    }
+
     function armyHeader(p, st, w) {
         let lv = st.b || 0;
         let box = new Table(Styles.black6);
@@ -5824,6 +6159,15 @@
         } else {
             box.add("[white]" + tr("Cấp ", "Level ") + lv + "/" + BARRACKS.length + "[]  [accent]" + armyDesc(lv - 1) + "[]").left().wrap().growX().row();
         }
+        if (lv >= 1) {
+            let co = st.cmd === 1;
+            box.button(tr("Ra lệnh cho lính: ", "Soldier commands: ") + (co ? tr("[green]BẬT[]", "[green]ON[]") : tr("[scarlet]TẮT[]", "[scarlet]OFF[]")), new Runnable({ run: function() { send(REQ_CMD, "t"); } })).growX().height(btnH()).padTop(6).row();
+            if (co) {
+                box.add("[lightgray]" + tr("Lính đi theo bạn, thấy địch trong tầm thì bắn. Shift+9: tập kết tại con trỏ. Shift+0: theo bạn.", "Soldiers follow you and shoot enemies in range. Shift+9: rally at cursor. Shift+0: follow you.") + "[]").left().wrap().growX().padTop(4).row();
+                box.button(tr("Tập kết tại vị trí tôi", "Rally at my position"), new Runnable({ run: function() { send(REQ_CMD, "h"); } })).growX().height(btnH()).padTop(4).row();
+                box.button(tr("Lính theo tôi", "Soldiers follow me"), new Runnable({ run: function() { send(REQ_CMD, "f"); } })).growX().height(btnH()).padTop(4).row();
+            }
+        }
         if (lv < BARRACKS.length) {
             let cost = barrackCost(lv);
             box.add("[lightgray]" + tr("Tiếp theo: ", "Next: ") + armyDesc(lv) + "[]").left().wrap().growX().padTop(4).row();
@@ -5833,6 +6177,7 @@
             box.add("[accent]MAX[]").left().padTop(4).row();
         }
         p.add(box).width(w).pad(4).row();
+        wallCard(p, st, w);
         statRow(p, st, STAT_ARMY, w);
         resetBtn(p, st, w, "army");
     }
@@ -6683,6 +7028,136 @@
     let buildMode = null;
     let buildHud = null;
 
+    // ===== UI ra lệnh lính: nút giữa màn hình -> bảng nhỏ phía dưới (theo tôi / điều hướng) =====
+    let cmdPick = false, cmdOpen = false, cmdMark = null, cmdCenter = null, cmdBottom = null;
+
+    function cmdOn() {
+        let st = localState();
+        return !Vars.headless && st != null && st.cmd === 1 && isActive() && (st.b || 0) >= 1;
+    }
+
+    function cmdTargetAt(tile) {
+        let team = Vars.player.team(), mw = Core.input.mouseWorld(), best = null, bd = 28 * 28;
+        Groups.unit.each(new Cons({ get: function(e) {
+            if (e.team === team || e.team === Team.derelict || e.dead || !e.isValid()) return;
+            let d = Mathf.dst2(e.x, e.y, mw.x, mw.y);
+            if (d < bd) { bd = d; best = e; }
+        } }));
+        if (best != null) return { x: best.x, y: best.y, uid: best.id, key: "u" + best.id };
+        let b = tile.build;
+        if (b != null && b.team != team && b.team != Team.derelict && tile.block() instanceof CoreBlock) return { x: b.x, y: b.y, bpos: b.tile.pos(), key: "b" + b.tile.pos() };
+        if (tile.solid() && tile.build == null) return null; // tường địa hình tự nhiên: bỏ qua
+        return { x: tile.worldx(), y: tile.worldy(), key: "t" + tile.x + "," + tile.y };
+    }
+
+    function cmdTap(tile) {
+        if (tile == null) return;
+        let g = cmdTargetAt(tile);
+        if (g == null) return;
+        let m = cmdMark;
+        if (m != null && m.st === 1 && m.key === g.key) { // chạm lần 2: X -> O, bắt đầu ra lệnh
+            send(REQ_CMD, g.uid !== undefined ? "au:" + g.uid : (g.bpos !== undefined ? "ab:" + g.bpos : "r:" + Math.round(g.x) + "," + Math.round(g.y)));
+            g.st = 2;
+            cmdMark = g;
+            cmdPick = false;
+            return;
+        }
+        g.st = 1;
+        cmdMark = g;
+    }
+
+    function drawCmdMark() {
+        let m = cmdMark;
+        if (m == null) return;
+        if (!cmdOn()) { cmdMark = null; return; }
+        let x = m.x, y = m.y;
+        if (m.uid !== undefined) {
+            let tu = Groups.unit.getByID(m.uid);
+            if (tu == null || !tu.isValid() || tu.dead) { cmdMark = null; return; }
+            x = tu.x; y = tu.y;
+        }
+        Draw.z(Layer.overlayUI + 1);
+        Lines.stroke(2.5);
+        if (m.st === 1) {
+            Draw.color(Color.valueOf("ffd34d"));
+            Lines.line(x - 6, y - 6, x + 6, y + 6);
+            Lines.line(x - 6, y + 6, x + 6, y - 6);
+        } else {
+            Draw.color(Color.valueOf("4dff88"));
+            Lines.circle(x, y, 8);
+        }
+        Draw.reset();
+    }
+
+    function cmdStatus() {
+        if (!cmdPick) return "[lightgray]" + tr("Chọn lệnh cho lính", "Pick a soldier command") + "[]";
+        if (cmdMark == null) return "[accent]" + tr("Chạm vị trí / lõi / unit địch (dấu X)", "Tap a spot / core / enemy unit (X mark)") + "[]";
+        return "[yellow]" + tr("Chạm lần nữa vào dấu X để bắt đầu (O)", "Tap the X again to start (O)") + "[]";
+    }
+
+    function buildCmdUi() {
+        cmdCenter = new Table(Styles.black6);
+        cmdCenter.margin(8);
+        cmdCenter.touchable = Touchable.enabled;
+        cmdCenter.add("[accent]" + tr("Ra lệnh lính", "Soldier orders") + "[]").pad(4);
+        cmdCenter.pack();
+        let kx = "newex-pvp-cmd-x", ky = "newex-pvp-cmd-y";
+        let cmdClamp = function() {
+            cmdCenter.setPosition(Mathf.clamp(cmdCenter.x, 0, Math.max(0, screenW() - cmdCenter.getWidth())), Mathf.clamp(cmdCenter.y, 0, Math.max(0, screenH() - cmdCenter.getHeight())));
+        };
+        if (Core.settings.has(kx) && Core.settings.has(ky)) cmdCenter.setPosition(Core.settings.getFloat(kx, 0), Core.settings.getFloat(ky, 0));
+        else cmdCenter.setPosition((screenW() - cmdCenter.getWidth()) / 2, (screenH() - cmdCenter.getHeight()) / 2);
+        cmdClamp();
+        let dragging = false, offX = 0, offY = 0;
+        cmdCenter.addListener(extend(InputListener, {
+            touchDown(event, x, y, pointer, button) { dragging = false; offX = x; offY = y; return true; },
+            touchDragged(event, x, y, pointer) {
+                if (Math.abs(x - offX) > 5 || Math.abs(y - offY) > 5) dragging = true;
+                if (dragging) {
+                    cmdCenter.setPosition(cmdCenter.x + x - offX, cmdCenter.y + y - offY);
+                    cmdClamp();
+                }
+            },
+            touchUp(event, x, y, pointer, button) {
+                if (dragging) {
+                    try { Core.settings.put(kx, java.lang.Float(cmdCenter.x)); Core.settings.put(ky, java.lang.Float(cmdCenter.y)); } catch (err) {}
+                } else {
+                    cmdOpen = !cmdOpen;
+                    if (!cmdOpen) cmdPick = false;
+                }
+                dragging = false;
+            }
+        }));
+        Core.scene.add(cmdCenter);
+
+        cmdBottom = new Table();
+        cmdBottom.setFillParent(true);
+        cmdBottom.bottom();
+        try { cmdBottom.touchable = Touchable.childrenOnly; } catch (err) {}
+        let padB = Math.round(Math.max(8, Math.min(Vars.mobile ? 90 : 60, screenH() * 0.12)));
+        cmdBottom.table(Styles.black6, new Cons({ get: function(c) {
+            c.margin(8);
+            c.label(new Prov({ get: function() { return cmdStatus(); } })).colspan(2).wrap().width(narrowScreen() ? 240 : 320).pad(4).row();
+            c.button(tr("Theo dõi tôi", "Follow me"), new Runnable({ run: function() { cmdPick = false; send(REQ_CMD, "f"); } })).size(narrowScreen() ? 110 : 140, btnH()).pad(3);
+            c.button(tr("Điều hướng", "Move / attack"), new Runnable({ run: function() { cmdPick = true; cmdMark = null; } })).size(narrowScreen() ? 110 : 140, btnH()).pad(3);
+        } })).padBottom(padB);
+        Core.scene.add(cmdBottom);
+    }
+
+    if (!Vars.headless) {
+        Events.run(Trigger.update, new Runnable({ run: function() {
+            if (cmdCenter == null) {
+                if (Core.scene == null || Vars.ui == null || Vars.ui.hudGroup == null) return;
+                try { buildCmdUi(); } catch (err) { logOnce("cmdui", "command ui failed: " + err); cmdCenter = {}; return; }
+            }
+            if (cmdCenter.visible === undefined) return;
+            let on = cmdOn() && buildMode == null;
+            if (!cmdOn()) { cmdOpen = false; cmdPick = false; }
+            cmdCenter.visible = on;
+            cmdBottom.visible = on && cmdOpen;
+        } }));
+    }
+
     function stopBuild() {
         buildMode = null;
         if (buildHud != null) {
@@ -6701,7 +7176,7 @@
     function buildStatus() {
         let m = buildMode;
         if (m == null) return "";
-        let def = droneDefs().map[m.id];
+        let def = buildDef(m.id);
         let nm = def != null ? def.block.localizedName : "";
         if (m.tx < 0) return "[accent]" + tr("Chạm 2 lần vào vị trí trên nền đặt lõi để xây ", "Tap twice on a core-zone tile to build ") + nm + "[]";
         return m.ok ? "[green]" + tr("Chạm lần nữa vào ô này để xây ", "Tap the same tile again to build ") + nm + "[]"
@@ -6753,9 +7228,25 @@
         showBuildHud();
     }
 
+    function buildDef(id) {
+        if (id === WALL_BUILD_ID) { let b = wallBlock((localState() || {}).wl || 0); return b != null ? { block: b } : null; }
+        return droneDefs().map[id];
+    }
+
+    function startWallBuild() {
+        if (Vars.headless || !isActive()) return;
+        let st = localState();
+        if (st == null || st.w !== IN_BAG) return;
+        if (upDialog != null) upDialog.hide();
+        if (bagDialog != null) bagDialog.hide();
+        stopBuild();
+        buildMode = { id: WALL_BUILD_ID, tx: -1, ty: -1, ok: false, ec: [], ecT: -999 };
+        showBuildHud();
+    }
+
     function buildCheck(m, tx, ty) {
         let core = Vars.player.team().core();
-        let def = droneDefs().map[m.id];
+        let def = buildDef(m.id);
         if (core == null || def == null) return false;
         return canBuildAt(core, m.ec, def.block, tx, ty);
     }
@@ -6767,8 +7258,11 @@
         if (core != null && Time.time - m.ecT > 30) { m.ec = enemyCores(core.team); m.ecT = Time.time; }
         if (m.tx === tile.x && m.ty === tile.y && m.ok) {
             let st = localState();
-            let idx = st != null ? bagIdxOf(st, m.id) : -1;
-            if (idx >= 0) send(REQ_MODE, idx + "|b|" + tile.x + "|" + tile.y);
+            if (m.id === WALL_BUILD_ID) send(REQ_WALL, "b|" + tile.x + "|" + tile.y);
+            else {
+                let idx = st != null ? bagIdxOf(st, m.id) : -1;
+                if (idx >= 0) send(REQ_MODE, idx + "|b|" + tile.x + "|" + tile.y);
+            }
             stopBuild();
             return;
         }
@@ -6781,7 +7275,7 @@
         let m = buildMode;
         if (m == null) return;
         let core = Vars.player.team().core();
-        let def = droneDefs().map[m.id];
+        let def = buildDef(m.id);
         if (!isActive() || Vars.player.dead() || core == null || def == null) { stopBuild(); return; }
         if (Time.time - m.ecT > 30) { m.ec = enemyCores(core.team); m.ecT = Time.time; }
         let ts = Vars.tilesize;
@@ -6820,6 +7314,7 @@
             get: function(e) {
                 if (Vars.headless || !isActive() || e.player !== Vars.player || e.tile == null) return;
                 if (buildMode != null) { buildTap(e.tile); return; }
+                if (cmdPick) { cmdTap(e.tile); return; }
                 if (!(e.tile.block() instanceof CoreBlock)) return;
                 if (e.tile.team() !== Vars.player.team()) return;
                 openUpgrade();
@@ -7040,6 +7535,8 @@
                     if (sh && !Core.scene.hasKeyboard()) {
                         if (Core.input.keyTap(KeyCode.num5)) { camMode = camMode === 1 ? 0 : 1; camNote(camMode === 1); }
                         if (Core.input.keyTap(KeyCode.num6)) { if (camMode === 2 && camBot + 1 < bots.length) camBot++; else { camMode = camMode === 2 ? 0 : 2; camBot = 0; } camNote(camMode === 2); }
+                        if (Core.input.keyTap(KeyCode.num9)) { let mw = Core.input.mouseWorld(); send(REQ_CMD, "r:" + Math.round(mw.x) + "," + Math.round(mw.y)); }
+                        if (Core.input.keyTap(KeyCode.num0)) send(REQ_CMD, "f");
                         if (Core.input.keyTap(KeyCode.num7)) send(REQ_PT, "me");
                         if (Core.input.keyTap(KeyCode.num8)) send(REQ_PT, "foe");
                     }

@@ -1,7 +1,0 @@
-name: Emeralift Wall
-type: Block
-health: 1000
-size: 2
-update: true
-buildVisibility: hidden
-category: defense

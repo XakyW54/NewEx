@@ -1,0 +1,29 @@
+type: Block
+name: "Sonicor"
+description: "Phòng không bằng sóng âm, đẩy lùi mục tiêu trên không trong vùng chữ nhật (10 sát thương).\n\nNối với [accent]DTG-Soldern[] để bắn đạn đánh chặn siêu nhanh, phá đạn địch trong vùng."
+size: 3
+health: 3000
+update: true
+solid: true
+configurable: true
+hasPower: true
+range: 320
+
+consumes: {
+  power: 6.5
+}
+
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+}
+
+category: turret
+research: newex
+requirements: [
+  copper/150
+  plastanium/120
+  silicon/280
+  phase-fabric/250
+]
+researchCostMultiplier: 10

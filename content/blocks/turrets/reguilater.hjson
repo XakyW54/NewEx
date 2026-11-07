@@ -1,0 +1,38 @@
+name: Reguilater
+description: "Tự động bắn cả trên không và mặt đất. Ngắm một lúc để tích sức, rồi bắn laser rất mạnh với sát thương ngẫu nhiên."
+health: 13000
+size: 3
+range: 260
+inaccuracy: 2
+rotateSpeed: 20.5
+shootSound: Gekko_fire
+shootCone: 25
+shootEffect: none
+maxAmmo: 50
+ammoPerShot: 1
+consumes: {
+  power: 2
+}
+unitSort: strongest
+targetGround: true
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+  parts: [
+    {
+      type: RegionPart
+      suffix: -barrel
+      progress: recoil
+      moveY: -3
+    }
+  ]
+}
+requirements: [
+  copper/135
+  lead/240
+  graphite/23
+  silicon/15
+]
+category: turret
+research: newex
+researchCostMultiplier: 1

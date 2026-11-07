@@ -1,0 +1,39 @@
+name: Lavunder 
+description: "Chiếu laser Photon liên tục vào mục tiêu mặt đất, bắn càng lâu càng mạnh. Đầy năng lượng sẽ gây vụ nổ quang phổ lớn."
+health: 3750
+size: 3
+range: 260
+inaccuracy: 2
+rotateSpeed: 20.5
+shootSound: Gekko_fire
+shootCone: 25
+shootEffect: none
+maxAmmo: 50
+ammoPerShot: 1
+consumes: {
+  power: 2
+}
+canControl: false
+unitSort: strongest
+targetGround: true
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+  parts: [
+    {
+      type: RegionPart
+      suffix: -barrel
+      progress: recoil
+      moveY: -3
+    }
+  ]
+}
+requirements: [
+  copper/190
+  lead/260
+  titanium/23
+  silicon/14
+]
+category: turret
+research: newex
+researchCostMultiplier: 1

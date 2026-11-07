@@ -1,0 +1,31 @@
+name: "newex-thermion"
+localizedName: "Thermion Wave Tower"
+description: '''
+Tháp chiến thuật 3 dạng:
+- 💛 Vàng: khống chế diện rộng, sát thương điện.
+- 💙 Xanh: hỏa lực quỹ đạo, hủy diệt tầm xa.
+- 💜 Tím: thao túng, cướp quân địch.
+'''
+type: "Block"
+size: 3
+health: 7500
+solid: true
+update: true
+hasPower: true
+configurable: true
+category: "turret"
+research: "core-shard"
+
+consumes: {
+  power: 4.0
+}
+
+requirements: [
+  copper/200
+  lead/150
+  silicon/120
+  phase-fabric/50
+]
+
+alwaysUnlocked: true
+researchCostMultiplier: 10

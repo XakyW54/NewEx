@@ -1,0 +1,61 @@
+type: PowerTurret
+name: Forstarsilum
+description: "Bắn đạn Starsword chính xác mỗi 1 giây. Bắn liên tục sẽ tích buff tăng sát thương và tốc độ bắn."
+size: 3
+health: 3000
+reload: 60
+range: 750
+targetAir: true
+targetGround: true
+recoilAmount: 1.5
+restitution: 0.04
+rotateSpeed: 8
+inaccuracy: 0
+shootSound: lasershoot
+
+consumes: {
+  power: 3.0
+}
+powerUse: 3.0
+hasPower: true
+
+shootType: {
+  type: BasicBulletType
+  sprite: starsword
+  absorbable: true
+  chargeEffect: lancerLaserCharge
+  chargeBeginEffect: lancerLaserChargeBegin
+  speed: 6
+  lifetime: 60
+  damage: 78
+  shrinkY: 0
+  shrinkX: 0
+  height: 20
+  width: 13
+  hitEffect: hitLaser
+  despawnEffect: hitLaser
+  pierce: true
+  pierceCap: 3
+  pierceBuilding: true
+  frontColor: bbdefb
+  backColor: 90caf9
+}
+
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+}
+
+requirements: [
+  copper/150
+  lead/120
+  graphite/80
+  silicon/100
+  titanium/175
+  obs/50
+  obsidis/120
+]
+
+category: turret
+research: dor
+researchCostMultiplier: 1

@@ -1,0 +1,51 @@
+
+name: Swordoder
+description: "Pháo kiếm: bắn đạn và chém, tận diệt mục tiêu dưới 15% máu. Nâng cấp MK2 (bắn 2 bên, bạo kích) hoặc MK2B (tầm xa, chém thẳng vào mục tiêu)."
+health: 867000
+size: 3
+reload: 120
+recoil: 3
+range: 210
+inaccuracy: 2
+targetAir: true
+targetGround: true
+maxAmmo: 10
+ammoPerShot: 1
+shootY: 5
+shootX: 0
+ammoTypes: {
+  titanium: {
+    type: BasicBulletType
+    speed: 999
+    damage: 1
+    sprite: swordoder-sword
+    width: 1
+    height: 1
+    lifetime: 999
+  }
+}
+
+
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+  parts: [
+    {
+      type: RegionPart
+      suffix: -barr
+      under: false
+      moveY: -3
+      progress: reload
+      heatProgress: reload
+    }
+  ]
+}
+
+
+requirements: [
+  copper/266
+    lead/170
+]
+category: turret
+research: xylaon
+researchCostMultiplier: 1

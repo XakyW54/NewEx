@@ -1,0 +1,301 @@
+(function() {
+    const CURRENT_MOD_NAME = "newex";
+    const GACHA_POINTS_KEY = "newex-gacha-points";
+
+    const SURVIVAL_ID = "newmodesurvival";
+    const PVP_ID = "pvpnewex3110";
+
+    const MAP_SIG_KEY = "newex-newmode-mapsig-";
+    const sigCache = {};
+
+    let activeMapName = null;
+    let isPlayingNewMode = false;
+    let pendingGachaReward = 0;
+    let hasWonPending = false;
+
+    const mapsList = [
+        { id: "Newbie", displayName: "Newbie" },
+        { id: "redces", displayName: "Redces ᑈᐴᐾᐶᒅ" },
+        { id: "sentyderd", displayName: "Sentyderd" },
+        { id: "defxy1", displayName: "Def Xy-1" },
+        { id: "defxy2", displayName: "Def Xy-2" },
+        { id: "defxy3", displayName: "Def Xy-3" },
+        { id: "rock", displayName: "Rocks" },
+        { id: SURVIVAL_ID, displayName: "Survival (Diệt 1000 địch)" },
+        { id: PVP_ID, displayName: "PvP Cày Cấp (Cùng bạn bè)" }
+    ];
+
+    // Lấy file maps/<id>.msav trong mod
+    function getMapFile(mapName) {
+        try {
+            let mod = Vars.mods.getMod(CURRENT_MOD_NAME);
+            if (mod != null && mod.root != null) {
+                let f = mod.root.child("maps").child(mapName + ".msav");
+                if (f.exists()) return f;
+            }
+        } catch (e) {}
+        return null;
+    }
+
+    // Chữ ký (kích thước + CRC32) của file map, dùng để biết map đã được xây lại hay chưa
+    function mapSig(mapName) {
+        if (sigCache[mapName] !== undefined) return sigCache[mapName];
+        let r = null;
+        try {
+            let f = getMapFile(mapName);
+            if (f != null) {
+                let bytes = f.readBytes();
+                let crc = new java.util.zip.CRC32();
+                crc.update(bytes, 0, bytes.length);
+                let hex = Number(String(crc.getValue())).toString(16);
+                r = { size: bytes.length, crc: hex, text: bytes.length + ":" + hex };
+            }
+        } catch (e) {
+            Log.err("Lỗi đọc file map " + mapName + ": " + e);
+        }
+        sigCache[mapName] = r;
+        return r;
+    }
+
+    function getNewModeSlot(mapId) {
+        let slots = Vars.control.saves.getSaveSlots();
+        return slots.find(s => s.name === "NewEx_NewMode_Save_" + mapId);
+    }
+
+    function isSlotValid(slot) {
+        return slot != null && slot.file != null && slot.file.exists();
+    }
+
+    function showNewModeDialog() {
+        const dialog = new BaseDialog("NewMode - Chọn Màn Chơi");
+        dialog.setFillParent(true);
+
+        const content = dialog.cont;
+        content.clear();
+
+        content.add("[accent]CHỌN BẢN ĐỒ NEWMODE[]").pad(10).fontScale(1.2).row();
+
+        let mapTable = new Table();
+        mapTable.top().margin(10);
+
+        mapsList.forEach(mapInfo => {
+            let slot = getNewModeSlot(mapInfo.id);
+            let hasSave = isSlotValid(slot);
+
+            let mapCard = new Table(Tex.button);
+            mapCard.margin(12);
+
+            mapCard.add("[white]Map: " + mapInfo.displayName + "[]").left().row();
+            if (mapInfo.id === SURVIVAL_ID && global.NexSurvival) {
+                mapCard.add("[lightgray]Tiêu diệt đủ " + global.NexSurvival.KILL_GOAL + " địch để thắng. Địch xuất hiện ngẫu nhiên khắp bản đồ theo từng đợt.[]").left().padBottom(4).row();
+            }
+            if (mapInfo.id === PVP_ID) {
+                mapCard.add("[lightgray]Điều khiển unit riêng, diệt địch wave để lấy EXP, về lõi nâng cấp rồi phá lõi đối phương. Bấm Host Game trong menu tạm dừng để mời bạn bè.[]").left().wrap().width(520).padBottom(4).row();
+            }
+            let sg = mapSig(mapInfo.id);
+            if (sg != null) {
+                mapCard.add("[gray]File: maps/" + mapInfo.id + ".msav • " + Math.ceil(sg.size / 1024) + " KB • #" + sg.crc + "[]").left().padBottom(4).row();
+            } else {
+                mapCard.add("[scarlet]Không thấy file maps/" + mapInfo.id + ".msav trong mod![]").left().padBottom(4).row();
+            }
+            if (hasSave) {
+                let titleText = "Save File";
+                try {
+                    if (slot.getDialogTitle) {
+                        titleText = slot.getDialogTitle();
+                    } else if (slot.getName) {
+                        titleText = slot.getName();
+                    }
+                } catch(e) {}
+                mapCard.add("[yellow]Có dữ liệu lưu từ trận trước (" + titleText + ")[]").left().padBottom(6).row();
+            } else {
+                mapCard.add("[gray]Màn chơi mới (Chưa có Save)[]").left().padBottom(6).row();
+            }
+
+            let btnText = hasSave ? "Tiếp Tục Chơi" : "Bắt Đầu Chơi";
+            mapCard.button(btnText, Styles.flatTogglet, () => {
+                dialog.hide();
+                startNewModeMap(mapInfo.id);
+            }).size(180, 45).pad(4);
+
+            if (hasSave) {
+                mapCard.button("Xóa Save & Chơi Mới", Styles.flatTogglet, () => {
+                    slot.delete();
+                    Vars.ui.showInfo("Đã xóa dữ liệu lưu của " + mapInfo.displayName + "!");
+                    dialog.hide();
+                    showNewModeDialog();
+                }).size(200, 45).pad(4);
+            }
+
+            mapTable.add(mapCard).growX().pad(6).row();
+        });
+
+        let scrollPane = new ScrollPane(mapTable);
+        content.add(scrollPane).grow().row();
+
+        dialog.addCloseButton();
+        dialog.show();
+    }
+
+    function startNewModeMap(mapName) {
+        isPlayingNewMode = true;
+        activeMapName = mapName;
+        hasWonPending = false;
+        pendingGachaReward = 0;
+
+        Core.settings.put("newex-is-playing-newmode", java.lang.Boolean(true));
+
+        let slotName = "NewEx_NewMode_Save_" + mapName;
+        let slots = Vars.control.saves.getSaveSlots();
+        let slot = slots.find(s => s.name === slotName);
+
+        let sg = mapSig(mapName);
+        let sigKey = MAP_SIG_KEY + mapName;
+
+        // Save cũ chứa map cũ -> nếu file map trong mod đã đổi thì bỏ save, chơi lại từ map mới
+        if (isSlotValid(slot) && sg != null) {
+            let saved = String(Core.settings.getString(sigKey, ""));
+            if (saved !== sg.text) {
+                if (saved === "" && mapName !== PVP_ID) {
+                    Core.settings.put(sigKey, java.lang.String(sg.text));
+                } else {
+                    try { slot.delete(); } catch (e) {}
+                    slot = null;
+                    Vars.ui.showInfoToast("[accent]Map đã được cập nhật - bỏ save cũ, bắt đầu trận mới!", 3);
+                }
+            }
+        }
+
+        if (isSlotValid(slot)) {
+            try {
+                slot.load();
+                Vars.state.set(GameState.State.playing);
+                Vars.ui.showInfoToast("Đã tải lại trận đấu NewMode thành công!", 2);
+                if (mapName === SURVIVAL_ID && global.NexSurvival) global.NexSurvival.onResume();
+                if (mapName === PVP_ID && global.NexPvp) global.NexPvp.onResume();
+                return;
+            } catch (e) {
+                Log.err("Lỗi load save NewMode, tạo lại trận mới: " + e);
+            }
+        }
+
+        let mapFile = getMapFile(mapName);
+        if (mapFile != null) {
+            let map = MapIO.createMap(mapFile, true);
+
+            Vars.logic.reset();
+            Vars.world.loadMap(map);
+            Vars.state.rules = map.applyRules(Gamemode.survival);
+            Vars.logic.play();
+
+            if (mapName === SURVIVAL_ID && global.NexSurvival) global.NexSurvival.onBegin();
+            if (mapName === PVP_ID && global.NexPvp) global.NexPvp.onBegin();
+
+            let newSlot = Vars.control.saves.addSave(slotName);
+            newSlot.save();
+
+            if (sg != null) Core.settings.put(sigKey, java.lang.String(sg.text));
+
+            Vars.ui.showInfoToast("Đã khởi tạo màn chơi " + mapName + (sg != null ? " (#" + sg.crc + ")" : "") + "!", 2);
+            return;
+        }
+
+        isPlayingNewMode = false;
+        activeMapName = null;
+        Core.settings.put("newex-is-playing-newmode", java.lang.Boolean(false));
+        Vars.ui.showInfo("Không tìm thấy file maps/" + mapName + ".msav trong thư mục mod!");
+    }
+
+    function saveNewModeGame() {
+        if (!isPlayingNewMode || !activeMapName || !Vars.state.isGame()) return;
+        try {
+            // Ghi tiến trình trang update (PvP: cấp, EXP, điểm nâng, chỉ số, pilot...) vào rules.tags
+            // trước khi lưu file, để không bị mất khi out rồi vào lại / tiếp tục trận.
+            if (activeMapName === PVP_ID && global.NexPvp && global.NexPvp.persistStore) {
+                try { global.NexPvp.persistStore(); } catch (e) {}
+            }
+            let slotName = "NewEx_NewMode_Save_" + activeMapName;
+            let slots = Vars.control.saves.getSaveSlots();
+            let slot = slots.find(s => s.name === slotName);
+            if (slot == null) {
+                slot = Vars.control.saves.addSave(slotName);
+            }
+            slot.save();
+            Vars.ui.showInfoToast("[accent]Đã tự động lưu trận NewMode![]", 2);
+        } catch (e) {
+            Log.err("Lỗi Save NewMode: " + e);
+        }
+    }
+
+    function deleteNewModeSave() {
+        if (isPlayingNewMode && activeMapName) {
+            let slotName = "NewEx_NewMode_Save_" + activeMapName;
+            let slots = Vars.control.saves.getSaveSlots();
+            let slot = slots.find(s => s.name === slotName);
+            if (slot != null) {
+                slot.delete();
+            }
+        }
+    }
+
+    Events.on(GameOverEvent, event => {
+        if (isPlayingNewMode) {
+            let isPvp = activeMapName === PVP_ID && global.NexPvp != null;
+            let wonNow = isPvp ? (event.winner != null && Vars.player != null && event.winner == Vars.player.team()) : (event.winner != null && event.winner == Vars.state.rules.defaultTeam);
+            if (wonNow) {
+                hasWonPending = true;
+                if (isPvp) pendingGachaReward = global.NexPvp.REWARD_POINTS;
+                else if (activeMapName === "Newbie") pendingGachaReward = 20;
+                else if (activeMapName === SURVIVAL_ID && global.NexSurvival) pendingGachaReward = global.NexSurvival.REWARD_POINTS;
+                else pendingGachaReward = 50;
+            }
+            deleteNewModeSave();
+        }
+    });
+
+    Events.on(StateChangeEvent, event => {
+        if (event.from === GameState.State.playing && event.to === GameState.State.menu) {
+            if (isPlayingNewMode) {
+                if (hasWonPending) {
+                    let currentPts = Core.settings.getInt(GACHA_POINTS_KEY, 0) + pendingGachaReward;
+                    Core.settings.put(GACHA_POINTS_KEY, java.lang.Integer(currentPts));
+                    let extra = "";
+                    let res = (activeMapName === SURVIVAL_ID && global.NexSurvival) ? global.NexSurvival.lastResult : null;
+                    if (res != null) {
+                        extra = "\n\n[white]Đã diệt [scarlet]" + res.kills + "[white] địch • Đợt [cyan]" + res.wave + "[white] • Thời gian [cyan]" + res.time + "[]";
+                    }
+                    Vars.ui.showInfo("[accent]🎉 CHIẾN THẮNG NEWMODE! 🎉\n\n[white]Bạn đã vượt qua bản đồ [cyan]" + activeMapName + "[white] và nhận được [yellow]+" + pendingGachaReward + " điểm Gacha[white]!\n\nTổng số điểm hiện tại: [yellow]" + currentPts + " điểm[]" + extra);
+                } else {
+                    saveNewModeGame();
+                }
+                isPlayingNewMode = false;
+                activeMapName = null;
+                hasWonPending = false;
+                pendingGachaReward = 0;
+            }
+            Core.settings.put("newex-is-playing-newmode", java.lang.Boolean(false));
+        }
+    });
+
+    Events.on(WaveEvent, event => {
+        if (isPlayingNewMode && Vars.state.isGame()) {
+            saveNewModeGame();
+
+            if (Vars.state.wave > 0 && Vars.state.wave % 10 === 0) {
+                let currentPts = Core.settings.getInt(GACHA_POINTS_KEY, 0) + 1;
+                Core.settings.put(GACHA_POINTS_KEY, java.lang.Integer(currentPts));
+                Vars.ui.showInfoToast("[accent]Đã qua đợt " + Vars.state.wave + "! Nhận +1 điểm Gacha (Tổng: " + currentPts + ")[ ]", 3);
+            }
+        }
+    });
+
+    Events.on(ClientLoadEvent, event => {
+        Core.settings.put("newex-is-playing-newmode", java.lang.Boolean(false));
+
+        try {
+            Vars.ui.menufrag.addButton("NewMode", Icon.play, () => {
+                showNewModeDialog();
+            });
+        } catch(e) {}
+    });
+})();

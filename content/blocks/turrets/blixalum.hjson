@@ -1,0 +1,40 @@
+
+name: Blixalum
+description: "Pháo điện từ bắn đạn năng lượng nổ diện rộng. Địch càng đông bắn càng nhanh, có cánh cơ khí hỗ trợ áp chế."
+health: 9500
+size: 3
+reload: 20
+range: 442
+inaccuracy: 2
+targetAir: tru3
+targetGround: true
+maxAmmo: 10
+ammoPerShot: 1
+ammoTypes: {
+  copper: {
+    type: BasicBulletType
+    speed: 10
+    damage: 30
+    width: 7
+    height: 9
+    lifetime: 10
+status: blasted
+statusDuration: 80
+  }
+}
+
+
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+}
+
+requirements: [
+  copper/224
+  lead/ 110
+  titanium/430
+  silicon/40
+]
+category: turret
+research: blaw
+researchCostMultiplier: 1

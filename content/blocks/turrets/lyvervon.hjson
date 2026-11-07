@@ -1,0 +1,38 @@
+name: Lyvervon
+description: "Cột thu lôi chiến đấu. Biến điện tích thành các đòn hồ quang chính xác, bắn liên tục."
+health: 2475
+size: 2
+range: 260
+inaccuracy: 2
+rotateSpeed: 20.5
+shootSound: Gekko_fire
+shootCone: 25
+shootEffect: none
+maxAmmo: 50
+ammoPerShot: 1
+unitSort: strongest
+consumes: {
+  power: 2
+}
+targetGround: true
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+  parts: [
+    {
+      type: RegionPart
+      suffix: -barrel
+      progress: recoil
+      moveY: -3
+    }
+  ]
+}
+requirements: [
+  copper/2500
+  lead/1400
+  coal/430
+  graphite/120
+]
+category: turret
+research: newex
+researchCostMultiplier: 1

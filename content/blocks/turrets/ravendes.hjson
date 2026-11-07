@@ -1,0 +1,43 @@
+name: "ravendes"
+localizedName: "Ravendes"
+description: "Siêu pháo hoàng gia bắn đạn sao 4 cánh. Sát thương đổi theo tầm bắn, có nhiều nhánh nâng cấp."
+type: "PowerTurret"
+size: 3
+health: 1200
+reload: 6.0
+range: 1200
+inaccuracy: 2.5
+rotateSpeed: 4.0
+targetAir: true
+targetGround: true
+drawer: {
+  type: DrawTurret
+  basePrefix: reinforced-
+}
+shootSound: "ravendesshoot"
+squareSprite: false
+
+shootType: {
+  type: BasicBulletType
+  speed: 20.8
+  damage: 75
+  lifetime: 57.6
+  width: 4.0
+  height: 16.0
+}
+
+powerConsumer: {
+  usage: 5.0
+}
+
+requirements: [
+  copper/400
+  lead/280
+  silicon/200
+  titanium/150
+]
+
+category: "turret"
+research: "foreshadow"
+buildVisibility: "shown"
+researchCostMultiplier: 10
